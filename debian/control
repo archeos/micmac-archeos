@@ -1,0 +1,16 @@
+Source: micmac
+Section: photogrammetry
+Priority: extra
+Maintainer: Romain Janvier <romain@Archeos>
+Build-Depends: debhelper (>= 9.0.0), cmake, libx11-dev
+Standards-Version: 3.9.4
+Homepage: http://logiciels.ign.fr/?Micmac
+#Vcs-Git: git://git.debian.org/collab-maint/micmac.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/micmac.git;a=summary
+
+Package: micmac
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, make, imagemagick, exiv2, libimage-exiftool-perl
+Description: MicMac is software for 
+ This package contains MicMac Along with various
+ software : Apero, to compute orientation

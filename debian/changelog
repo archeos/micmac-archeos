@@ -1,0 +1,5 @@
+micmac (1.0+hg473-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Romain Janvier <romain@Archeos>  Wed, 23 Jan 2013 19:18:14 +0100

@@ -1,0 +1,28 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Wed, 23 Jan 2013 21:15:21 +0100
+Subject: Proper install directory
+
+---
+ CMakeLists.txt |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5fd0b00..1a909c4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -245,13 +245,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+ 
+ # DEFINITION : du dossier d'installation
+-set(Install_Dir ${PROJECT_SOURCE_DIR}/bin)
++set(Install_Dir /usr/bin)
+ 
+ # DEFINITION : du dossier des sources d'Elise
+ set(ELISE_DIR src)
+ 
+ # CONSTRUCTION : Librairie ELISE
+-set( code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
++set(code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
+ include(${code_genere_dir}/Sources.cmake)
+ ADD_SUBDIRECTORY(${ELISE_DIR})
+ 

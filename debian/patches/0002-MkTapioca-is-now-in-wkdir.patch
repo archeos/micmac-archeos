@@ -1,0 +1,21 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Thu, 24 Jan 2013 09:40:14 +0100
+Subject: MkTapioca is now in wkdir
+
+---
+ src/uti_phgrm/CPP_Tapioca.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/uti_phgrm/CPP_Tapioca.cpp b/src/uti_phgrm/CPP_Tapioca.cpp
+index 90a1878..61c4551 100644
+--- a/src/uti_phgrm/CPP_Tapioca.cpp
++++ b/src/uti_phgrm/CPP_Tapioca.cpp
+@@ -351,7 +351,7 @@ int Tapioca_main(int argc,char ** argv)
+     }
+ */
+ 
+-    MkFT= MMDir() + "MkTapioca";
++    MkFT= aDir + "MkTapioca";
+     BinPastis = MM3dBinFile("Pastis");
+     ByP= MMNbProc();
+ 

@@ -1,0 +1,4 @@
+data /usr/share/micmac
+binaire-aux/*.LINUX /usr/bin
+include/XML_MicMac /usr/share/micmac
+include/XML_GEN /usr/share/micmac
