@@ -1,35 +1,34 @@
 Source: micmac
 Section: photogrammetry
 Priority: extra
-Maintainer: Romain Janvier <romain@Archeos>
-Build-Depends: debhelper (>= 9.0.0), cmake, libx11-dev
+Maintainer: Romain Janvier <romain.janvier@hotmail.fr>
+Build-Depends: debhelper (>= 9.0.0), cmake (>= 2.8.1), libx11-dev
 Standards-Version: 3.9.4
-Homepage: http://logiciels.ign.fr/?Micmac
-#Vcs-Git: git://git.debian.org/collab-maint/micmac.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/micmac.git;a=summary
+Homepage: http://www.micmac.ign.fr
+Vcs-Git: git://github.com/archeos/micmac-archeos.git
+Vcs-Browser: https://github.com/archeos/micmac-archeos/
 
 Package: micmac
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, make, imagemagick, exiv2, libimage-exiftool-perl, proj-bin
 Description: Photogrammetry in geographic context
  This package include photogrammetry command line tools from IGN (www.ign.fr).
- They were primarly designed to create a complete pipeline in long range
- photogrammetry area (DEM, DTM, orthophotos...). they are powerful and versatile 
- enought to adapts theirselves to archaeological or even cultural heritage contexts.
+ They were primarily designed to create a complete pipeline for long range
+ photogrammetry area (DEM, DTM, orthophotos...) but they are powerful and versatile 
+ enough to adapts themselves to archaeological and cultural heritage contexts.
  .
  In contrast to other pipelines (Bundler + PMVS), that come from Computer 
  Vision background, the pipeline of IGN come from Photogrammetry background. As a 
- result, it should be more exigent and less easy-to-use, but it offer widers 
+ result, it should be more exigent and less easy-to-use, but it offer wider 
  possibilities and much more features (georeferencing, ortophotos, depth maps, 
  distortion models for fish-eyes...). MicMac is particullary confortable 
  working on quasi planar scene (façade, stratigraphic cross sections...).
  .
- MicMac suite is under heavy devlopement. 
- This tools are licenced under the CeCILL-B, a french adaptation of the BSD
- .
- .
- Among the softwares included (not exhaustive list):
+ Some of the tools included:
  Pastis extracts and matches tie points. Apero computes orientations and
  MicMac generate the dense matching.
+ .
+ MicMac suite is still under heavy devlopement and is licensed under CeCILL-B, 
+ a French adaptation of the BSD
  
  

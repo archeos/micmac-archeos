@@ -1,14 +1,23 @@
 Next releases
 =============
 
+- Use a relative path in Elise error reports
+
+- Are headers in include/XML*/ useful ? If not, XML* 
+should maybe be installed in /var/...
+
 - Make a watch script
 
-- Look at change in path organisation and 
-clean hardcoded stuffs (maybe patch a config.h.in)
+- Look at change in path organization upstream and 
+finally clean hardcoded stuffs (maybe patch a config.h.in)
 
-- Reimplement an open source 'Sift' w/ vlfeat:
+- Auto DicoCamera installation? on first launch mm3D 
+should create $HOME/.micmac/*.xml.
+postinst scripts and /usr/skel  should be avoided
+
+- Re-implement an open source 'Sift' w/ vlfeat:
  * Tiling for big images and good memory management
  * Native support of 1b Tiff (instead of pgm) to integrate 
    seamlessly w/ Pastis
 
-- Reimplement an open source Flann based matcher
+- Re-implement an open source Flann based matcher

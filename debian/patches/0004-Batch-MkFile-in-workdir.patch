@@ -1,3 +1,7 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Thu, 24 Jan 2013 11:17:34 +0100
+Subject: Hardcoded paths. FHS complient
+
 --- a/src/util/cGPAO.cpp
 +++ b/src/util/cGPAO.cpp
 @@ -53,7 +53,7 @@ void cEl_GPAO:: DoComInParal(const std::

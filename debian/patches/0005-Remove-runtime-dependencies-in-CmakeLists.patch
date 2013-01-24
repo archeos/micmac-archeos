@@ -1,3 +1,7 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Thu, 24 Jan 2013 17:00:00 +0100
+Subject: Hardcoded paths. FHS complient
+
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -150,12 +150,12 @@ ENDIF()
