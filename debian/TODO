@@ -1,0 +1,14 @@
+Next releases
+=============
+
+- Make a watch script
+
+- Look at change in path organisation and 
+clean hardcoded stuffs (maybe patch a config.h.in)
+
+- Reimplement an open source 'Sift' w/ vlfeat:
+ * Tiling for big images and good memory management
+ * Native support of 1b Tiff (instead of pgm) to integrate 
+   seamlessly w/ Pastis
+
+- Reimplement an open source Flann based matcher

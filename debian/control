@@ -10,7 +10,19 @@ Homepage: http://logiciels.ign.fr/?Micmac
 
 Package: micmac
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, make, imagemagick, exiv2, libimage-exiftool-perl
-Description: MicMac is software for 
- This package contains MicMac Along with various
+Depends: ${shlibs:Depends}, ${misc:Depends}, make, imagemagick, exiv2, libimage-exiftool-perl, proj-bin
+Description: Photogrammetry in geographical context
+ This package include photogrammetry command line tools from IGN (www.ign.fr).
+ They were primarly designed do create a complete pipeline for long range
+ photogrammetry (DEM, DTM, orthophotos...) but they are powerful and versatile 
+ enought to apdapts in archaeological or even cultural heritage contexts.
+ .
+ In contrast to other pipelines (Bundler + PMVS), that came from Computer 
+ Vision background, the pipeline of IGN come from Photogrammetry background. As a 
+ result, it should be more exigent and less easy-to-use, but it offer widers 
+ possibilities and much more features (georeferencing, ortophotos, depth maps, 
+ distortion models for fish-eyes...). MicMac is particullary confortable 
+ working on quasi planar scene (façade, stratigraphic cross sections...).
+ .
+ This tools are licenced under the CeCILL-B, a french adaptation of the BSD
  software : Apero, to compute orientation
