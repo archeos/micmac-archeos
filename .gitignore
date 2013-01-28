@@ -1,5 +1,11 @@
 # Quilt
 .pc
 
-# Vim
+# gedit
 *~
+
+#vim
+*.swp
+
+# Test build
+bin

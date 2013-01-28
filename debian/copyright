@@ -1,16 +1,88 @@
 Upstream-Name: MicMac
 Source: http://www.micmac.ign.fr/
 
+
 Files: *
 Copyright: 2007-2013 Institut Géographique National (IGN) www.ign.fr
-Author:    2007-2013 Marc Pierrot Deseilligny
-Contibutors: Grégoire Maillet, Didier Bolto, Arnaud le Bris,
-Matthieu Deveau, Gérald Choqueux, Jérémie Belvaux  
+Author: 1999-2013 Marc Pierrot Deseilligny, marc.pierrot-deseilligny at ensg.eu
+Contibutors: Grégoire Maillet
+             Didier Bolto
+             Arnaud le Bris
+             Matthieu Deveau
+             Gérald Choqueux
+             Jérémie Belvaux  
 License: CeCILL-B
+ An extensive copy of the license is provided in this document.
+References (please cite these when using this software): 
+  M. Pierrot-Deseilligny, N. Paparoditis.
+ "A multiresolution and optimization-based image matching approach:
+ An application to surface reconstruction from SPOT5-HRS stereo imagery."
+ In IAPRS vol XXXVI-1/W41 in ISPRS Workshop On Topographic Mapping From Space
+ (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
+ .
+ M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
+ d'images, adapte au contexte geograhique" to appears in Bulletin d'information 
+ de l'Institut Geographique National, 2007.
+
+
+Files: src/AMD/*
+Copyright: 2004-2012 Timothy A. Davis,  davis at cise.ufl.edu
+           2004-2012 Patrick R. Amestoy
+           2004-2012 Iain S. Duff
+Licence: LGPL
+
+
+Files: src/tiff/el_dcraw.c
+Copyright: 1997-2010 Dave Coffin, dcoffin at cybercom.net
+License: GPL-2+ 
+
+
+Files: src/geom2D/Shewchuk*
+Copyright: 1996-2005 Jonathan Richard Shewchuk jrs at cs.cmu.edu
+License: Free for non-commercial use
+
+
+Files: src/uti_phgrm/MaxFlow/*
+Authors: Yuri Boykov, Vladimir Kolmogorov
+Licence: Free for non-commercial use
+References: "An Experimental Comparison of Min-Cut/Max-Flow Algorithms for Energy
+ Minimization in Vision."
+ Yuri Boykov and Vladimir Kolmogorov.
+ In IEEE Transactions on Pattern Analysis and Machine Intelligence (PAMI),
+ September 2004
+ .
+ "Efficiently Solving Dynamic Markov Random Fields Using Graph Cuts."
+ Pushmeet Kohli and Philip H.S. Torr International Conference on Computer Vision
+ (ICCV), 2005
+
+
+Files: src/uti_phgrm/MergePly
+Copyright: 1994 The Board of Trustees of The Leland Stanford
+Author: Greg Turk
+Contributor: Joao Fradinho Oliveira
+License: GPL-2+
+
+
+Files: CodeExterne/*
+Copyright: 2006 The Regents of the University of California
+Author: Andrea Vedaldi
+Licence:This software program is Copyright © 2006 The Regents of the University of
+ California and can be freely used for research purposes (see the included license
+ file for details). Although this implementation is original (in particular, it is
+ not derived from Lowe's implementation), the SIFT algorithm has been issued a
+ patent. Thus you should note that:
+ . 
+ This software embodies a method for which the following patent has been issued:
+ "Method and apparatus for identifying scale invariant features in an image and use
+ of same for locating an object in an image," David G. Lowe, US Patent 6,711,293
+ (March 23, 2004). Provisional application filed March 8, 1999. Asignee: The
+ University of British Columbia
+
 
 Files: debian/*
 Copyright: 2013 Romain Janvier romain.janvier@hotmail.fr
 License: GPL-2+
+
 
 License: CeCILL-B
  CeCILL-B FREE SOFTWARE LICENSE AGREEMENT
@@ -34,7 +106,8 @@ License: CeCILL-B
  25 rue Leblanc, immeuble Le Ponant D, 75015 Paris, France.
  
  Centre National de la Recherche Scientifique - CNRS, a public scientific and
- technological establishment, having its principal place of business at 3 rue
+ technological establishment, having its principal place of business at 3
+rue
  Michel-Ange, 75794 Paris cedex 16, France.
  
  Institut National de Recherche en Informatique et en Automatique - INRIA, a

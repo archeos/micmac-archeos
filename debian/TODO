@@ -3,12 +3,12 @@ Next releases
 
 - Use a relative path in Elise error reports
 
-- Are headers in include/XML*/ useful ? If not, XML* 
+- Are headers in include/XML*/ useful? If not, XML* 
 should maybe be installed in /var/...
 
 - Make a watch script
 
-- Look at change in path organization upstream and 
+- Look at upstream changes in path organization and 
 finally clean hardcoded stuffs (maybe patch a config.h.in)
 
 - Auto DicoCamera installation? on first launch mm3D 
@@ -17,7 +17,7 @@ postinst scripts and /usr/skel  should be avoided
 
 - Re-implement an open source 'Sift' w/ vlfeat:
  * Tiling for big images and good memory management
- * Native support of 1b Tiff (instead of pgm) to integrate 
+ * Native support of 8b Tiff (instead of pgm) to integrate 
    seamlessly w/ Pastis
 
 - Re-implement an open source Flann based matcher
