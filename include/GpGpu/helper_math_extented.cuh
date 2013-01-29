@@ -1,37 +1,10 @@
 #pragma once
+
 #include <cuda_runtime.h>
-#include <helper_math.h>
 #include <helper_functions.h>
+#include <helper_math.h>
 #include <helper_cuda.h>
 
-struct paramGPU
-{
-
-	 int2	pUTer0;
-	 int2	pUTer1;
-
-	 uint2	rDiTer;		// Dimension du bloque terrain
-	 uint2	dimTer;		// Dimension du bloque terrain + halo
-	 uint2	dimSTer;	// Dimension du bloque terrain + halo sous echantilloné
-	 uint2	dimVig;		// Dimension de la vignette
-	 uint2	dimImg;		// Dimension des images
-	 uint2	rVig;		// Rayon de la vignette
-	 uint	sizeVig;	// Taille de la vignette en pixel
-	 uint	sizeTer;	// Taille du bloque terrain + halo
-	 uint	rSiTer;		// taille reel du terrain
-	 uint	sizeSTer;	// Taille du bloque terrain + halo sous echantilloné
-	 uint	sampTer;	// Pas echantillonage du terrain
-	 float	UVDefValue;	// UV Terrain incorrect
-	 uint2	dimCach;	// Dimension cache
-	 uint	sizeCach;	// Taille du cache
-	 uint	nLayer;		// Nombre d'images
-	 int2	ptMask0;	// point debut du masque
-	 int2	ptMask1;	// point fin du masque
-	 float	badVig;		//
-	 float	mAhEpsilon;
-};
-
-static __constant__ paramGPU cH;
 
 static int iDivUp(int a, int b)
 {
@@ -66,6 +39,11 @@ inline __host__ __device__ uint2 operator/(uint2 a, uint2 b)
 inline __host__ __device__ uint2 operator/(uint2 a, int b)
 {
 	return make_uint2(a.x / b, a.y / b);
+}
+
+inline __host__ __device__ int2 operator/(int2 a, uint b)
+{
+	return make_int2(a.x / b, a.y / b);
 }
 
 inline __host__ __device__ int2 operator/(int2 a, uint2 b)
@@ -132,6 +110,12 @@ inline __host__ __device__ int mdlo(uint a, uint b)
 
 }
 
+inline __host__ __device__ bool aSE(int2 a, int b)
+{
+	return ((a.x >= b) && (a.y >= b));
+}
+
+
 inline __host__ __device__ bool oSE(uint2 a, uint2 b)
 {
 	return ((a.x >= b.x) || (a.y >= b.y));
@@ -141,7 +125,6 @@ inline __host__ __device__ bool oSE(int2 a, uint2 b)
 {
 	return ((a.x >= (int)b.x) || (a.y >= (int)b.y));
 }
-
 
 inline __host__ __device__ bool oSE(uint3 a, uint2 b)
 {
@@ -153,6 +136,17 @@ inline __host__ __device__ bool oEq(float2 a, float b)
 	return ((a.x == b) || (a.y == b));
 }
 
+inline __host__ __device__ bool oEq(uint2 a, int b)
+{
+	return ((a.x == (uint)b) || (a.y == (uint)b));
+}
+
+
+inline __host__ __device__ bool aEq(int2 a, int b)
+{
+	return ((a.x == b) && (a.y == b));
+}
+
 inline __host__ __device__ bool oI(uint2 a, uint2 b)
 {
 	return ((a.x < b.x) || (a.y < b.y));
@@ -161,6 +155,11 @@ inline __host__ __device__ bool oI(uint2 a, uint2 b)
 inline __host__ __device__ bool oI(int2 a, int b)
 {
 	return ((a.x < b) || (a.y < b));
+}
+
+inline __host__ __device__ bool aI(int2 a, int2 b)
+{
+	return ((a.x < b.x) && (a.y < b.y));
 }
 
 inline __host__ __device__ bool oI(uint3 a, uint2 b)
