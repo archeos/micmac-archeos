@@ -1,3 +1,8 @@
+micmac (1.0+hg497-0archeos1) theodoric; urgency=low
+  * New upstream verrsion
+
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 29 Jan 2013 10:40:00 +0100
+
 micmac (1.0+hg473-0archeos1) theodoric; urgency=low
 
   * Initial release
