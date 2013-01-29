@@ -17,22 +17,21 @@ Description: Photogrammetry in geographic context
  photogrammetry area (DEM, DTM, orthophotos...) but they are powerful and versatile 
  enough to adapts themselves to archaeological and cultural heritage contexts.
  .
- In contrast to other pipelines (Bundler + PMVS), that come from Computer 
- Vision background, the pipeline from IGN come from Photogrammetry background. As a 
- result, it should be more exigent and less easy-to-use, but it offer wider 
- possibilities and much more features (georeferencing, ortophotos, depth maps, 
- distortion models for fish-eyes...) and MicMac is particullary fluent 
- on quasi planar scene (façade, stratigraphic cross sections...).
+ While other SFM/IBR software come more from Computer Vision background, 
+ the pipeline from IGN come from Photogrammetry area. As a  result, it should be more exigent 
+ and less easy-to-use, but it offer wider  possibilities and much more features 
+ (georeferencing, ortophotos, depth maps, distortion models for fish-eyes...) 
+ and MicMac is notably fluent on quasi planar scene (façade, stratigraphic cross sections...).
  .
- Some of the tools included:
- Pastis extracts and matches tie points. Apero computes orientations and
- MicMac generate the dense matching.
+ MicMac suite was designed as research tool and targeted laboratories. As a result, 
+ performance and user experience were not the main goals. But since 2012 MicMac 
+ is under more heavy development and this may lead to major changes in terms of 
+ performances and usability. CUDA support was recently bought to MicMac for CPGPU but it's 
+ NOT included in this package.
  .
- MicMac suite is still under heavy devlopement and is licensed under CeCILL-B, 
- a French adaptation of the BSD.
- .
- PLEASE NOTICE that this package contains an implementation of the SIFT algorithm
- which is patented. Please refer to the copyright file included in this package 
- for further information.
+ MicMac is Open Source an is licensed under CeCILL-B, a French adaptation of the BSD licence. 
+ But PLEASE NOTE that this package contains an implementation of the SIFT algorithm 
+ which is patented. It also include several libraries that are NOT FREE for commercial use. 
+ Please refer to the copyright file included in this package for further informations.
  
  
