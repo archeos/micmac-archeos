@@ -82,7 +82,6 @@ int cAppliMICMAC::GetTXY() const
 }
 
 extern "C" void  imagesToLayers(float *fdataImg1D, int sx, int sy, int sz);
-extern "C" void  FreeLayers();
 
 void cAppliMICMAC::DoAllMEC()
 {
@@ -90,7 +89,6 @@ void cAppliMICMAC::DoAllMEC()
 #ifdef CUDA_ENABLED
 	
 	// Création du contexte GPGPU
-	
 	cudaDeviceProp deviceProp;
 	// Obtention de l'identifiant de la carte la plus puissante
 	int devID = gpuGetMaxGflopsDeviceId();
