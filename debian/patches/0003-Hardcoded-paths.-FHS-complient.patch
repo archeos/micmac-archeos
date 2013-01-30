@@ -1,9 +1,9 @@
 From: Romain Janvier <romain.janvier@hotmail.fr>
 Date: Thu, 24 Jan 2013 11:01:52 +0100
-Subject: Hardcoded paths. FHS complient
+Subject: Hardcoded paths... but they are now 
+FHS complient
 
 ---
- .list.cpp.swp                             |  Bin 0 -> 12288 bytes
  src/EtalonnagePolygone/lib/PointeInit.cpp |    6 +++---
  src/photogram/ChantierNameAssoc.cpp       |    2 +-
  src/tiff/tiff_header.cpp                  |    6 +++---
@@ -26,8 +26,7 @@ Subject: Hardcoded paths. FHS complient
  src/util/externalToolHandler.cpp          |    2 +-
  src/util/stringifie.cpp                   |    2 +-
  src/util/xml.cpp                          |    2 +-
- 23 files changed, 29 insertions(+), 28 deletions(-)
- create mode 100644 .list.cpp.swp
+ 22 files changed, 29 insertions(+), 28 deletions(-)
 
 --- a/src/EtalonnagePolygone/lib/PointeInit.cpp
 +++ b/src/EtalonnagePolygone/lib/PointeInit.cpp
