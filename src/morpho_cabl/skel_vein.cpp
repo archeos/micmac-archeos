@@ -194,7 +194,12 @@ SkVein::SkVein()
        }
     }
     for (int b=0; b<8 ; b++)
-       UniqueBits[1<<b] = (U_INT1) b;
+
+#if (ELISE_windows)
+      UniqueBits[1i64<<b] = (U_INT1) b;
+#else
+      UniqueBits[1<<b] = (U_INT1) b;
+#endif
 }
 
 
