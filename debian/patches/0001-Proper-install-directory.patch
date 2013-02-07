@@ -6,11 +6,9 @@ Subject: Proper install directory
  CMakeLists.txt |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5fd0b00..1a909c4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -245,13 +245,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+@@ -269,13 +269,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG
  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
  
  # DEFINITION : du dossier d'installation

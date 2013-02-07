@@ -4,7 +4,7 @@ Subject: Hardcoded paths. FHS complient
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -150,12 +150,12 @@ ENDIF()
+@@ -174,12 +174,12 @@ ENDIF()
  
  # VERIFICATION si ImageMagick est installé
  

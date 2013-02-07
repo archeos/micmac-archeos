@@ -4,7 +4,7 @@ Subject: Hardcoded paths. FHS complient
 
 --- a/src/util/cGPAO.cpp
 +++ b/src/util/cGPAO.cpp
-@@ -53,7 +53,7 @@ void cEl_GPAO:: DoComInParal(const std::
+@@ -53,7 +53,7 @@ void cEl_GPAO::DoComInParal(const std::l
         aNbProc = NbProcSys();
  
      if (FileMk=="") 

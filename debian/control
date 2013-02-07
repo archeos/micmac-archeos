@@ -12,26 +12,32 @@ Package: micmac
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, make, imagemagick, exiv2, libimage-exiftool-perl, proj-bin
 Description: Photogrammetry in geographic context
- This package include photogrammetry command line tools from IGN (www.ign.fr).
+ This package include photogrammetry command line tools from IGN 
+ (www.ign.fr).
  They were primarily designed to create a complete pipeline for long range
- photogrammetry area (DEM, DTM, orthophotos...) but they are powerful and versatile 
- enough to adapts themselves to archaeological and cultural heritage contexts.
+ photogrammetry area (DEM, DTM, orthophotos...) but they are also powerful
+ and versatile enough to adapts themselves to archaeological and cultural
+ heritage contexts.
  .
  While other SFM/IBR software come more from Computer Vision background, 
- the pipeline from IGN come from Photogrammetry area. As a  result, it should be more exigent 
- and less easy-to-use, but it offer wider  possibilities and much more features 
- (georeferencing, ortophotos, depth maps, distortion models for fish-eyes...) 
- and MicMac is notably fluent on quasi planar scene (façade, stratigraphic cross sections...).
+ the pipeline from IGN come from Photogrammetry area. As a  result, it
+ should be more exigent and less easy-to-use, but it offer wider 
+ possibilities and much more features (georeferencing, ortophotos, depth
+ maps, distortion models for fish-eyes...) 
+ and MicMac is notably fluent on quasi planar scene (façade, stratigraphic
+ cross sections...).
  .
- MicMac suite was designed as research tool and targeted laboratories. As a result, 
- performance and user experience were not the main goals. But since 2012 MicMac 
- is under more heavy development and this may lead to major changes in terms of 
- performances and usability. CUDA support was recently bought to MicMac for CPGPU but it's 
- NOT included in this package.
+ MicMac suite was designed as research tool and targeted laboratories. 
+ As a result, performance and user experience were not the main goals.
+ But since 2012 MicMac is under more heavy development and this may lead
+ to major changes in terms of performances and usability. 
+ CUDA support was recently bought to MicMac for GPGPU but it's NOT
+ included in this package.
  .
- MicMac is Open Source an is licensed under CeCILL-B, a French adaptation of the BSD licence. 
- But PLEASE NOTE that this package contains an implementation of the SIFT algorithm 
- which is patented. It also include several libraries that are NOT FREE for commercial use. 
- Please refer to the copyright file included in this package for further informations.
- 
- 
+ MicMac is Open Source an is licensed under CeCILL-B, a French adaptation
+ of the BSD licence. 
+ But PLEASE NOTE that this package contains an implementation of the SIFT 
+ algorithm which is patented. It also include several libraries that are 
+ NOT FREE for commercial use. 
+ Please refer to the copyright file included in this package for further
+ informations. 
