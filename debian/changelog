@@ -1,6 +1,8 @@
 micmac (1.0+hg560-0archeos1) theodoric; urgency=low
  
   * New upstream version
+  * Upstream fixed various bug in input tools
+  * Added parallel package build
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 7 Feb 2013 19:40:00 +0100
 
@@ -14,6 +16,6 @@ micmac (1.0+hg473-0archeos1) theodoric; urgency=low
 
   * Initial release
   * MkTapioca is now longer created in the MMDir directory (/usr/)
-  * Many patches for FHS complience
+  * Many patches for FHS compliance
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Wed, 23 Jan 2013 19:18:14 +0100

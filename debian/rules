@@ -1,7 +1,8 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
+NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
+export DEB_BUILD_OPTIONS=parallel=$(NPROCS)
 
-DEB_BUILD_OPTIONS=parallel=2
 %:
-	dh $@ 
+	dh $@ --parallel
