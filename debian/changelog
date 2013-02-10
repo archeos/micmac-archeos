@@ -4,7 +4,7 @@ micmac (1.0+hg560-0archeos1) theodoric; urgency=low
   * Upstream fixed various bug in input tools
   * Added parallel package build
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 7 Feb 2013 19:40:00 +0100
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Sun, 10 Feb 2013 22:16:33 +0100
 
 micmac (1.0+hg497-0archeos1) theodoric; urgency=low
  
