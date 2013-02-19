@@ -1,7 +1,14 @@
+micmac (1.0+hg560-0archeos2) UNRELEASED; urgency=low
+
+  * Fix path to user directory
+
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 19 Feb 2013 09:29:57 +0100
+
 micmac (1.0+hg560-0archeos1) theodoric; urgency=low
  
   * New upstream version
-  * Upstream fixed various bug in input tools
+  * Upstream changes: 
+    - fixed various bug in input tools
   * Added parallel package build
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Sun, 10 Feb 2013 22:16:33 +0100
@@ -15,7 +22,7 @@ micmac (1.0+hg497-0archeos1) theodoric; urgency=low
 micmac (1.0+hg473-0archeos1) theodoric; urgency=low
 
   * Initial release
-  * MkTapioca is now longer created in the MMDir directory (/usr/)
+  * MkTapioca is no longer created in the MMDir directory (/usr/)
   * Many patches for FHS compliance
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Wed, 23 Jan 2013 19:18:14 +0100
