@@ -68,7 +68,7 @@ FHS complient
        return aFullRes;
  
 -   aFullRes = MMDir() + "include"+ELISE_CAR_DIR+"XML_User"+ELISE_CAR_DIR+"DicoCalibGeom"+ELISE_CAR_DIR + aName;
-+   aFullRes = std::string("~/.micmac/")+"XML_User"+ELISE_CAR_DIR+"DicoCalibGeom"+ELISE_CAR_DIR + aName;
++   aFullRes = getenv("HOME")+std::string("/.micmac/DicoCalibGeom/")+aName;
     if (ELISE_fp::exist_file(aFullRes) ) 
        return aFullRes;
  
@@ -271,11 +271,28 @@ FHS complient
  		statTheDicCam = new std::map<std::string,cCameraEntry>;
 -         DC_Add(statTheDicCam,MMDir()+"include"+ELISE_CAR_DIR+"XML_User"+ELISE_CAR_DIR+"DicoCamera.xml");
 -         DC_Add(statTheDicCam,MMDir()+"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+"DicoCamera.xml");
-+         DC_Add(statTheDicCam,std::string("~/.micmac")+ELISE_CAR_DIR+"XML_User"+ELISE_CAR_DIR+"DicoCamera.xml");
++         DC_Add(statTheDicCam, getenv("HOME")+std::string("/.micmac/DicoCamera.xml"));
 +         DC_Add(statTheDicCam,MMDir()+"share/micmac"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+"DicoCamera.xml");
  	}
  	std::map<std::string,cCameraEntry>::iterator iT = statTheDicCam->find(aName);
  	if (iT==statTheDicCam->end())
+@@ -130,8 +130,14 @@ void WarnNo35(const std::string aName)
+ 
+ 	aSetDeja.insert(aName);
+ 
+-	std::cout << "WARN  !! , for camera "  << aName << " cannot determine focale equiv-35mm\n";
+-	std::cout << "          add it in include/XML_User/DicoCamera.xml\n";
++	std::cout << "!! WARN !! For camera "  << aName << " cannot determine focale equiv-35mm" << endl;
++	std::cout << std::string("          add it in ")+getenv("HOME")+"/.micmac/DicoCamera.xml" << endl;
++    //-------------------------------------------------------------------------------------
++    //Display help tip for users, the proper way is to check if not exists and create it...
++    //-------------------------------------------------------------------------------------  
++    std::cout << "?? Help ?? You should find a template of DicoCamera.xml under" << endl; 
++    std::cout << "           /usr/share/micmac/XML_MicMac/"; << endl;
++
+ }
+ 
+ 
 --- a/src/util/externalToolHandler.cpp
 +++ b/src/util/externalToolHandler.cpp
 @@ -133,7 +133,7 @@ ExternalToolItem & ExternalToolHandler::
