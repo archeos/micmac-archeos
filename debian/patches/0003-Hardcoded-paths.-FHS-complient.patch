@@ -288,7 +288,7 @@ FHS complient
 +    //Display help tip for users, the proper way is to check if not exists and create it...
 +    //-------------------------------------------------------------------------------------  
 +    std::cout << "?? Help ?? You should find a template of DicoCamera.xml under" << endl; 
-+    std::cout << "           /usr/share/micmac/XML_MicMac/"; << endl;
++    std::cout << "           /usr/share/micmac/XML_MicMac/" << endl;
 +
  }
  
