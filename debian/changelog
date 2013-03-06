@@ -1,8 +1,12 @@
-micmac (1.0+hg560-0archeos2) UNRELEASED; urgency=low
+micmac (1.0+hg560-0archeos2.1) theodoric; urgency=low
 
+  [ Romain Janvier ]
   * Fix path to user directory
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 19 Feb 2013 09:29:57 +0100
+  [ Fabrizio Furnari ]
+  * Simple fix
+
+ -- Fabrizio Furnari <fab.furnari@gmail.com>  Wed, 06 Mar 2013 14:25:37 +0100
 
 micmac (1.0+hg560-0archeos1) theodoric; urgency=low
  
