@@ -38,13 +38,6 @@ See below and http://www.cecill.info.
 Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
-#if ELISE_windows
-#ifdef INT
-#undef INT
-#endif
-#include "Windows.h"
-#endif
-
 
 extern void NewSplit( const std::string  &  a2Stplit,std::string & aK0,std::vector<std::string>  & aSup);
 
@@ -1651,9 +1644,12 @@ std::string XML_MM_File(const std::string & aFile)
 	}
 
 
-	std::string cInterfChantierNameManipulateur::StdKeyOrient(const tKey & aKey)
+	std::string cInterfChantierNameManipulateur::StdKeyOrient(const tKey & aKeyOri)
 	{
-		if (AssocHasKey(aKey)) return aKey;
+		if (AssocHasKey(aKeyOri)) return aKeyOri;
+
+                std::string aKey = aKeyOri;
+                if (aKey.c_str()[0] != '-') aKey = "-" + aKey ;
 		return "NKS-Assoc-Im2Orient@" + aKey;
 	}
 

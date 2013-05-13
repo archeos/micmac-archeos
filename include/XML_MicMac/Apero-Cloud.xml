@@ -3,6 +3,9 @@
        <DicoLoc>
             <Symb>   NbChan="-1" </Symb>
             <Symb>   SeuilEc="10" </Symb>
+             
+            <Symb>   LimBsH=1e-2 </Symb>
+            <Symb>   KeyAssocImage=NKS-Assoc-Id  </Symb>
        </DicoLoc>
 
        <SectionBDD_Observation>
@@ -98,8 +101,10 @@
                                           <EcartMesureIndiv>  1.0 </EcartMesureIndiv>
                                           <EcartMax> ${SeuilEc} </EcartMax>
                                    </Pond>
-                                   <KeyFileColImage>NKS-Assoc-Id   </KeyFileColImage>
+                                  
+                                   <KeyFileColImage> ${KeyAssocImage}   </KeyFileColImage>
                                    <NbChan> ${NbChan} </NbChan>
+                                   <LimBSurH> ${LimBsH} </LimBSurH>
                                    <NuagePutCam >
                                        <ColCadre > 255 0 0 </ColCadre>
                                        <ColRay >  0 255 0 </ColRay>

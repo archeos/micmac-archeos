@@ -79,6 +79,7 @@ int to8Bits_main(int argc,char ** argv)
 
     Pt2dr aP0Crop(0.0,0.0);
     Pt2dr aP1Crop(1.0,1.0);
+    bool  aCropIsAbs = false;
 
     double Big      = 1e30;
     double ForceMax = -2*Big;
@@ -87,6 +88,7 @@ int to8Bits_main(int argc,char ** argv)
     std::string BoucheMask="";
 
     bool UseSigne = true;
+    bool ToXV = false;
 
 
 
@@ -114,8 +116,9 @@ int to8Bits_main(int argc,char ** argv)
                     << EAM(aTestVals,"TestVals",true)
                     << EAM(aStep,"Step",true)
                     << EAM(aVisuAff,"VisuAff",true)
-                    << EAM(aP0Crop,"P0Crop",true)
-                    << EAM(aP1Crop,"P1Crop",true)
+                    << EAM(aP0Crop,"P0Crop",true,"!!!  crop in rel (between 0 & 1)")
+                    << EAM(aP1Crop,"P1Crop",true,"!!!  crop in rel (between 0 & 1)")
+                    << EAM(aCropIsAbs,"CropIsAbs",true," Set to true if crop is not rel ")
                     << EAM(aCanTileFile,"CanTileFile",true)
                     << EAM(EqHisto,"EqHisto",true)
                     << EAM(aStepH,"StepH",true)
@@ -124,6 +127,7 @@ int to8Bits_main(int argc,char ** argv)
                     << EAM(Mask,"Mask",true)
                     << EAM(BoucheMask,"BoucheMask",true)
                     << EAM(UseSigne,"UseSigne",true)
+                    << EAM(ToXV,"2XV",true)
     );	
     if ((ForceMax> -Big) || (ForceMin < Big))
         AdaptMinMax = true;
@@ -201,6 +205,19 @@ cout << "Types = "
     Pt2di aP0_Out  = round_ni(aP0Crop.mcbyc(Pt2dr(tiff.sz())));
     Pt2di aP1_Out  = round_ni(aP1Crop.mcbyc(Pt2dr(tiff.sz())));
 
+   if ( (EAMIsInit(&aP0Crop) || EAMIsInit(&aP1Crop)) && (!aCropIsAbs))
+   {
+      for (int aK=0 ; aK< 10 ; aK++)
+      {
+           std::cout << "Warnn you use crop with rel, Sz=" << (aP1_Out-aP0_Out) << "\n";
+      }
+   }
+   if (aCropIsAbs)
+   {
+       aP0_Out = round_ni(aP0Crop);
+       aP1_Out = round_ni(aP1Crop);
+   }
+
     Tiff_Im TiffOut  = 
                          Coul                ?
                            Tiff_Im 
@@ -264,7 +281,7 @@ cout << "Types = "
                 fRes = fRes + Offset;
             fRes = fRes * Dyn;
             std::cout << "SIGNED " << signed_type_num(aType) << " DO " << DefOffset << "\n";
-            if ( DefOffset && (UseSigne&&signed_type_num(aType)))
+            if ( (Offset==0) &&  DefOffset && (UseSigne&&signed_type_num(aType)))
             {
                 fRes = fRes+128;
             }
@@ -371,6 +388,30 @@ cout << "Types = "
          trans(fRes,aP0_Out),
          TiffOut.out() | (aVisuAff ? Video_Win::WiewAv(tiff.sz()) : Output::onul())
     );
+ 
+
+
+   if (ToXV)
+   {
+/*
+        std::string aCom =  std::string("convert -quality 100 ")
+                           + aNameOut +  std::string(" ")
+                           + StdPrefix(aNameOut) + std::string(".jpg ");
+*/
+        std::string aDir,aNewName;
+        SplitDirAndFile(aDir,aNewName,aNameOut);
+        ELISE_fp::MkDir(aDir+"Tmp-MM-Dir/");
+
+        std::string aCom =  std::string("convert ")
+                           + aNameOut +  std::string(" ")
+                           + aDir+"Tmp-MM-Dir/"+StdPrefix(aNewName) + std::string(".gif ");
+
+        system_call(aCom.c_str());
+        aCom  = "\\rm " + aNameOut;
+        system_call(aCom.c_str());
+   }
+
+// convert -quality 100 Z_Num3_DeZoom8_LeChantier_8Bits.tif  Z_Num3_DeZoom8_LeChantier_8Bits.jpg
 
 
     return 0;

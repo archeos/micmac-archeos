@@ -604,6 +604,9 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 
 	if ((aF35<=0) || (aFForced))
 	{
+           std::string aNameCam = aMDP->Cam(true);
+           if (aNameCam!="")
+           {
 		cCameraEntry *  aCE = CamOfName(aMDP->Cam());
 		if (aCE)
 		{
@@ -615,6 +618,7 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 		{
 			WarnNo35(aMDP->Cam());
 		}
+           }
 	}
 	return *(TheDicoMDP[aNameFile]);
 }
@@ -1011,7 +1015,7 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			)
 			);
 		
-		if ( g_externalToolHandler.get("exiv2").m_status==EXT_TOOL_NOT_FOUND )
+		if ( !g_externalToolHandler.get("exiv2").isCallable() )
 			cerr << "WARNING: exiv2 not found" << endl;
 		else aRes.push_back(
 			new cXifDecoder
@@ -1031,11 +1035,10 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			"",
 			"",
 			""
-
 			)
 			);
 
-		if ( g_externalToolHandler.get("exiftool").m_status==EXT_TOOL_NOT_FOUND )
+		if ( !g_externalToolHandler.get("exiftool").isCallable() )
 			cerr << "WARNING: exiftool not found" << endl;
 		else aRes.push_back(
 			new cXifDecoder

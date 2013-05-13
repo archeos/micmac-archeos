@@ -41,12 +41,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 namespace NS_ParamMICMAC
 {
 
-#ifdef CUDA_ENABLED
-	// Déclaration des fonctions Cuda
-	extern "C" void freeGpuMemory();
-	
-#endif
-
 int cAppliMICMAC::MemSizePixelImage() const
 {
     // Nombre d'octet par pixel et par image,
@@ -81,14 +75,14 @@ int cAppliMICMAC::GetTXY() const
     return aSz-aStep;
 }
 
-extern "C" void  imagesToLayers(float *fdataImg1D, int sx, int sy, int sz);
+
 
 void cAppliMICMAC::DoAllMEC()
 {
 
 #ifdef CUDA_ENABLED
 	
-	// Création du contexte GPGPU
+	// Cr�ation du contexte GPGPU
 	cudaDeviceProp deviceProp;
 	// Obtention de l'identifiant de la carte la plus puissante
 	int devID = gpuGetMaxGflopsDeviceId();
@@ -109,7 +103,7 @@ void cAppliMICMAC::DoAllMEC()
      )
      { 
         OneEtapeSetCur(**itE);
-        if (DoMEC().Val()  && (!DoNothingBut().IsInit()))
+        if (mDoTheMEC  && (!DoNothingBut().IsInit()))
            DoOneEtapeMEC(**itE);
         if (
                  ( (*itE)->Num()>=FirstEtapeMEC().Val())
@@ -121,7 +115,7 @@ void cAppliMICMAC::DoAllMEC()
 
 
             if (
-                      (DoMEC().Val()  && (!DoNothingBut().IsInit()))
+                      (mDoTheMEC  && (!DoNothingBut().IsInit()))
                  ||   (DoNothingBut().IsInit() && (ButDoOrtho().Val()||ButDoPartiesCachees().Val()))
                  ||   ( Paral_Pc_NbProcess().IsInit())
                )
@@ -132,12 +126,12 @@ void cAppliMICMAC::DoAllMEC()
 
             if (     (! CalledByProcess().Val())
                  &&  (
-                            (DoMEC().Val()  && (!DoNothingBut().IsInit()))
+                            (mDoTheMEC  && (!DoNothingBut().IsInit()))
                         ||  (DoNothingBut().IsInit() &&  ButDoRedrLocAnam().Val())
                      )
                )
             {
-               MakeRedrLocAnam();
+               MakeRedrLocAnamSA();
             }
         }
      }
@@ -277,6 +271,7 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
      mCorrelAdHoc = anEM.CorrelAdHoc().PtrVal();
      if (mCorrelAdHoc)
      {
+         // C'est pour court circuiter les algo cd ChCorrel, c'est indépendant de ce qui est fait dans le code specifique
          mCurForceCorrelPontcuelle = true;
          if (mCorrelAdHoc->Correl2DLeastSquare().IsInit())
          {
@@ -287,6 +282,8 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
              ELISE_ASSERT(mDimPx==1,"Multiple Px in GPU");
          }
          ELISE_ASSERT(mCurSurEchWCor==1,"Sur ech in GPU");
+
+        mCMS = mCorrelAdHoc->CorrelMultiScale().PtrVal();
 /*
          ELISE_ASSERT(mCurEtape->EtapeMEC().AggregCorr().Val()==eAggregSymetrique,"Aggreg non sym in GPU");
          ELISE_ASSERT(mCurEtape->EtapeMEC().ModeInterpolation().Val()==eInterpolMPD,"Interp non MPD in GPU");
@@ -294,10 +291,15 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
 
 
      }
+     else
+     {
+         mCMS = 0;
+     }
 
 
      mIsOptDiffer = anEtape.IsOptDiffer();
      mIsOptDequant = anEtape.IsOptDequant();
+     mIsOptIdentite = anEtape.IsOptIdentite();
      mIsOptimCont = anEtape.IsOptimCont();
 
      mCurCarDZ =  GetCaracOfDZ(mCurEtape->DeZoomTer());
@@ -454,11 +456,13 @@ std::cout << "CCMMM = " << aBoxClip._p0 << " " << aBoxClip._p1 << "\n"; getchar(
                 && (mNbBoitesToDo >0)
              )
           {
-               if (mShowMes)
+               if ( mShowMes)
                {
                   mCout << "   -- BEGIN BLOC  "
                         << "  Bloc= " << mKBox 
                         << ", Out of " << aDecInterv.NbInterv()  
+                        << aDecInterv.KthIntervOut(mKBox)._p0
+                        << aDecInterv.KthIntervOut(mKBox)._p1
                         << "\n";
                }
                if (ByProcess().Val()==0)
@@ -504,6 +508,11 @@ std::cout << "CCMMM = " << aBoxClip._p0 << " " << aBoxClip._p1 << "\n"; getchar(
      if (ByProcess().Val()!=0)
         ExeProcessParallelisable(true,aLStrProcess);
 	 
+
+   if (anEM.DoImageBSurH().IsInit())
+   {
+      DoImagesBSurH(anEM.DoImageBSurH().Val());
+   }
 }
 
 
@@ -518,6 +527,28 @@ void cAppliMICMAC::SauvFileChantier(Fonc_Num aF,Tiff_Im aFile) const
 
 }
 
+
+int cAppliMICMAC::NbApproxVueActive()
+{
+  if (mNbApproxVueActive<0)
+  {
+      mNbApproxVueActive = 0;
+      for (tCsteIterPDV itFI=PdvBegin(); itFI!=PdvEnd(); itFI++)
+      {
+          // bool Loaded = false;
+          if (
+                   (mCurEtape->SelectImage(*itFI))
+               &&  (*itFI)->LoadImageMM(true,*mLTer,Pt2di(0,0), itFI==PdvBegin())
+             )
+          {
+             mNbApproxVueActive++;
+          }
+       }
+  }
+  return mNbApproxVueActive;
+}
+
+
 void cAppliMICMAC::DoOneBloc
      (
           const Box2di & aBoxOut,
@@ -526,19 +557,28 @@ void cAppliMICMAC::DoOneBloc
           const Box2di & aBoxGlob
      )
 {
-   // std::cout << "DO ONE BLOC " << aBoxOut._p0 << " " << aBoxIn._p0 << "\n";
+
+    std::cout << "DO ONE BLOC " << aBoxOut._p0 << " " << aBoxOut._p1 << " " << aBoxIn._p0  << " MATP " << mCurEtape->MATP() << "\n";
    //  mStatN =0;
    mStatGlob =0;
    mLTer = 0;
    mSurfOpt = 0;
+   mNbApproxVueActive = -1;
 
+#ifdef CUDA_ENABLED
    mLoadTextures = true;
+#endif
+
 
    mBoxIn = aBoxIn;
    mBoxOut = aBoxOut;
    mLTer = new cLoadTer(mDimPx,aBoxIn.sz(),*mCurEtape);
+
    double aNbCel = mCurEtape->LoadNappesAndSetGeom(*mLTer,aBoxIn);
 
+
+   int aSzCel = mCurEtape->MultiplierNbSizeCellule();
+   //std::cout << "SzzEcccell " <<  aSzCel*aNbCel <<"\n"; 
 
    int aLMin = ElMin(aBoxOut._p1.x-aBoxOut._p0.x,aBoxOut._p1.y-aBoxOut._p0.y);
 
@@ -550,7 +590,8 @@ void cAppliMICMAC::DoOneBloc
 
 
    if (
-              aNbCel>NbCelluleMax().Val()
+                 (!mCurEtape->MATP() )
+              && (aNbCel*aSzCel) >NbCelluleMax().Val()
           // && (aBoxOut._p1.x-aBoxOut._p0.x) > (3*mSzRec+5)  // Evite recursion trop profonde, voir infinie
           // && (aBoxOut._p1.y-aBoxOut._p0.y) > (3*mSzRec+5)
       )
@@ -616,6 +657,22 @@ void cAppliMICMAC::DoOneBloc
 	                cDecoupageInterv2D::SimpleDec(aBoxIn.sz(),aSzMaxChCorr,0);
   Pt2di aSzMaxDec = aDecInterv.SzMaxOut();
 
+
+  mCurEtUseWAdapt =  mCurEtape->UseWAdapt();
+  if (mCurEtUseWAdapt)
+  {
+       mImSzWCor.Resize(aBoxIn.sz());
+       mTImSzWCor = TIm2D<U_INT1,INT>(mImSzWCor);
+       ELISE_ASSERT(mCurEtape->DeZoomTer()==mCurEtape->DeZoomIm(),"ZoomTer!=ZoomIm with UseWAdapt");
+       std::string aNameSzW = NameFileSzW(mCurEtape->DeZoomTer());
+       Tiff_Im aTF(aNameSzW.c_str());
+       ELISE_COPY
+       (
+            mImSzWCor.all_pts(),
+            trans(aTF.in_proj(),aBoxIn._p0),
+            mImSzWCor.out()
+       );
+  }
    
    // Chargement des images
 
@@ -626,7 +683,7 @@ void cAppliMICMAC::DoOneBloc
        // bool Loaded = false;
        if (
                 (mCurEtape->SelectImage(*itFI))
-            &&  (*itFI)->LoadImage(*mLTer,aSzMaxDec,isFirstImLoaded)
+            &&  (*itFI)->LoadImageMM(false,*mLTer,aSzMaxDec,isFirstImLoaded)
           )
        {
          // Loaded = true;
@@ -637,7 +694,7 @@ void cAppliMICMAC::DoOneBloc
           }
           mPDVBoxGlobAct.push_back(*itFI);
 
-          if (mCurEtape->UsePC() || (*itFI)->Geom().UseMasqAnam())
+          if (mCurEtape->UsePC() || (*itFI)->Geom().UseMasqTerAnamSA())
           {
               (*itFI)->LoadedIm().MakePC
                        (
@@ -646,7 +703,7 @@ void cAppliMICMAC::DoOneBloc
                            mCurEtape->PredPC(),
                            aBoxIn,
                            mCurEtape->UsePC(),
-                           (*itFI)->Geom().UseMasqAnam()
+                           (*itFI)->Geom().UseMasqTerAnamSA()
                        );
           }
        }
@@ -739,7 +796,8 @@ void cAppliMICMAC::DoOneBloc
         mSurfOpt->SolveOpt();
 
 #ifdef CUDA_ENABLED
-		freeGpuMemory();
+		IMmGg.DeallocMemory();
+		//freeGpuMemory();
 #endif
     }
 
@@ -784,6 +842,136 @@ void cAppliMICMAC::DoOneBloc
     mSurfOpt = 0;
     mNbBoitesToDo--;
 }
+
+template <class aTVect> double EcartType(const aTVect & aV,const  std::vector<double> * aVPds)
+{
+   typename aTVect::value_type aSomT;
+   typename aTVect::value_type aSomT2;
+   double aSP = 0;
+   double aSP2 = 0;
+
+   int aK=0;
+   for (typename aTVect::const_iterator itV=aV.begin() ; itV!=aV.end() ; itV++)
+   {
+          double aPds = aVPds ? (*aVPds)[aK] : 1.0 ;
+          typename aTVect::value_type aT = *itV;
+          aSomT = aSomT + aT*aPds;
+          aSomT2 = aSomT2 + Pcoord2(aT) *aPds;
+          aSP += aPds;
+          aSP2 += ElSquare(aPds);
+          aK++;
+   }
+   aSomT = aSomT / aSP;
+   aSomT2 = aSomT2 / aSP;
+   aSomT2 = aSomT2 - Pcoord2(aSomT);
+
+      // Ce debiaisement est necessaire, par exemple si tous les poids sauf 1 sont
+      // presque nuls
+   double aDebias = 1 - aSP2/ElSquare(aSP);
+   ELISE_ASSERT(aDebias>0,"Singularity in cManipPt3TerInc::CalcPTerInterFaisceauCams ");
+   aSomT2 =  aSomT2/ aDebias;
+
+   // double anEc2 = aSomT2.x+aSomT2.y+aSomT2.z;
+   double anEc2 = SomCoord(aSomT2);
+   if (anEc2 <= -1e-7)
+   {
+       std::cout << "EC2 =" << anEc2 << "\n";
+       ELISE_ASSERT(false,"Singularity in BSurH_SetOfDir ");
+   }
+   anEc2 = sqrt(ElMax(0.0,anEc2));
+    return anEc2;
+}
+
+double BSurH_SetOfDir(const std::vector<Pt3dr> & aV,const  std::vector<double> * aVPds)
+{
+      // Adaptation purement heuristique
+   return     1.35 * EcartType(aV,aVPds);
+}
+
+        // virtual ElSeg3D FaisceauPersp(const Pt2dr & )  const;
+void cAppliMICMAC::DoImagesBSurH(const cDoImageBSurH& aParBsH)
+{
+     ElTimer aChrono;
+     double aDownScale = aParBsH.ScaleNuage();
+
+     cXML_ParamNuage3DMaille aXmlN =  mCurEtape->DoRemplitXML_MTD_Nuage();
+     cElNuage3DMaille *  aFullNuage = cElNuage3DMaille::FromParam(aXmlN,FullDirMEC());
+
+     cElNuage3DMaille *  aNuage = aFullNuage->ReScaleAndClip(aDownScale);
+
+
+     Pt2di aSz = aNuage->SzUnique();
+     Im2D_U_INT1 aRes(aSz.x,aSz.y);
+     TIm2D<U_INT1,INT> aTRes(aRes);
+
+     Im2D_Bits<1>  aNewMasq(aSz.x,aSz.y,0);
+     TIm2DBits<1>  aTNMasq(aNewMasq);
+     double aSeuilBsH = aParBsH.SeuilMasqExport().ValWithDef(0);
+
+     Pt2di aPIndex;
+     // double aPax[theDimPxMax] ={0,0};
+
+     for (aPIndex.x=0 ; aPIndex.x<aSz.x ; aPIndex.x++)
+     {
+         for (aPIndex.y=0 ; aPIndex.y<aSz.y ; aPIndex.y++)
+         {
+             int aVal = 255;
+             if (aNuage->IndexHasContenu(aPIndex))
+             {
+                Pt3dr aPEucl = aNuage->PtOfIndex(aPIndex);
+                // Pt3dr aQE = aNuage->Euclid2ProfAndIndex(aPEucl);
+                // Pt2dr aPE2(aPEucl.x,aPEucl.y);
+                // aPax[0] = aPEucl.z;
+                std::vector<Pt3dr> aVN;
+                for (int aKPdv=0 ; aKPdv<int(mPrisesDeVue.size()) ; aKPdv++)
+                {
+                    cPriseDeVue & aPDV = *(mPrisesDeVue[aKPdv]);
+                    cGeomImage & aGeom = aPDV.Geom();
+                    CamStenope *  aCS = aGeom.GetOriNN() ;
+
+                    Pt2dr  aPIm = aCS->R3toF2(aPEucl);
+
+
+                    //  Pt2dr  aPIm = aGeom.Objet2ImageInit_Euclid(aPE2,aPax);
+                    Pt2di  aSz = aPDV.SzIm() ;
+                    if ((aPIm.x>0) && (aPIm.y>0) && (aPIm.x<aSz.x) && (aPIm.y<aSz.y))
+                    {
+                          Pt3dr aN = vunit(aPEucl-aCS->PseudoOpticalCenter());
+                          aVN.push_back(aN);
+                    }
+                }
+                if (aVN.size() > 1)
+                {
+                   double aRVal = BSurH_SetOfDir(aVN,0);
+                   aTNMasq.oset(aPIndex,aRVal > aSeuilBsH);
+                   aRVal = (aRVal+aParBsH.Offset().Val()) * aParBsH.Dyn().Val();
+                   aVal = ElMax(0,ElMin(253,round_ni(aRVal)));
+                }
+                else
+                {
+                   aVal = 254;
+                }
+             }
+             aTRes.oset(aPIndex,aVal);
+         }
+     }
+     Tiff_Im::Create8BFromFonc
+     (
+         FullDirMEC()+aParBsH.Name(),
+         aRes.sz(),
+         aRes.in()
+     );
+     Im2D_Bits<1>  anOldMasq = aNuage->ImDef();
+     ELISE_COPY
+     (
+          anOldMasq.all_pts(),
+          anOldMasq.in() && close_32(aNewMasq.in(0),6),
+          anOldMasq.out()
+     );
+     aNuage->Save(aParBsH.NameNuage());
+     std::cout << "Time-BSH " << aChrono.uval();
+}
+
 
 
 void cAppliMICMAC::InitBlocInterne( const Box2di & aBox)
@@ -1198,7 +1386,7 @@ void   cAppliMICMAC::CalcCorrelByRect(Box2di aBox,int * aPx)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1214,17 +1402,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

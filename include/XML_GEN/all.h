@@ -1252,7 +1252,7 @@ ElPackHomologue PackFromCplAPF(const cMesureAppuiFlottant1Im & aMes, const cMesu
 const cOneMesureAF1I *  PtsOfName(const cMesureAppuiFlottant1Im &,const std::string & aName);
 
 class cImSecOfMaster;
-const std::list<std::string > & GetBestSec(const cImSecOfMaster&,int aNb=-1);
+const std::list<std::string > * GetBestImSec(const cImSecOfMaster&,int aNb=-1,int aNbMin=-1,int aNbMax=1000,bool OkAndOutWhenNone=false);
 };
 
 
@@ -1366,6 +1366,12 @@ cConvExplicite GlobMakeExplicite(const cConvOri & aConv);
 
 
 void AdaptDist2PPaEqPPs(NS_ParamChantierPhotogram::cCalibDistortion & aCD);
+
+void MakeMetaData_XML_GeoI(const std::string & aNameImMasq);
+void MakeMetaData_XML_GeoI(const std::string & aNameImMasq,double aResol);
+
+
+//estd::set<std::string> SetOfCorresp(const std::vector<cCpleString> & aRel,const std::string &);
 
 
 #endif   // _ELISE_XML_GEN_ALL_H

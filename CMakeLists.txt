@@ -31,13 +31,43 @@ OPTION(BUILD_ONLY_ELISE "Projet Elise uniquement" OFF )
 # construire l'interface graphique
 OPTION(WITH_ETALONPOLY  "build etalonnage polygone" ON)
 
-
 # Utiliser Cuda
 OPTION(CUDA_ENABLED "Utilisation de cuda" OFF )
 
-##################################
+# Multi thread Poisson avec OpenMP
+OPTION(WITH_OPEN_MP "use OpenMP" OFF )
+
+if ( WITH_OPEN_MP )
+	FIND_PACKAGE(OpenMP REQUIRED)
+	message("using OpenMP for Poisson 3d shell computing")
+	list( APPEND CMAKE_C_FLAGS ${OpenMP_C_FLAGS} )
+	list( APPEND CMAKE_CXX_FLAGS ${OpenMP_CXX_FLAGS} )
+	add_definitions(-DUSE_OPEN_MP)
+endif()
+
+# Utiliser Cuda
+OPTION(WITH_DOXYGEN "Generation de documentation" OFF )
+
+
+######################################
 ## 	Trouver les EXES et Libs	##
-##################################
+######################################
+IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
+    add_definitions(-DELISE_Darwin)
+endif()
+# systeme 32 ou 64 bits
+if (WIN32)
+    set(CPU_BITNESS 64)
+    if (CMAKE_CL_64)
+        set(CPU_BITNESS 32)
+    endif()
+else()
+    set(CPU_BITNESS 32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(CPU_BITNESS 64)
+    endif()
+endif()
+message( STATUS "Systeme is " ${CMAKE_SYSTEM_NAME} ${CPU_BITNESS} )
 
 # DEFINITION : Dossier des exe et Dll nécessaires sous windows
 set(BinAuxWinDir ${PROJECT_SOURCE_DIR}/binaire-aux/BIN_AUX_WIN32)
@@ -62,8 +92,13 @@ if (${CUDA_ENABLED})
 	FIND_PACKAGE(CUDA)
 	INCLUDE(FindCUDA)
 	INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/inc)
-	add_definitions(-DCUDA_ENABLED)
-
+	#IFNOT(${WITH_IGN_ORI})
+	FIND_PACKAGE( Boost 1.48.0 COMPONENTS system serialization thread REQUIRED )
+	#chrono
+	 IF(NOT ${WITH_IGN_ORI})
+		  include_directories ( ${Boost_INCLUDE_DIRS} )
+		  include_directories ( ${Boost_INCLUDE_DIR} )
+	 endif()
 endif()
 
 # Etalonnage polygone
@@ -90,14 +125,14 @@ else()
 		ERROR_QUIET
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
-	message("Derniere revision mercurial de MicMac : " ${HG_REVISION_DIST})
+	message( STATUS "Derniere revision mercurial de MicMac : " ${HG_REVISION_DIST})
 
 	set(HG_REV ${HG_REVISION_DIST} CACHE STRING "Revision" FORCE)
 endif()
 
 CONFIGURE_FILE (
   "include/general/MM_InstalDir.h.in"
-  "${PROJECT_BINARY_DIR}/include/general/MM_InstalDir.h"
+  "${CMAKE_SOURCE_DIR}/include/general/MM_InstalDir.h"
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
@@ -122,10 +157,10 @@ ENDIF()
 IF(${WITH_IGN_ORI})
 	FIND_PACKAGE( IgnSocle  COMPONENTS core data orientation geodesy transform math numeric tools xml)
 	FIND_PACKAGE(TinyXML)
-	add_definitions( "-DBOOST_THREAD_USE_LIB" ) 
+	#add_definitions( "-DBOOST_THREAD_USE_LIB" )
 	SET(Boost_USE_MULTITHREADED ON)
-	FIND_PACKAGE( Boost 1.46.0 COMPONENTS unit_test_framework system filesystem serialization thread regex)
-	IF(IgnSocle_FOUND AND TinyXML_FOUND AND Boost_FOUND)	
+	FIND_PACKAGE( Boost 1.48.0 COMPONENTS unit_test_framework date_time filesystem system serialization thread regex chrono REQUIRED)
+	IF(IgnSocle_FOUND AND TinyXML_FOUND AND Boost_FOUND)
         	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
         	LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 		message("TinyXML_LIBRARY_DIRS : ${TinyXML_LIBRARY_DIRS}")
@@ -151,7 +186,7 @@ IF(${WITH_MATIS_ORI})
 		OPTION(MICMAC_USE_PROJ4 "Use PROJ4" OFF)
 		#-- recherche de boost
 		SET(Boost_USE_MULTITHREADED ON)
-		FIND_PACKAGE( Boost 1.46.0 COMPONENTS unit_test_framework system filesystem serialization thread  REQUIRED )
+		FIND_PACKAGE( Boost 1.48.0 COMPONENTS unit_test_framework date_time system filesystem serialization thread regex chrono REQUIRED)
 		FIND_PACKAGE(TICPP REQUIRED)
 		IF ( TICPP_FOUND)
 			LINK_DIRECTORIES(${TICPP_LIBRARY_DIRS})
@@ -207,8 +242,8 @@ if(EXIV2_EXECUTABLE_NOTFOUND)
 endif(EXIV2_EXECUTABLE_NOTFOUND)
 
 if (MINGW)
-	add_definitions(-D__CYGWIN__)
-	set( WINSOCK2_LIBRAIRIE ws2_32 )
+	add_definitions(-D__MINGW__)
+	set( WINSOCK2_LIBRARY ws2_32 )
 endif()
 
 if(NOT WIN32)
@@ -227,9 +262,11 @@ if(NOT WIN32)
 		#MESSAGE("X11 Found : ${X11_INCLUDE_DIRS} | ${X11_LIBRARIES} | ${X11_LIBRARY_DIRS}")
 	ELSE()
 		add_definitions(-DNO_X11)
+        IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
+            set( DYN_LIB_LIBRARY dl )
+        endif()
 		MESSAGE("X11 Not Found : pas de SaisieMasq")
 	ENDIF()
-
 ELSE()
 
 	find_program(MAKE_EXECUTABLE make
@@ -248,7 +285,7 @@ ENDIF()
 # DEFINITION : des preprocesseurs windows
 IF (MSVC)
 	add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4661 /wd4267 /nologo" )
-	
+
 	if(MSVC80 OR MSVC90 OR MSVC10)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	endif()
@@ -270,26 +307,35 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 
 # DEFINITION : du dossier d'installation
 set(Install_Dir ${PROJECT_SOURCE_DIR}/bin)
+set(Install_Dir_lib ${PROJECT_SOURCE_DIR}/lib)
 
 # DEFINITION : du dossier des sources d'Elise
 set(ELISE_DIR src)
 
+# CONSTRUCTION : Librairie ANN
+include(${PROJECT_SOURCE_DIR}/CodeExterne/ANN/CMakeLists.txt)
 # CONSTRUCTION : Librairie ELISE
 set( code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
 include(${code_genere_dir}/Sources.cmake)
 ADD_SUBDIRECTORY(${ELISE_DIR})
 
 # INSTALLATION : Liste des exe et Dll nécessaires sous windows
-if (win32)
-	set(BinAuxWin
-		${BinAuxWinDir}/exiftool.exe
-		${BinAuxWinDir}/exiv2.exe
-		${BinAuxWinDir}/libexpat.dll
-		${BinAuxWinDir}/libiconv2.dll
-		${BinAuxWinDir}/libintl3.dll
-		${BinAuxWinDir}/make.exe
-	)
+if ( ${CMAKE_SYSTEM_NAME} STREQUAL "Windows" )
+	configure_file( ${BinAuxWinDir}/convert.exe ${PROJECT_SOURCE_DIR}/binaire-aux/convert.exe COPYONLY )
+	configure_file( ${BinAuxWinDir}/exiftool.exe ${PROJECT_SOURCE_DIR}/binaire-aux/exiftool.exe COPYONLY )
+	configure_file( ${BinAuxWinDir}/exiv2.exe ${PROJECT_SOURCE_DIR}/binaire-aux/exiv2.exe COPYONLY )
+	configure_file( ${BinAuxWinDir}/libexpat.dll ${PROJECT_SOURCE_DIR}/binaire-aux/libexpat.dll COPYONLY )
+	configure_file( ${BinAuxWinDir}/libiconv2.dll ${PROJECT_SOURCE_DIR}/binaire-aux/libiconv2.dll COPYONLY )
+	configure_file( ${BinAuxWinDir}/libintl3.dll ${PROJECT_SOURCE_DIR}/binaire-aux/libintl3.dll COPYONLY )
+	configure_file( ${BinAuxWinDir}/make.exe ${PROJECT_SOURCE_DIR}/binaire-aux/make.exe COPYONLY )
 endif()
 
-# INSTALLATION : des exe et Dll nécessaires sous windows
-install(FILES ${BinAuxWin} DESTINATION ${Install_Dir})
+# Doxygen
+if(${WITH_DOXYGEN})
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+	  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    message("${CMAKE_CURRENT_SOURCE_DIR}")
+	  add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMENT "Generating API documentation with Doxygen" VERBATIM)
+    endif(DOXYGEN_FOUND)
+endif()

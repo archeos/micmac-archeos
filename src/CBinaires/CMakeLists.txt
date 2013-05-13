@@ -1,18 +1,28 @@
 add_executable(mm3d mm3d.cpp)
-target_link_libraries(mm3d elise ${X11_LIBRARIES} ${KAKADU_LIBRARIES} ${WINSOCK2_LIBRAIRIE} )
 
-if (Boost_FOUND)
-    target_link_libraries(mm3d ${Boost_LIBRARIES} ${Boost_THREADAPI})
+target_link_libraries(mm3d elise ${X11_LIBRARIES} ${WINSOCK2_LIBRARY} ${DYN_LIB_LIBRARY} ANN)
+
+if(${CUDA_ENABLED})
+	 target_link_libraries(mm3d ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt})
 endif()
 
-if (TinyXML_FOUND)
+if(IgnSocle_FOUND)
+    target_link_libraries(mm3d ${IgnSocle_LIBRARIES})
+endif()
+
+if(KAKADU_FOUND)
+    target_link_libraries(mm3d pthread  ${KAKADU_LIBRARIES})
+endif()
+
+if(TinyXML_FOUND)
     target_link_libraries(mm3d ${TinyXML_LIBRARIES})
 endif()
 
-if (IgnSocle_FOUND)
-    target_link_libraries(mm3d ${IgnSocle_LIBRARIES})
-    message({IgnSocle_LIBRARIES} : ${IgnSocle_LIBRARIES})
+if(Boost_FOUND)
+    target_link_libraries(mm3d ${Boost_LIBRARIES} ${Boost_THREADAPI})
 endif()
+
+
 
 INSTALL(TARGETS mm3d RUNTIME DESTINATION ${Install_Dir})
 
@@ -21,8 +31,17 @@ if (NOT ${BUILD_ONLY_ELISE})
 	add_executable(AperiCloud  AperiCloud.c)
 	INSTALL(TARGETS AperiCloud RUNTIME DESTINATION ${Install_Dir})
 
+	add_executable(Digeo  Digeo.c)
+	INSTALL(TARGETS Digeo RUNTIME DESTINATION ${Install_Dir})
+
 	add_executable(Apero  Apero.c)
 	INSTALL(TARGETS Apero RUNTIME DESTINATION ${Install_Dir})
+	
+	add_executable(Apero2PMVS Apero2PMVS.c)
+	INSTALL(TARGETS Apero2PMVS RUNTIME DESTINATION ${Install_Dir})
+
+	add_executable(mmxv mmxv.c)
+	INSTALL(TARGETS mmxv RUNTIME DESTINATION ${Install_Dir})
 
 	add_executable(Bascule  Bascule.c)
 	INSTALL(TARGETS Bascule RUNTIME DESTINATION ${Install_Dir})
@@ -36,8 +55,14 @@ if (NOT ${BUILD_ONLY_ELISE})
 	add_executable(Dequant  Dequant.c)
 	INSTALL(TARGETS Dequant RUNTIME DESTINATION ${Install_Dir})
 
+	add_executable(vic  vic.c)
+	INSTALL(TARGETS vic RUNTIME DESTINATION ${Install_Dir})
+
 	add_executable(Devlop  Devlop.c)
 	INSTALL(TARGETS Devlop RUNTIME DESTINATION ${Install_Dir})
+
+	add_executable(Drunk Drunk.c)
+	INSTALL(TARGETS Drunk RUNTIME DESTINATION ${Install_Dir})
 
 	add_executable(ElDcraw  ElDcraw.c)
 	INSTALL(TARGETS ElDcraw RUNTIME DESTINATION ${Install_Dir})
@@ -122,6 +147,9 @@ if (NOT ${BUILD_ONLY_ELISE})
 
 	add_executable(TestCam  TestCam.c)
 	INSTALL(TARGETS TestCam RUNTIME DESTINATION ${Install_Dir})
+	
+	add_executable(TestCmds  TestCmds.c)
+	INSTALL(TARGETS TestCmds RUNTIME DESTINATION ${Install_Dir})
 
 	add_executable(tiff_info  tiff_info.c)
 	INSTALL(TARGETS tiff_info RUNTIME DESTINATION ${Install_Dir})

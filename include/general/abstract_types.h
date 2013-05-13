@@ -692,6 +692,11 @@ Fonc_Num rect_som(Fonc_Num f,Box2di,bool aCatFinit = false);
 Fonc_Num rect_som(Fonc_Num f,Pt2di,bool aCatFinit = false);
 Fonc_Num rect_som(Fonc_Num f,INT,bool aCatFinit = false);
 
+Fonc_Num Moy(Fonc_Num,int);
+Fonc_Num Moy1(Fonc_Num aF);
+Fonc_Num MoyIter(Fonc_Num aF,int aSz,int aNbIter);
+
+
 Fonc_Num rect_max(Fonc_Num f,Box2di,bool aCatFinit = false);
 Fonc_Num rect_max(Fonc_Num f,Pt2di,bool aCatFinit = false);
 Fonc_Num rect_max(Fonc_Num f,INT,bool aCatFinit = false);
@@ -857,7 +862,7 @@ extern   double    AtanXY(double,double);
 extern Fonc_Num FoncNormalisee_S1S2 (Flux_Pts aFl,Fonc_Num aFPds,Fonc_Num aF);
 extern Fonc_Num FoncNormalisee_S1S2 (Flux_Pts aFl,Fonc_Num aF); // FPds=1.0
 
-#if ( ELISE_windows & !ELISE_Cygwin )
+#if ( ELISE_windows & !ELISE_MinGW )
 inline double log2(const double & aD)
 {
        return log(aD) / log(2.0);

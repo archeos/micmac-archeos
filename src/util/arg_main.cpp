@@ -47,9 +47,21 @@ using namespace NS_ParamChantierPhotogram;
 #define SzBuf 2000
 static char buf[SzBuf];
 
+std::string MakeStrFromArgcARgv(int  argc,char** argv)
+{
+   std::string aRes;
+   for (int aK=0 ; aK<argc ; aK++)
+      aRes = aRes + std::string(argv[aK]) + " ";
+
+   return aRes;
+}
+
 
 static int Argc=-1;
 static char ** Argv=0;
+static std::string GlobArcArgv;
+
+
 void MemoArg(int argc,char** argv)   
 {
 	static bool First  = false;
@@ -59,6 +71,7 @@ void MemoArg(int argc,char** argv)
 	MMD_InitArgcArgv(argc,argv);
 	Argc = argc;
 	Argv = argv;
+        GlobArcArgv = MakeStrFromArgcARgv(argc,argv);
 }
 
 void ShowArgs()
@@ -209,6 +222,7 @@ INT LArgMain::Init
 }
 
 
+int LArgMain::Size() const {return _larg.size();}
 
 
 
@@ -372,12 +386,12 @@ const char * GenElArgMain::name() const
 
 std::vector<char *>  	ElInitArgMain
 	(
-	int argc,char ** argv,
-	const LArgMain & LGlob,
-	const LArgMain & L1,
-	bool  VerifInit,
-	bool  AccUnK,
-	int   aNbArgGlobGlob
+	     int argc,char ** argv,
+	     const LArgMain & LGlob,
+	     const LArgMain & L1,
+	     bool  VerifInit,
+	     bool  AccUnK,
+	     int   aNbArgGlobGlob
 	)
 {
 	std::vector<char *> aRes;
@@ -386,7 +400,9 @@ std::vector<char *>  	ElInitArgMain
 	argv++;
 
 	bool Help = false;
-	if (argc==0) Help = true;
+
+// std::cout << "ARGCCCC " << argc << " " <<  LGlob.Size() << "\n";
+	if ((argc==0) && ( LGlob.Size() !=0)) Help = true;
 	for (int aK=0 ; aK<argc ; aK++)
 	{
 		if (std::string(argv[aK])=="-help")
@@ -401,7 +417,7 @@ std::vector<char *>  	ElInitArgMain
 		cout << "*****************************\n";
 		cout << "*  Help for Elise Arg main  *\n";
 		cout << "*****************************\n";
-		cout << "Unamed args : \n";
+		cout << "Unnamed args : \n";
 		LGlob.show(false);
 		cout << "Named args : \n";
 		L1.show(true);

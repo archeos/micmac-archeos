@@ -1,8 +1,7 @@
 <GenCpp>
 
 <Verbatim File=".h.cpp">
-#include "general/all.h"
-#include "private/all.h"
+#include "StdAfx.h"
 </Verbatim>
 <Verbatim  File=".h">
 #ifndef Define_NotDigeo
@@ -19,7 +18,7 @@ using namespace NS_SuperposeImage;
 </Verbatim>
 
 <Verbatim File=".h.cpp">
-namespace NS_ParamDigeo{
+//namespace NS_ParamDigeo{
 </Verbatim>
 
 
@@ -28,6 +27,8 @@ namespace NS_ParamDigeo{
          <eTtpCuvette>    </eTtpCuvette> 
          <eTtpCol>        </eTtpCol>
          <eTtpCorner>      </eTtpCorner>
+         <eSiftMaxDog>     </eSiftMaxDog>
+         <eSiftMinDog>     </eSiftMinDog>
    </enum>
 
    <enum Name="eReducDemiImage">
@@ -36,6 +37,11 @@ namespace NS_ParamDigeo{
          <eRDI_11>     </eRDI_11>  
    </enum>
 
+   <enum Name="eTest12345">
+         <eTest12345_A>     </eTest12345_A>  
+         <eTest12345_B>     </eTest12345_B>  
+         <eTest12345_C>     </eTest12345_C>  
+   </enum>
 
 
 
@@ -71,14 +77,20 @@ namespace NS_ParamDigeo{
               <VisuCarac Nb="?"  RefType="ParamVisuCarac" > </VisuCarac>
 
               <KeyOrPat Nb="1" Type="std::string"> </KeyOrPat>
+              <!-- Pas utilise pour l'instant, sans doute prevu pour modele geometrique -->
               <KeyCalcCalib Nb="?" Type="std::string"> </KeyCalcCalib>
-              <BoxIm Nb="?" Type="Box2di">  </BoxIm>
+              <!-- La BoxImR1 est donnee / a la resol 1 -->
+              <BoxImR1 Nb="?" Type="Box2di">  </BoxImR1>
+              <!-- ResolInit=0.5 signifie des images deux fois plus grandes -->
+              <ResolInit Nb="?" Type="double" Def="1.0"> </ResolInit>
 
               <!-- Pour l'instant pas utilise, mais pour pouvoir commencer
                   a organiser la structure -->
               <PredicteurGeom Nb="?" UnionType="true">
                      <Unused Nb="?" Type="std::string"> </Unused> 
               </PredicteurGeom>
+              <!-- Si la taille mémoire de l'image est inférieure a ce seuil, le fichier est lu en 1 bloc-->
+              <NbOctetLimitLoadImageOnce Nb="?" Type="double" Def="1e8"> </NbOctetLimitLoadImageOnce>
            </ImageDigeo>
            <PyramideImage Nb="1">
               <TypeNumeriqueOfNiv Nb="*">
@@ -87,7 +99,7 @@ namespace NS_ParamDigeo{
               </TypeNumeriqueOfNiv>
 
             <!-- En maximisant la dynamique compatible avec le type d'image,
-                 permet d'avoir une plus grande precision -->
+                 permet d'avoir une plus grande precision; Def = true pour (u_)?int[12] -->
 
               <MaximDyn Nb="?" Type="bool"> </MaximDyn>
               <!-- Parfois l'image contient des valeurs "parasites" qui 
@@ -102,7 +114,11 @@ namespace NS_ParamDigeo{
                   <NivPyramBasique Nb="?" Type="int"> </NivPyramBasique>
                   <PyramideGaussienne  Nb="?">
                        <NbByOctave Def="3" Nb="?"  Type="int"> </NbByOctave>
+
                        <Sigma0 Nb="?" Type="double" Def="1.6"> </Sigma0>
+                       <!-- le papier de Lowe semble indiquer un smooting identique à chaque octave -->
+                       <SigmaN Nb="?" Type="double"> </SigmaN>
+
                        <NbInLastOctave Nb="?"  Type="int"> </NbInLastOctave>
                        <!-- Pour la premiere octave on peut supprimer ou rajouter 
                            (avec val<0) des frequence grace a ce tag -->
@@ -174,8 +190,8 @@ namespace NS_ParamDigeo{
            <DirectoryChantier Nb="?"  Type="std::string" Def="">  </DirectoryChantier>
            <SauvPyram Nb="?">
               <Dir Nb="?" Type="std::string" Def=""> </Dir>
+              <Glob Nb="?" Type="bool" Def="true"> </Glob>
               <Key Nb="?" Type="std::string" Def="Key-Assoc-Pyram-MM"> </Key>
-              <CreateFileWhenExist Nb="?" Type="bool" Def="false">  </CreateFileWhenExist>
               <!-- <=0 si pas used -->
               <StripTifFile Nb="?" Type="int" Def="100"> </StripTifFile>
               <Force8B Nb="?" Type="bool" Def="false">   </Force8B>
@@ -191,11 +207,12 @@ namespace NS_ParamDigeo{
 insulter si ce n'est pas le cas; sauf si ExigeCodeCompile indique que c'est sciemment -->
             <ExigeCodeCompile Nb="?" Type="bool" Def="true"></ExigeCodeCompile>
             <GenereCodeConvol Nb="?"  AccessorFils="false">
-                   <Dir Nb="?" Type="std::string" Def="applis/Digeo/"> </Dir>
+                   <Dir Nb="?" Type="std::string" Def="src/uti_image/Digeo/"> </Dir>
                    <File Nb="?" Type="std::string" Def="GenConvolSpec"> </File>
                    <ModifGCC Nb="*"  Container="std::vector">
                        <NbByOctave Nb="1" Type="int"> </NbByOctave>
                        <ConvolIncrem Nb="1" Type="bool"> </ConvolIncrem>
+                       <TypeNum Nb="1" Type="eTypeNumerique"> </TypeNum>
                    </ModifGCC>
             </GenereCodeConvol>
 
@@ -207,7 +224,6 @@ insulter si ce n'est pas le cas; sauf si ExigeCodeCompile indique que c'est scie
            </FenVisu>
 
            <!-- Pas de raison, hors mis au point/test, de changer cette val -->
-           <UseConvolSpec Nb="?" Type="bool" Def="true"> </UseConvolSpec>
            <ShowConvolSpec Nb="?" Type="bool" Def="false"> </ShowConvolSpec>
 
 
@@ -215,7 +231,7 @@ insulter si ce n'est pas le cas; sauf si ExigeCodeCompile indique que c'est scie
    </ParamDigeo>
 
 <Verbatim File=".h.cpp">
-};
+// };
 </Verbatim>
 <Verbatim File=".h">
 #endif // Define_NotDigeo

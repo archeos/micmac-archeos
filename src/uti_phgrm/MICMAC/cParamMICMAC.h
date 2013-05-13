@@ -54,10 +54,25 @@ cElXMLTree * ToXMLTree(const std::string & aNameTag,const eModeGeomImage & anObj
 
 typedef enum
 {
+  eOEISA_error,
+  eOEISA_exit,
+  eOEISA_goon
+} eOnEmptyImSecApero;
+void xml_init(eOnEmptyImSecApero & aVal,cElXMLTree * aTree);
+std::string  eToString(const eOnEmptyImSecApero & aVal);
+
+eOnEmptyImSecApero  Str2eOnEmptyImSecApero(const std::string & aName);
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const eOnEmptyImSecApero & anObj);
+
+typedef enum
+{
   eAggregSymetrique,
   eAggregIm1Maitre,
   eAggregInfoMut,
-  eAggregMaxIm1Maitre
+  eAggregMaxIm1Maitre,
+  eAggregMinIm1Maitre,
+  eAggregMoyMedIm1Maitre
 } eModeAggregCorr;
 void xml_init(eModeAggregCorr & aVal,cElXMLTree * aTree);
 std::string  eToString(const eModeAggregCorr & aVal);
@@ -100,7 +115,9 @@ typedef enum
   eAlgoCoxRoySiPossible,
   eAlgoOptimDifferentielle,
   eAlgoDequant,
-  eAlgoLeastSQ
+  eAlgoLeastSQ,
+  eAlgoTestGPU,
+  eAlgoIdentite
 } eAlgoRegul;
 void xml_init(eAlgoRegul & aVal,cElXMLTree * aTree);
 std::string  eToString(const eAlgoRegul & aVal);
@@ -688,6 +705,23 @@ class cIntervParalaxe
 };
 cElXMLTree * ToXMLTree(const cIntervParalaxe &);
 
+class cNuageXMLInit
+{
+    public:
+        friend void xml_init(cNuageXMLInit & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameNuageXML();
+        const std::string & NameNuageXML()const ;
+
+        cTplValGesInit< bool > & CanAdaptGeom();
+        const cTplValGesInit< bool > & CanAdaptGeom()const ;
+    private:
+        std::string mNameNuageXML;
+        cTplValGesInit< bool > mCanAdaptGeom;
+};
+cElXMLTree * ToXMLTree(const cNuageXMLInit &);
+
 class cIntervSpecialZInv
 {
     public:
@@ -743,27 +777,6 @@ class cMasqueTerrain
 };
 cElXMLTree * ToXMLTree(const cMasqueTerrain &);
 
-class cMasqueAutoByTieP
-{
-    public:
-        friend void xml_init(cMasqueAutoByTieP & anObj,cElXMLTree * aTree);
-
-
-        std::string & FilePt3D();
-        const std::string & FilePt3D()const ;
-
-        int & Zoom();
-        const int & Zoom()const ;
-
-        int & SzW();
-        const int & SzW()const ;
-    private:
-        std::string mFilePt3D;
-        int mZoom;
-        int mSzW;
-};
-cElXMLTree * ToXMLTree(const cMasqueAutoByTieP &);
-
 class cPlanimetrie
 {
     public:
@@ -797,18 +810,6 @@ class cPlanimetrie
         cTplValGesInit< cMasqueTerrain > & MasqueTerrain();
         const cTplValGesInit< cMasqueTerrain > & MasqueTerrain()const ;
 
-        std::string & FilePt3D();
-        const std::string & FilePt3D()const ;
-
-        int & Zoom();
-        const int & Zoom()const ;
-
-        int & SzW();
-        const int & SzW()const ;
-
-        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
-        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
-
         cTplValGesInit< double > & RecouvrementMinimal();
         const cTplValGesInit< double > & RecouvrementMinimal()const ;
     private:
@@ -818,7 +819,6 @@ class cPlanimetrie
         cTplValGesInit< double > mResolutionTerrain;
         cTplValGesInit< std::string > mFilterEstimTerrain;
         cTplValGesInit< cMasqueTerrain > mMasqueTerrain;
-        cTplValGesInit< cMasqueAutoByTieP > mMasqueAutoByTieP;
         cTplValGesInit< double > mRecouvrementMinimal;
 };
 cElXMLTree * ToXMLTree(const cPlanimetrie &);
@@ -849,6 +849,9 @@ class cSection_Terrain
     public:
         friend void xml_init(cSection_Terrain & anObj,cElXMLTree * aTree);
 
+
+        cTplValGesInit< bool > & IntervalPaxIsProportion();
+        const cTplValGesInit< bool > & IntervalPaxIsProportion()const ;
 
         cTplValGesInit< double > & RatioAltiPlani();
         const cTplValGesInit< double > & RatioAltiPlani()const ;
@@ -916,6 +919,15 @@ class cSection_Terrain
         cTplValGesInit< cIntervParalaxe > & IntervParalaxe();
         const cTplValGesInit< cIntervParalaxe > & IntervParalaxe()const ;
 
+        std::string & NameNuageXML();
+        const std::string & NameNuageXML()const ;
+
+        cTplValGesInit< bool > & CanAdaptGeom();
+        const cTplValGesInit< bool > & CanAdaptGeom()const ;
+
+        cTplValGesInit< cNuageXMLInit > & NuageXMLInit();
+        const cTplValGesInit< cNuageXMLInit > & NuageXMLInit()const ;
+
         double & MulZMin();
         const double & MulZMin()const ;
 
@@ -952,18 +964,6 @@ class cSection_Terrain
         cTplValGesInit< cMasqueTerrain > & MasqueTerrain();
         const cTplValGesInit< cMasqueTerrain > & MasqueTerrain()const ;
 
-        std::string & FilePt3D();
-        const std::string & FilePt3D()const ;
-
-        int & Zoom();
-        const int & Zoom()const ;
-
-        int & SzW();
-        const int & SzW()const ;
-
-        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
-        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
-
         cTplValGesInit< double > & RecouvrementMinimal();
         const cTplValGesInit< double > & RecouvrementMinimal()const ;
 
@@ -985,10 +985,12 @@ class cSection_Terrain
         cTplValGesInit< cRugositeMNT > & RugositeMNT();
         const cTplValGesInit< cRugositeMNT > & RugositeMNT()const ;
     private:
+        cTplValGesInit< bool > mIntervalPaxIsProportion;
         cTplValGesInit< double > mRatioAltiPlani;
         cTplValGesInit< bool > mEstimPxPrefZ2Prof;
         cTplValGesInit< cIntervAltimetrie > mIntervAltimetrie;
         cTplValGesInit< cIntervParalaxe > mIntervParalaxe;
+        cTplValGesInit< cNuageXMLInit > mNuageXMLInit;
         cTplValGesInit< cIntervSpecialZInv > mIntervSpecialZInv;
         cTplValGesInit< cPlanimetrie > mPlanimetrie;
         cTplValGesInit< std::string > mFileOriMnt;
@@ -1078,9 +1080,21 @@ class cImSecCalcApero
 
         cTplValGesInit< int > & Nb();
         const cTplValGesInit< int > & Nb()const ;
+
+        cTplValGesInit< int > & NbMin();
+        const cTplValGesInit< int > & NbMin()const ;
+
+        cTplValGesInit< int > & NbMax();
+        const cTplValGesInit< int > & NbMax()const ;
+
+        cTplValGesInit< eOnEmptyImSecApero > & OnEmpty();
+        const cTplValGesInit< eOnEmptyImSecApero > & OnEmpty()const ;
     private:
         std::string mKey;
         cTplValGesInit< int > mNb;
+        cTplValGesInit< int > mNbMin;
+        cTplValGesInit< int > mNbMax;
+        cTplValGesInit< eOnEmptyImSecApero > mOnEmpty;
 };
 cElXMLTree * ToXMLTree(const cImSecCalcApero &);
 
@@ -1126,6 +1140,15 @@ class cImages
 
         cTplValGesInit< int > & Nb();
         const cTplValGesInit< int > & Nb()const ;
+
+        cTplValGesInit< int > & NbMin();
+        const cTplValGesInit< int > & NbMin()const ;
+
+        cTplValGesInit< int > & NbMax();
+        const cTplValGesInit< int > & NbMax()const ;
+
+        cTplValGesInit< eOnEmptyImSecApero > & OnEmpty();
+        const cTplValGesInit< eOnEmptyImSecApero > & OnEmpty()const ;
 
         cTplValGesInit< cImSecCalcApero > & ImSecCalcApero();
         const cTplValGesInit< cImSecCalcApero > & ImSecCalcApero()const ;
@@ -1411,6 +1434,15 @@ class cSection_PriseDeVue
         cTplValGesInit< int > & Nb();
         const cTplValGesInit< int > & Nb()const ;
 
+        cTplValGesInit< int > & NbMin();
+        const cTplValGesInit< int > & NbMin()const ;
+
+        cTplValGesInit< int > & NbMax();
+        const cTplValGesInit< int > & NbMax()const ;
+
+        cTplValGesInit< eOnEmptyImSecApero > & OnEmpty();
+        const cTplValGesInit< eOnEmptyImSecApero > & OnEmpty()const ;
+
         cTplValGesInit< cImSecCalcApero > & ImSecCalcApero();
         const cTplValGesInit< cImSecCalcApero > & ImSecCalcApero()const ;
 
@@ -1546,6 +1578,48 @@ class cAdapteDynCov
         cTplValGesInit< double > mValRef;
 };
 cElXMLTree * ToXMLTree(const cAdapteDynCov &);
+
+class cOneParamCMS
+{
+    public:
+        friend void xml_init(cOneParamCMS & anObj,cElXMLTree * aTree);
+
+
+        Pt2di & SzW();
+        const Pt2di & SzW()const ;
+
+        double & Sigma();
+        const double & Sigma()const ;
+
+        double & Pds();
+        const double & Pds()const ;
+    private:
+        Pt2di mSzW;
+        double mSigma;
+        double mPds;
+};
+cElXMLTree * ToXMLTree(const cOneParamCMS &);
+
+class cCorrelMultiScale
+{
+    public:
+        friend void xml_init(cCorrelMultiScale & anObj,cElXMLTree * aTree);
+
+
+        cTplValGesInit< bool > & ModeDense();
+        const cTplValGesInit< bool > & ModeDense()const ;
+
+        cTplValGesInit< bool > & UseWAdapt();
+        const cTplValGesInit< bool > & UseWAdapt()const ;
+
+        std::vector< cOneParamCMS > & OneParamCMS();
+        const std::vector< cOneParamCMS > & OneParamCMS()const ;
+    private:
+        cTplValGesInit< bool > mModeDense;
+        cTplValGesInit< bool > mUseWAdapt;
+        std::vector< cOneParamCMS > mOneParamCMS;
+};
+cElXMLTree * ToXMLTree(const cCorrelMultiScale &);
 
 class cCorrel2DLeastSquare
 {
@@ -1692,6 +1766,82 @@ class cCorrel_NC_Robuste
 };
 cElXMLTree * ToXMLTree(const cCorrel_NC_Robuste &);
 
+class cTiePMasqIm
+{
+    public:
+        friend void xml_init(cTiePMasqIm & anObj,cElXMLTree * aTree);
+
+
+        int & DeZoomRel();
+        const int & DeZoomRel()const ;
+
+        int & Dilate();
+        const int & Dilate()const ;
+    private:
+        int mDeZoomRel;
+        int mDilate;
+};
+cElXMLTree * ToXMLTree(const cTiePMasqIm &);
+
+class cMasqueAutoByTieP
+{
+    public:
+        friend void xml_init(cMasqueAutoByTieP & anObj,cElXMLTree * aTree);
+
+
+        cTplValGesInit< std::string > & GlobFilePt3D();
+        const cTplValGesInit< std::string > & GlobFilePt3D()const ;
+
+        std::string & KeyImFilePt3D();
+        const std::string & KeyImFilePt3D()const ;
+
+        int & DeltaZ();
+        const int & DeltaZ()const ;
+
+        double & SeuilSomCostCorrel();
+        const double & SeuilSomCostCorrel()const ;
+
+        double & SeuilMaxCostCorrel();
+        const double & SeuilMaxCostCorrel()const ;
+
+        double & SeuilMedCostCorrel();
+        const double & SeuilMedCostCorrel()const ;
+
+        cTplValGesInit< bool > & Visu();
+        const cTplValGesInit< bool > & Visu()const ;
+
+        cTplValGesInit< eImpaintMethod > & ImPaintResult();
+        const cTplValGesInit< eImpaintMethod > & ImPaintResult()const ;
+
+        cTplValGesInit< double > & ParamIPMnt();
+        const cTplValGesInit< double > & ParamIPMnt()const ;
+
+        int & DeZoomRel();
+        const int & DeZoomRel()const ;
+
+        int & Dilate();
+        const int & Dilate()const ;
+
+        cTplValGesInit< cTiePMasqIm > & TiePMasqIm();
+        const cTplValGesInit< cTiePMasqIm > & TiePMasqIm()const ;
+
+        cTplValGesInit< bool > & DoImageLabel();
+        const cTplValGesInit< bool > & DoImageLabel()const ;
+    private:
+        cTplValGesInit< std::string > mGlobFilePt3D;
+        std::string mKeyImFilePt3D;
+        int mDeltaZ;
+        double mSeuilSomCostCorrel;
+        double mSeuilMaxCostCorrel;
+        double mSeuilMedCostCorrel;
+        cTplValGesInit< bool > mVisu;
+        cTplValGesInit< eImpaintMethod > mImPaintResult;
+        cTplValGesInit< double > mParamIPMnt;
+        cTplValGesInit< cTiePMasqIm > mTiePMasqIm;
+        cTplValGesInit< bool > mDoImageLabel;
+};
+cElXMLTree * ToXMLTree(const cMasqueAutoByTieP &);
+
 class cTypeCAH
 {
     public:
@@ -1724,6 +1874,9 @@ class cTypeCAH
 
         cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste();
         const cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste()const ;
+
+        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
+        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
     private:
         cTplValGesInit< cCorrel2DLeastSquare > mCorrel2DLeastSquare;
         cTplValGesInit< cGPU_Correl > mGPU_Correl;
@@ -1734,6 +1887,7 @@ class cTypeCAH
         cTplValGesInit< cCorrel_MultiFen > mCorrel_MultiFen;
         cTplValGesInit< cCorrel_Correl_MNE_ZPredic > mCorrel_Correl_MNE_ZPredic;
         cTplValGesInit< cCorrel_NC_Robuste > mCorrel_NC_Robuste;
+        cTplValGesInit< cMasqueAutoByTieP > mMasqueAutoByTieP;
 };
 cElXMLTree * ToXMLTree(const cTypeCAH &);
 
@@ -1751,6 +1905,18 @@ class cCorrelAdHoc
 
         cTplValGesInit< int > & SzBlocAH();
         const cTplValGesInit< int > & SzBlocAH()const ;
+
+        cTplValGesInit< bool > & ModeDense();
+        const cTplValGesInit< bool > & ModeDense()const ;
+
+        cTplValGesInit< bool > & UseWAdapt();
+        const cTplValGesInit< bool > & UseWAdapt()const ;
+
+        std::vector< cOneParamCMS > & OneParamCMS();
+        const std::vector< cOneParamCMS > & OneParamCMS()const ;
+
+        cTplValGesInit< cCorrelMultiScale > & CorrelMultiScale();
+        const cTplValGesInit< cCorrelMultiScale > & CorrelMultiScale()const ;
 
         cTplValGesInit< cCorrel2DLeastSquare > & Correl2DLeastSquare();
         const cTplValGesInit< cCorrel2DLeastSquare > & Correl2DLeastSquare()const ;
@@ -1779,15 +1945,52 @@ class cCorrelAdHoc
         cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste();
         const cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste()const ;
 
+        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
+        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
+
         cTypeCAH & TypeCAH();
         const cTypeCAH & TypeCAH()const ;
     private:
         cTplValGesInit< double > mEpsilonAddMoyenne;
         cTplValGesInit< double > mEpsilonMulMoyenne;
         cTplValGesInit< int > mSzBlocAH;
+        cTplValGesInit< cCorrelMultiScale > mCorrelMultiScale;
         cTypeCAH mTypeCAH;
 };
 cElXMLTree * ToXMLTree(const cCorrelAdHoc &);
+
+class cDoImageBSurH
+{
+    public:
+        friend void xml_init(cDoImageBSurH & anObj,cElXMLTree * aTree);
+
+
+        cTplValGesInit< double > & Dyn();
+        const cTplValGesInit< double > & Dyn()const ;
+
+        cTplValGesInit< double > & Offset();
+        const cTplValGesInit< double > & Offset()const ;
+
+        cTplValGesInit< double > & SeuilMasqExport();
+        const cTplValGesInit< double > & SeuilMasqExport()const ;
+
+        std::string & Name();
+        const std::string & Name()const ;
+
+        double & ScaleNuage();
+        const double & ScaleNuage()const ;
+
+        std::string & NameNuage();
+        const std::string & NameNuage()const ;
+    private:
+        cTplValGesInit< double > mDyn;
+        cTplValGesInit< double > mOffset;
+        cTplValGesInit< double > mSeuilMasqExport;
+        std::string mName;
+        double mScaleNuage;
+        std::string mNameNuage;
+};
+cElXMLTree * ToXMLTree(const cDoImageBSurH &);
 
 class cDoStatResult
 {
@@ -2877,6 +3080,18 @@ class cEtapeMEC
         cTplValGesInit< int > & SzBlocAH();
         const cTplValGesInit< int > & SzBlocAH()const ;
 
+        cTplValGesInit< bool > & ModeDense();
+        const cTplValGesInit< bool > & ModeDense()const ;
+
+        cTplValGesInit< bool > & UseWAdapt();
+        const cTplValGesInit< bool > & UseWAdapt()const ;
+
+        std::vector< cOneParamCMS > & OneParamCMS();
+        const std::vector< cOneParamCMS > & OneParamCMS()const ;
+
+        cTplValGesInit< cCorrelMultiScale > & CorrelMultiScale();
+        const cTplValGesInit< cCorrelMultiScale > & CorrelMultiScale()const ;
+
         cTplValGesInit< cCorrel2DLeastSquare > & Correl2DLeastSquare();
         const cTplValGesInit< cCorrel2DLeastSquare > & Correl2DLeastSquare()const ;
 
@@ -2904,11 +3119,17 @@ class cEtapeMEC
         cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste();
         const cTplValGesInit< cCorrel_NC_Robuste > & Correl_NC_Robuste()const ;
 
+        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
+        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
+
         cTypeCAH & TypeCAH();
         const cTypeCAH & TypeCAH()const ;
 
         cTplValGesInit< cCorrelAdHoc > & CorrelAdHoc();
         const cTplValGesInit< cCorrelAdHoc > & CorrelAdHoc()const ;
+
+        cTplValGesInit< cDoImageBSurH > & DoImageBSurH();
+        const cTplValGesInit< cDoImageBSurH > & DoImageBSurH()const ;
 
         bool & DoRatio2Im();
         const bool & DoRatio2Im()const ;
@@ -3189,6 +3410,9 @@ class cEtapeMEC
         cTplValGesInit< cImageSelecteur > & ImageSelecteur();
         const cTplValGesInit< cImageSelecteur > & ImageSelecteur()const ;
 
+        cTplValGesInit< cParamGenereStrVois > & RelSelecteur();
+        const cTplValGesInit< cParamGenereStrVois > & RelSelecteur()const ;
+
         cTplValGesInit< bool > & Gen8Bits_Px1();
         const cTplValGesInit< bool > & Gen8Bits_Px1()const ;
 
@@ -3455,6 +3679,7 @@ class cEtapeMEC
     private:
         int mDeZoom;
         cTplValGesInit< cCorrelAdHoc > mCorrelAdHoc;
+        cTplValGesInit< cDoImageBSurH > mDoImageBSurH;
         cTplValGesInit< cDoStatResult > mDoStatResult;
         std::list< cMasqOfEtape > mMasqOfEtape;
         cTplValGesInit< int > mSzRecouvrtDalles;
@@ -3523,6 +3748,7 @@ class cEtapeMEC
         cTplValGesInit< cPostFiltragePx > mPostFiltragePx;
         cTplValGesInit< cPostFiltrageDiscont > mPostFiltrageDiscont;
         cTplValGesInit< cImageSelecteur > mImageSelecteur;
+        cTplValGesInit< cParamGenereStrVois > mRelSelecteur;
         cTplValGesInit< bool > mGen8Bits_Px1;
         cTplValGesInit< int > mOffset8Bits_Px1;
         cTplValGesInit< double > mDyn8Bits_Px1;
@@ -3665,6 +3891,9 @@ class cSection_MEC
         std::list< cTypePyramImage > & TypePyramImage();
         const std::list< cTypePyramImage > & TypePyramImage()const ;
 
+        cTplValGesInit< bool > & HighPrecPyrIm();
+        const cTplValGesInit< bool > & HighPrecPyrIm()const ;
+
         cTplValGesInit< bool > & Correl16Bits();
         const cTplValGesInit< bool > & Correl16Bits()const ;
     private:
@@ -3686,6 +3915,7 @@ class cSection_MEC
         std::list< cEtapeMEC > mEtapeMEC;
         cEtapeMEC mGlobEtapeMEC;
         std::list< cTypePyramImage > mTypePyramImage;
+        cTplValGesInit< bool > mHighPrecPyrIm;
         cTplValGesInit< bool > mCorrel16Bits;
 };
 cElXMLTree * ToXMLTree(const cSection_MEC &);
@@ -4030,6 +4260,39 @@ class cAnamSurfaceAnalytique
 };
 cElXMLTree * ToXMLTree(const cAnamSurfaceAnalytique &);
 
+class cMakeMaskImNadir
+{
+    public:
+        friend void xml_init(cMakeMaskImNadir & anObj,cElXMLTree * aTree);
+
+
+        cTplValGesInit< double > & DynIncid();
+        const cTplValGesInit< double > & DynIncid()const ;
+
+        cTplValGesInit< bool > & MakeAlsoMaskTerrain();
+        const cTplValGesInit< bool > & MakeAlsoMaskTerrain()const ;
+
+        int & KBest();
+        const int & KBest()const ;
+
+        cTplValGesInit< double > & IncertAngle();
+        const cTplValGesInit< double > & IncertAngle()const ;
+
+        cTplValGesInit< int > & Dilat32();
+        const cTplValGesInit< int > & Dilat32()const ;
+
+        cTplValGesInit< int > & Erod32();
+        const cTplValGesInit< int > & Erod32()const ;
+    private:
+        cTplValGesInit< double > mDynIncid;
+        cTplValGesInit< bool > mMakeAlsoMaskTerrain;
+        int mKBest;
+        cTplValGesInit< double > mIncertAngle;
+        cTplValGesInit< int > mDilat32;
+        cTplValGesInit< int > mErod32;
+};
+cElXMLTree * ToXMLTree(const cMakeMaskImNadir &);
+
 class cAnamorphoseGeometrieMNT
 {
     public:
@@ -4050,10 +4313,32 @@ class cAnamorphoseGeometrieMNT
 
         cTplValGesInit< double > & AnamLimAngleVisib();
         const cTplValGesInit< double > & AnamLimAngleVisib()const ;
+
+        cTplValGesInit< double > & DynIncid();
+        const cTplValGesInit< double > & DynIncid()const ;
+
+        cTplValGesInit< bool > & MakeAlsoMaskTerrain();
+        const cTplValGesInit< bool > & MakeAlsoMaskTerrain()const ;
+
+        int & KBest();
+        const int & KBest()const ;
+
+        cTplValGesInit< double > & IncertAngle();
+        const cTplValGesInit< double > & IncertAngle()const ;
+
+        cTplValGesInit< int > & Dilat32();
+        const cTplValGesInit< int > & Dilat32()const ;
+
+        cTplValGesInit< int > & Erod32();
+        const cTplValGesInit< int > & Erod32()const ;
+
+        cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir();
+        const cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir()const ;
     private:
         cTplValGesInit< cAnamSurfaceAnalytique > mAnamSurfaceAnalytique;
         cTplValGesInit< int > mAnamDeZoomMasq;
         cTplValGesInit< double > mAnamLimAngleVisib;
+        cTplValGesInit< cMakeMaskImNadir > mMakeMaskImNadir;
 };
 cElXMLTree * ToXMLTree(const cAnamorphoseGeometrieMNT &);
 
@@ -4217,6 +4502,27 @@ class cSection_Results
         cTplValGesInit< double > & AnamLimAngleVisib();
         const cTplValGesInit< double > & AnamLimAngleVisib()const ;
 
+        cTplValGesInit< double > & DynIncid();
+        const cTplValGesInit< double > & DynIncid()const ;
+
+        cTplValGesInit< bool > & MakeAlsoMaskTerrain();
+        const cTplValGesInit< bool > & MakeAlsoMaskTerrain()const ;
+
+        int & KBest();
+        const int & KBest()const ;
+
+        cTplValGesInit< double > & IncertAngle();
+        const cTplValGesInit< double > & IncertAngle()const ;
+
+        cTplValGesInit< int > & Dilat32();
+        const cTplValGesInit< int > & Dilat32()const ;
+
+        cTplValGesInit< int > & Erod32();
+        const cTplValGesInit< int > & Erod32()const ;
+
+        cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir();
+        const cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir()const ;
+
         cTplValGesInit< cAnamorphoseGeometrieMNT > & AnamorphoseGeometrieMNT();
         const cTplValGesInit< cAnamorphoseGeometrieMNT > & AnamorphoseGeometrieMNT()const ;
 
@@ -4228,6 +4534,9 @@ class cSection_Results
 
         cTplValGesInit< bool > & DoMEC();
         const cTplValGesInit< bool > & DoMEC()const ;
+
+        cTplValGesInit< std::string > & NonExistingFileDoMEC();
+        const cTplValGesInit< std::string > & NonExistingFileDoMEC()const ;
 
         cTplValGesInit< bool > & DoFDC();
         const cTplValGesInit< bool > & DoFDC()const ;
@@ -4246,6 +4555,9 @@ class cSection_Results
 
         cTplValGesInit< int > & ZoomMakeMasq();
         const cTplValGesInit< int > & ZoomMakeMasq()const ;
+
+        cTplValGesInit< bool > & LazyZoomMaskTerrain();
+        const cTplValGesInit< bool > & LazyZoomMaskTerrain()const ;
 
         cTplValGesInit< bool > & MakeImCptTA();
         const cTplValGesInit< bool > & MakeImCptTA()const ;
@@ -4315,12 +4627,14 @@ class cSection_Results
         cTplValGesInit< std::string > mRepereCorrel;
         cTplValGesInit< std::string > mTagRepereCorrel;
         cTplValGesInit< bool > mDoMEC;
+        cTplValGesInit< std::string > mNonExistingFileDoMEC;
         cTplValGesInit< bool > mDoFDC;
         cTplValGesInit< bool > mGenereXMLComp;
         cTplValGesInit< int > mZoomMakeTA;
         cTplValGesInit< double > mSaturationTA;
         cTplValGesInit< bool > mOrthoTA;
         cTplValGesInit< int > mZoomMakeMasq;
+        cTplValGesInit< bool > mLazyZoomMaskTerrain;
         cTplValGesInit< bool > mMakeImCptTA;
         cTplValGesInit< std::string > mFilterTA;
         cTplValGesInit< double > mGammaVisu;
@@ -4792,6 +5106,9 @@ class cParamMICMAC
         cTplValGesInit< cChantierDescripteur > & DicoLoc();
         const cTplValGesInit< cChantierDescripteur > & DicoLoc()const ;
 
+        cTplValGesInit< bool > & IntervalPaxIsProportion();
+        const cTplValGesInit< bool > & IntervalPaxIsProportion()const ;
+
         cTplValGesInit< double > & RatioAltiPlani();
         const cTplValGesInit< double > & RatioAltiPlani()const ;
 
@@ -4858,6 +5175,15 @@ class cParamMICMAC
         cTplValGesInit< cIntervParalaxe > & IntervParalaxe();
         const cTplValGesInit< cIntervParalaxe > & IntervParalaxe()const ;
 
+        std::string & NameNuageXML();
+        const std::string & NameNuageXML()const ;
+
+        cTplValGesInit< bool > & CanAdaptGeom();
+        const cTplValGesInit< bool > & CanAdaptGeom()const ;
+
+        cTplValGesInit< cNuageXMLInit > & NuageXMLInit();
+        const cTplValGesInit< cNuageXMLInit > & NuageXMLInit()const ;
+
         double & MulZMin();
         const double & MulZMin()const ;
 
@@ -4893,18 +5219,6 @@ class cParamMICMAC
 
         cTplValGesInit< cMasqueTerrain > & MasqueTerrain();
         const cTplValGesInit< cMasqueTerrain > & MasqueTerrain()const ;
-
-        std::string & FilePt3D();
-        const std::string & FilePt3D()const ;
-
-        int & Zoom();
-        const int & Zoom()const ;
-
-        int & SzW();
-        const int & SzW()const ;
-
-        cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP();
-        const cTplValGesInit< cMasqueAutoByTieP > & MasqueAutoByTieP()const ;
 
         cTplValGesInit< double > & RecouvrementMinimal();
         const cTplValGesInit< double > & RecouvrementMinimal()const ;
@@ -4986,6 +5300,15 @@ class cParamMICMAC
 
         cTplValGesInit< int > & Nb();
         const cTplValGesInit< int > & Nb()const ;
+
+        cTplValGesInit< int > & NbMin();
+        const cTplValGesInit< int > & NbMin()const ;
+
+        cTplValGesInit< int > & NbMax();
+        const cTplValGesInit< int > & NbMax()const ;
+
+        cTplValGesInit< eOnEmptyImSecApero > & OnEmpty();
+        const cTplValGesInit< eOnEmptyImSecApero > & OnEmpty()const ;
 
         cTplValGesInit< cImSecCalcApero > & ImSecCalcApero();
         const cTplValGesInit< cImSecCalcApero > & ImSecCalcApero()const ;
@@ -5125,6 +5448,9 @@ class cParamMICMAC
         std::list< cTypePyramImage > & TypePyramImage();
         const std::list< cTypePyramImage > & TypePyramImage()const ;
 
+        cTplValGesInit< bool > & HighPrecPyrIm();
+        const cTplValGesInit< bool > & HighPrecPyrIm()const ;
+
         cTplValGesInit< bool > & Correl16Bits();
         const cTplValGesInit< bool > & Correl16Bits()const ;
 
@@ -5215,6 +5541,27 @@ class cParamMICMAC
         cTplValGesInit< double > & AnamLimAngleVisib();
         const cTplValGesInit< double > & AnamLimAngleVisib()const ;
 
+        cTplValGesInit< double > & DynIncid();
+        const cTplValGesInit< double > & DynIncid()const ;
+
+        cTplValGesInit< bool > & MakeAlsoMaskTerrain();
+        const cTplValGesInit< bool > & MakeAlsoMaskTerrain()const ;
+
+        int & KBest();
+        const int & KBest()const ;
+
+        cTplValGesInit< double > & IncertAngle();
+        const cTplValGesInit< double > & IncertAngle()const ;
+
+        cTplValGesInit< int > & Dilat32();
+        const cTplValGesInit< int > & Dilat32()const ;
+
+        cTplValGesInit< int > & Erod32();
+        const cTplValGesInit< int > & Erod32()const ;
+
+        cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir();
+        const cTplValGesInit< cMakeMaskImNadir > & MakeMaskImNadir()const ;
+
         cTplValGesInit< cAnamorphoseGeometrieMNT > & AnamorphoseGeometrieMNT();
         const cTplValGesInit< cAnamorphoseGeometrieMNT > & AnamorphoseGeometrieMNT()const ;
 
@@ -5226,6 +5573,9 @@ class cParamMICMAC
 
         cTplValGesInit< bool > & DoMEC();
         const cTplValGesInit< bool > & DoMEC()const ;
+
+        cTplValGesInit< std::string > & NonExistingFileDoMEC();
+        const cTplValGesInit< std::string > & NonExistingFileDoMEC()const ;
 
         cTplValGesInit< bool > & DoFDC();
         const cTplValGesInit< bool > & DoFDC()const ;
@@ -5244,6 +5594,9 @@ class cParamMICMAC
 
         cTplValGesInit< int > & ZoomMakeMasq();
         const cTplValGesInit< int > & ZoomMakeMasq()const ;
+
+        cTplValGesInit< bool > & LazyZoomMaskTerrain();
+        const cTplValGesInit< bool > & LazyZoomMaskTerrain()const ;
 
         cTplValGesInit< bool > & MakeImCptTA();
         const cTplValGesInit< bool > & MakeImCptTA()const ;

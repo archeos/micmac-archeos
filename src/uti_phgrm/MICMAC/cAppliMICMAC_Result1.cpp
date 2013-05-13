@@ -378,11 +378,13 @@ Tiff_Im cAppliMICMAC::FileMasqOfResol(int aDeZoom)
 {
     std::string aNameMasq = NameImageMasqOfResol(aDeZoom);
 
+    int aDZC = LazyZoomMaskTerrain().Val() ? mDeZoomMin : 1;
+
     if (! ELISE_fp::exist_file(aNameMasq))
     {
   
-       if (aDeZoom==1)
-          MakeDefImMasq();
+       if (aDeZoom==aDZC)
+          MakeDefImMasq(aDZC);
        else
        {
            // cGeomDiscFPx aGeomDFPx =  *mGeomDFPx;
@@ -457,28 +459,31 @@ Fonc_Num cAppliMICMAC::FoncMasqOfResol(int aDz)
 
 
 
-void cAppliMICMAC::MakeDefImMasq()
+void cAppliMICMAC::MakeDefImMasq(int aDeZoomCible)
 {
+/*
     if (Planimetrie().IsInit() && MasqueAutoByTieP().IsInit())
     {
        DoMasqueAutoByTieP();
     }
+*/
 
 
     int aNbImMin = NbMinImagesVisibles().Val();
-    std::string aNameMasq = NameImageMasqOfResol(1);
+    std::string aNameMasq = NameImageMasqOfResol(aDeZoomCible);
     if (ELISE_fp::exist_file(aNameMasq))
        return;
 
     std::cout << "<< Make Masq Resol 1 " << aNameMasq << "\n";
 
     cGeomDiscFPx aGeomDFPx =  *mGeomDFPx;
-    aGeomDFPx.SetDeZoom(1);
+    // aGeomDFPx.SetDeZoom(1);
     // Pt2di aSzGlob = aGeomDFPx.SzDz();
     // int aDeZoom = ElMax(0,round_ni(log2(aSzGlob.x * aSzGlob.y / 3.0e7)));
     // aDeZoom = 1<< aDeZoom;
     int aDeZoom = ZoomMakeMasq().ValWithDef(mDeZoomFilesAux);
-    
+
+
     aGeomDFPx.SetDeZoom(aDeZoom);
     Pt2di aSzClip = aGeomDFPx.SzDz();
 
@@ -490,11 +495,13 @@ void cAppliMICMAC::MakeDefImMasq()
     bool FirstIm=true;
 
 
+    bool aFullIm1= false;
 
     if (mFullIm1 && ChantierFullMaskImage1().Val())
     {
        ELISE_COPY(aImCpt.all_pts(),aNbImMin+1,aImCpt.out());
        ELISE_COPY(aImOKIm1.all_pts(),1,aImOKIm1.out());
+       aFullIm1 =true;
     }
     else
     {
@@ -579,7 +586,9 @@ void cAppliMICMAC::MakeDefImMasq()
     //Tiff_Im::Create8BFromFonc("ImCompteur.tif",aImCpt.sz(),aImCpt.in());
 /*
 */
-    aGeomDFPx.SetDeZoom(1);
+    aGeomDFPx.SetDeZoom(aDeZoomCible);
+
+
     Tiff_Im aFileMasq
             (
                 aNameMasq.c_str(),
@@ -601,8 +610,8 @@ void cAppliMICMAC::MakeDefImMasq()
 
     if (mHasOneModeIm1Maitre)
     {
-       aF = aF && (aImOKIm1.in(0)>0.5);
-/// std::cout << "AAAAAAAa \n"; getchar();
+       if (! aFullIm1)
+          aF = aF && (aImOKIm1.in(0)>0.5);
     }
     if (Planimetrie().IsInit() && MasqueTerrain().IsInit())
     {
@@ -643,7 +652,7 @@ void cAppliMICMAC::MakeDefImMasq()
       );
     }
 
-   Fonc_Num aFoncMasq = aF[Virgule(FX,FY)/double(aDeZoom)];
+   Fonc_Num aFoncMasq = aF[Virgule(FX,FY) * (aDeZoomCible/double(aDeZoom))];
    if (mUseConstSpecIm1)
    {
       Pt2di aSz = aFileMasq.sz();
@@ -660,7 +669,7 @@ void cAppliMICMAC::MakeDefImMasq()
           aFoncMasq,
           aFileMasq.out() 
     );
-    std::cout << ">>  Done Masq Resol 1 " << aNameMasq << "\n";
+    std::cout << ">>  Done Masq Resol 1 " << aNameMasq  <<  "\n";
 }
 
 cFileOriMnt cAppliMICMAC::OrientFromOneEtape(const cEtapeMecComp & anEtape) const
@@ -815,7 +824,44 @@ Fonc_Num  cAppliMICMAC::AdaptFoncFileOriMnt
 
 
 
+void cAppliMICMAC::GenereOrientationMnt()
+{
+   for
+   (
+        tContEMC::const_iterator itE = mEtapesMecComp.begin();
+        itE != mEtapesMecComp.end();
+        itE++
+   )
+   {
+        GenereOrientationMnt(*itE);
+   }
+}
 
+void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
+{
+        cFileOriMnt aFOM = OrientFromOneEtape(*itE);
+        std::string aName =   
+		        FullDirMEC()
+	              + std::string("Z_Num") 
+                      + ToString((itE)->Num())
+		      + std::string("_DeZoom")
+		      + ToString((itE)->DeZoomTer())
+		      + std::string("_")
+		      + NameChantier()
+                      + std::string(".xml");
+         cElXMLTree * aTree = ToXMLTree(aFOM);
+         FILE * aFP = ElFopen(aName.c_str(),"w");
+         ELISE_ASSERT(aFP!=0,"cAppliMICMAC::GenereOrientationMnt");
+
+         aTree->Show("      ",aFP,0,0,true);
+
+         delete aTree;
+         ElFclose(aFP);
+
+         (itE)->DoRemplitXML_MTD_Nuage();
+}
+
+/*
 void cAppliMICMAC::GenereOrientationMnt()
 {
    for
@@ -846,8 +892,8 @@ void cAppliMICMAC::GenereOrientationMnt()
 
          (*itE)->DoRemplitXML_MTD_Nuage();
    }
-
 }
+*/
 
 void cAppliMICMAC::SauvParam()
 {

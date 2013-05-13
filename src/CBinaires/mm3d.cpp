@@ -38,6 +38,8 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
+
+
 #define DEF_OFSET -12349876
 
 typedef int (*tCommande)  (int,char**);
@@ -154,40 +156,59 @@ const std::vector<cMMCom> & getAvailableCommands()
    static std::vector<cMMCom> aRes;
    if (aRes.empty())
    {
+       aRes.push_back(cMMCom("Ann",Ann_main," matches points of interest of two images"));
        aRes.push_back(cMMCom("AperiCloud",AperiCloud_main," Visualisation of camera in ply file",cArgLogCom(2)));
        aRes.push_back(cMMCom("Apero",Apero_main," Compute external and internal orientations"));
-       aRes.push_back(cMMCom("AperoChImSecMM",AperoChImMM_main,"Select secondary images for MicMac "));
-       aRes.push_back(cMMCom("Bascule",Bascule_main," Generate orientations coherent with some physical information on the scene"));
+       aRes.push_back(cMMCom("Digeo",Digeo_main," In devlopment- Will compute tie points "));
+
+       aRes.push_back(cMMCom("AperoChImSecMM",AperoChImMM_main,"Select secondary images for MicMac",cArgLogCom(2)));
+	   aRes.push_back(cMMCom("Apero2PMVS",Apero2PMVS_main,"Convert Orientation from Apero-Micmac workflow to PMVS format"));
+       aRes.push_back(cMMCom("Bascule",Bascule_main," Generate orientations coherent with some physical information on the scene",cArgLogCom(2)));
        aRes.push_back(cMMCom("BatchFDC",BatchFDC_main," Tool for batching a set of commands"));
        aRes.push_back(cMMCom("Campari",Campari_main," Interface to Apero, for compensation of heterogenous measures",cArgLogCom(2)));
        aRes.push_back(cMMCom("ChgSysCo",ChgSysCo_main," Chang coordinate system of orientation",cArgLogCom(2)));
        aRes.push_back(cMMCom("CmpCalib",CmpCalib_main," Do some stuff"));
        aRes.push_back(cMMCom("cod",cod_main," Do some stuff"));
+       aRes.push_back(cMMCom("vic",vicod_main," Do some stuff"));
+       aRes.push_back(cMMCom("genmail",genmail_main," Do some stuff"));
        aRes.push_back(cMMCom("CreateEpip",CreateEpip_main," Tool create epipolar images"));
        aRes.push_back(cMMCom("Dequant",Dequant_main," Tool for dequantifying an image"));
        aRes.push_back(cMMCom("Devlop",Devlop_main," Do some stuff"));
+	   aRes.push_back(cMMCom("Drunk", Drunk_main,"Images distortion removing tool"));
        aRes.push_back(cMMCom("ElDcraw",ElDcraw_main," Do some stuff"));
-       aRes.push_back(cMMCom("GCPBascule",GCPBascule_main," Relative to absolute using  GCP",cArgLogCom(2)));
+       aRes.push_back(cMMCom("GCPBascule",GCPBascule_main," Relative to absolute using GCP",cArgLogCom(2)));
 
-       aRes.push_back(cMMCom("CenterBascule",CentreBascule_main," Realtive to absolute using  embedded GPS",cArgLogCom(2)));
+       aRes.push_back(cMMCom("CenterBascule",CentreBascule_main," Relative to absolute using embedded GPS",cArgLogCom(2)));
 
+       aRes.push_back(cMMCom("GrapheHom",GrapheHom_main,"Compute XML-Visibility graph from approximative orientation ",cArgLogCom(3)));
        aRes.push_back(cMMCom("GCPConvert",GCP_Txt2Xml_main," Convert GCP from Txt 2 XML",cArgLogCom(3)));
        aRes.push_back(cMMCom("OriConvert",Ori_Txt2Xml_main," Convert Orientation from Txt 2 XML",cArgLogCom(3)));
 
        aRes.push_back(cMMCom("GenXML2Cpp",GenXML2Cpp_main," Do some stuff"));
        aRes.push_back(cMMCom("GrShade",GrShade_main," Compute shading from depth image"));
+       aRes.push_back(cMMCom("StackFlatField",EstimFlatField_main,"Basic Flat Field estimation by image stacking"));
+       aRes.push_back(cMMCom("Impaint",Impainting_main,"Basic Impainting"));
        aRes.push_back(cMMCom("Gri2Bin",Gri2Bin_main," Do some stuff"));
        aRes.push_back(cMMCom("MakeGrid",MakeGrid_main," Generate orientations in a grid format"));
        aRes.push_back(cMMCom("Malt",Malt_main," Simplified matching (interface to MicMac)",cArgLogCom(3)));
        aRes.push_back(cMMCom("MapCmd",MapCmd_main," Transforms a command working on a single file in a command working on a set of files"));
-	   aRes.push_back(cMMCom("Mascarpone",Mascarpone_main," Automatic mask tests"));
-	   aRes.push_back(cMMCom("MergePly",MergePly_main," Merge ply files"));
+       aRes.push_back(cMMCom("Mascarpone",Mascarpone_main," Automatic mask tests"));
+       aRes.push_back(cMMCom("MergePly",MergePly_main," Merge ply files"));
        aRes.push_back(cMMCom("MICMAC",MICMAC_main," Computes image matching from oriented images"));
-       aRes.push_back(cMMCom("MMPyram",MMPyram_main," Computes pyram for micmac (internal use)"));
-       aRes.push_back(cMMCom("MpDcraw",MpDcraw_main," Interface to dcraw"));
-       aRes.push_back(cMMCom("MMInitialModel",MMInitialModel_main,"Initial Model for MicMac "));
+       aRes.push_back(cMMCom("MMPyram",MMPyram_main," Computes pyram for micmac (internal use)",cArgLogCom(2)));
 
+       aRes.push_back(cMMCom("MMCalcSzWCor",CalcSzWCor_main," Compute Image of Size of correlation windows (Atomic tool)",cArgLogCom(2)));
+       aRes.push_back(cMMCom("MpDcraw",MpDcraw_main," Interface to dcraw"));
+
+       aRes.push_back(cMMCom("MMTestOrient",MMTestOrient_main,"Tool for testing quality of orientation"));
+       aRes.push_back(cMMCom("MMInitialModel",MMInitialModel_main,"Initial Model for MicMac ",cArgLogCom(2)));
+       aRes.push_back(cMMCom("MMTestAllAuto",MMAllAuto_main,"Full automatic version for 1 view point, test mode ",cArgLogCom(2)));
+       aRes.push_back(cMMCom("MM2DPosSism",MM2DPostSism_Main,"Simplified interface for post 2D post sismic deformation ",cArgLogCom(2)));
+       aRes.push_back(cMMCom("MMMergeCloud",MM_FusionNuage_main,"Merging of low resol cloud, in preparation 2 MicMac ",cArgLogCom(2)));
+
+       aRes.push_back(cMMCom("MergeDepthMap",FusionCarteProf_main,"Merging of individual, stackable, depth maps "));
        aRes.push_back(cMMCom("MyRename",MyRename_main,"File renaming using posix regular expression "));
+       aRes.push_back(cMMCom("Genere_Header_TiffFile",Genere_Header_TiffFile_main,"Generate Header for internal tiling format "));
 
 
        aRes.push_back(cMMCom("Nuage2Ply",Nuage2Ply_main," Convert depth map into point cloud"));
@@ -198,13 +219,17 @@ const std::vector<cMMCom> & getAvailableCommands()
        aRes.push_back(cMMCom("Pasta",Pasta_main," Do some stuff"));
        aRes.push_back(cMMCom("PastDevlop",PastDevlop_main," Do some stuff"));
        aRes.push_back(cMMCom("Pastis",Pastis_main," Tie points detection"));
+	   aRes.push_back(cMMCom("Poisson",Poisson_main," Mesh Poisson reconstruction by M. Khazdan"));
        aRes.push_back(cMMCom("Porto",Porto_main," Generates a global ortho-photo"));
        aRes.push_back(cMMCom("Reduc2MM",Reduc2MM_main," Do some stuff"));
        aRes.push_back(cMMCom("ReducHom",ReducHom_main," Do some stuff"));
        aRes.push_back(cMMCom("RepLocBascule",RepLocBascule_main," Tool to define a local repair without changing the orientation"));
        aRes.push_back(cMMCom("SBGlobBascule",SBGlobBascule_main," Tool for 'scene based global' bascule"));
        aRes.push_back(cMMCom("ScaleIm",ScaleIm_main," Tool for scaling image"));
+       aRes.push_back(cMMCom("ConvertIm",ConvertIm_main," Tool for convertion inside tiff-format"));
+       aRes.push_back(cMMCom("PanelIm",MakePlancheImage_main,"Tool for creating a pannel of images ")); 
        aRes.push_back(cMMCom("ScaleNuage",ScaleNuage_main," Tool for scaling internal representation of point cloud"));
+       aRes.push_back(cMMCom("Sift",Sift_main," Tool for extracting points of interest using Lowe's SIFT method"));
        aRes.push_back(cMMCom("Tapas",Tapas_main," Interface to Apero to compute external and internal orientations",cArgLogCom(3)));
        aRes.push_back(cMMCom("Tapioca",Tapioca_main," Interface to Pastis for tie point detection and matching",cArgLogCom(3)));
        aRes.push_back(cMMCom("Tarama",Tarama_main," Compute a rectified image"));
@@ -212,12 +237,19 @@ const std::vector<cMMCom> & getAvailableCommands()
        aRes.push_back(cMMCom("TestCam",TestCam_main," Test camera orientation convention"));
        aRes.push_back(cMMCom("TestKey",TestSet_main," Test Keys for Sets and Assoc"));
        aRes.push_back(cMMCom("TestMTD",TestMTD_main," Test meta data of image"));
+	   aRes.push_back(cMMCom("TestCmds",TestCmds_main," Test MM3D commands on micmac_data sets"));
 
        aRes.push_back(cMMCom("tiff_info",tiff_info_main," Tool for giving information about a tiff file"));
        aRes.push_back(cMMCom("to8Bits",to8Bits_main," Tool for converting 16 or 32 bit image in a 8 bit image."));
+       aRes.push_back(cMMCom("mmxv",mmxv_main," Interface to xv (due to problem in tiff lib)"));
+       aRes.push_back(cMMCom("CmpIm",CmpIm_main," Tool basic for comparison of images"));
        aRes.push_back(cMMCom("Undist",Undist_main," Tool for removing images distortion"));
 
        aRes.push_back(cMMCom("CheckDependencies",CheckDependencies_main," check dependencies to third-party tools"));
+       aRes.push_back(cMMCom("VV",VideoVisage_main,"A very simplified tool for 3D model of visage out of video, just for fun"));
+
+       aRes.push_back(cMMCom("XYZ2Im",XYZ2Im_main,"tool to transform a 3D point (text file) to their 2D proj in cam or cloud"));
+       aRes.push_back(cMMCom("Im2XYZ",Im2XYZ_main,"tool to transform a 2D point (text file) to their 3D cloud homologous"));
 
 #if (ELISE_X11)
        aRes.push_back(cMMCom("MPDtest",MPDtest_main," My own test"));
@@ -284,8 +316,13 @@ int main(int argc,char ** argv)
    }
 
    // MPD : deplace sinon core dump qd argc==1
+    // Pour l'analyse de la ligne de commande, on ne peut pas desactiver le bloquage de l'exe via l'option ExitOnBrkp
+    // puisque le XML n'a pas encore ete analyse, on change donc provisoireement le comportement par defaut 
+    TheExitOnBrkp=true;
    MMD_InitArgcArgv( argc, argv );
-
+    // On reactive le blocage par defaut
+    TheExitOnBrkp=false;
+    
    std::string aCom = argv[1];
    std::string aLowCom = StrToLower(aCom);
 

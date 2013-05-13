@@ -148,6 +148,43 @@ cElXMLTree * ToXMLTree(const std::string & aNameTag,const eModeGeomImage & anObj
       return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
 }
 
+eOnEmptyImSecApero  Str2eOnEmptyImSecApero(const std::string & aName)
+{
+   if (aName=="eOEISA_error")
+      return eOEISA_error;
+   else if (aName=="eOEISA_exit")
+      return eOEISA_exit;
+   else if (aName=="eOEISA_goon")
+      return eOEISA_goon;
+  else
+  {
+      cout << aName << " is not a correct value for enum eOnEmptyImSecApero\n" ;
+      ELISE_ASSERT(false,"XML enum value error");
+  }
+  return (eOnEmptyImSecApero) 0;
+}
+void xml_init(eOnEmptyImSecApero & aVal,cElXMLTree * aTree)
+{
+   aVal= Str2eOnEmptyImSecApero(aTree->Contenu());
+}
+std::string  eToString(const eOnEmptyImSecApero & anObj)
+{
+   if (anObj==eOEISA_error)
+      return  "eOEISA_error";
+   if (anObj==eOEISA_exit)
+      return  "eOEISA_exit";
+   if (anObj==eOEISA_goon)
+      return  "eOEISA_goon";
+ std::cout << "Enum = eOnEmptyImSecApero\n";
+   ELISE_ASSERT(false,"Bad Value in eToString for enum value ");
+   return "";
+}
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const eOnEmptyImSecApero & anObj)
+{
+      return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
+}
+
 eModeAggregCorr  Str2eModeAggregCorr(const std::string & aName)
 {
    if (aName=="eAggregSymetrique")
@@ -158,6 +195,10 @@ eModeAggregCorr  Str2eModeAggregCorr(const std::string & aName)
       return eAggregInfoMut;
    else if (aName=="eAggregMaxIm1Maitre")
       return eAggregMaxIm1Maitre;
+   else if (aName=="eAggregMinIm1Maitre")
+      return eAggregMinIm1Maitre;
+   else if (aName=="eAggregMoyMedIm1Maitre")
+      return eAggregMoyMedIm1Maitre;
   else
   {
       cout << aName << " is not a correct value for enum eModeAggregCorr\n" ;
@@ -179,6 +220,10 @@ std::string  eToString(const eModeAggregCorr & anObj)
       return  "eAggregInfoMut";
    if (anObj==eAggregMaxIm1Maitre)
       return  "eAggregMaxIm1Maitre";
+   if (anObj==eAggregMinIm1Maitre)
+      return  "eAggregMinIm1Maitre";
+   if (anObj==eAggregMoyMedIm1Maitre)
+      return  "eAggregMoyMedIm1Maitre";
  std::cout << "Enum = eModeAggregCorr\n";
    ELISE_ASSERT(false,"Bad Value in eToString for enum value ");
    return "";
@@ -279,6 +324,10 @@ eAlgoRegul  Str2eAlgoRegul(const std::string & aName)
       return eAlgoDequant;
    else if (aName=="eAlgoLeastSQ")
       return eAlgoLeastSQ;
+   else if (aName=="eAlgoTestGPU")
+      return eAlgoTestGPU;
+   else if (aName=="eAlgoIdentite")
+      return eAlgoIdentite;
   else
   {
       cout << aName << " is not a correct value for enum eAlgoRegul\n" ;
@@ -306,6 +355,10 @@ std::string  eToString(const eAlgoRegul & anObj)
       return  "eAlgoDequant";
    if (anObj==eAlgoLeastSQ)
       return  "eAlgoLeastSQ";
+   if (anObj==eAlgoTestGPU)
+      return  "eAlgoTestGPU";
+   if (anObj==eAlgoIdentite)
+      return  "eAlgoIdentite";
  std::cout << "Enum = eAlgoRegul\n";
    ELISE_ASSERT(false,"Bad Value in eToString for enum value ");
    return "";
@@ -1872,6 +1925,46 @@ void xml_init(cIntervParalaxe & anObj,cElXMLTree * aTree)
 }
 
 
+std::string & cNuageXMLInit::NameNuageXML()
+{
+   return mNameNuageXML;
+}
+
+const std::string & cNuageXMLInit::NameNuageXML()const 
+{
+   return mNameNuageXML;
+}
+
+
+cTplValGesInit< bool > & cNuageXMLInit::CanAdaptGeom()
+{
+   return mCanAdaptGeom;
+}
+
+const cTplValGesInit< bool > & cNuageXMLInit::CanAdaptGeom()const 
+{
+   return mCanAdaptGeom;
+}
+
+cElXMLTree * ToXMLTree(const cNuageXMLInit & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"NuageXMLInit",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("NameNuageXML"),anObj.NameNuageXML())->ReTagThis("NameNuageXML"));
+   if (anObj.CanAdaptGeom().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("CanAdaptGeom"),anObj.CanAdaptGeom().Val())->ReTagThis("CanAdaptGeom"));
+  return aRes;
+}
+
+void xml_init(cNuageXMLInit & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.NameNuageXML(),aTree->Get("NameNuageXML",1)); //tototo 
+
+   xml_init(anObj.CanAdaptGeom(),aTree->Get("CanAdaptGeom",1),bool(false)); //tototo 
+}
+
+
 double & cIntervSpecialZInv::MulZMin()
 {
    return mMulZMin;
@@ -2009,59 +2102,6 @@ void xml_init(cMasqueTerrain & anObj,cElXMLTree * aTree)
 }
 
 
-std::string & cMasqueAutoByTieP::FilePt3D()
-{
-   return mFilePt3D;
-}
-
-const std::string & cMasqueAutoByTieP::FilePt3D()const 
-{
-   return mFilePt3D;
-}
-
-
-int & cMasqueAutoByTieP::Zoom()
-{
-   return mZoom;
-}
-
-const int & cMasqueAutoByTieP::Zoom()const 
-{
-   return mZoom;
-}
-
-
-int & cMasqueAutoByTieP::SzW()
-{
-   return mSzW;
-}
-
-const int & cMasqueAutoByTieP::SzW()const 
-{
-   return mSzW;
-}
-
-cElXMLTree * ToXMLTree(const cMasqueAutoByTieP & anObj)
-{
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"MasqueAutoByTieP",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("FilePt3D"),anObj.FilePt3D())->ReTagThis("FilePt3D"));
-   aRes->AddFils(::ToXMLTree(std::string("Zoom"),anObj.Zoom())->ReTagThis("Zoom"));
-   aRes->AddFils(::ToXMLTree(std::string("SzW"),anObj.SzW())->ReTagThis("SzW"));
-  return aRes;
-}
-
-void xml_init(cMasqueAutoByTieP & anObj,cElXMLTree * aTree)
-{
-   if (aTree==0) return;
-
-   xml_init(anObj.FilePt3D(),aTree->Get("FilePt3D",1)); //tototo 
-
-   xml_init(anObj.Zoom(),aTree->Get("Zoom",1)); //tototo 
-
-   xml_init(anObj.SzW(),aTree->Get("SzW",1)); //tototo 
-}
-
-
 cTplValGesInit< Box2dr > & cPlanimetrie::BoxTerrain()
 {
    return mBoxTerrain;
@@ -2161,50 +2201,6 @@ const cTplValGesInit< cMasqueTerrain > & cPlanimetrie::MasqueTerrain()const
 }
 
 
-std::string & cPlanimetrie::FilePt3D()
-{
-   return MasqueAutoByTieP().Val().FilePt3D();
-}
-
-const std::string & cPlanimetrie::FilePt3D()const 
-{
-   return MasqueAutoByTieP().Val().FilePt3D();
-}
-
-
-int & cPlanimetrie::Zoom()
-{
-   return MasqueAutoByTieP().Val().Zoom();
-}
-
-const int & cPlanimetrie::Zoom()const 
-{
-   return MasqueAutoByTieP().Val().Zoom();
-}
-
-
-int & cPlanimetrie::SzW()
-{
-   return MasqueAutoByTieP().Val().SzW();
-}
-
-const int & cPlanimetrie::SzW()const 
-{
-   return MasqueAutoByTieP().Val().SzW();
-}
-
-
-cTplValGesInit< cMasqueAutoByTieP > & cPlanimetrie::MasqueAutoByTieP()
-{
-   return mMasqueAutoByTieP;
-}
-
-const cTplValGesInit< cMasqueAutoByTieP > & cPlanimetrie::MasqueAutoByTieP()const 
-{
-   return mMasqueAutoByTieP;
-}
-
-
 cTplValGesInit< double > & cPlanimetrie::RecouvrementMinimal()
 {
    return mRecouvrementMinimal;
@@ -2234,8 +2230,6 @@ cElXMLTree * ToXMLTree(const cPlanimetrie & anObj)
       aRes->AddFils(::ToXMLTree(std::string("FilterEstimTerrain"),anObj.FilterEstimTerrain().Val())->ReTagThis("FilterEstimTerrain"));
    if (anObj.MasqueTerrain().IsInit())
       aRes->AddFils(ToXMLTree(anObj.MasqueTerrain().Val())->ReTagThis("MasqueTerrain"));
-   if (anObj.MasqueAutoByTieP().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.MasqueAutoByTieP().Val())->ReTagThis("MasqueAutoByTieP"));
    if (anObj.RecouvrementMinimal().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("RecouvrementMinimal"),anObj.RecouvrementMinimal().Val())->ReTagThis("RecouvrementMinimal"));
   return aRes;
@@ -2256,8 +2250,6 @@ void xml_init(cPlanimetrie & anObj,cElXMLTree * aTree)
    xml_init(anObj.FilterEstimTerrain(),aTree->Get("FilterEstimTerrain",1),std::string(".*")); //tototo 
 
    xml_init(anObj.MasqueTerrain(),aTree->Get("MasqueTerrain",1)); //tototo 
-
-   xml_init(anObj.MasqueAutoByTieP(),aTree->Get("MasqueAutoByTieP",1)); //tototo 
 
    xml_init(anObj.RecouvrementMinimal(),aTree->Get("RecouvrementMinimal",1)); //tototo 
 }
@@ -2316,6 +2308,17 @@ void xml_init(cRugositeMNT & anObj,cElXMLTree * aTree)
    xml_init(anObj.EnergieExpRegulPlani(),aTree->Get("EnergieExpRegulPlani",1),double(-1.0)); //tototo 
 
    xml_init(anObj.EnergieExpRegulAlti(),aTree->Get("EnergieExpRegulAlti",1),double(-1.0)); //tototo 
+}
+
+
+cTplValGesInit< bool > & cSection_Terrain::IntervalPaxIsProportion()
+{
+   return mIntervalPaxIsProportion;
+}
+
+const cTplValGesInit< bool > & cSection_Terrain::IntervalPaxIsProportion()const 
+{
+   return mIntervalPaxIsProportion;
 }
 
 
@@ -2561,6 +2564,39 @@ const cTplValGesInit< cIntervParalaxe > & cSection_Terrain::IntervParalaxe()cons
 }
 
 
+std::string & cSection_Terrain::NameNuageXML()
+{
+   return NuageXMLInit().Val().NameNuageXML();
+}
+
+const std::string & cSection_Terrain::NameNuageXML()const 
+{
+   return NuageXMLInit().Val().NameNuageXML();
+}
+
+
+cTplValGesInit< bool > & cSection_Terrain::CanAdaptGeom()
+{
+   return NuageXMLInit().Val().CanAdaptGeom();
+}
+
+const cTplValGesInit< bool > & cSection_Terrain::CanAdaptGeom()const 
+{
+   return NuageXMLInit().Val().CanAdaptGeom();
+}
+
+
+cTplValGesInit< cNuageXMLInit > & cSection_Terrain::NuageXMLInit()
+{
+   return mNuageXMLInit;
+}
+
+const cTplValGesInit< cNuageXMLInit > & cSection_Terrain::NuageXMLInit()const 
+{
+   return mNuageXMLInit;
+}
+
+
 double & cSection_Terrain::MulZMin()
 {
    return IntervSpecialZInv().Val().MulZMin();
@@ -2693,50 +2729,6 @@ const cTplValGesInit< cMasqueTerrain > & cSection_Terrain::MasqueTerrain()const
 }
 
 
-std::string & cSection_Terrain::FilePt3D()
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().FilePt3D();
-}
-
-const std::string & cSection_Terrain::FilePt3D()const 
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().FilePt3D();
-}
-
-
-int & cSection_Terrain::Zoom()
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().Zoom();
-}
-
-const int & cSection_Terrain::Zoom()const 
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().Zoom();
-}
-
-
-int & cSection_Terrain::SzW()
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().SzW();
-}
-
-const int & cSection_Terrain::SzW()const 
-{
-   return Planimetrie().Val().MasqueAutoByTieP().Val().SzW();
-}
-
-
-cTplValGesInit< cMasqueAutoByTieP > & cSection_Terrain::MasqueAutoByTieP()
-{
-   return Planimetrie().Val().MasqueAutoByTieP();
-}
-
-const cTplValGesInit< cMasqueAutoByTieP > & cSection_Terrain::MasqueAutoByTieP()const 
-{
-   return Planimetrie().Val().MasqueAutoByTieP();
-}
-
-
 cTplValGesInit< double > & cSection_Terrain::RecouvrementMinimal()
 {
    return Planimetrie().Val().RecouvrementMinimal();
@@ -2816,6 +2808,8 @@ const cTplValGesInit< cRugositeMNT > & cSection_Terrain::RugositeMNT()const
 cElXMLTree * ToXMLTree(const cSection_Terrain & anObj)
 {
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"Section_Terrain",eXMLBranche);
+   if (anObj.IntervalPaxIsProportion().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("IntervalPaxIsProportion"),anObj.IntervalPaxIsProportion().Val())->ReTagThis("IntervalPaxIsProportion"));
    if (anObj.RatioAltiPlani().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("RatioAltiPlani"),anObj.RatioAltiPlani().Val())->ReTagThis("RatioAltiPlani"));
    if (anObj.EstimPxPrefZ2Prof().IsInit())
@@ -2824,6 +2818,8 @@ cElXMLTree * ToXMLTree(const cSection_Terrain & anObj)
       aRes->AddFils(ToXMLTree(anObj.IntervAltimetrie().Val())->ReTagThis("IntervAltimetrie"));
    if (anObj.IntervParalaxe().IsInit())
       aRes->AddFils(ToXMLTree(anObj.IntervParalaxe().Val())->ReTagThis("IntervParalaxe"));
+   if (anObj.NuageXMLInit().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.NuageXMLInit().Val())->ReTagThis("NuageXMLInit"));
    if (anObj.IntervSpecialZInv().IsInit())
       aRes->AddFils(ToXMLTree(anObj.IntervSpecialZInv().Val())->ReTagThis("IntervSpecialZInv"));
    if (anObj.Planimetrie().IsInit())
@@ -2839,6 +2835,8 @@ void xml_init(cSection_Terrain & anObj,cElXMLTree * aTree)
 {
    if (aTree==0) return;
 
+   xml_init(anObj.IntervalPaxIsProportion(),aTree->Get("IntervalPaxIsProportion",1),bool(false)); //tototo 
+
    xml_init(anObj.RatioAltiPlani(),aTree->Get("RatioAltiPlani",1)); //tototo 
 
    xml_init(anObj.EstimPxPrefZ2Prof(),aTree->Get("EstimPxPrefZ2Prof",1),bool(false)); //tototo 
@@ -2846,6 +2844,8 @@ void xml_init(cSection_Terrain & anObj,cElXMLTree * aTree)
    xml_init(anObj.IntervAltimetrie(),aTree->Get("IntervAltimetrie",1)); //tototo 
 
    xml_init(anObj.IntervParalaxe(),aTree->Get("IntervParalaxe",1)); //tototo 
+
+   xml_init(anObj.NuageXMLInit(),aTree->Get("NuageXMLInit",1)); //tototo 
 
    xml_init(anObj.IntervSpecialZInv(),aTree->Get("IntervSpecialZInv",1)); //tototo 
 
@@ -3040,12 +3040,51 @@ const cTplValGesInit< int > & cImSecCalcApero::Nb()const
    return mNb;
 }
 
+
+cTplValGesInit< int > & cImSecCalcApero::NbMin()
+{
+   return mNbMin;
+}
+
+const cTplValGesInit< int > & cImSecCalcApero::NbMin()const 
+{
+   return mNbMin;
+}
+
+
+cTplValGesInit< int > & cImSecCalcApero::NbMax()
+{
+   return mNbMax;
+}
+
+const cTplValGesInit< int > & cImSecCalcApero::NbMax()const 
+{
+   return mNbMax;
+}
+
+
+cTplValGesInit< eOnEmptyImSecApero > & cImSecCalcApero::OnEmpty()
+{
+   return mOnEmpty;
+}
+
+const cTplValGesInit< eOnEmptyImSecApero > & cImSecCalcApero::OnEmpty()const 
+{
+   return mOnEmpty;
+}
+
 cElXMLTree * ToXMLTree(const cImSecCalcApero & anObj)
 {
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ImSecCalcApero",eXMLBranche);
    aRes->AddFils(::ToXMLTree(std::string("Key"),anObj.Key())->ReTagThis("Key"));
    if (anObj.Nb().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("Nb"),anObj.Nb().Val())->ReTagThis("Nb"));
+   if (anObj.NbMin().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("NbMin"),anObj.NbMin().Val())->ReTagThis("NbMin"));
+   if (anObj.NbMax().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("NbMax"),anObj.NbMax().Val())->ReTagThis("NbMax"));
+   if (anObj.OnEmpty().IsInit())
+      aRes->AddFils(ToXMLTree(std::string("OnEmpty"),anObj.OnEmpty().Val())->ReTagThis("OnEmpty"));
   return aRes;
 }
 
@@ -3056,6 +3095,12 @@ void xml_init(cImSecCalcApero & anObj,cElXMLTree * aTree)
    xml_init(anObj.Key(),aTree->Get("Key",1)); //tototo 
 
    xml_init(anObj.Nb(),aTree->Get("Nb",1),int(-1)); //tototo 
+
+   xml_init(anObj.NbMin(),aTree->Get("NbMin",1),int(-1)); //tototo 
+
+   xml_init(anObj.NbMax(),aTree->Get("NbMax",1),int(1000)); //tototo 
+
+   xml_init(anObj.OnEmpty(),aTree->Get("OnEmpty",1),eOnEmptyImSecApero(eOEISA_error)); //tototo 
 }
 
 
@@ -3169,6 +3214,39 @@ cTplValGesInit< int > & cImages::Nb()
 const cTplValGesInit< int > & cImages::Nb()const 
 {
    return ImSecCalcApero().Val().Nb();
+}
+
+
+cTplValGesInit< int > & cImages::NbMin()
+{
+   return ImSecCalcApero().Val().NbMin();
+}
+
+const cTplValGesInit< int > & cImages::NbMin()const 
+{
+   return ImSecCalcApero().Val().NbMin();
+}
+
+
+cTplValGesInit< int > & cImages::NbMax()
+{
+   return ImSecCalcApero().Val().NbMax();
+}
+
+const cTplValGesInit< int > & cImages::NbMax()const 
+{
+   return ImSecCalcApero().Val().NbMax();
+}
+
+
+cTplValGesInit< eOnEmptyImSecApero > & cImages::OnEmpty()
+{
+   return ImSecCalcApero().Val().OnEmpty();
+}
+
+const cTplValGesInit< eOnEmptyImSecApero > & cImages::OnEmpty()const 
+{
+   return ImSecCalcApero().Val().OnEmpty();
 }
 
 
@@ -4054,6 +4132,39 @@ const cTplValGesInit< int > & cSection_PriseDeVue::Nb()const
 }
 
 
+cTplValGesInit< int > & cSection_PriseDeVue::NbMin()
+{
+   return Images().ImSecCalcApero().Val().NbMin();
+}
+
+const cTplValGesInit< int > & cSection_PriseDeVue::NbMin()const 
+{
+   return Images().ImSecCalcApero().Val().NbMin();
+}
+
+
+cTplValGesInit< int > & cSection_PriseDeVue::NbMax()
+{
+   return Images().ImSecCalcApero().Val().NbMax();
+}
+
+const cTplValGesInit< int > & cSection_PriseDeVue::NbMax()const 
+{
+   return Images().ImSecCalcApero().Val().NbMax();
+}
+
+
+cTplValGesInit< eOnEmptyImSecApero > & cSection_PriseDeVue::OnEmpty()
+{
+   return Images().ImSecCalcApero().Val().OnEmpty();
+}
+
+const cTplValGesInit< eOnEmptyImSecApero > & cSection_PriseDeVue::OnEmpty()const 
+{
+   return Images().ImSecCalcApero().Val().OnEmpty();
+}
+
+
 cTplValGesInit< cImSecCalcApero > & cSection_PriseDeVue::ImSecCalcApero()
 {
    return Images().ImSecCalcApero();
@@ -4515,6 +4626,119 @@ void xml_init(cAdapteDynCov & anObj,cElXMLTree * aTree)
 }
 
 
+Pt2di & cOneParamCMS::SzW()
+{
+   return mSzW;
+}
+
+const Pt2di & cOneParamCMS::SzW()const 
+{
+   return mSzW;
+}
+
+
+double & cOneParamCMS::Sigma()
+{
+   return mSigma;
+}
+
+const double & cOneParamCMS::Sigma()const 
+{
+   return mSigma;
+}
+
+
+double & cOneParamCMS::Pds()
+{
+   return mPds;
+}
+
+const double & cOneParamCMS::Pds()const 
+{
+   return mPds;
+}
+
+cElXMLTree * ToXMLTree(const cOneParamCMS & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"OneParamCMS",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("SzW"),anObj.SzW())->ReTagThis("SzW"));
+   aRes->AddFils(::ToXMLTree(std::string("Sigma"),anObj.Sigma())->ReTagThis("Sigma"));
+   aRes->AddFils(::ToXMLTree(std::string("Pds"),anObj.Pds())->ReTagThis("Pds"));
+  return aRes;
+}
+
+void xml_init(cOneParamCMS & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.SzW(),aTree->Get("SzW",1)); //tototo 
+
+   xml_init(anObj.Sigma(),aTree->Get("Sigma",1)); //tototo 
+
+   xml_init(anObj.Pds(),aTree->Get("Pds",1)); //tototo 
+}
+
+
+cTplValGesInit< bool > & cCorrelMultiScale::ModeDense()
+{
+   return mModeDense;
+}
+
+const cTplValGesInit< bool > & cCorrelMultiScale::ModeDense()const 
+{
+   return mModeDense;
+}
+
+
+cTplValGesInit< bool > & cCorrelMultiScale::UseWAdapt()
+{
+   return mUseWAdapt;
+}
+
+const cTplValGesInit< bool > & cCorrelMultiScale::UseWAdapt()const 
+{
+   return mUseWAdapt;
+}
+
+
+std::vector< cOneParamCMS > & cCorrelMultiScale::OneParamCMS()
+{
+   return mOneParamCMS;
+}
+
+const std::vector< cOneParamCMS > & cCorrelMultiScale::OneParamCMS()const 
+{
+   return mOneParamCMS;
+}
+
+cElXMLTree * ToXMLTree(const cCorrelMultiScale & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"CorrelMultiScale",eXMLBranche);
+   if (anObj.ModeDense().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ModeDense"),anObj.ModeDense().Val())->ReTagThis("ModeDense"));
+   if (anObj.UseWAdapt().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("UseWAdapt"),anObj.UseWAdapt().Val())->ReTagThis("UseWAdapt"));
+  for
+  (       std::vector< cOneParamCMS >::const_iterator it=anObj.OneParamCMS().begin();
+      it !=anObj.OneParamCMS().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("OneParamCMS"));
+  return aRes;
+}
+
+void xml_init(cCorrelMultiScale & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.ModeDense(),aTree->Get("ModeDense",1)); //tototo 
+
+   xml_init(anObj.UseWAdapt(),aTree->Get("UseWAdapt",1),bool(false)); //tototo 
+
+   xml_init(anObj.OneParamCMS(),aTree->GetAll("OneParamCMS",false,1));
+}
+
+
 int & cCorrel2DLeastSquare::SzW()
 {
    return mSzW;
@@ -4846,6 +5070,238 @@ void xml_init(cCorrel_NC_Robuste & anObj,cElXMLTree * aTree)
 }
 
 
+int & cTiePMasqIm::DeZoomRel()
+{
+   return mDeZoomRel;
+}
+
+const int & cTiePMasqIm::DeZoomRel()const 
+{
+   return mDeZoomRel;
+}
+
+
+int & cTiePMasqIm::Dilate()
+{
+   return mDilate;
+}
+
+const int & cTiePMasqIm::Dilate()const 
+{
+   return mDilate;
+}
+
+cElXMLTree * ToXMLTree(const cTiePMasqIm & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"TiePMasqIm",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("DeZoomRel"),anObj.DeZoomRel())->ReTagThis("DeZoomRel"));
+   aRes->AddFils(::ToXMLTree(std::string("Dilate"),anObj.Dilate())->ReTagThis("Dilate"));
+  return aRes;
+}
+
+void xml_init(cTiePMasqIm & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.DeZoomRel(),aTree->Get("DeZoomRel",1)); //tototo 
+
+   xml_init(anObj.Dilate(),aTree->Get("Dilate",1)); //tototo 
+}
+
+
+cTplValGesInit< std::string > & cMasqueAutoByTieP::GlobFilePt3D()
+{
+   return mGlobFilePt3D;
+}
+
+const cTplValGesInit< std::string > & cMasqueAutoByTieP::GlobFilePt3D()const 
+{
+   return mGlobFilePt3D;
+}
+
+
+std::string & cMasqueAutoByTieP::KeyImFilePt3D()
+{
+   return mKeyImFilePt3D;
+}
+
+const std::string & cMasqueAutoByTieP::KeyImFilePt3D()const 
+{
+   return mKeyImFilePt3D;
+}
+
+
+int & cMasqueAutoByTieP::DeltaZ()
+{
+   return mDeltaZ;
+}
+
+const int & cMasqueAutoByTieP::DeltaZ()const 
+{
+   return mDeltaZ;
+}
+
+
+double & cMasqueAutoByTieP::SeuilSomCostCorrel()
+{
+   return mSeuilSomCostCorrel;
+}
+
+const double & cMasqueAutoByTieP::SeuilSomCostCorrel()const 
+{
+   return mSeuilSomCostCorrel;
+}
+
+
+double & cMasqueAutoByTieP::SeuilMaxCostCorrel()
+{
+   return mSeuilMaxCostCorrel;
+}
+
+const double & cMasqueAutoByTieP::SeuilMaxCostCorrel()const 
+{
+   return mSeuilMaxCostCorrel;
+}
+
+
+double & cMasqueAutoByTieP::SeuilMedCostCorrel()
+{
+   return mSeuilMedCostCorrel;
+}
+
+const double & cMasqueAutoByTieP::SeuilMedCostCorrel()const 
+{
+   return mSeuilMedCostCorrel;
+}
+
+
+cTplValGesInit< bool > & cMasqueAutoByTieP::Visu()
+{
+   return mVisu;
+}
+
+const cTplValGesInit< bool > & cMasqueAutoByTieP::Visu()const 
+{
+   return mVisu;
+}
+
+
+cTplValGesInit< eImpaintMethod > & cMasqueAutoByTieP::ImPaintResult()
+{
+   return mImPaintResult;
+}
+
+const cTplValGesInit< eImpaintMethod > & cMasqueAutoByTieP::ImPaintResult()const 
+{
+   return mImPaintResult;
+}
+
+
+cTplValGesInit< double > & cMasqueAutoByTieP::ParamIPMnt()
+{
+   return mParamIPMnt;
+}
+
+const cTplValGesInit< double > & cMasqueAutoByTieP::ParamIPMnt()const 
+{
+   return mParamIPMnt;
+}
+
+
+int & cMasqueAutoByTieP::DeZoomRel()
+{
+   return TiePMasqIm().Val().DeZoomRel();
+}
+
+const int & cMasqueAutoByTieP::DeZoomRel()const 
+{
+   return TiePMasqIm().Val().DeZoomRel();
+}
+
+
+int & cMasqueAutoByTieP::Dilate()
+{
+   return TiePMasqIm().Val().Dilate();
+}
+
+const int & cMasqueAutoByTieP::Dilate()const 
+{
+   return TiePMasqIm().Val().Dilate();
+}
+
+
+cTplValGesInit< cTiePMasqIm > & cMasqueAutoByTieP::TiePMasqIm()
+{
+   return mTiePMasqIm;
+}
+
+const cTplValGesInit< cTiePMasqIm > & cMasqueAutoByTieP::TiePMasqIm()const 
+{
+   return mTiePMasqIm;
+}
+
+
+cTplValGesInit< bool > & cMasqueAutoByTieP::DoImageLabel()
+{
+   return mDoImageLabel;
+}
+
+const cTplValGesInit< bool > & cMasqueAutoByTieP::DoImageLabel()const 
+{
+   return mDoImageLabel;
+}
+
+cElXMLTree * ToXMLTree(const cMasqueAutoByTieP & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"MasqueAutoByTieP",eXMLBranche);
+   if (anObj.GlobFilePt3D().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("GlobFilePt3D"),anObj.GlobFilePt3D().Val())->ReTagThis("GlobFilePt3D"));
+   aRes->AddFils(::ToXMLTree(std::string("KeyImFilePt3D"),anObj.KeyImFilePt3D())->ReTagThis("KeyImFilePt3D"));
+   aRes->AddFils(::ToXMLTree(std::string("DeltaZ"),anObj.DeltaZ())->ReTagThis("DeltaZ"));
+   aRes->AddFils(::ToXMLTree(std::string("SeuilSomCostCorrel"),anObj.SeuilSomCostCorrel())->ReTagThis("SeuilSomCostCorrel"));
+   aRes->AddFils(::ToXMLTree(std::string("SeuilMaxCostCorrel"),anObj.SeuilMaxCostCorrel())->ReTagThis("SeuilMaxCostCorrel"));
+   aRes->AddFils(::ToXMLTree(std::string("SeuilMedCostCorrel"),anObj.SeuilMedCostCorrel())->ReTagThis("SeuilMedCostCorrel"));
+   if (anObj.Visu().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Visu"),anObj.Visu().Val())->ReTagThis("Visu"));
+   if (anObj.ImPaintResult().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ImPaintResult"),anObj.ImPaintResult().Val())->ReTagThis("ImPaintResult"));
+   if (anObj.ParamIPMnt().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ParamIPMnt"),anObj.ParamIPMnt().Val())->ReTagThis("ParamIPMnt"));
+   if (anObj.TiePMasqIm().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.TiePMasqIm().Val())->ReTagThis("TiePMasqIm"));
+   if (anObj.DoImageLabel().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("DoImageLabel"),anObj.DoImageLabel().Val())->ReTagThis("DoImageLabel"));
+  return aRes;
+}
+
+void xml_init(cMasqueAutoByTieP & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.GlobFilePt3D(),aTree->Get("GlobFilePt3D",1)); //tototo 
+
+   xml_init(anObj.KeyImFilePt3D(),aTree->Get("KeyImFilePt3D",1)); //tototo 
+
+   xml_init(anObj.DeltaZ(),aTree->Get("DeltaZ",1)); //tototo 
+
+   xml_init(anObj.SeuilSomCostCorrel(),aTree->Get("SeuilSomCostCorrel",1)); //tototo 
+
+   xml_init(anObj.SeuilMaxCostCorrel(),aTree->Get("SeuilMaxCostCorrel",1)); //tototo 
+
+   xml_init(anObj.SeuilMedCostCorrel(),aTree->Get("SeuilMedCostCorrel",1)); //tototo 
+
+   xml_init(anObj.Visu(),aTree->Get("Visu",1),bool(false)); //tototo 
+
+   xml_init(anObj.ImPaintResult(),aTree->Get("ImPaintResult",1),eImpaintMethod(eImpaintL2)); //tototo 
+
+   xml_init(anObj.ParamIPMnt(),aTree->Get("ParamIPMnt",1),double(1.0)); //tototo 
+
+   xml_init(anObj.TiePMasqIm(),aTree->Get("TiePMasqIm",1)); //tototo 
+
+   xml_init(anObj.DoImageLabel(),aTree->Get("DoImageLabel",1),bool(false)); //tototo 
+}
+
+
 cTplValGesInit< cCorrel2DLeastSquare > & cTypeCAH::Correl2DLeastSquare()
 {
    return mCorrel2DLeastSquare;
@@ -4944,6 +5400,17 @@ const cTplValGesInit< cCorrel_NC_Robuste > & cTypeCAH::Correl_NC_Robuste()const
    return mCorrel_NC_Robuste;
 }
 
+
+cTplValGesInit< cMasqueAutoByTieP > & cTypeCAH::MasqueAutoByTieP()
+{
+   return mMasqueAutoByTieP;
+}
+
+const cTplValGesInit< cMasqueAutoByTieP > & cTypeCAH::MasqueAutoByTieP()const 
+{
+   return mMasqueAutoByTieP;
+}
+
 cElXMLTree * ToXMLTree(const cTypeCAH & anObj)
 {
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"TypeCAH",eXMLBranche);
@@ -4965,6 +5432,8 @@ cElXMLTree * ToXMLTree(const cTypeCAH & anObj)
       aRes->AddFils(ToXMLTree(anObj.Correl_Correl_MNE_ZPredic().Val())->ReTagThis("Correl_Correl_MNE_ZPredic"));
    if (anObj.Correl_NC_Robuste().IsInit())
       aRes->AddFils(ToXMLTree(anObj.Correl_NC_Robuste().Val())->ReTagThis("Correl_NC_Robuste"));
+   if (anObj.MasqueAutoByTieP().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.MasqueAutoByTieP().Val())->ReTagThis("MasqueAutoByTieP"));
   return aRes;
 }
 
@@ -4989,6 +5458,8 @@ void xml_init(cTypeCAH & anObj,cElXMLTree * aTree)
    xml_init(anObj.Correl_Correl_MNE_ZPredic(),aTree->Get("Correl_Correl_MNE_ZPredic",1)); //tototo 
 
    xml_init(anObj.Correl_NC_Robuste(),aTree->Get("Correl_NC_Robuste",1)); //tototo 
+
+   xml_init(anObj.MasqueAutoByTieP(),aTree->Get("MasqueAutoByTieP",1)); //tototo 
 }
 
 
@@ -5022,6 +5493,50 @@ cTplValGesInit< int > & cCorrelAdHoc::SzBlocAH()
 const cTplValGesInit< int > & cCorrelAdHoc::SzBlocAH()const 
 {
    return mSzBlocAH;
+}
+
+
+cTplValGesInit< bool > & cCorrelAdHoc::ModeDense()
+{
+   return CorrelMultiScale().Val().ModeDense();
+}
+
+const cTplValGesInit< bool > & cCorrelAdHoc::ModeDense()const 
+{
+   return CorrelMultiScale().Val().ModeDense();
+}
+
+
+cTplValGesInit< bool > & cCorrelAdHoc::UseWAdapt()
+{
+   return CorrelMultiScale().Val().UseWAdapt();
+}
+
+const cTplValGesInit< bool > & cCorrelAdHoc::UseWAdapt()const 
+{
+   return CorrelMultiScale().Val().UseWAdapt();
+}
+
+
+std::vector< cOneParamCMS > & cCorrelAdHoc::OneParamCMS()
+{
+   return CorrelMultiScale().Val().OneParamCMS();
+}
+
+const std::vector< cOneParamCMS > & cCorrelAdHoc::OneParamCMS()const 
+{
+   return CorrelMultiScale().Val().OneParamCMS();
+}
+
+
+cTplValGesInit< cCorrelMultiScale > & cCorrelAdHoc::CorrelMultiScale()
+{
+   return mCorrelMultiScale;
+}
+
+const cTplValGesInit< cCorrelMultiScale > & cCorrelAdHoc::CorrelMultiScale()const 
+{
+   return mCorrelMultiScale;
 }
 
 
@@ -5124,6 +5639,17 @@ const cTplValGesInit< cCorrel_NC_Robuste > & cCorrelAdHoc::Correl_NC_Robuste()co
 }
 
 
+cTplValGesInit< cMasqueAutoByTieP > & cCorrelAdHoc::MasqueAutoByTieP()
+{
+   return TypeCAH().MasqueAutoByTieP();
+}
+
+const cTplValGesInit< cMasqueAutoByTieP > & cCorrelAdHoc::MasqueAutoByTieP()const 
+{
+   return TypeCAH().MasqueAutoByTieP();
+}
+
+
 cTypeCAH & cCorrelAdHoc::TypeCAH()
 {
    return mTypeCAH;
@@ -5143,6 +5669,8 @@ cElXMLTree * ToXMLTree(const cCorrelAdHoc & anObj)
       aRes->AddFils(::ToXMLTree(std::string("EpsilonMulMoyenne"),anObj.EpsilonMulMoyenne().Val())->ReTagThis("EpsilonMulMoyenne"));
    if (anObj.SzBlocAH().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("SzBlocAH"),anObj.SzBlocAH().Val())->ReTagThis("SzBlocAH"));
+   if (anObj.CorrelMultiScale().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.CorrelMultiScale().Val())->ReTagThis("CorrelMultiScale"));
    aRes->AddFils(ToXMLTree(anObj.TypeCAH())->ReTagThis("TypeCAH"));
   return aRes;
 }
@@ -5157,7 +5685,107 @@ void xml_init(cCorrelAdHoc & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.SzBlocAH(),aTree->Get("SzBlocAH",1),int(40)); //tototo 
 
+   xml_init(anObj.CorrelMultiScale(),aTree->Get("CorrelMultiScale",1)); //tototo 
+
    xml_init(anObj.TypeCAH(),aTree->Get("TypeCAH",1)); //tototo 
+}
+
+
+cTplValGesInit< double > & cDoImageBSurH::Dyn()
+{
+   return mDyn;
+}
+
+const cTplValGesInit< double > & cDoImageBSurH::Dyn()const 
+{
+   return mDyn;
+}
+
+
+cTplValGesInit< double > & cDoImageBSurH::Offset()
+{
+   return mOffset;
+}
+
+const cTplValGesInit< double > & cDoImageBSurH::Offset()const 
+{
+   return mOffset;
+}
+
+
+cTplValGesInit< double > & cDoImageBSurH::SeuilMasqExport()
+{
+   return mSeuilMasqExport;
+}
+
+const cTplValGesInit< double > & cDoImageBSurH::SeuilMasqExport()const 
+{
+   return mSeuilMasqExport;
+}
+
+
+std::string & cDoImageBSurH::Name()
+{
+   return mName;
+}
+
+const std::string & cDoImageBSurH::Name()const 
+{
+   return mName;
+}
+
+
+double & cDoImageBSurH::ScaleNuage()
+{
+   return mScaleNuage;
+}
+
+const double & cDoImageBSurH::ScaleNuage()const 
+{
+   return mScaleNuage;
+}
+
+
+std::string & cDoImageBSurH::NameNuage()
+{
+   return mNameNuage;
+}
+
+const std::string & cDoImageBSurH::NameNuage()const 
+{
+   return mNameNuage;
+}
+
+cElXMLTree * ToXMLTree(const cDoImageBSurH & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"DoImageBSurH",eXMLBranche);
+   if (anObj.Dyn().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Dyn"),anObj.Dyn().Val())->ReTagThis("Dyn"));
+   if (anObj.Offset().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Offset"),anObj.Offset().Val())->ReTagThis("Offset"));
+   if (anObj.SeuilMasqExport().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("SeuilMasqExport"),anObj.SeuilMasqExport().Val())->ReTagThis("SeuilMasqExport"));
+   aRes->AddFils(::ToXMLTree(std::string("Name"),anObj.Name())->ReTagThis("Name"));
+   aRes->AddFils(::ToXMLTree(std::string("ScaleNuage"),anObj.ScaleNuage())->ReTagThis("ScaleNuage"));
+   aRes->AddFils(::ToXMLTree(std::string("NameNuage"),anObj.NameNuage())->ReTagThis("NameNuage"));
+  return aRes;
+}
+
+void xml_init(cDoImageBSurH & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.Dyn(),aTree->Get("Dyn",1),double(1e-2)); //tototo 
+
+   xml_init(anObj.Offset(),aTree->Get("Offset",1),double(0)); //tototo 
+
+   xml_init(anObj.SeuilMasqExport(),aTree->Get("SeuilMasqExport",1)); //tototo 
+
+   xml_init(anObj.Name(),aTree->Get("Name",1)); //tototo 
+
+   xml_init(anObj.ScaleNuage(),aTree->Get("ScaleNuage",1)); //tototo 
+
+   xml_init(anObj.NameNuage(),aTree->Get("NameNuage",1)); //tototo 
 }
 
 
@@ -8557,6 +9185,50 @@ const cTplValGesInit< int > & cEtapeMEC::SzBlocAH()const
 }
 
 
+cTplValGesInit< bool > & cEtapeMEC::ModeDense()
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().ModeDense();
+}
+
+const cTplValGesInit< bool > & cEtapeMEC::ModeDense()const 
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().ModeDense();
+}
+
+
+cTplValGesInit< bool > & cEtapeMEC::UseWAdapt()
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().UseWAdapt();
+}
+
+const cTplValGesInit< bool > & cEtapeMEC::UseWAdapt()const 
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().UseWAdapt();
+}
+
+
+std::vector< cOneParamCMS > & cEtapeMEC::OneParamCMS()
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().OneParamCMS();
+}
+
+const std::vector< cOneParamCMS > & cEtapeMEC::OneParamCMS()const 
+{
+   return CorrelAdHoc().Val().CorrelMultiScale().Val().OneParamCMS();
+}
+
+
+cTplValGesInit< cCorrelMultiScale > & cEtapeMEC::CorrelMultiScale()
+{
+   return CorrelAdHoc().Val().CorrelMultiScale();
+}
+
+const cTplValGesInit< cCorrelMultiScale > & cEtapeMEC::CorrelMultiScale()const 
+{
+   return CorrelAdHoc().Val().CorrelMultiScale();
+}
+
+
 cTplValGesInit< cCorrel2DLeastSquare > & cEtapeMEC::Correl2DLeastSquare()
 {
    return CorrelAdHoc().Val().TypeCAH().Correl2DLeastSquare();
@@ -8656,6 +9328,17 @@ const cTplValGesInit< cCorrel_NC_Robuste > & cEtapeMEC::Correl_NC_Robuste()const
 }
 
 
+cTplValGesInit< cMasqueAutoByTieP > & cEtapeMEC::MasqueAutoByTieP()
+{
+   return CorrelAdHoc().Val().TypeCAH().MasqueAutoByTieP();
+}
+
+const cTplValGesInit< cMasqueAutoByTieP > & cEtapeMEC::MasqueAutoByTieP()const 
+{
+   return CorrelAdHoc().Val().TypeCAH().MasqueAutoByTieP();
+}
+
+
 cTypeCAH & cEtapeMEC::TypeCAH()
 {
    return CorrelAdHoc().Val().TypeCAH();
@@ -8675,6 +9358,17 @@ cTplValGesInit< cCorrelAdHoc > & cEtapeMEC::CorrelAdHoc()
 const cTplValGesInit< cCorrelAdHoc > & cEtapeMEC::CorrelAdHoc()const 
 {
    return mCorrelAdHoc;
+}
+
+
+cTplValGesInit< cDoImageBSurH > & cEtapeMEC::DoImageBSurH()
+{
+   return mDoImageBSurH;
+}
+
+const cTplValGesInit< cDoImageBSurH > & cEtapeMEC::DoImageBSurH()const 
+{
+   return mDoImageBSurH;
 }
 
 
@@ -9701,6 +10395,17 @@ const cTplValGesInit< cImageSelecteur > & cEtapeMEC::ImageSelecteur()const
 }
 
 
+cTplValGesInit< cParamGenereStrVois > & cEtapeMEC::RelSelecteur()
+{
+   return mRelSelecteur;
+}
+
+const cTplValGesInit< cParamGenereStrVois > & cEtapeMEC::RelSelecteur()const 
+{
+   return mRelSelecteur;
+}
+
+
 cTplValGesInit< bool > & cEtapeMEC::Gen8Bits_Px1()
 {
    return mGen8Bits_Px1;
@@ -10674,6 +11379,8 @@ cElXMLTree * ToXMLTree(const cEtapeMEC & anObj)
    aRes->AddFils(::ToXMLTree(std::string("DeZoom"),anObj.DeZoom())->ReTagThis("DeZoom"));
    if (anObj.CorrelAdHoc().IsInit())
       aRes->AddFils(ToXMLTree(anObj.CorrelAdHoc().Val())->ReTagThis("CorrelAdHoc"));
+   if (anObj.DoImageBSurH().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.DoImageBSurH().Val())->ReTagThis("DoImageBSurH"));
    if (anObj.DoStatResult().IsInit())
       aRes->AddFils(ToXMLTree(anObj.DoStatResult().Val())->ReTagThis("DoStatResult"));
   for
@@ -10818,6 +11525,8 @@ cElXMLTree * ToXMLTree(const cEtapeMEC & anObj)
       aRes->AddFils(ToXMLTree(anObj.PostFiltrageDiscont().Val())->ReTagThis("PostFiltrageDiscont"));
    if (anObj.ImageSelecteur().IsInit())
       aRes->AddFils(ToXMLTree(anObj.ImageSelecteur().Val())->ReTagThis("ImageSelecteur"));
+   if (anObj.RelSelecteur().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.RelSelecteur().Val())->ReTagThis("RelSelecteur"));
    if (anObj.Gen8Bits_Px1().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("Gen8Bits_Px1"),anObj.Gen8Bits_Px1().Val())->ReTagThis("Gen8Bits_Px1"));
    if (anObj.Offset8Bits_Px1().IsInit())
@@ -10892,6 +11601,8 @@ void xml_init(cEtapeMEC & anObj,cElXMLTree * aTree)
    xml_init(anObj.DeZoom(),aTree->Get("DeZoom",1)); //tototo 
 
    xml_init(anObj.CorrelAdHoc(),aTree->Get("CorrelAdHoc",1)); //tototo 
+
+   xml_init(anObj.DoImageBSurH(),aTree->Get("DoImageBSurH",1)); //tototo 
 
    xml_init(anObj.DoStatResult(),aTree->Get("DoStatResult",1)); //tototo 
 
@@ -11028,6 +11739,8 @@ void xml_init(cEtapeMEC & anObj,cElXMLTree * aTree)
    xml_init(anObj.PostFiltrageDiscont(),aTree->Get("PostFiltrageDiscont",1)); //tototo 
 
    xml_init(anObj.ImageSelecteur(),aTree->Get("ImageSelecteur",1)); //tototo 
+
+   xml_init(anObj.RelSelecteur(),aTree->Get("RelSelecteur",1)); //tototo 
 
    xml_init(anObj.Gen8Bits_Px1(),aTree->Get("Gen8Bits_Px1",1)); //tototo 
 
@@ -11459,6 +12172,17 @@ const std::list< cTypePyramImage > & cSection_MEC::TypePyramImage()const
 }
 
 
+cTplValGesInit< bool > & cSection_MEC::HighPrecPyrIm()
+{
+   return mHighPrecPyrIm;
+}
+
+const cTplValGesInit< bool > & cSection_MEC::HighPrecPyrIm()const 
+{
+   return mHighPrecPyrIm;
+}
+
+
 cTplValGesInit< bool > & cSection_MEC::Correl16Bits()
 {
    return mCorrel16Bits;
@@ -11514,6 +12238,8 @@ cElXMLTree * ToXMLTree(const cSection_MEC & anObj)
       it++
   ) 
       aRes->AddFils(ToXMLTree((*it))->ReTagThis("TypePyramImage"));
+   if (anObj.HighPrecPyrIm().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("HighPrecPyrIm"),anObj.HighPrecPyrIm().Val())->ReTagThis("HighPrecPyrIm"));
    if (anObj.Correl16Bits().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("Correl16Bits"),anObj.Correl16Bits().Val())->ReTagThis("Correl16Bits"));
   return aRes;
@@ -11570,6 +12296,10 @@ void xml_init(cSection_MEC & anObj,cElXMLTree * aTree)
         xml_init(aVal.CorrelAdHoc(),(*itLTr)->Get("CorrelAdHoc",1)); //tototo 
         if ((*itLTr)->HasFilsPorteeGlob("CorrelAdHoc"))
           anObj.mGlobEtapeMEC.CorrelAdHoc() = aVal.CorrelAdHoc();
+
+        xml_init(aVal.DoImageBSurH(),(*itLTr)->Get("DoImageBSurH",1)); //tototo 
+        if ((*itLTr)->HasFilsPorteeGlob("DoImageBSurH"))
+          anObj.mGlobEtapeMEC.DoImageBSurH() = aVal.DoImageBSurH();
 
         xml_init(aVal.DoStatResult(),(*itLTr)->Get("DoStatResult",1)); //tototo 
         if ((*itLTr)->HasFilsPorteeGlob("DoStatResult"))
@@ -11843,6 +12573,10 @@ void xml_init(cSection_MEC & anObj,cElXMLTree * aTree)
         if ((*itLTr)->HasFilsPorteeGlob("ImageSelecteur"))
           anObj.mGlobEtapeMEC.ImageSelecteur() = aVal.ImageSelecteur();
 
+        xml_init(aVal.RelSelecteur(),(*itLTr)->Get("RelSelecteur",1)); //tototo 
+        if ((*itLTr)->HasFilsPorteeGlob("RelSelecteur"))
+          anObj.mGlobEtapeMEC.RelSelecteur() = aVal.RelSelecteur();
+
         xml_init(aVal.Gen8Bits_Px1(),(*itLTr)->Get("Gen8Bits_Px1",1)); //tototo 
         if ((*itLTr)->HasFilsPorteeGlob("Gen8Bits_Px1"))
           anObj.mGlobEtapeMEC.Gen8Bits_Px1() = aVal.Gen8Bits_Px1();
@@ -11937,6 +12671,8 @@ void xml_init(cSection_MEC & anObj,cElXMLTree * aTree)
   }
 
    xml_init(anObj.TypePyramImage(),aTree->GetAll("TypePyramImage",false,1));
+
+   xml_init(anObj.HighPrecPyrIm(),aTree->Get("HighPrecPyrIm",1),bool(true)); //tototo 
 
    xml_init(anObj.Correl16Bits(),aTree->Get("Correl16Bits",1)); //tototo 
 }
@@ -12964,6 +13700,106 @@ void xml_init(cAnamSurfaceAnalytique & anObj,cElXMLTree * aTree)
 }
 
 
+cTplValGesInit< double > & cMakeMaskImNadir::DynIncid()
+{
+   return mDynIncid;
+}
+
+const cTplValGesInit< double > & cMakeMaskImNadir::DynIncid()const 
+{
+   return mDynIncid;
+}
+
+
+cTplValGesInit< bool > & cMakeMaskImNadir::MakeAlsoMaskTerrain()
+{
+   return mMakeAlsoMaskTerrain;
+}
+
+const cTplValGesInit< bool > & cMakeMaskImNadir::MakeAlsoMaskTerrain()const 
+{
+   return mMakeAlsoMaskTerrain;
+}
+
+
+int & cMakeMaskImNadir::KBest()
+{
+   return mKBest;
+}
+
+const int & cMakeMaskImNadir::KBest()const 
+{
+   return mKBest;
+}
+
+
+cTplValGesInit< double > & cMakeMaskImNadir::IncertAngle()
+{
+   return mIncertAngle;
+}
+
+const cTplValGesInit< double > & cMakeMaskImNadir::IncertAngle()const 
+{
+   return mIncertAngle;
+}
+
+
+cTplValGesInit< int > & cMakeMaskImNadir::Dilat32()
+{
+   return mDilat32;
+}
+
+const cTplValGesInit< int > & cMakeMaskImNadir::Dilat32()const 
+{
+   return mDilat32;
+}
+
+
+cTplValGesInit< int > & cMakeMaskImNadir::Erod32()
+{
+   return mErod32;
+}
+
+const cTplValGesInit< int > & cMakeMaskImNadir::Erod32()const 
+{
+   return mErod32;
+}
+
+cElXMLTree * ToXMLTree(const cMakeMaskImNadir & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"MakeMaskImNadir",eXMLBranche);
+   if (anObj.DynIncid().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("DynIncid"),anObj.DynIncid().Val())->ReTagThis("DynIncid"));
+   if (anObj.MakeAlsoMaskTerrain().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("MakeAlsoMaskTerrain"),anObj.MakeAlsoMaskTerrain().Val())->ReTagThis("MakeAlsoMaskTerrain"));
+   aRes->AddFils(::ToXMLTree(std::string("KBest"),anObj.KBest())->ReTagThis("KBest"));
+   if (anObj.IncertAngle().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("IncertAngle"),anObj.IncertAngle().Val())->ReTagThis("IncertAngle"));
+   if (anObj.Dilat32().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Dilat32"),anObj.Dilat32().Val())->ReTagThis("Dilat32"));
+   if (anObj.Erod32().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Erod32"),anObj.Erod32().Val())->ReTagThis("Erod32"));
+  return aRes;
+}
+
+void xml_init(cMakeMaskImNadir & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.DynIncid(),aTree->Get("DynIncid",1),double(1e4)); //tototo 
+
+   xml_init(anObj.MakeAlsoMaskTerrain(),aTree->Get("MakeAlsoMaskTerrain",1),bool(false)); //tototo 
+
+   xml_init(anObj.KBest(),aTree->Get("KBest",1)); //tototo 
+
+   xml_init(anObj.IncertAngle(),aTree->Get("IncertAngle",1),double(0.1)); //tototo 
+
+   xml_init(anObj.Dilat32(),aTree->Get("Dilat32",1),int(6)); //tototo 
+
+   xml_init(anObj.Erod32(),aTree->Get("Erod32",1),int(3)); //tototo 
+}
+
+
 std::string & cAnamorphoseGeometrieMNT::NameFile()
 {
    return AnamSurfaceAnalytique().Val().NameFile();
@@ -13018,6 +13854,83 @@ const cTplValGesInit< double > & cAnamorphoseGeometrieMNT::AnamLimAngleVisib()co
    return mAnamLimAngleVisib;
 }
 
+
+cTplValGesInit< double > & cAnamorphoseGeometrieMNT::DynIncid()
+{
+   return MakeMaskImNadir().Val().DynIncid();
+}
+
+const cTplValGesInit< double > & cAnamorphoseGeometrieMNT::DynIncid()const 
+{
+   return MakeMaskImNadir().Val().DynIncid();
+}
+
+
+cTplValGesInit< bool > & cAnamorphoseGeometrieMNT::MakeAlsoMaskTerrain()
+{
+   return MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+const cTplValGesInit< bool > & cAnamorphoseGeometrieMNT::MakeAlsoMaskTerrain()const 
+{
+   return MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+
+int & cAnamorphoseGeometrieMNT::KBest()
+{
+   return MakeMaskImNadir().Val().KBest();
+}
+
+const int & cAnamorphoseGeometrieMNT::KBest()const 
+{
+   return MakeMaskImNadir().Val().KBest();
+}
+
+
+cTplValGesInit< double > & cAnamorphoseGeometrieMNT::IncertAngle()
+{
+   return MakeMaskImNadir().Val().IncertAngle();
+}
+
+const cTplValGesInit< double > & cAnamorphoseGeometrieMNT::IncertAngle()const 
+{
+   return MakeMaskImNadir().Val().IncertAngle();
+}
+
+
+cTplValGesInit< int > & cAnamorphoseGeometrieMNT::Dilat32()
+{
+   return MakeMaskImNadir().Val().Dilat32();
+}
+
+const cTplValGesInit< int > & cAnamorphoseGeometrieMNT::Dilat32()const 
+{
+   return MakeMaskImNadir().Val().Dilat32();
+}
+
+
+cTplValGesInit< int > & cAnamorphoseGeometrieMNT::Erod32()
+{
+   return MakeMaskImNadir().Val().Erod32();
+}
+
+const cTplValGesInit< int > & cAnamorphoseGeometrieMNT::Erod32()const 
+{
+   return MakeMaskImNadir().Val().Erod32();
+}
+
+
+cTplValGesInit< cMakeMaskImNadir > & cAnamorphoseGeometrieMNT::MakeMaskImNadir()
+{
+   return mMakeMaskImNadir;
+}
+
+const cTplValGesInit< cMakeMaskImNadir > & cAnamorphoseGeometrieMNT::MakeMaskImNadir()const 
+{
+   return mMakeMaskImNadir;
+}
+
 cElXMLTree * ToXMLTree(const cAnamorphoseGeometrieMNT & anObj)
 {
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"AnamorphoseGeometrieMNT",eXMLBranche);
@@ -13027,6 +13940,8 @@ cElXMLTree * ToXMLTree(const cAnamorphoseGeometrieMNT & anObj)
       aRes->AddFils(::ToXMLTree(std::string("AnamDeZoomMasq"),anObj.AnamDeZoomMasq().Val())->ReTagThis("AnamDeZoomMasq"));
    if (anObj.AnamLimAngleVisib().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("AnamLimAngleVisib"),anObj.AnamLimAngleVisib().Val())->ReTagThis("AnamLimAngleVisib"));
+   if (anObj.MakeMaskImNadir().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.MakeMaskImNadir().Val())->ReTagThis("MakeMaskImNadir"));
   return aRes;
 }
 
@@ -13039,6 +13954,8 @@ void xml_init(cAnamorphoseGeometrieMNT & anObj,cElXMLTree * aTree)
    xml_init(anObj.AnamDeZoomMasq(),aTree->Get("AnamDeZoomMasq",1),int(16)); //tototo 
 
    xml_init(anObj.AnamLimAngleVisib(),aTree->Get("AnamLimAngleVisib",1),double(1.05)); //tototo 
+
+   xml_init(anObj.MakeMaskImNadir(),aTree->Get("MakeMaskImNadir",1)); //tototo 
 }
 
 
@@ -13567,6 +14484,83 @@ const cTplValGesInit< double > & cSection_Results::AnamLimAngleVisib()const
 }
 
 
+cTplValGesInit< double > & cSection_Results::DynIncid()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().DynIncid();
+}
+
+const cTplValGesInit< double > & cSection_Results::DynIncid()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().DynIncid();
+}
+
+
+cTplValGesInit< bool > & cSection_Results::MakeAlsoMaskTerrain()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+const cTplValGesInit< bool > & cSection_Results::MakeAlsoMaskTerrain()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+
+int & cSection_Results::KBest()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().KBest();
+}
+
+const int & cSection_Results::KBest()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().KBest();
+}
+
+
+cTplValGesInit< double > & cSection_Results::IncertAngle()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().IncertAngle();
+}
+
+const cTplValGesInit< double > & cSection_Results::IncertAngle()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().IncertAngle();
+}
+
+
+cTplValGesInit< int > & cSection_Results::Dilat32()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Dilat32();
+}
+
+const cTplValGesInit< int > & cSection_Results::Dilat32()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Dilat32();
+}
+
+
+cTplValGesInit< int > & cSection_Results::Erod32()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Erod32();
+}
+
+const cTplValGesInit< int > & cSection_Results::Erod32()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Erod32();
+}
+
+
+cTplValGesInit< cMakeMaskImNadir > & cSection_Results::MakeMaskImNadir()
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir();
+}
+
+const cTplValGesInit< cMakeMaskImNadir > & cSection_Results::MakeMaskImNadir()const 
+{
+   return AnamorphoseGeometrieMNT().Val().MakeMaskImNadir();
+}
+
+
 cTplValGesInit< cAnamorphoseGeometrieMNT > & cSection_Results::AnamorphoseGeometrieMNT()
 {
    return mAnamorphoseGeometrieMNT;
@@ -13608,6 +14602,17 @@ cTplValGesInit< bool > & cSection_Results::DoMEC()
 const cTplValGesInit< bool > & cSection_Results::DoMEC()const 
 {
    return mDoMEC;
+}
+
+
+cTplValGesInit< std::string > & cSection_Results::NonExistingFileDoMEC()
+{
+   return mNonExistingFileDoMEC;
+}
+
+const cTplValGesInit< std::string > & cSection_Results::NonExistingFileDoMEC()const 
+{
+   return mNonExistingFileDoMEC;
 }
 
 
@@ -13674,6 +14679,17 @@ cTplValGesInit< int > & cSection_Results::ZoomMakeMasq()
 const cTplValGesInit< int > & cSection_Results::ZoomMakeMasq()const 
 {
    return mZoomMakeMasq;
+}
+
+
+cTplValGesInit< bool > & cSection_Results::LazyZoomMaskTerrain()
+{
+   return mLazyZoomMaskTerrain;
+}
+
+const cTplValGesInit< bool > & cSection_Results::LazyZoomMaskTerrain()const 
+{
+   return mLazyZoomMaskTerrain;
 }
 
 
@@ -13904,6 +14920,8 @@ cElXMLTree * ToXMLTree(const cSection_Results & anObj)
       aRes->AddFils(::ToXMLTree(std::string("TagRepereCorrel"),anObj.TagRepereCorrel().Val())->ReTagThis("TagRepereCorrel"));
    if (anObj.DoMEC().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("DoMEC"),anObj.DoMEC().Val())->ReTagThis("DoMEC"));
+   if (anObj.NonExistingFileDoMEC().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("NonExistingFileDoMEC"),anObj.NonExistingFileDoMEC().Val())->ReTagThis("NonExistingFileDoMEC"));
    if (anObj.DoFDC().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("DoFDC"),anObj.DoFDC().Val())->ReTagThis("DoFDC"));
    if (anObj.GenereXMLComp().IsInit())
@@ -13916,6 +14934,8 @@ cElXMLTree * ToXMLTree(const cSection_Results & anObj)
       aRes->AddFils(::ToXMLTree(std::string("OrthoTA"),anObj.OrthoTA().Val())->ReTagThis("OrthoTA"));
    if (anObj.ZoomMakeMasq().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ZoomMakeMasq"),anObj.ZoomMakeMasq().Val())->ReTagThis("ZoomMakeMasq"));
+   if (anObj.LazyZoomMaskTerrain().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("LazyZoomMaskTerrain"),anObj.LazyZoomMaskTerrain().Val())->ReTagThis("LazyZoomMaskTerrain"));
    if (anObj.MakeImCptTA().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("MakeImCptTA"),anObj.MakeImCptTA().Val())->ReTagThis("MakeImCptTA"));
    if (anObj.FilterTA().IsInit())
@@ -13967,6 +14987,8 @@ void xml_init(cSection_Results & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.DoMEC(),aTree->Get("DoMEC",1),bool(true)); //tototo 
 
+   xml_init(anObj.NonExistingFileDoMEC(),aTree->Get("NonExistingFileDoMEC",1)); //tototo 
+
    xml_init(anObj.DoFDC(),aTree->Get("DoFDC",1),bool(false)); //tototo 
 
    xml_init(anObj.GenereXMLComp(),aTree->Get("GenereXMLComp",1),bool(true)); //tototo 
@@ -13978,6 +15000,8 @@ void xml_init(cSection_Results & anObj,cElXMLTree * aTree)
    xml_init(anObj.OrthoTA(),aTree->Get("OrthoTA",1),bool(false)); //tototo 
 
    xml_init(anObj.ZoomMakeMasq(),aTree->Get("ZoomMakeMasq",1)); //tototo 
+
+   xml_init(anObj.LazyZoomMaskTerrain(),aTree->Get("LazyZoomMaskTerrain",1),bool(false)); //tototo 
 
    xml_init(anObj.MakeImCptTA(),aTree->Get("MakeImCptTA",1),bool(false)); //tototo 
 
@@ -15460,6 +16484,17 @@ const cTplValGesInit< cChantierDescripteur > & cParamMICMAC::DicoLoc()const
 }
 
 
+cTplValGesInit< bool > & cParamMICMAC::IntervalPaxIsProportion()
+{
+   return Section_Terrain().IntervalPaxIsProportion();
+}
+
+const cTplValGesInit< bool > & cParamMICMAC::IntervalPaxIsProportion()const 
+{
+   return Section_Terrain().IntervalPaxIsProportion();
+}
+
+
 cTplValGesInit< double > & cParamMICMAC::RatioAltiPlani()
 {
    return Section_Terrain().RatioAltiPlani();
@@ -15702,6 +16737,39 @@ const cTplValGesInit< cIntervParalaxe > & cParamMICMAC::IntervParalaxe()const
 }
 
 
+std::string & cParamMICMAC::NameNuageXML()
+{
+   return Section_Terrain().NuageXMLInit().Val().NameNuageXML();
+}
+
+const std::string & cParamMICMAC::NameNuageXML()const 
+{
+   return Section_Terrain().NuageXMLInit().Val().NameNuageXML();
+}
+
+
+cTplValGesInit< bool > & cParamMICMAC::CanAdaptGeom()
+{
+   return Section_Terrain().NuageXMLInit().Val().CanAdaptGeom();
+}
+
+const cTplValGesInit< bool > & cParamMICMAC::CanAdaptGeom()const 
+{
+   return Section_Terrain().NuageXMLInit().Val().CanAdaptGeom();
+}
+
+
+cTplValGesInit< cNuageXMLInit > & cParamMICMAC::NuageXMLInit()
+{
+   return Section_Terrain().NuageXMLInit();
+}
+
+const cTplValGesInit< cNuageXMLInit > & cParamMICMAC::NuageXMLInit()const 
+{
+   return Section_Terrain().NuageXMLInit();
+}
+
+
 double & cParamMICMAC::MulZMin()
 {
    return Section_Terrain().IntervSpecialZInv().Val().MulZMin();
@@ -15831,50 +16899,6 @@ cTplValGesInit< cMasqueTerrain > & cParamMICMAC::MasqueTerrain()
 const cTplValGesInit< cMasqueTerrain > & cParamMICMAC::MasqueTerrain()const 
 {
    return Section_Terrain().Planimetrie().Val().MasqueTerrain();
-}
-
-
-std::string & cParamMICMAC::FilePt3D()
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().FilePt3D();
-}
-
-const std::string & cParamMICMAC::FilePt3D()const 
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().FilePt3D();
-}
-
-
-int & cParamMICMAC::Zoom()
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().Zoom();
-}
-
-const int & cParamMICMAC::Zoom()const 
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().Zoom();
-}
-
-
-int & cParamMICMAC::SzW()
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().SzW();
-}
-
-const int & cParamMICMAC::SzW()const 
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP().Val().SzW();
-}
-
-
-cTplValGesInit< cMasqueAutoByTieP > & cParamMICMAC::MasqueAutoByTieP()
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP();
-}
-
-const cTplValGesInit< cMasqueAutoByTieP > & cParamMICMAC::MasqueAutoByTieP()const 
-{
-   return Section_Terrain().Planimetrie().Val().MasqueAutoByTieP();
 }
 
 
@@ -16172,6 +17196,39 @@ cTplValGesInit< int > & cParamMICMAC::Nb()
 const cTplValGesInit< int > & cParamMICMAC::Nb()const 
 {
    return Section_PriseDeVue().Images().ImSecCalcApero().Val().Nb();
+}
+
+
+cTplValGesInit< int > & cParamMICMAC::NbMin()
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().NbMin();
+}
+
+const cTplValGesInit< int > & cParamMICMAC::NbMin()const 
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().NbMin();
+}
+
+
+cTplValGesInit< int > & cParamMICMAC::NbMax()
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().NbMax();
+}
+
+const cTplValGesInit< int > & cParamMICMAC::NbMax()const 
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().NbMax();
+}
+
+
+cTplValGesInit< eOnEmptyImSecApero > & cParamMICMAC::OnEmpty()
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().OnEmpty();
+}
+
+const cTplValGesInit< eOnEmptyImSecApero > & cParamMICMAC::OnEmpty()const 
+{
+   return Section_PriseDeVue().Images().ImSecCalcApero().Val().OnEmpty();
 }
 
 
@@ -16681,6 +17738,17 @@ const std::list< cTypePyramImage > & cParamMICMAC::TypePyramImage()const
 }
 
 
+cTplValGesInit< bool > & cParamMICMAC::HighPrecPyrIm()
+{
+   return Section_MEC().HighPrecPyrIm();
+}
+
+const cTplValGesInit< bool > & cParamMICMAC::HighPrecPyrIm()const 
+{
+   return Section_MEC().HighPrecPyrIm();
+}
+
+
 cTplValGesInit< bool > & cParamMICMAC::Correl16Bits()
 {
    return Section_MEC().Correl16Bits();
@@ -17011,6 +18079,83 @@ const cTplValGesInit< double > & cParamMICMAC::AnamLimAngleVisib()const
 }
 
 
+cTplValGesInit< double > & cParamMICMAC::DynIncid()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().DynIncid();
+}
+
+const cTplValGesInit< double > & cParamMICMAC::DynIncid()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().DynIncid();
+}
+
+
+cTplValGesInit< bool > & cParamMICMAC::MakeAlsoMaskTerrain()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+const cTplValGesInit< bool > & cParamMICMAC::MakeAlsoMaskTerrain()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().MakeAlsoMaskTerrain();
+}
+
+
+int & cParamMICMAC::KBest()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().KBest();
+}
+
+const int & cParamMICMAC::KBest()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().KBest();
+}
+
+
+cTplValGesInit< double > & cParamMICMAC::IncertAngle()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().IncertAngle();
+}
+
+const cTplValGesInit< double > & cParamMICMAC::IncertAngle()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().IncertAngle();
+}
+
+
+cTplValGesInit< int > & cParamMICMAC::Dilat32()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Dilat32();
+}
+
+const cTplValGesInit< int > & cParamMICMAC::Dilat32()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Dilat32();
+}
+
+
+cTplValGesInit< int > & cParamMICMAC::Erod32()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Erod32();
+}
+
+const cTplValGesInit< int > & cParamMICMAC::Erod32()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir().Val().Erod32();
+}
+
+
+cTplValGesInit< cMakeMaskImNadir > & cParamMICMAC::MakeMaskImNadir()
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir();
+}
+
+const cTplValGesInit< cMakeMaskImNadir > & cParamMICMAC::MakeMaskImNadir()const 
+{
+   return Section_Results().AnamorphoseGeometrieMNT().Val().MakeMaskImNadir();
+}
+
+
 cTplValGesInit< cAnamorphoseGeometrieMNT > & cParamMICMAC::AnamorphoseGeometrieMNT()
 {
    return Section_Results().AnamorphoseGeometrieMNT();
@@ -17052,6 +18197,17 @@ cTplValGesInit< bool > & cParamMICMAC::DoMEC()
 const cTplValGesInit< bool > & cParamMICMAC::DoMEC()const 
 {
    return Section_Results().DoMEC();
+}
+
+
+cTplValGesInit< std::string > & cParamMICMAC::NonExistingFileDoMEC()
+{
+   return Section_Results().NonExistingFileDoMEC();
+}
+
+const cTplValGesInit< std::string > & cParamMICMAC::NonExistingFileDoMEC()const 
+{
+   return Section_Results().NonExistingFileDoMEC();
 }
 
 
@@ -17118,6 +18274,17 @@ cTplValGesInit< int > & cParamMICMAC::ZoomMakeMasq()
 const cTplValGesInit< int > & cParamMICMAC::ZoomMakeMasq()const 
 {
    return Section_Results().ZoomMakeMasq();
+}
+
+
+cTplValGesInit< bool > & cParamMICMAC::LazyZoomMaskTerrain()
+{
+   return Section_Results().LazyZoomMaskTerrain();
+}
+
+const cTplValGesInit< bool > & cParamMICMAC::LazyZoomMaskTerrain()const 
+{
+   return Section_Results().LazyZoomMaskTerrain();
 }
 
 

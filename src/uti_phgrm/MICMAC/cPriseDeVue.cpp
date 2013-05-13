@@ -282,8 +282,12 @@ int  cPriseDeVue::Num() const {return mNum;}
 /*  Chargement des images                */
 /*****************************************/
 
-bool cPriseDeVue::LoadImage
+
+
+
+bool cPriseDeVue::LoadImageMM
      (
+          bool  forTest,
           const cLoadTer& aLT,
           const Pt2di & aSzMaxInGeomTer,
           bool  IsFirstLoaded
@@ -306,10 +310,16 @@ bool cPriseDeVue::LoadImage
          WithRab ? 5 :0
     );
 
-    if (mGeom->ClipIsEmpty())
+    bool isEmpty = mGeom->ClipIsEmpty();
+    if (isEmpty)
     {
        ELISE_ASSERT(!mIsMaitre,"PriseDeVue::Maitre&&Empty !! ");
        return false;
+    }
+    else
+    {
+        if (forTest)
+           return true;
     }
 
     // std::cout  << " yyyyyyyyy " <<  mGeom->BoxClip()._p0 <<  mGeom->BoxClip()._p1<< "\n";
@@ -812,7 +822,7 @@ Tiff_Im     cPriseDeVue::FileImMasqOfResol(int aDz) const
    Pt2di aSz = Std2Elise(mIMIL->Sz(aDz));
    if (! ELISE_fp::exist_file(aName))
    {
-      std::cout << "Make Masq " << aName << "\n";
+      std::cout << "PDV--Make Masq " << aName << "\n";
       if (aDz==1)
       {
            Tiff_Im aFile

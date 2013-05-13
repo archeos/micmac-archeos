@@ -67,6 +67,44 @@
    </CameraEntry>
 
 
+   <CameraEntry>
+        <Name> RICOH GR DIGITAL 3 </Name>
+        <SzCaptMm> 5.6 7.5 </SzCaptMm>
+        <ShortName> R3 </ShortName>
+   </CameraEntry>
+
+
+   <CameraEntry>
+        <Name> RICOH GR DIGITAL 2 </Name>
+        <SzCaptMm> 5.6 7.5 </SzCaptMm>
+        <ShortName> R2 </ShortName>
+   </CameraEntry>
+
+   <CameraEntry>
+        <Name> GoPro YHDC5170 </Name>
+        <SzCaptMm> 2.54 5.91 </SzCaptMm>
+        <ShortName> GoPro </ShortName>
+   </CameraEntry>
+
+
+
+<CameraEntry>
+        <Name> Canon IXUS 105 </Name>
+        <SzCaptMm> 5.1 3.8 </SzCaptMm>
+        <ShortName> CI105 </ShortName>
+   </CameraEntry>
+
+<CameraEntry> 
+        <Name> Canon EOS 7D </Name>
+        <SzCaptMm> 22.3 14.9 </SzCaptMm>
+        <ShortName> C7D </ShortName>
+   </CameraEntry>
+
+<CameraEntry> 
+        <Name> GR DIGITAL 3 </Name>
+        <SzCaptMm> 7.6 6.1 </SzCaptMm>
+        <ShortName> GR3 </ShortName>
+   </CameraEntry>
 
 
    <CameraEntry>
@@ -110,17 +148,6 @@
         <ShortName> NEX-7  </ShortName>
    </CameraEntry>
 
-   <CameraEntry>
-        <Name>    RICOH GR DIGITAL 3 </Name>
-        <SzCaptMm>   5.7 7.6  </SzCaptMm>
-        <ShortName> GRD3  </ShortName>
-   </CameraEntry>
-
-   <CameraEntry>
-        <Name>    NIKON D800 </Name>
-        <SzCaptMm>   24 26  </SzCaptMm>
-        <ShortName> ND800  </ShortName>
-   </CameraEntry>
 
 
 </MMCameraDataBase>

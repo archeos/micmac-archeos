@@ -1,14 +1,8 @@
-#pragma once
+#ifndef _ELISE_STDAFX_H
+#define _ELISE_STDAFX_H
 
 #if (  __VERBOSE__>1 )
 	#define __TRACE_SYSTEM__
-#endif
-
-#ifdef CUDA_ENABLED
-	#include <cuda_runtime.h>
-	#include <helper_functions.h>
-	#include <helper_math.h>
-	#include <helper_cuda.h>
 #endif
 
 #include <algorithm>
@@ -41,27 +35,33 @@ extern bool BugDG;
 
 #define ELISE_INSERT_CODE_GEN 1
 
-#ifdef _WIN32
-	#define USE_NOYAU 1
-	#define ELISE_unix 0
-	#define ELISE_windows 1
-        #define ELISE_MacOs 0
-#elif __APPLE__
-	#define USE_NOYAU 0
-	#define ELISE_unix 0
-	#define ELISE_MacOs 1
-	#define ELISE_windows 0
-#else
-       #define USE_NOYAU 0
-       #define ELISE_unix 1
-       #define ELISE_MacOs 0
-       #define ELISE_windows 0
-#endif
-
-#if ( __CYGWIN__ & _WIN32 )
-    #define ELISE_Cygwin 1
-#else
-    #define ELISE_Cygwin 0
+#ifndef ELISE_unix
+	#ifdef _WIN32
+		#define USE_NOYAU 0
+		#define ELISE_unix 0
+		#define ELISE_windows 1
+		#define ELISE_MacOs 0
+		#define ELISE_POSIX 0
+		#if __MINGW__
+			#define ELISE_MinGW 1
+		#else
+			#define ELISE_MinGW 0
+		#endif
+	#elif __APPLE__
+		#define USE_NOYAU 0
+		#define ELISE_unix 0
+		#define ELISE_MacOs 1
+		#define ELISE_windows 0
+		#define ELISE_MinGW 0
+		#define ELISE_POSIX 1
+	#else
+		#define USE_NOYAU 0
+		#define ELISE_unix 1
+		#define ELISE_MacOs 0
+		#define ELISE_windows 0
+		#define ELISE_MinGW 0
+		#define ELISE_POSIX 1
+	#endif
 #endif
 
 //  =================
@@ -119,6 +119,8 @@ using namespace std;
 #include "general/phgr_san.h"
 #include "general/hassan_arrangt.h"
 
+
+
 //  ==== AJOUT  =====
 
 #include "private/util.h"
@@ -175,8 +177,9 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 
 // ---------
 
-#if(ELISE_unix)
-	#include <cstring>
+#if (ELISE_POSIX)
+	#include <grp.h>
+	#include <pwd.h>
 #endif
 
 #ifdef MATLAB_MEX_FILE
@@ -207,6 +210,8 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #include "ext_stl/Nappes.h"
 #include "im_tpl/ProgDyn2D.h"
 #include "im_tpl/algo_cc.h"
+#include "im_tpl/reduc_im.h"
+#include "im_tpl/impainting.h"
 
 #include "ext_stl/fifo.h"
 #include "ext_stl/intheap.h"
@@ -220,6 +225,9 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #include "graphes/graphe.h"
 #include "graphes/graphe_implem.h"
 #include "graphes/algo_planarite.h"
+#include "graphes/connec_comp.h"
+#include "graphes/uti_gr.h"
+#include "graphes/brins.h"
 
 #include "algo_geom/qdt.h"
 #include "algo_geom/qdt_implem.h"
@@ -264,3 +272,22 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 	#include "../src/EtalonnagePolygone/lib/pointe.h"
 #endif
 
+// POISSON
+#if (ELISE_windows)
+    #ifdef INT
+        #undef INT
+    #endif
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
+	#if (ELISE_MinGW)
+		#define _WIN32_WINNT 0x0500 // this is for windows 2000 and higher
+	#endif
+    #include <Windows.h>
+    #include <Psapi.h>
+#endif // _WIN32
+#include "poisson/Poisson.h"
+
+#include <stdarg.h>
+
+#endif //_ELISE_STDAFX_H

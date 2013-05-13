@@ -10,6 +10,7 @@ set(uti_phgrm_MICMAC_Src_Files
     ${UTI_PHGRM_MICMAC_DIR}/cAppliMICMAC_GPU.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cAppliMICMAC_MEC.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cAppliMICMAC_MNE.cpp
+    ${UTI_PHGRM_MICMAC_DIR}/cCorrelMulScale.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cAppliMICMAC_Result1.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cAppliMICMAC_Result2.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cBasculeMnt.cpp
@@ -34,7 +35,7 @@ set(uti_phgrm_MICMAC_Src_Files
     ${UTI_PHGRM_MICMAC_DIR}/cStatNDistrib.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cStdTiffModuleImageLoader.cpp
     ${UTI_PHGRM_MICMAC_DIR}/cSurfaceOptimiseur.cpp
-#    ${UTI_PHGRM_MICMAC_DIR}/FusionCarteProf.cpp
+    ${UTI_PHGRM_MICMAC_DIR}/FusionCarteProf.cpp
 #    ${UTI_PHGRM_MICMAC_DIR}/GenParamMICMAC.cpp
 #    ${UTI_PHGRM_MICMAC_DIR}/GrilleXml2Bin.cpp
     ${UTI_PHGRM_MICMAC_DIR}/Jp2ImageLoader.cpp

@@ -37,10 +37,15 @@ namespace NS_ParamChantierPhotogram{
 
    <enum Name="eTypeFichierOriTxt">
        <eOriTxtAgiSoft>   </eOriTxtAgiSoft>
-       <eOriTxtInFile>       </eOriTxtInFile>
+       <eOriBluh>         </eOriBluh>
+       <eOriTxtInFile>    </eOriTxtInFile>
        <eNbTypeOriTxt>    </eNbTypeOriTxt>
    </enum>
 
+   <enum Name="eImpaintMethod">
+       <eImpaintL2>   </eImpaintL2>
+       <eImpaintMNT>  </eImpaintMNT>
+   </enum>
 
 
    <enum Name="eTypeNumerique">
@@ -564,6 +569,11 @@ namespace NS_ParamChantierPhotogram{
    <!--
         Export des grids
    -->
+   <TestNewGrid  Nb="1"  Class="true" ToReference="true">
+       <A Nb="1" Type="std::string"> </A>
+       <Im     Nb="1" Type="Im2D_INT1">       </Im>
+       <Z Nb="1" Type="std::string"> </Z>
+   </TestNewGrid>
 
    <GridDeform2D Nb="1"  Class="true" ToReference="true">
        <Origine Nb="1" Type="Pt2dr"> </Origine>
@@ -1330,6 +1340,13 @@ namespace NS_ParamChantierPhotogram{
     <ImSecOfMaster  Nb="1" Class="true" ToReference="true">
           <Master Nb="1" Type="std::string"> </Master>
           <Sols Nb="*" RefType="OneSolImageSec"> </Sols>
+          <ISOM_AllVois Nb="?" AccessorFils="false">
+               <ISOM_Vois Nb="*">
+                    <Name Type="std::string" Nb="1"> </Name>
+                    <Angle Type="double" Nb="1"> </Angle>
+                    <Nb Type="double" Nb="1"> </Nb>
+               </ISOM_Vois>
+          </ISOM_AllVois>
     </ImSecOfMaster>
     
   
