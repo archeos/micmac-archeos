@@ -946,6 +946,7 @@ void DataElXim::read_write_ElIm
              _w->_devd->read_rgb_line(r,g,b,aSz.x,Xim);
         else
              _w->_devd->write_rgb_line(Xim,aSz.x,r,g,b);
+
      }
 }
 
@@ -1725,6 +1726,17 @@ void  Video_Win::SetInteractor(EliseStdImageInteractor * anI)
       devw()->mInteractor = anI;
 }
 
+Video_Win  Video_Win::WSzMax(Pt2dr aSzTarget,Pt2dr aSzMax)
+{
+
+    REAL aZoom = aSzMax.RatioMin(aSzTarget);
+
+    Pt2di aSzReal = round_ni(aSzTarget*aZoom);
+
+    return Video_Win::WStd(round_ni(Pt2dr(aSzReal)/aZoom),aZoom);
+    
+}
+
 
 
 Video_Win  Video_Win::chc_fit_sz(Pt2dr aSz,bool ClikCoord)
@@ -2346,6 +2358,30 @@ HJ_Window   Video_Win::window()
 {
      return devw()->_w;
 }
+
+
+void Video_Win::DumpImage(const std::string & aName)
+{
+    Pt2di aSz = sz();
+
+    ElXim  anIm (*this,aSz);
+
+    Im2D_U_INT1 aIR(aSz.x,aSz.y);
+    Im2D_U_INT1 aIG(aSz.x,aSz.y);
+    Im2D_U_INT1 aIB(aSz.x,aSz.y);
+
+
+   anIm.read_in_el_image(Pt2di(0,0),Pt2di(0,0),aSz,aIR,aIG,aIB);
+
+
+   Tiff_Im::Create8BFromFonc
+   (
+        aName,
+        aSz,
+        Virgule(aIR.in(),aIG.in(),aIB.in())
+   );
+}
+
 
 /***************************************************/
 /*                                                 */

@@ -59,6 +59,10 @@ template <class Type> class El_CTypeTraits
 template <> class El_CTypeTraits<U_INT1>
 {
 		public :
+                     static const U_INT1 MaxValue() {return   UCHAR_MAX;}
+                     static const U_INT1 MinValue() {return   0;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return Max(tBase(eVMin),Min(tBase(eVMax),aFonc));}
+
 static std::string   Name() {return "U_INT1";}
 				typedef INT1    tSignedVal;
 				typedef U_INT1  tUnSignedVal;
@@ -85,6 +89,9 @@ static tVal TronqueR(double aVal)
 template <> class El_CTypeTraits<U_INT2>
 {
 		public :
+                     static const U_INT2 MaxValue() {return   USHRT_MAX;}
+                     static const U_INT2 MinValue() {return  0;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return Max(tBase(eVMin),Min(tBase(eVMax),aFonc));}
 static std::string   Name() {return "U_INT2";}
 				typedef U_INT2  tVal;
 				typedef INT     tBase;
@@ -129,6 +136,10 @@ inline int AdjUC(double aV)
 template <> class El_CTypeTraits<INT2>
 {
 		public :
+static std::string   Name() {return "INT2";}
+                     static const INT2 MaxValue () { return SHRT_MAX;}
+                     static const INT2 MinValue () { return SHRT_MIN;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return Max(tBase(eVMin),Min(tBase(eVMax),aFonc));}
 				typedef INT2  tVal;
 				typedef INT     tBase;
 				static bool IsIntType() {return true;}
@@ -150,6 +161,10 @@ static tVal TronqueR(double aVal)
 template <> class El_CTypeTraits<INT1>
 {
 		public :
+static std::string   Name() {return "INT1";}
+                     static const INT1 MaxValue() {return SCHAR_MAX;}
+                     static const INT1 MinValue() {return SCHAR_MIN;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return Max(tBase(eVMin),Min(tBase(eVMax),aFonc));}
 				typedef INT1    tSignedVal;
 				typedef U_INT1  tUnSignedVal;
 
@@ -174,6 +189,9 @@ static tVal TronqueR(double aVal)
 template <> class El_CTypeTraits<INT>
 {
 		public :
+                     static const INT MaxValue (){ return INT_MAX;}
+                     static const INT MinValue (){ return INT_MIN;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return aFonc;}
 static std::string   Name() {return "INT";}
 				typedef INT   tVal;
 				typedef INT   tBase;
@@ -194,6 +212,9 @@ static tVal TronqueR(double aVal) { return round_ni(aVal); }
 template <> class El_CTypeTraits<REAL4>
 {
 		public :
+                     static const REAL4 MaxValue (){return FLT_MAX;}
+                     static const REAL4 MinValue (){return -FLT_MAX;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return aFonc;}
 static std::string   Name() {return "REAL4";}
 				typedef REAL4   tVal;
 				typedef REAL8   tBase;
@@ -213,6 +234,9 @@ static tVal TronqueR(double aVal) { return  (tVal) aVal;}
 template <> class El_CTypeTraits<REAL8>
 {
 		public :
+                     static REAL8 MaxValue() {return DBL_MAX;}
+                     static REAL8 MinValue() {return -DBL_MAX;}
+                     static Fonc_Num TronqueF(Fonc_Num aFonc) {return aFonc;}
 static std::string   Name() {return "REAL8";}
 				typedef REAL8   tVal;
 				typedef REAL8   tBase;
@@ -406,6 +430,7 @@ class Im2DGen : public GenIm,
       Box2di ImBox2d(INT Brd) const {return Box2di(Pt2di(Brd,Brd),Pt2di(tx()-Brd,ty()-Brd));}
 
       virtual void TronqueAndSet(const Pt2di &,double aVal);
+      virtual double  MoyG2() const ; // Grad au carre
       virtual INT  vmax() const ;
       virtual INT  vmin() const ;
       virtual cIm2DInter * BilinIm() ;
@@ -526,6 +551,7 @@ template <class Type,class TyBase> class Im2D : public Im2DGen
       const Type *    data_lin() const;
       INT  vmax() const;
       INT  vmin() const;
+      double  MoyG2() const ;
       virtual  GenIm::type_el TypeEl() const ;
       void raz();
       void dup (Im2D<Type,TyBase> to_dup);
@@ -572,6 +598,17 @@ template <class Type,class TyBase> class Im2D : public Im2DGen
    private :
 	  DataIm2D<Type,TyBase> * di2d(){return (DataIm2D<Type,TyBase> *) (_ptr);}
 };
+
+
+template <class TypeIn,class TypeOut> TypeOut Conv2Type(TypeIn anImIn,TypeOut * )
+{
+   Pt2di aSz = anImIn.sz();
+   TypeOut aRes(aSz.x,aSz.y);
+   ELISE_COPY(anImIn.all_pts(),anImIn.in(),aRes.out());
+   return aRes;
+}
+
+
 
 template <class Type,class Type_Base> Im2D<Type,Type_Base> ImMediane
                                       (

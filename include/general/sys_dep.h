@@ -76,6 +76,8 @@ Header-MicMac-eLiSe-25/06/2007*/
 		#define ELISE_X11  (ELISE_unix | ELISE_MacOs)
 	#endif 
 #endif
+/*
+*/
 
 #define ELISE_NO_VIDEO  (! ELISE_X11)
 
@@ -93,6 +95,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 	#define SYS_MV "mv"
 	#define SYS_RM "\\rm"   // MODID MPD CAR rm ne fonctionne pas si il a ete redefini par alias !!
 	#define SYS_CP "cp"
+	#define SYS_CAT "cat"
 	#define ELISE_CAR_DIR  '/' 
 	#define ELISE_Current_DIR  "./"
     #define ELISE_STR_DIR "/"
@@ -104,26 +107,18 @@ Header-MicMac-eLiSe-25/06/2007*/
 	#define SYS_MV "mv"
 	#define SYS_RM "rm"
 	#define SYS_CP "cp"
+	#define SYS_CAT "cat"
 	#define ELISE_CAR_DIR  '/' 
 	#define ELISE_Current_DIR  "./"
     #define ELISE_STR_DIR "/"
     #define ELISE_CAR_ENV ':'
 #endif
 
-#if ELISE_Cygwin
-	#define SYS_MV "mv"
-	#define SYS_RM "rm"
-	#define SYS_CP "cp"
-	#define ELISE_CAR_DIR  '/' 
-	#define ELISE_Current_DIR  "./"
-	// the character separating directories in PATH environment variable
-    #define ELISE_CAR_ENV ';'
-#endif
-
 #if ELISE_windows
 	#define SYS_MV "move"
 	#define SYS_RM "del"
 	#define SYS_CP "copy"
+	#define SYS_CAT "type"
 	#define ELISE_CAR_DIR  '/' 
 	#define ELISE_Current_DIR  "./"
 	#include <float.h>
@@ -144,7 +139,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 #define ElTemplateInstantiation 1
 
 // Apparamment MSW est assez restrictif sur l'emploi du typename
-#if ( ELISE_windows & !ELISE_Cygwin )
+#if ( ELISE_windows & !ELISE_MinGW )
 	#define ElTypeName_NotMSW
 	#define  ClassFriend
 #else
@@ -204,7 +199,7 @@ Header-MicMac-eLiSe-25/06/2007*/
  *   ISO/IEC 14881:1998 (E) (autrement dit la norme ANSI/C++).
  *
  */
-#if ELISE_windows
+#if (ELISE_windows)&&(!ELISE_MinGW)
 	#define STRICT_ANSI_FRIEND_TPL 0
 #else
 	#define STRICT_ANSI_FRIEND_TPL 1

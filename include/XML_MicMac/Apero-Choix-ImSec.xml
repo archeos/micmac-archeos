@@ -2,6 +2,8 @@
 Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  DirectoryChantier=/home/marc/TMP/ExempleDoc/Boudha/ +AeroIn=-Test-3 +PatternAllIm="IMG_[0-9]{4}\.tif"
 
 Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  DirectoryChantier=/home/marc/TMP/Versailles/  +AeroIn=-All +PatternAllIm="IMGP[0-9]{4}.PEF" +Ext=dat Out=-All
+                               <TetaMinPreSel> 0.025</TetaMinPreSel>
+                               <TetaOpt > 0.17 </TetaOpt>
 -->
 <Global>
    <ParamApero>
@@ -12,6 +14,7 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
             <Symb>  PatternAllIm=XXXX  </Symb>
             <Symb>  Ext=XXXX  </Symb>
             <Symb>  SeuilP3d=1.5  </Symb>
+            <Symb>  TetaOpt=0.17   </Symb>
        </DicoLoc>
 
        <SectionBDD_Observation>
@@ -106,7 +109,7 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
                                <IdBdl > Id_Pastis_Hom </IdBdl>
                                <NbMinPtsHom > 15 </NbMinPtsHom>
                                <TetaMinPreSel> 0.025</TetaMinPreSel>
-                               <TetaOpt > 0.15 </TetaOpt>
+                               <TetaOpt > 0.17 </TetaOpt>
                                <TetaMaxPreSel> 0.8 </TetaMaxPreSel>
                                <NbMaxPresel>  15</NbMaxPresel>
                           </ChoixImSec>
@@ -115,13 +118,19 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
                           <PatternSel> .* </PatternSel>
 
                           <NameOut>  Ori${Out}/Pts3d.dat  </NameOut>
+                          <ExportNuageByImage>
+                               <KeyCalc> NKS-Assoc-Pts3dIm@${Out} </KeyCalc>
+                               <SymPts> true </SymPts>
+                          </ExportNuageByImage>
+
+
                           <PlyModeBin> true </PlyModeBin>
                           <NameRefLiaison> Id_Pastis_Hom </NameRefLiaison>
                           <Pond>
                                  <EcartMesureIndiv>  1.0 </EcartMesureIndiv>
                                  <EcartMax> ${SeuilP3d} </EcartMax>
-                           </Pond>
-                           <KeyFileColImage> NKS-Assoc-Cste@NoAttr   </KeyFileColImage>
+                          </Pond>
+                          <KeyFileColImage> NKS-Assoc-Cste@NoAttr   </KeyFileColImage>
                      </ExportNuage>
 
                    </SectionExport>

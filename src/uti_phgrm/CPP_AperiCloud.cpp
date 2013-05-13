@@ -51,6 +51,8 @@ int AperiCloud_main(int argc,char ** argv)
 
     int RGB = -1;
     double aSeuilEc = 10.0;
+    double aLimBsH;
+    bool   WithPoints = true;
 
     ElInitArgMain
     (
@@ -63,6 +65,8 @@ int AperiCloud_main(int argc,char ** argv)
                     << EAM(PlyBin,"Bin",true,"Ply in binarie mode, Def=true")
                     << EAM(RGB,"RGB",true,"Use RGB image to texurate points, def=true")
                     << EAM(aSeuilEc,"SeuilEc",true,"Max residual (def =10)")
+                    << EAM(aLimBsH,"LimBsH",true,"Limit ratio base to high (Def=1e-2)")
+                    << EAM(WithPoints,"WithPoints",true,"Do we add point cloud ? (Def=true) ")
     );
 
     if (RGB >=0) 
@@ -86,6 +90,14 @@ int AperiCloud_main(int argc,char ** argv)
                        + std::string(" +NbChan=") +  ToString(RGB)
                        + std::string(" +SeuilEc=") +  ToString(aSeuilEc)
                     ;
+
+    if (! WithPoints)
+    {
+         aCom = aCom + std::string(" +KeyAssocImage=NKS-Assoc-Cste@NoPoint");
+    }
+
+    if (EAMIsInit(&aLimBsH))
+       aCom = aCom + std::string(" +LimBsH=") + ToString(aLimBsH);
 
    std::cout << "Com = " << aCom << "\n";
    int aRes = system_call(aCom.c_str());

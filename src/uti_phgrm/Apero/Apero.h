@@ -443,6 +443,10 @@ class cPoseCam
           void  SetNbPosOfInit(int);
 
           int   & NumTmp(); // Entre autre dans bloc bascule
+
+          void ResetPtsVu();
+          void AddPtsVu(const Pt3dr &);
+          const std::vector<Pt3dr> & PtsVu() const;
      private  :
 
           void AssertHasObsCentre() const;
@@ -540,6 +544,8 @@ class cPoseCam
           double                       mMMGainAng;
           std::vector<double>          mMMGainTeta;
           bool                         mFidExist;
+
+          std::vector<Pt3dr>           mPtsVu;
 };
 
 
@@ -1127,7 +1133,8 @@ typedef enum
   eModeAGPIm,
   eModeAGPHypso,
   eModeAGPNormale,
-  eModeAGPNoAttr
+  eModeAGPNoAttr,
+  eModeAGPNoPoint
 } eModeAGP;
 
 
@@ -1156,10 +1163,13 @@ class cArgGetPtsTerrain
           void InitFileColor(const std::string &,double aStepIm,const std::string & aRef,int NbChan);
           void AddSeg(Pt3dr aP1,Pt3dr aP2,double aStep,Pt3di aCoul);
 
+          void AddPts(Pt3dr aP1,Pt3di aCoul);
+
           void InitColiorageDirec(Pt3dr,double);
           void InitModeNormale();
           void InitModeNoAttr();
           double LimBsH() const;
+          void SetByIm(bool DoByIm,bool Sym);
 
 
       private :
@@ -1183,6 +1193,8 @@ class cArgGetPtsTerrain
           eModeAGP                mMode;
           Pt3dr                   mDirCol;
           double                  mLimBsH;
+          bool                    mDoByIm;
+          bool                    mSymDoByIm;
 };
 
 
@@ -1931,6 +1943,10 @@ class cAppliApero : public NROptF1vND
 
        void CheckInit(const cLiaisonsInit * ,cPoseCam *);
     private :
+
+       void ClearAllCamPtsVu();
+
+
         void  BasculeBloc(const cBlocBascule &);
         std::vector<cPoseCam *> PoseOfPattern(const std::string & aKeyPat);
         void  BasculeBloc

@@ -98,8 +98,11 @@ class cTplLoadedImage : public cLoadedImage
       tVecTPtr ToCurType(tContPDV&);
 
    private:
-      float ** DataFloatIm() const ;
-      float *  DataFloatLinIm() const ;
+      float *** DataFloatIm();
+      float **  DataFloatLinIm();
+      Im2D_REAL4 ** FloatIm();
+      Im2D_REAL4 * FirstFloatIm();
+
       void PrecalcRect(const Box2di & aBoxCorrTer);
       void FiltrageWRect(const Box2di & aBoxCorrTer,Im2D_REAL8 anIm);
       void FiltrageWExp(const Box2di & aBoxCorrTer,Im2D_REAL8 anIm);
@@ -158,17 +161,39 @@ cTplLoadedImage<TypeEl>::~cTplLoadedImage()
 }
 
 
-template <class TypeEl> float ** cTplLoadedImage<TypeEl>::DataFloatIm() const
+template <class TypeEl> float *** cTplLoadedImage<TypeEl>::DataFloatIm() 
 {
-  ELISE_ASSERT(mIm.TypeEl()==GenIm::real4,":DataFloatIm");
-   return (float **)  mIm.data();
+   // return (float **)  mIm.data();
+   return & (mVDataIm[0]);
 }
 
-template <class TypeEl> float * cTplLoadedImage<TypeEl>::DataFloatLinIm() const
+template <class TypeEl> float ** cTplLoadedImage<TypeEl>::DataFloatLinIm() 
+{
+   // return (float *)  mIm.data_lin();
+   return & (mVDataLin[0]);
+}
+
+template <class TypeEl> Im2D_REAL4 ** cTplLoadedImage<TypeEl>::FloatIm()
+{
+/*
+  cTplLoadedImage<TypeEl> * aNI = const_cast<cTplLoadedImage<TypeEl> *>(this);
+  return (Im2D_REAL4 *)  &(aNI->mIm);
+  return (Im2D_REAL4 *)  &(mIm);
+*/
+   return  & (mVIm[0]);
+}
+
+template <class TypeEl> Im2D_REAL4 * cTplLoadedImage<TypeEl>::FirstFloatIm()
 {
   ELISE_ASSERT(mIm.TypeEl()==GenIm::real4,":DataFloatIm");
-   return (float *)  mIm.data_lin();
+/*
+  cTplLoadedImage<TypeEl> * aNI = const_cast<cTplLoadedImage<TypeEl> *>(this);
+  return (Im2D_REAL4 *)  &(aNI->mIm);
+  return  & (mVIm[0]);
+*/
+  return (Im2D_REAL4 *)  &(mIm);
 }
+
 
 
 
@@ -859,6 +884,7 @@ void   cTplLoadedImage<TypeEl>::CalcFenSpec(const Box2di & aBox,tContPDV& aCont)
        break;
        case eAggregIm1Maitre :
        case eAggregMaxIm1Maitre :
+       case eAggregMinIm1Maitre :
             for (int aK2=1 ; aK2<int(aVTpl.size()) ; aK2++)
             {
                 aVTpl[0]->OneCorrelSpec(Box2di(aP0,aP1),*(aVTpl[aK2]));
@@ -1547,6 +1573,35 @@ void cTplLoadedImage<TypeEl>::CalcRapCorrelIm1Maitre
 
 /*****************************************/
 /*                                       */
+/*             cMSLoadedIm               */
+/*                                       */
+/*****************************************/
+
+cMSLoadedIm::cMSLoadedIm(const cOneParamCMS& aParam ,Im2D_REAL4 * anI,bool First) :
+   mImCMS (aParam),
+   mIm    (First ? *anI : Im2D_REAL4(anI->sz().x,anI->sz().y)),
+   mTIm   (mIm)
+{
+   if (! First)
+   {
+       mIm.dup(*anI);
+   }
+
+   if (aParam.Sigma() > 0)
+   {
+       FilterGauss(mIm,aParam.Sigma(),2);
+   }
+}
+
+Im2D_REAL4 * cMSLoadedIm::Im() { return &mIm; }
+const Im2D_REAL4 * cMSLoadedIm::Im() const { return &mIm; }
+
+/*
+*/
+
+
+/*****************************************/
+/*                                       */
 /*            cLoadedImage               */
 /*                                       */
 /*****************************************/
@@ -1662,6 +1717,49 @@ cLoadedImage::cLoadedImage
    }
 }
 
+
+
+void cLoadedImage::PostInit()
+{
+    const cCorrelMultiScale*  aCMS = mAppli.CMS();
+
+    if ( aCMS) 
+    {
+       for (int aK=0 ; aK<int(aCMS->OneParamCMS().size()) ; aK++)
+       {
+           cMSLoadedIm  aMLI(aCMS->OneParamCMS()[aK],FirstFloatIm() , aK==0);
+           mMSLI.push_back(aMLI);
+       }
+    }
+    else
+    {
+         cOneParamCMS aParam;
+         aParam.SzW() = mAppli.PtSzWFixe();
+         aParam.Sigma() = 0;
+         aParam.Pds() = 1;
+
+         cMSLoadedIm  aMLI(aParam,FirstFloatIm() , true);
+         mMSLI.push_back(aMLI);
+    }
+
+    for (int aK=0 ; aK<int(mMSLI.size()) ; aK++)
+    {
+         Im2D_REAL4 * anIm = mMSLI[aK].Im();
+
+         mVIm.push_back(anIm);
+         mVDataIm.push_back(anIm->data());
+         mVDataLin.push_back(anIm->data_lin());
+    }
+
+}
+
+const std::vector<cMSLoadedIm>&  cLoadedImage::MSLI()
+{
+    return mMSLI;
+}
+
+
+
 cLoadedImage * cLoadedImage::Alloc
                (
                    const cAppliMICMAC & anAppli,
@@ -1681,7 +1779,10 @@ cLoadedImage * cLoadedImage::Alloc
   */
 
 
-   return new cTplLoadedImage<REAL4>(anAppli,aPDV,aGeomI,aBox,aSzMaxGT,aIMIL,aDZ,aFMasq,IsFirstLoaded);
+   cLoadedImage * aRes = new cTplLoadedImage<REAL4>(anAppli,aPDV,aGeomI,aBox,aSzMaxGT,aIMIL,aDZ,aFMasq,IsFirstLoaded);
+
+   aRes->PostInit();
+   return aRes;
 /*
    switch (aIMIL->PreferedTypeOfResol(aDZ))
    {
@@ -1821,7 +1922,7 @@ void cLoadedImage::MakePC
          for (aP.x=0 ; aP.x< aSzCur.x ; aP.x++)
          {
 // std::cout << aP << aGeoT.DiscToR2(aP) << "\n";
-             if (! aGeomI.IsInMasqAnam(aGeoT.DiscToR2(aP)))
+             if (! aGeomI.IsInMasqAnamSA(aGeoT.DiscToR2(aP)))
                 mTImPC.oset(aP,mSeuilPC);
          }
       }

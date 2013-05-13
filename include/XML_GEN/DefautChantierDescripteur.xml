@@ -163,10 +163,34 @@
                 <CalcName>  $1  </CalcName>
             </Inverse>
         </Calcs>
-    <Key>   NKS-Assoc-ImSec </Key>
-    <SubDirAutoMake> Ori#1 </SubDirAutoMake>
+        <Key>   NKS-Assoc-ImSec </Key>
+        <SubDirAutoMake> Ori#1 </SubDirAutoMake>
+    </KeyedNamesAssociations>
+
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  Ori#1/Pt3dIm-$1.dat  </CalcName>
+            </Direct>
+            <Inverse>
+                <PatternTransform> Ori#1/Pt3dIm-(.*).dat  </PatternTransform>
+                <CalcName>  $1  </CalcName>
+            </Inverse>
+        </Calcs>
+        <Key>   NKS-Assoc-Pts3dIm </Key>
+        <SubDirAutoMake> Ori#1 </SubDirAutoMake>
     </KeyedNamesAssociations>
   
+
+
+
+  
+
+
+
     <KeyedNamesAssociations>
     <IsParametrized>  true </IsParametrized>
     <Calcs>
@@ -182,6 +206,24 @@
         </Calcs>
         <Key>   NKS-Assoc-Im2Orient </Key>
 	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
+    </KeyedNamesAssociations>
+
+    <!-- C'est quasiment la meme qie NKS-Assoc-Im2Orient,  mais pas SubDirAutoMake
+        pas tres elegant comme duplication, mais bon ....  -->
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  #1$1/#2$1.#3  </CalcName>
+             </Direct>
+            <Inverse>
+                <PatternTransform>#1(.*)/#2(.*).#3  </PatternTransform>
+                <CalcName>  $2  </CalcName>
+             </Inverse>
+        </Calcs>
+        <Key>   NKS-Assoc-Im2NuageInit </Key>
     </KeyedNamesAssociations>
 
     <!-- C'est quasiment la meme qie NKS-Assoc-Im2Orient,  mais pas SubDirAutoMake
@@ -309,6 +351,19 @@
         <Key>   NKS-Assoc-Cste </Key>
     </KeyedNamesAssociations>
 
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)\.([a-z,A-Z,0-9]{3,4}) </PatternTransform>
+                <CalcName>  $1  </CalcName>
+             </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Prefix </Key>
+    </KeyedNamesAssociations>
+
+
     <KeyedNamesAssociations>
         <IsParametrized>  true </IsParametrized>
         <Calcs>
@@ -324,6 +379,10 @@
         </Calcs>
         <Key>   NKS-Assoc-AddPost </Key>
     </KeyedNamesAssociations>
+
+
+
+
 
     <KeyedNamesAssociations>
         <IsParametrized>  true </IsParametrized>
@@ -470,6 +529,28 @@
                  </Direct>
              </Calcs>
              <Key>   NKS-Assoc-STD-SZ </Key>
+    </KeyedNamesAssociations>
+
+    <!-- Pour le devlopt en 8 Bits :  Gama > 0 donne un gama, Gama < 0 Gama * dyn log  -->
+    <KeyedNamesAssociations>
+            <Calcs>
+                 <Arrite>  1 1 </Arrite>
+                 <Direct>
+                       <PatternTransform> .*  </PatternTransform>
+                       <CalcName> 1.0 </CalcName>
+                 </Direct>
+             </Calcs>
+             <Key>   NKS-Assoc-STD-Gama8Bits </Key>
+    </KeyedNamesAssociations>
+    <KeyedNamesAssociations>
+            <Calcs>
+                 <Arrite>  1 1 </Arrite>
+                 <Direct>
+                       <PatternTransform> .*  </PatternTransform>
+                       <CalcName> 1.0 </CalcName>
+                 </Direct>
+             </Calcs>
+             <Key>   NKS-Assoc-STD-EpsLog8Bits </Key>
     </KeyedNamesAssociations>
 
 

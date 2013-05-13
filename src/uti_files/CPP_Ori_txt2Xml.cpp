@@ -267,6 +267,11 @@ class cAppli_Ori_Txt2Xml_main
          double                  mScaleV;
          double                  mBordV;
          Video_Win *             mW;
+         int                     mLine;
+         eConventionsOrientation mConvOri;
+         bool                 mCalibByFile;
+         double               mAltiSol;
+         double               mProf;
 };
 
 void cAppli_Ori_Txt2Xml_main::operator()(tSomVois* aS1,tSomVois* aS2,bool)  // Delaunay Call back
@@ -642,7 +647,10 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
     mUseOnlyC        (false),
     mSzV             (800),
     mBordV           (20),
-    mW               (0)
+    mW               (0),
+    mLine            (3),
+    mConvOri         (eConvAngPhotoMDegre),
+    mCalibByFile     (true)
 {
 
     bool Help;
@@ -693,6 +701,10 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
                       << EAM(aVCpt,"Cpt",true,"============ [CptMin,CptMax] for tuning purpose =======")
                       << EAM(mUseOnlyC,"UOC",true,"Use Only Center (tuning)")
                       << EAM(mMTDOnce,"MTD1",true,"Compute Metadata only for first image (tuning)")
+                      << EAM(mLine,"Line",true,"Nb neighbour in the same line")
+                      << EAM(mCalibByFile,"CBF",true,"Export calib as a link to existing file")
+                      << EAM(mAltiSol,"AltiSol",true,"Average altitude of ground")
+                      << EAM(mProf,"Prof",true,"Average Prof of images")
     );
 
     if (! EAMIsInit(&mAddDelaunay))
@@ -734,6 +746,12 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
          mFormat     = "N  X Y Z K W P";
          mComment    = '#';
     }
+    else if (mType==eOriBluh)
+    {
+         mFormat     = "N  W P K X Y Z";
+         mComment    = '#';
+         mConvOri    = eConvAngPhotoMGrade;
+    }
     else if (mType==eOriTxtInFile)
     {
        bool Ok = cReadObject::ReadFormat(mComment,mFormat,mFilePtsIn,true);
@@ -747,6 +765,7 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
 
     // cCalibrationInternConique aCIO;
     bool CalibIsInit = EAMIsInit(&mFileCalib) && mAddCalib;
+    mCalibByFile = mCalibByFile && CalibIsInit;
 
      mCIO=  StdGetObjFromFile<cCalibrationInternConique>
             (
@@ -807,7 +826,6 @@ void  cAppli_Ori_Txt2Xml_main::InitGrapheVois()
 #ifdef ELISE_X11
 
 	elise_x11 = true;
-
 #endif
 
     if ((mSzV >0) && elise_x11)
@@ -887,14 +905,19 @@ void cAppli_Ori_Txt2Xml_main::VoisInitDelaunayCroist()
 
 
 
-    std::cout << "Viiissuu "<< mBoxC.sz() << " " << mScaleV << "\n"; getchar();
+    // std::cout << "Viiissuu "<< mBoxC.sz() << " " << mScaleV << "\n"; getchar();
 }
 
 void  cAppli_Ori_Txt2Xml_main::InitCamera(cTxtCam & aCam,Pt3dr  aC,Pt3dr  aWPK)
 {
+    const cElDate & aDate =   aCam.mMTD->Date(true);
+    const cElDate & aDate0 =   mVCam[0]->mMTD->Date(true);
+    static bool allDateUnInit = true;
+    allDateUnInit = allDateUnInit && aDate.IsNoDate() && aDate0.IsNoDate(); 
+
     {
        aCam.mOC->Externe().Centre() = aC;
-       aCam.mTime =  mMTDOnce  ? aCam.mNum : aCam.mMTD->Date().DifInSec(mVCam[0]->mMTD->Date()) ;
+       aCam.mTime =  (mMTDOnce | allDateUnInit)  ? aCam.mNum : aCam.mMTD->Date().DifInSec(mVCam[0]->mMTD->Date()) ;
                
        aCam.mOC->Externe().Time().SetVal(aCam.mTime);
        aCam.mC = aC;
@@ -904,9 +927,17 @@ void  cAppli_Ori_Txt2Xml_main::InitCamera(cTxtCam & aCam,Pt3dr  aC,Pt3dr  aWPK)
     if (mHasWPK)
     {
        // aCam.mOC->ConvOri().KnownConv().SetVal(eConvAngLPSDegre);
-       aCam.mOC->ConvOri().KnownConv().SetVal(eConvAngPhotoMDegre);
+       aCam.mOC->ConvOri().KnownConv().SetVal(mConvOri);
        aCam.mOC->Externe().ParamRotation().CodageAngulaire().SetVal(aWPK);
        aCam.mWPK = aWPK;
+    }
+    if(EAMIsInit(&mAltiSol))
+    {
+        aCam.mOC->Externe().AltiSol().SetVal(mAltiSol);
+    }
+    if(EAMIsInit(&mProf))
+    {
+        aCam.mOC->Externe().AltiSol().SetVal(mProf);
     }
     MakeFileXML(*(aCam.mOC),aCam.mNameOri);
     aCam.mCam = CamOrientGenFromFile(aCam.mNameOri,mICNM);
@@ -968,7 +999,10 @@ void cAppli_Ori_Txt2Xml_main::ParseFile()
            aNewCam.mOC = new cOrientationConique(mOC0);
            if (mAddCalib)
            {
-              aNewCam.mOC->Interne().SetVal(mCIO);
+              if (mCalibByFile)
+                 aNewCam.mOC->FileInterne().SetVal(mFileCalib);
+              else
+                 aNewCam.mOC->Interne().SetVal(mCIO);
            }
 
 //===============================
@@ -1142,7 +1176,41 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
    {
         VoisInitDelaunayCroist();
    }
-    cSauvegardeNamedRel  aRelIm;    
+
+   if (mLine > 0)
+   {
+       for (int aK1 = 0 ; aK1<int(mVCam.size()) ; aK1++)
+       {
+           int aK2Min = ElMax(0,aK1-mLine);
+           int aK2Max = ElMin(int(mVCam.size())-1,aK1+mLine);
+           for (int aK2=aK2Min ; aK2<aK2Max ; aK2++)
+           {
+                if (aK1 != aK2)
+                   AddArc(mVSomVois[aK1],mVSomVois[aK2],P8COL::white);
+           }
+           
+           std::cout << "TTttiim e " << mVSomVois[aK1]->attr().mCam->mTime << "\n";
+       }
+       //getchar();
+   }
+
+   cSauvegardeNamedRel  aRelIm;    
+
+   for (tItSVois itS=mGrVois.begin(mSubAll) ; itS.go_on() ;itS++)
+   {
+       for (tItAVois itA= (*itS).begin(mSubAll) ; itA.go_on() ; itA++)
+       {
+             tSomVois & aS1 = (*itA).s1();
+             tSomVois & aS2 = (*itA).s2();
+             const cTxtCam * aC1 = aS1.attr().mCam;
+             const cTxtCam * aC2 = aS2.attr().mCam;
+             cCpleString aCpl(aC1->mNameIm,aC2->mNameIm);
+             aRelIm.Cple().push_back(aCpl);
+       }
+   }
+  
+
+   MakeFileXML(aRelIm,mDir+mNameCple);
 /*
     for (int aK1=0 ; aK1<mNbCam ; aK1++)
     {
@@ -1166,7 +1234,6 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
             }
         }
     }
-    MakeFileXML(aRelIm,mDir+mNameCple);
 */
 }
 

@@ -52,6 +52,22 @@ namespace NS_SuperposeImage{
 };
 using namespace NS_SuperposeImage;
 
+cXML_ParamNuage3DMaille CropAndSousEch
+                        (
+                             const cXML_ParamNuage3DMaille & anInit,
+                             Pt2dr & aP0,
+                             double aSc,
+                             Pt2dr & aSz
+                        );
+cXML_ParamNuage3DMaille CropAndSousEch
+                        (
+                             const cXML_ParamNuage3DMaille & anInit,
+                             Pt2dr & aP0,
+                             double aSc
+                        );
+
+
+
 class  cBasculeNuage;
  
 class cLayerNuage3DM
@@ -190,15 +206,17 @@ class cElNuage3DMaille : public cCapture3D
         {
              return IndexHasContenuForInterpol(round_down(aP));
         }
-        const Pt2di & Sz() const {return mSz;}
+        const Pt2di & SzGeom() const {return mSzGeom;}
+        const Pt2di & SzData() const {return mSzData;}
 
+        const Pt2di & SzUnique() const;//  const {return mSzGeom;}
    //  Acces aux donnees 
 
                  // NUAGE  =>  TERRAIN
 
         Pt3dr PtOfIndex(const tIndex2D & aP) const ;
         Pt3dr PtOfIndexInterpol(const Pt2dr & aP) const;  // [2]
-		Pt3dr NormaleOfIndex(const tIndex2D&, int) const;
+        Pt3dr NormaleOfIndex(const tIndex2D&, int) const;
 
 
         virtual Pt3dr Loc_PtOfIndex(const tIndex2D & aP) const = 0;
@@ -215,6 +233,12 @@ class cElNuage3DMaille : public cCapture3D
          virtual double  ProfOfIndex(const tIndex2D & aP) const ;
          virtual double   ProfOfIndexInterpol(const Pt2dr  & aP)const ;
          virtual double   ProfOfIndexInterpolWithDef(const Pt2dr  & aP,double aDef)const =0 ;
+
+    // Si la profondeur n'est vraiment pas euclidienne (genre ZInv), la corrige
+
+         virtual double  ProfEuclidOfIndex(const tIndex2D & aP) const ;
+         virtual void    SetProfEuclidOfIndex(const tIndex2D & aP,double ) ;
+
 
          // Renvoie en Z avec une dynamique telle que Dz de 1 correpsonde a 1 Pixel,
          // tape dans Im2D Gen 
@@ -342,7 +366,8 @@ class cElNuage3DMaille : public cCapture3D
         (
              const std::string & aDir,
              const cXML_ParamNuage3DMaille &,
-             Fonc_Num aFDef
+             Fonc_Num aFDef,
+             bool      WithEmptyData = false
         );
         virtual ~cElNuage3DMaille();
 
@@ -359,7 +384,8 @@ class cElNuage3DMaille : public cCapture3D
                                        const std::string & aDir,
                                        const std::string & aMasq = "",
                                        double ExagZ         =1.0,
-                                       cParamModifGeomMTDNuage * = 0
+                                       const cParamModifGeomMTDNuage * = 0,
+                                       bool  WithEmptyData = false
                                   );
 /*
 
@@ -414,28 +440,37 @@ class cElNuage3DMaille : public cCapture3D
         virtual void V_Save(const std::string & aNameP) = 0;
 
 
-        void  AssertInside(const tIndex2D & anI) const;
+        void  AssertInsideData(const tIndex2D & anI) const;
+        void  AssertInsideGeom(const tIndex2D & anI) const;
         void AssertCamInit() const;
 
 
-        bool  IndexInside(const tIndex2D & aP) const
+        bool  IndexInsideGeom(const tIndex2D & aP) const
         {
             return     (aP.x >= 0)
                     && (aP.y >= 0)
-                    && (aP.x < mSz.x)
-                    && (aP.y < mSz.y);
+                    && (aP.x < mSzGeom.x)
+                    && (aP.y < mSzGeom.y);
         }
+        bool  IndexInsideData(const tIndex2D & aP) const
+        {
+            return     (aP.x >= 0)
+                    && (aP.y >= 0)
+                    && (aP.x < mSzData.x)
+                    && (aP.y < mSzData.y);
+        }
+
 
 
         bool  IndexIsOK(const tIndex2D & aP) const
         {
-             return IndexInside(aP) && IndexHasContenu(aP);
+             return IndexInsideData(aP) && IndexHasContenu(aP);
         }
 
         bool IndexIsOKForInterpol(const Pt2dr & aP) const
         {
              Pt2di aQ = round_down(aP);
-             return IndexInside(aQ) && IndexHasContenuForInterpol(aQ);
+             return IndexInsideData(aQ) && IndexHasContenuForInterpol(aQ);
         }
 
         void UpdateDefInterp(const Pt2di & aP);
@@ -454,6 +489,7 @@ class cElNuage3DMaille : public cCapture3D
         void AddTri(std::vector<tTri> &,const tIndex2D &,int *K123,int aOffset) const;
 
      protected  :
+        void AssertNoEmptyData() const;
 
         void PlyPutDataOneFace(FILE *,const tTri& , bool aModeBin) const;
 
@@ -461,10 +497,12 @@ class cElNuage3DMaille : public cCapture3D
         // CamStenope *                 CamS() ; // Erreur si TypeProj est pas compat
         // ElCamera *                   Cam();
 
+        bool                         mEmptyData;
         std::string                  mDir;
         cInterfChantierNameManipulateur * mICNM;
         cXML_ParamNuage3DMaille&     mParams;
-        Pt2di                        mSz;
+        Pt2di                        mSzGeom;
+        Pt2di                        mSzData;
         Im2D_Bits<1>                 mImDef;
         int                          mNbPts;
         TIm2DBits<1>                 mTImDef;
@@ -641,7 +679,8 @@ cElNuage3DMaille *  BasculeNuageAutoReSize
                        const cXML_ParamNuage3DMaille & aGeomIn,
                        const std::string & aDirIn,
                        const std::string &  aNameRes,
-                       bool  AutoResize
+                       bool  AutoResize,
+                       const Box2di  * aBoxClipIn = 0
                     );
 
 template <class Type> void WriteType(FILE * aFP,Type f)
@@ -649,6 +688,20 @@ template <class Type> void WriteType(FILE * aFP,Type f)
 	size_t  size = sizeof(Type);
 	TheIntFuckingReturnValue=fwrite(&f,size,1,aFP);
 }
+
+
+cElNuage3DMaille * NuageWithoutDataWithModel(const std::string & aName,const std::string & aModel);
+cElNuage3DMaille * NuageWithoutData(const std::string & aName);
+cXML_ParamNuage3DMaille XML_Nuage(const std::string & aName);
+bool GeomCompatForte(cElNuage3DMaille * aN1,cElNuage3DMaille *aN2);
+
+Fonc_Num Pix2Z(const cXML_ParamNuage3DMaille & aCloud,Fonc_Num aF);
+Fonc_Num Z2Pix(const cXML_ParamNuage3DMaille & aCloud,Fonc_Num aF);
+Fonc_Num Pix2Pix(const cXML_ParamNuage3DMaille &Out,Fonc_Num,const cXML_ParamNuage3DMaille & In);
+
+Fonc_Num Pix2Pix(const cXML_ParamNuage3DMaille &Out,const cXML_ParamNuage3DMaille & In,const std::string& aDir)
+;
+
 
 #endif // _ELISE_NUAGE_3D_MAILLE_
 

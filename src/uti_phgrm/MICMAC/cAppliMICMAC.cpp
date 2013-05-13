@@ -294,6 +294,8 @@ cAppliMICMAC::cAppliMICMAC
    mLastMAnExp      (0),
    mImOkTerCur (1,1),
    mTImOkTerCur (mImOkTerCur),
+   mImSzWCor    (1,1),
+   mTImSzWCor   (mImSzWCor),
    mImOkTerDil (1,1),
    mTImOkTerDil (mImOkTerDil),
    mAll1ImOkTerDil (1,1),
@@ -306,8 +308,8 @@ cAppliMICMAC::cAppliMICMAC
    mVisu     (0),
    mOriPtLoc_Read (false),
    mMapEquiv (NULL),
-   mAnam          (0),
-   mXmlAnam        (0),
+   mAnamSA         (0),
+   mXmlAnamSA      (0),
    mRepCorrel      (0),
    mRepInvCorrel   (0),
    mFileBoxMasqIsBoxTer (""),
@@ -315,10 +317,23 @@ cAppliMICMAC::cAppliMICMAC
    mSurfOpt        (0),
    mCorrelAdHoc    (0),
    mGIm1IsInPax    (ModeGeomIsIm1InvarPx(*aParam.mObj)),
-   mGPRed2         (0)
+   mGPRed2         (0),
+   mDoTheMEC       (true),
+   mAnaGeomMNT     (0),
+   mMakeMaskImNadir  (0)
    // mInterpolTabule (10,8,0.0,eTabul_Bilin)
    // mInterpolTabule (10,8,0.0,eTabul_Bicub)
 {
+
+        mDoTheMEC = DoMEC().Val();
+        if (
+                  NonExistingFileDoMEC().IsInit()
+              &&  ELISE_fp::exist_file(WorkDir()+ NonExistingFileDoMEC().Val())
+              &&  (!CalledByProcess().Val())
+           )
+        {
+            mDoTheMEC = false; 
+        }
 	// NO_WARN
 	mICNM			= ( ( UseICNM( (cParamMICMAC &)(*this) ) ) ? aParam.mICNM : NULL );
 	mWM				= WithMessage().Val();
@@ -390,7 +405,7 @@ cAppliMICMAC::cAppliMICMAC
       mNameExe = aNameExeEnv;
 
    InitDirectories();
-   InitAnam();
+   InitAnamSA();
    InitImages();
 /*
    {
@@ -433,11 +448,13 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
    mDeZoomFilesAux = ElMax(DeZoomDefMinFileAux().Val(),(1<<ElMax(0,(round_ni(aLogDZ)))));
    PostInitGeom();
 
+   InitNadirRank();
+
 
    VerifEtapes();
    VerifImages();
 
-   InitMecComp();
+   // InitMecComp();
 
 /*
    if (FCND_CalcHomFromI1I2().IsInit())
@@ -460,6 +477,7 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
 /*
 */
 
+   InitMecComp();
    if ((aMode == eAllocAM_STD) && (! DoNotMasqChantier()))
    {
        FileMasqOfResol(128);
@@ -477,8 +495,11 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
     // Optionnel permet de generer le fichier apres modif 
     if  ((! CalledByProcess().Val()) && (mModeAlloc==eAllocAM_STD))
     {
+/*
+        FAIT DANS LE InitMecCOMP pour etre fait avant le CreateMNTInit
         if (! DoNotOriMNT())
            GenereOrientationMnt();
+*/
 	if (! DoNotExtendParam())
             SauvParam();
         if (! DoNotFDC())
@@ -553,7 +574,6 @@ cAppliMICMAC * cAppliMICMAC::Alloc(int argc,char ** argv,eModeAllocAM aMode)
        }
     }
 
-// std::cout << "AAAAAAAAAAAAAAAAAAAAAAa\n"; getchar();
     {
         cElXMLTree aTreeParam(argv[1]);
         if (aName==0)
@@ -857,9 +877,16 @@ void cAppliMICMAC::SauvMemPart()
 
 bool IsModeIm1Maitre(const eModeAggregCorr & aMode)
 {
-    return (aMode==eAggregIm1Maitre) || (aMode==eAggregMaxIm1Maitre);
+    return    (aMode==eAggregIm1Maitre) 
+           || (aMode==eAggregMaxIm1Maitre)
+           || (aMode==eAggregMinIm1Maitre)
+           || (aMode==eAggregMoyMedIm1Maitre);
 }
 
+std::string  cAppliMICMAC::NameFileSzW(int aDz)
+{
+    return FullDirPyr() + "ImSzW_Dz" + ToString(aDz) + PDV1()->Name() + ".tif";
+}
 
 
 void cAppliMICMAC::InitMecComp()
@@ -903,6 +930,22 @@ void cAppliMICMAC::InitMecComp()
               ElSetMax(mDeZoomMax,aDz);
               ElSetMin(mDeZoomMin,aDz);
            }
+
+
+           if (anEt->UseWAdapt() && (itE->DeZoom()>0) &&  (! CalledByProcess().Val()))
+           {
+                int aDZ = itE->DeZoom();
+                std::string aNameSzW = NameFileSzW(aDz);
+                if (! ELISE_fp::exist_file(aNameSzW))
+                {
+                    std::string aCom =    MM3dBinFile("MMCalcSzWCor ") 
+                                       + PDV1()->IMIL()->NameFileOfResol(aDZ) 
+                                       + " Out=" + aNameSzW;
+                    system_call(aCom.c_str());
+
+                    // std::cout << "CCCcc " << aCom << "\n"; getchar();
+                }
+           }
         }
         if ( IsModeIm1Maitre(itE->AggregCorr().Val()))
         {
@@ -942,6 +985,22 @@ void cAppliMICMAC::InitMecComp()
       (*itE)->SetCaracOfZoom();
    }
 
+
+   if  ((! CalledByProcess().Val()) && (mModeAlloc==eAllocAM_STD) && (! DoNotOriMNT()))
+   {
+        GenereOrientationMnt();
+   }
+   if (mEtape00) 
+       mEtape00->CreateMNTInit();
+   for
+   (
+        tContEMC::const_iterator itE = mEtapesMecComp.begin();
+        itE != mEtapesMecComp.end();
+        itE++
+   )
+   {
+      (*itE)->CreateMNTInit();
+   }
 }
 
 cCaracOfDeZoom * cAppliMICMAC::GetCaracOfDZ(int aDZ) const
@@ -963,28 +1022,38 @@ cCaracOfDeZoom * cAppliMICMAC::GetCaracOfDZ(int aDZ) const
 /*****************************************/
 /*       Initialise les images           */
 /*****************************************/
+
+cAnamorphoseGeometrieMNT * cAppliMICMAC::AnaGeomMNT() const {return mAnaGeomMNT;}
+cMakeMaskImNadir * cAppliMICMAC::MMImNadir() const {return mMakeMaskImNadir;}
     
-void cAppliMICMAC::InitAnam() 
+void cAppliMICMAC::InitAnamSA() 
 {
     if(! AnamorphoseGeometrieMNT().IsInit())
       return;
+
+    mAnaGeomMNT = AnamorphoseGeometrieMNT().PtrVal();
+    mMakeMaskImNadir = mAnaGeomMNT->MakeMaskImNadir().PtrVal();
 
     ELISE_ASSERT( GeomMNT() == eGeomMNTEuclid,"Anamophose incompatible avec Non-Euclid");
 
     const cAnamorphoseGeometrieMNT & aAGM = AnamorphoseGeometrieMNT().Val();
     if (aAGM.AnamSurfaceAnalytique().IsInit())
     {
-       mXmlAnam = new  cXmlOneSurfaceAnalytique;
+       mXmlAnamSA = new  cXmlOneSurfaceAnalytique;
        const cAnamSurfaceAnalytique & anASA = aAGM.AnamSurfaceAnalytique().Val();
-       mNameAnam = WorkDir()+anASA.NameFile();
-       mAnam = SFromFile
+       mNameAnamSA = WorkDir()+anASA.NameFile();
+       mAnamSA = SFromFile
                (
-                     mNameAnam,
+                     mNameAnamSA,
                      anASA.Id(),
                      "",
-                     mXmlAnam
+                     mXmlAnamSA
                );
        ELISE_ASSERT(!mRepCorrel,"Anam and RepCorrel incompatibles");
+    }
+    else
+    {
+         mAnamSA = cInterfSurfaceAnalytique::Id();
     }
 }
 
@@ -1069,6 +1138,8 @@ void cAppliMICMAC::InitImages()
    {
        const cImSecCalcApero & aISCA = ImSecCalcApero().Val();
        int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+       int aNbMin = aISCA.NbMin().Val();
+       int aNbMax = aISCA.NbMax().Val();
        for (int aKV=0 ; aKV<aNbPDV ; aKV++)
        {
            std::string aNameImSec = WorkDir() + mICNM->Assoc1To1(aISCA.Key(),mPrisesDeVue[aKV]->Name(),true);
@@ -1081,15 +1152,35 @@ void cAppliMICMAC::InitImages()
                                  "ImSecOfMaster",
                                  "ImSecOfMaster"
                               );
-                 const std::list<std::string > & aList =  GetBestSec(aISOM,aISCA.Nb().Val());
-                 for 
-                 (
-                      std::list<std::string>::const_iterator itS = aList.begin();
-                      itS != aList.end();
-                      itS++
-                 )
+                 const std::list<std::string > * aList =  GetBestImSec(aISOM,aISCA.Nb().Val(),aNbMin,aNbMax,true);
+                 if (aList==0) 
                  {
-                     AddAnImage(*itS);
+                     std::cout << "NOT ENOUG IMAGE in ImSecCalcApero for " << aNameImSec << "\n";
+                     switch(aISCA.OnEmpty().Val())
+                     {
+                         case eOEISA_error:
+                             ELISE_ASSERT(false,"NOT ENOUG IMAGE is fatal error in this context");
+                         break;
+
+                         case eOEISA_exit:
+                             exit(0);
+                         break;
+           
+                         case eOEISA_goon:
+                         break;
+                     }
+                 }
+                 else
+                 {
+                      for 
+                      (
+                           std::list<std::string>::const_iterator itS = aList->begin();
+                           itS != aList->end();
+                           itS++
+                      )
+                      {
+                          AddAnImage(*itS);
+                      }
                  }
             }
        }
@@ -1233,12 +1324,20 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
         {
             std::string aN1 = WorkDir()+ mPDV1->NameGeom();
             std::string aN2 = WorkDir()+ aNameGeom;
-            // std::cout << aN1 << " " << aN2 << "\n";
+            ElCamera * aCam1 = Cam_Gen_From_File(aN1,"OrientationConique",mICNM);
+            ElCamera * aCam2 = Cam_Gen_From_File(aN2,"OrientationConique",mICNM);
+            double aProp = aCam1->RatioInterSol(*aCam2);
+            // std::cout << aN1 << " " << aN2 << " " << aProp << "\n";
+            if (aProp < aSel.RecouvrMin())
+               return;
+
+/*
             Ori3D_Std anO1(aN1.c_str());
             Ori3D_Std anO2(aN2.c_str());
             std::string  aN0 =  mPDV1->Name();
             if (anO1.PropInter(anO2) < aSel.RecouvrMin())
                return;
+*/
             // std::cout  << aN0 << " " << aName <<  "  " << anO1.PropInter(anO2) << "\n";
         }
     }
@@ -1248,12 +1347,12 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
      mPrisesDeVue.push_back(new cPriseDeVue(*this,aName,aIMIL,mNbPDV,aNameGeom,theGotGeom->ModG()));
 
 // InitAnam
-     if (mAnam)
+     if (mAnamSA)
      {
          ELISE_ASSERT
          (
-              mPrisesDeVue.back()->Geom().AcceptAnam(),
-              "Geometrie do not handle anamorphose\n"
+              mPrisesDeVue.back()->Geom().AcceptAnamSA(),
+              "Acquisition Geometrie do not handle anamorphose\n"
          );
      }
      if ( mNbPDV == 0)
@@ -1420,6 +1519,12 @@ inline cPriseDeVue * PDVNN(const cPriseDeVue * aPDV,int aNum)
 }
 
 
+const cEtapeMecComp * cAppliMICMAC::FirstVraiEtape() const
+{
+   ELISE_ASSERT(!mEtapesMecComp.empty(),"cAppliMICMAC::FirstVraiEtape");
+   return mEtapesMecComp.front();
+}
+
 
 
 const cPriseDeVue * cAppliMICMAC::PDV1() const { return  PDVNN(mPDV1,1); }
@@ -1506,6 +1611,11 @@ const Pt2di &  cAppliMICMAC::PtSzWFixe() const
 const cCorrelAdHoc * cAppliMICMAC::CAH() const
 {
     return mCorrelAdHoc;
+}
+
+const cCorrelMultiScale * cAppliMICMAC::CMS() const
+{
+   return mCMS;
 }
 
 const cEtiqBestImage *  cAppliMICMAC::EBI() const
@@ -1602,12 +1712,20 @@ bool cAppliMICMAC::IsOptDequant() const
 {
    return mIsOptDequant;
 }
+bool cAppliMICMAC::IsOptIdentite() const
+{
+   return mIsOptIdentite;
+}
 
 int cAppliMICMAC::CurSurEchWCor() const
 {
    return mCurSurEchWCor;
 }
 
+bool cAppliMICMAC::DoTheMEC() const
+{
+   return mDoTheMEC;
+}
 
 const cInterfaceVisualisation * cAppliMICMAC::PtrVI() const
 {
@@ -1619,8 +1737,8 @@ bool cAppliMICMAC::FullIm1() const
    return mFullIm1;
 }
 
-cInterfSurfaceAnalytique * cAppliMICMAC::Anam() const { return mAnam; }
-cXmlOneSurfaceAnalytique * cAppliMICMAC::XmlAnam() const { return mXmlAnam; }
+cInterfSurfaceAnalytique * cAppliMICMAC::AnamSA() const { return mAnamSA; }
+cXmlOneSurfaceAnalytique * cAppliMICMAC::XmlAnamSA() const { return mXmlAnamSA; }
 const cChCoCart  * cAppliMICMAC::RC() const { return mRepCorrel; }
 const cChCoCart  * cAppliMICMAC::RCI() const { return mRepInvCorrel; }
 
@@ -1733,7 +1851,7 @@ void cAppliMICMAC::ExeProcessParallelisable
    std::string ToAdd("");
    if (AddNameExeMicMac)
    {
-#if (ELISE_unix || ELISE_MacOs|| ELISE_Cygwin)
+#if (ELISE_unix || ELISE_MacOs)
 	  // TODO: a better solution for this
 	  std::size_t spacePos = mNameExe.rfind( ' ' );
 	  if ( spacePos!=std::string::npos )
@@ -1872,12 +1990,10 @@ void cAppliMICMAC::ExeProcessParallelisable
        } 
        fic.close();
        mCout << " ---Lance les Process avec le Makefile\n";
-#if (ELISE_unix || ELISE_MacOs || ELISE_Cygwin)
-
-	   std::string aCom = std::string("make -f \"")+nomMakefile+std::string("\" -j ")+ToString(std::abs(ByProcess().Val()));
+#if (ELISE_unix || ELISE_MacOs)
+	   std::string aCom = g_externalToolHandler.get( "make" ).callName() + " -f \""+nomMakefile+std::string("\" -j ")+ToString(std::abs(ByProcess().Val()));
 #else
-	   string str = g_externalToolHandler.get( "make" ).callName();
-	   std::string aCom = std::string(g_externalToolHandler.get( "make" ).callName()+" -f ")+nomMakefile+std::string(" -j ")+ToString(std::abs(ByProcess().Val()));
+	   std::string aCom = g_externalToolHandler.get( "make" ).callName()+" -f "+nomMakefile+std::string(" -j ")+ToString(std::abs(ByProcess().Val()));
 #endif
 	   int aCodeRetour = system_call(aCom.c_str());
        if (StopOnEchecFils().Val())
@@ -1961,7 +2077,7 @@ void cAppliMICMAC::TestReducIm(int aDZ)
 
     if (mGPRed2)
     {
-       mGPRed2->ExeParal("MkRed2MM");
+       mGPRed2->ExeParal(mFullDirMEC + "MkRed2MM",-1);
     }
 
 

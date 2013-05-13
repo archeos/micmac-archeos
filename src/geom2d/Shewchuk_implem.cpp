@@ -318,8 +318,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 /* The next line is used to outsmart some very stupid compilers.  If your    */
 /*   compiler is smarter, feel free to replace the "int" with "void".        */
 /*   Not that it matters.                                                    */
-
-#define VOID int
+#ifndef VOID
+	#define VOID int
+#endif
 
 /* Two constants for algorithms based on random sampling.  Both constants    */
 /*   have been chosen empirically to optimize their respective algorithms.   */
@@ -343,7 +344,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 /* And here's one for those of you who are intimidated by math.              */
 
 #define ONETHIRD 0.333333333333333333333333333333333333333333333333333333333333
-#if (!ELISE_windows | ELISE_Cygwin)
+#if (!ELISE_windows | ELISE_MinGW)
 #include <unistd.h>
 #endif
 

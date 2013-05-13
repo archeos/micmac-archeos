@@ -280,8 +280,9 @@ cEtapeMecComp::cEtapeMecComp
   mCaracZ          (0),
   mIsOptDiffer     (anEtape.AlgoRegul().ValWithDef(eAlgoCoxRoy)==eAlgoOptimDifferentielle),
   mIsOptDequant    (anEtape.AlgoRegul().ValWithDef(eAlgoCoxRoy)==eAlgoDequant),
+  mIsOptIdentite    (anEtape.AlgoRegul().ValWithDef(eAlgoCoxRoy)==eAlgoIdentite),
   mIsOtpLeastSQ    (anEtape.AlgoRegul().ValWithDef(eAlgoCoxRoy)==eAlgoLeastSQ),
-  mIsOptimCont     (mIsOptDiffer || mIsOptDequant),
+  mIsOptimCont     (mIsOptDiffer || mIsOptDequant || mIsOptIdentite),
   mIsOptimReel     (mIsOptimCont || mIsOtpLeastSQ),
   mGenImageCorrel  ((!mIsOptimCont) && (anEtape.GenImagesCorrel().ValWithDef(mIsLast))),
   mPrec            (aVEtPrec.empty() ?0  : aVEtPrec.back()),
@@ -292,7 +293,10 @@ cEtapeMecComp::cEtapeMecComp
   mEBI               (0),
   mTheModPrgD        (0),
   mTheEtapeNewPrgD   (0),
-  mInterpFloat       (0)
+  mInterpFloat       (0),
+  mMATP              (false),
+  mUseWAdapt         (false),
+  mNameXMLNuage      ("")
 {
 
     
@@ -300,7 +304,7 @@ cEtapeMecComp::cEtapeMecComp
      {
         ELISE_ASSERT
         (
-           isLastEtape,
+           (isLastEtape || mIsOptIdentite),
            "Optimisation differentielle uniquement en derniere etape"
         );
      }
@@ -432,6 +436,8 @@ cEtapeMecComp::cEtapeMecComp
       mGeomTer.SetStep(aVPas);
 
 
+      // CreateMNTInit();
+/*
        if (!mAppli.DoNothingBut().IsInit())
        {
            for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
@@ -439,6 +445,7 @@ cEtapeMecComp::cEtapeMecComp
               mFilesPx[aK]->CreateMNTInit();
            }
        }
+*/
 
 
       if ((mNbNappesEp==0) && (aVEtPrec.size() > 1)  && (mAlgoRegul!=eAlgoLeastSQ))
@@ -463,9 +470,17 @@ cEtapeMecComp::cEtapeMecComp
          );
       }
 
+
+      if (mEtape.RelSelecteur().IsInit())
+      {
+          ELISE_ASSERT (ModeGeomIsIm1InvarPx(mAppli),"RelSelecteur requires master image")
+          mSelectByRel =  GetStrFromGenStrRel(mAppli.ICNM(),mEtape.RelSelecteur().Val(),mAppli.PDV1()->Name());
+         // aPDV->SetMaitre(IsModeIm1Maitre(mEtape.AggregCorr().Val()));
+      }
+
+
       if (mEtape.ImageSelecteur().IsInit())
       {
-         // cImageSelecteur & aIS = mEtape.ImageSelecteur().Val();
          mPatternModeExcl = mEtape.ImageSelecteur().Val().ModeExclusion();
          std::list<string> aLPat  = mEtape.ImageSelecteur().Val().PatternSel();
          for 
@@ -570,6 +585,7 @@ cEtapeMecComp::cEtapeMecComp
                  mEBI = mArgMaskAuto->EtiqBestImage().PtrVal();
              }
 
+
              if (
                     (mTheModPrgD->EtapeProgDyn().size()==1)
                  && (( NbNappesEp() ==1) && (NumSeuleNapEp() ==0))
@@ -618,6 +634,7 @@ cEtapeMecComp::cEtapeMecComp
               {
                   NewPrgDynOblig = true;
               }
+
           }
 
           if (NewPrgDynInterdit && NewPrgDynOblig)
@@ -630,6 +647,25 @@ cEtapeMecComp::cEtapeMecComp
       }
 
 
+      if (mEBI)
+      {
+           ELISE_ASSERT(mEtape.CorrelAdHoc().IsInit(),"EtiqBestImage requires CorrelAdHoc");
+      }
+
+      if (mEtape.CorrelAdHoc().IsInit())
+      {
+         const cCorrelAdHoc & aCAH  = mEtape.CorrelAdHoc().Val();
+
+         cTypeCAH aT = aCAH.TypeCAH();
+         if (aT.MasqueAutoByTieP().IsInit())
+            mMATP = true;
+
+         if (aCAH.CorrelMultiScale().IsInit())
+         {
+              const cCorrelMultiScale & aCMS = aCAH.CorrelMultiScale().Val();
+              mUseWAdapt = aCMS.UseWAdapt().Val();
+         }
+      }
 
 
       if (mArgMaskAuto)
@@ -670,7 +706,32 @@ cEtapeMecComp::cEtapeMecComp
            }
      }
      mUsePC = (mPredPC!=0) && (mEtape.UsePartiesCachee().ValWithDef(true));
+
+
+    // CreateMNTInit();
 }
+
+void  cEtapeMecComp::CreateMNTInit()
+{
+       if (!mAppli.DoNothingBut().IsInit())
+       {
+           for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
+           {
+              mFilesPx[aK]->CreateMNTInit();
+           }
+       }
+}
+
+
+
+int  cEtapeMecComp::MultiplierNbSizeCellule() const
+{
+   if (mEBI)
+      return  mAppli.NbApproxVueActive();
+
+   return 1;
+}
+
 
 void cEtapeMecComp::SetCaracOfZoom()
 {
@@ -702,6 +763,18 @@ void cEtapeMecComp::ExportModelesAnalytiques()
        (*itM)->MakeExport();
    }
 }
+
+bool  cEtapeMecComp::MATP() const
+{
+   return mMATP;
+}
+
+
+bool  cEtapeMecComp::UseWAdapt() const
+{
+   return mUseWAdapt;
+}
+
 
 
 cInterpolateurIm2D<float> * cEtapeMecComp::InterpFloat()  const
@@ -785,6 +858,13 @@ Tiff_Im cEtapeMecComp::LastFileCorrelOK() const
 bool cEtapeMecComp::SelectImage(cPriseDeVue * aPDV) const
 {
     aPDV->SetMaitre(IsModeIm1Maitre(mEtape.AggregCorr().Val()));
+
+    if (mEtape.RelSelecteur().IsInit())
+    {
+       if ((! BoolFind(mSelectByRel,aPDV->Name())) && (aPDV!=mAppli.PDV1()))
+          return false;
+    }
+
     const std::string & aName = aPDV->Name();
     bool aRes = mPatternModeExcl;
     for
@@ -1011,11 +1091,21 @@ bool cEtapeMecComp::IsOptDequant() const
 {
    return mIsOptDequant;
 }
+
+bool cEtapeMecComp::IsOptIdentite() const
+{
+   return mIsOptIdentite;
+}
+
 bool cEtapeMecComp::IsOptimReel() const
 {
    return mIsOptimReel;
 }
 
+const std::string &  cEtapeMecComp::NameXMLNuage() const
+{
+    return mNameXMLNuage;
+}
 
 
 
@@ -1262,7 +1352,9 @@ void cEtapeMecComp::SauvNappes
      )
 {
 
-  if (mIsOtpLeastSQ)
+/// std::cout << "cEtapeMecComp::SauvNappes  " << mMATP << "\n";
+
+  if (mIsOtpLeastSQ || mMATP)
      return;
 
    cResProj32 aRP32 = Projection32
@@ -1520,8 +1612,11 @@ int cEtapeMecComp::MemSizeCelluleAlgo() const
               return 16;
          case eAlgo2PrgDyn  :
               return 4;
+         case eAlgoTestGPU :
+              return 4;
          case eAlgoMaxOfScore :
          case eAlgoDequant :
+         case eAlgoIdentite :
               return 0;
          default :
               ELISE_ASSERT(false,"Optimization non supportee");
@@ -1538,7 +1633,10 @@ int cEtapeMecComp::MemSizePixelSsCelluleAlgo() const
               return 20;
          case eAlgo2PrgDyn  :
               return 20;
+         case eAlgoTestGPU :
+              return 20;
          case eAlgoMaxOfScore :
+         case eAlgoIdentite :
               return (int) (4*mFilesPx.size());
          case eAlgoDequant :
               return (int) (12*mFilesPx.size());
@@ -1575,7 +1673,7 @@ void cEtapeMecComp::DoRemplitXMLNuage() const
    }
 }
 
-void cEtapeMecComp::DoRemplitXML_MTD_Nuage() const
+cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXML_MTD_Nuage() const
 {
    // Prudence pour la generation systematique, ce ne doit pas
    // fonctionner avec toutes les geometries
@@ -1588,11 +1686,11 @@ void cEtapeMecComp::DoRemplitXML_MTD_Nuage() const
    aMTD.KeyNameMTD() = "Key-Assoc-Nuage-ImProf";
    cExportNuage anEN;
    anEN.MTD_Nuage_Maille().SetVal(aMTD);
-   DoRemplitXMLNuage(anEN);
+   return DoRemplitXMLNuage(anEN);
 }
 
 
-void cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & anEN) const
+cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & anEN) const
 {
     cXML_ParamNuage3DMaille aNuage;
     bool aMTD = anEN.MTD_Nuage_Maille().IsInit();
@@ -1615,6 +1713,7 @@ void cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & anEN) const
                                   true
                               );
         MakeFileXML(aNuage,aName);
+        mNameXMLNuage = aName;
     }
     if (anEN.PlyFile().IsInit())
     {
@@ -1677,7 +1776,7 @@ void cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & anEN) const
          MakeFileXML(aN2->Params(), StdPrefix(aName)+std::string(".xml"));
     }
 
-   
+   return aNuage;
 }
 
 std::string cEtapeMecComp::NameMasqCarteProf() const
@@ -1705,9 +1804,9 @@ void cEtapeMecComp::RemplitXMLNuage
        aNuage.RepereGlob().SetVal(mAppli.RC()->El2Xml());
     }
 
-    if (mAppli.XmlAnam())
+    if (mAppli.XmlAnamSA())
     {
-        aNuage.Anam().SetVal(*(mAppli.XmlAnam()));
+        aNuage.Anam().SetVal(*(mAppli.XmlAnamSA()));
     }
 
     // ELISE_ASSERT(mAppli.DimPx()==1,"cEtapeMecComp::RemplitXMLNuage with DimPx>1");
@@ -1821,7 +1920,7 @@ void cEtapeMecComp::RemplitXMLNuage
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1837,17 +1936,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

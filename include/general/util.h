@@ -98,6 +98,18 @@ class FBool
          return mVal != F2.mVal;
       }
 
+      bool  BoolCast()
+      {
+           if ((*this)==True) return true;
+           if ((*this)==False) return false;
+
+           ELISE_ASSERT(false,"FBool::BoolCast , val is MayBe");
+           return false;
+      }
+
+
+
+
     private :
        FBool(U_INT1);
        U_INT1    mVal;
@@ -518,6 +530,7 @@ bool N2IsEndN1(const char * aName1,const char * aName2);
 std::string ToStrBlkCorr(const std::string &);
 
 
+std::string StrToLower(const std::string & aStr);
 INT    IndPostfixed  (const ElSTDNS string &,char = '.');
 ElSTDNS string StdPostfix(const ElSTDNS string &,char = '.');
 ElSTDNS string StdPrefix (const ElSTDNS string &,char = '.');
@@ -878,7 +891,7 @@ class cEl_GPAO
 {
      public :
           // Interface simplifiee quand il n'y a pas de dependance entre les commandes
-          static void DoComInParal(const std::list<std::string> &,std::string  FileMk = "", int   aNbProc = 0 );
+          static void DoComInParal(const std::list<std::string> &,std::string  FileMk = "", int   aNbProc = 0 ,bool Exe=true);
 
          ~cEl_GPAO();
           cEl_GPAO();
@@ -899,7 +912,7 @@ class cEl_GPAO
          cElTask   &TaskOfName(const std::string &aName) ;
          void  GenerateMakeFile(const std::string & aNameFile) const ;
          void  GenerateMakeFile(const std::string & aNameFile,bool ModeAdditif) const;
-         void ExeParal(std::string aFile,int aNbProc = -1);
+         void ExeParal(std::string aFile,int aNbProc = -1,bool SuprFile=true);
 
      private :
          std::map<std::string,cElTask *>  mDico;

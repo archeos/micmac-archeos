@@ -93,6 +93,8 @@ eTypeFichierOriTxt  Str2eTypeFichierOriTxt(const std::string & aName)
 {
    if (aName=="eOriTxtAgiSoft")
       return eOriTxtAgiSoft;
+   else if (aName=="eOriBluh")
+      return eOriBluh;
    else if (aName=="eOriTxtInFile")
       return eOriTxtInFile;
    else if (aName=="eNbTypeOriTxt")
@@ -112,6 +114,8 @@ std::string  eToString(const eTypeFichierOriTxt & anObj)
 {
    if (anObj==eOriTxtAgiSoft)
       return  "eOriTxtAgiSoft";
+   if (anObj==eOriBluh)
+      return  "eOriBluh";
    if (anObj==eOriTxtInFile)
       return  "eOriTxtInFile";
    if (anObj==eNbTypeOriTxt)
@@ -122,6 +126,39 @@ std::string  eToString(const eTypeFichierOriTxt & anObj)
 }
 
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const eTypeFichierOriTxt & anObj)
+{
+      return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
+}
+
+eImpaintMethod  Str2eImpaintMethod(const std::string & aName)
+{
+   if (aName=="eImpaintL2")
+      return eImpaintL2;
+   else if (aName=="eImpaintMNT")
+      return eImpaintMNT;
+  else
+  {
+      cout << aName << " is not a correct value for enum eImpaintMethod\n" ;
+      ELISE_ASSERT(false,"XML enum value error");
+  }
+  return (eImpaintMethod) 0;
+}
+void xml_init(eImpaintMethod & aVal,cElXMLTree * aTree)
+{
+   aVal= Str2eImpaintMethod(aTree->Contenu());
+}
+std::string  eToString(const eImpaintMethod & anObj)
+{
+   if (anObj==eImpaintL2)
+      return  "eImpaintL2";
+   if (anObj==eImpaintMNT)
+      return  "eImpaintMNT";
+ std::cout << "Enum = eImpaintMethod\n";
+   ELISE_ASSERT(false,"Bad Value in eToString for enum value ");
+   return "";
+}
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const eImpaintMethod & anObj)
 {
       return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
 }
@@ -3884,6 +3921,59 @@ void xml_init(cCalibrationInterneUnif & anObj,cElXMLTree * aTree)
    xml_init(anObj.Params(),aTree->GetAll("Params",false,1));
 
    xml_init(anObj.Etats(),aTree->GetAll("Etats",false,1));
+}
+
+
+std::string & cTestNewGrid::A()
+{
+   return mA;
+}
+
+const std::string & cTestNewGrid::A()const 
+{
+   return mA;
+}
+
+
+Im2D_INT1 & cTestNewGrid::Im()
+{
+   return mIm;
+}
+
+const Im2D_INT1 & cTestNewGrid::Im()const 
+{
+   return mIm;
+}
+
+
+std::string & cTestNewGrid::Z()
+{
+   return mZ;
+}
+
+const std::string & cTestNewGrid::Z()const 
+{
+   return mZ;
+}
+
+cElXMLTree * ToXMLTree(const cTestNewGrid & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"TestNewGrid",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("A"),anObj.A())->ReTagThis("A"));
+   aRes->AddFils(::ToXMLTree(std::string("Im"),anObj.Im())->ReTagThis("Im"));
+   aRes->AddFils(::ToXMLTree(std::string("Z"),anObj.Z())->ReTagThis("Z"));
+  return aRes;
+}
+
+void xml_init(cTestNewGrid & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.A(),aTree->Get("A",1)); //tototo 
+
+   xml_init(anObj.Im(),aTree->Get("Im",1)); //tototo 
+
+   xml_init(anObj.Z(),aTree->Get("Z",1)); //tototo 
 }
 
 
@@ -12244,6 +12334,89 @@ void xml_init(cOneSolImageSec & anObj,cElXMLTree * aTree)
 }
 
 
+std::string & cISOM_Vois::Name()
+{
+   return mName;
+}
+
+const std::string & cISOM_Vois::Name()const 
+{
+   return mName;
+}
+
+
+double & cISOM_Vois::Angle()
+{
+   return mAngle;
+}
+
+const double & cISOM_Vois::Angle()const 
+{
+   return mAngle;
+}
+
+
+double & cISOM_Vois::Nb()
+{
+   return mNb;
+}
+
+const double & cISOM_Vois::Nb()const 
+{
+   return mNb;
+}
+
+cElXMLTree * ToXMLTree(const cISOM_Vois & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ISOM_Vois",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("Name"),anObj.Name())->ReTagThis("Name"));
+   aRes->AddFils(::ToXMLTree(std::string("Angle"),anObj.Angle())->ReTagThis("Angle"));
+   aRes->AddFils(::ToXMLTree(std::string("Nb"),anObj.Nb())->ReTagThis("Nb"));
+  return aRes;
+}
+
+void xml_init(cISOM_Vois & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.Name(),aTree->Get("Name",1)); //tototo 
+
+   xml_init(anObj.Angle(),aTree->Get("Angle",1)); //tototo 
+
+   xml_init(anObj.Nb(),aTree->Get("Nb",1)); //tototo 
+}
+
+
+std::list< cISOM_Vois > & cISOM_AllVois::ISOM_Vois()
+{
+   return mISOM_Vois;
+}
+
+const std::list< cISOM_Vois > & cISOM_AllVois::ISOM_Vois()const 
+{
+   return mISOM_Vois;
+}
+
+cElXMLTree * ToXMLTree(const cISOM_AllVois & anObj)
+{
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ISOM_AllVois",eXMLBranche);
+  for
+  (       std::list< cISOM_Vois >::const_iterator it=anObj.ISOM_Vois().begin();
+      it !=anObj.ISOM_Vois().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("ISOM_Vois"));
+  return aRes;
+}
+
+void xml_init(cISOM_AllVois & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+
+   xml_init(anObj.ISOM_Vois(),aTree->GetAll("ISOM_Vois",false,1));
+}
+
+
 std::string & cImSecOfMaster::Master()
 {
    return mMaster;
@@ -12265,6 +12438,17 @@ const std::list< cOneSolImageSec > & cImSecOfMaster::Sols()const
    return mSols;
 }
 
+
+cTplValGesInit< cISOM_AllVois > & cImSecOfMaster::ISOM_AllVois()
+{
+   return mISOM_AllVois;
+}
+
+const cTplValGesInit< cISOM_AllVois > & cImSecOfMaster::ISOM_AllVois()const 
+{
+   return mISOM_AllVois;
+}
+
 cElXMLTree * ToXMLTree(const cImSecOfMaster & anObj)
 {
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ImSecOfMaster",eXMLBranche);
@@ -12275,6 +12459,8 @@ cElXMLTree * ToXMLTree(const cImSecOfMaster & anObj)
       it++
   ) 
       aRes->AddFils(ToXMLTree((*it))->ReTagThis("Sols"));
+   if (anObj.ISOM_AllVois().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.ISOM_AllVois().Val())->ReTagThis("ISOM_AllVois"));
   return aRes;
 }
 
@@ -12285,6 +12471,8 @@ void xml_init(cImSecOfMaster & anObj,cElXMLTree * aTree)
    xml_init(anObj.Master(),aTree->Get("Master",1)); //tototo 
 
    xml_init(anObj.Sols(),aTree->GetAll("Sols",false,1));
+
+   xml_init(anObj.ISOM_AllVois(),aTree->Get("ISOM_AllVois",1)); //tototo 
 }
 
 

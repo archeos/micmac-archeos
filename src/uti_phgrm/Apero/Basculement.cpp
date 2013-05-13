@@ -77,12 +77,22 @@ Pt3dr cAppliApero::PImetZ2PTer(const cAperoPointeMono & anAPM,double aZ)
      //---------------------------------------------
 
 cArgGetPtsTerrain::cArgGetPtsTerrain(double aResolMAsq,double aLimBsH) :
-     mResol  (aResolMAsq),
-     mMasq   (0),
-     mMode   (eModeAGPIm), 
-     mLimBsH (aLimBsH)
+     mResol      (aResolMAsq),
+     mMasq       (0),
+     mMode       (eModeAGPIm), 
+     mLimBsH     (aLimBsH),
+     mDoByIm     (false),
+     mSymDoByIm  (false)
 {
 }
+
+void cArgGetPtsTerrain::SetByIm(bool DoByIm,bool Sym)
+{
+   mDoByIm = DoByIm;
+   mSymDoByIm = Sym;
+}
+
+
 
 double cArgGetPtsTerrain::LimBsH() const {return mLimBsH;}
 
@@ -130,6 +140,13 @@ void cArgGetPtsTerrain::AddAGP
    {
       mPts.push_back(aPts);
       mPds.push_back(aPds);
+      if (mDoByIm && aVPose)
+      {
+          int aNb = mSymDoByIm ? aVPose->size() : ElMin(1,int(aVPose->size()));
+          for (int aK=0 ; aK<aNb ; aK++)
+              (*aVPose)[aK]->AddPtsVu(aPts);
+      }
+
       if (mMode == eModeAGPIm)
       {
          if (mVIms.size())
@@ -195,6 +212,12 @@ void cArgGetPtsTerrain::AddAGP
       {
       }
    }
+}
+
+void cArgGetPtsTerrain::AddPts(Pt3dr aP1,Pt3di aCoul)
+{
+   mCouls.push_back(aCoul); 
+   mPts.push_back(aP1);
 }
 
 void cArgGetPtsTerrain::AddSeg(Pt3dr aP1,Pt3dr aP2,double aStep,Pt3di aCoul)

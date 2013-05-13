@@ -68,6 +68,8 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 //#include <strstream>    
 
+std::string MakeStrFromArgcARgv(int  argc,char** argv);
+
 void MemoArg(int,char**);
 void ShowArgs();
 
@@ -314,6 +316,8 @@ class LArgMain
 		}
 		~LArgMain();
 
+                int Size() const;
+
 
 		INT  Init(int argc,char ** argv) const;
                 void  InitIfMatchEq
@@ -347,14 +351,18 @@ class LArgMain
 
 
 // Renvoie eventuellement la parti non consommee
+#define EIAM_VerifInit true
+#define EIAM_AccUnK false
+#define EIAM_NbArgGlobGlob -1 
+
 std::vector<char *>   	ElInitArgMain
 		(
 			int argc,char ** argv,
 			const LArgMain & ,
 			const LArgMain & ,
-                        bool  VerifInit=true,
-                        bool  AccUnK=false,
-			int   aNbArgGlobGlob = -1 // 
+                        bool  VerifInit=EIAM_VerifInit,
+                        bool  AccUnK=EIAM_AccUnK,
+			int   aNbArgGlobGlob = EIAM_NbArgGlobGlob
 		);
 
 void  	ElInitArgMain
@@ -421,8 +429,11 @@ class cReadObject
 int BatchFDC_main(int argc,char ** argv);
 int MapCmd_main(int argc,char ** argv);
 int MyRename_main(int argc,char ** argv);
+int Genere_Header_TiffFile_main(int argc,char ** argv);
 int TestSet_main(int argc,char ** argv);
 int TestMTD_main(int argc,char ** argv);
+int TestCmds_main(int argc,char ** argv);
+int Apero2PMVS_main(int argc,char ** argv);
 
 // uti_images
 int Undist_main(int argc,char ** argv);
@@ -431,13 +442,25 @@ int Devlop_main(int argc,char ** argv);
 int ElDcraw_main(int argc,char ** argv);
 int GenXML2Cpp_main(int argc,char ** argv);
 int GrShade_main(int argc,char ** argv);
+int EstimFlatField_main(int argc,char ** argv);
+int Impainting_main(int argc,char ** argv);
 int MpDcraw_main(int argc,char ** argv);
 int PastDevlop_main(int argc,char ** argv);
 int Reduc2MM_main(int argc,char ** argv);
 int ScaleIm_main(int argc,char ** argv);
+int ConvertIm_main(int argc,char ** argv);
+int MakePlancheImage_main(int argc,char ** argv);
 int tiff_info_main(int argc,char ** argv);
 int to8Bits_main(int argc,char ** argv);
+int mmxv_main(int argc,char ** argv);
 int MPDtest_main(int argc,char ** argv);
+int CmpIm_main(int argc,char ** argv);
+int Drunk_main(int argc,char ** argv);
+int CalcSzWCor_main(int argc,char ** argv);
+int Digeo_main(int argc,char ** argv);
+int Sift_main(int argc,char ** argv);
+int Ann_main(int argc,char ** argv);
+
 
 // uti_phgram
 int AperiCloud_main(int argc,char ** argv);
@@ -445,6 +468,7 @@ int Apero_main(int argc,char ** argv);
 int Bascule_main(int argc,char ** argv);
 int CmpCalib_main(int argc,char ** argv);
 int Campari_main(int argc,char ** argv);
+int MMTestOrient_main(int argc,char ** argv);
 int ChgSysCo_main(int argc,char ** argv);
 int GCPBascule_main(int argc,char ** argv);
 int CentreBascule_main(int argc,char ** argv);
@@ -453,6 +477,7 @@ int Malt_main(int argc,char ** argv);
 int Mascarpone_main(int argc,char ** argv);
 int MergePly_main(int argc,char ** argv);
 int MICMAC_main(int argc,char ** argv);
+int FusionCarteProf_main(int argc,char ** argv);
 int Nuage2Ply_main(int argc,char ** argv);
 int Pasta_main(int argc,char ** argv);
 int Pastis_main(int argc,char ** argv);
@@ -466,19 +491,27 @@ int Tarama_main(int argc,char ** argv);
 int Tawny_main(int argc,char ** argv);
 int TestCam_main(int argc,char ** argv);
 int ScaleNuage_main(int argc,char ** argv);
-int  Gri2Bin_main(int argc,char ** argv);
+int Gri2Bin_main(int argc,char ** argv);
+int XYZ2Im_main(int argc,char ** argv);
+int Im2XYZ_main(int argc,char ** argv);
 
 int MMPyram_main(int argc,char ** argv);
 int CreateEpip_main(int argc,char ** argv);
 int AperoChImMM_main(int argc,char ** argv);
+int MM_FusionNuage_main(int argc,char ** argv);
 int MMInitialModel_main(int argc,char ** argv);
+int MMAllAuto_main(int argc,char ** argv);
+int MM2DPostSism_Main(int argc,char ** argv);
 int CheckDependencies_main(int argc,char ** argv);
 int NuageBascule_main(int argc,char ** argv);
 int  cod_main(int argc,char ** argv);
+int  vicod_main(int argc,char ** argv);
+int  genmail_main(int argc,char ** argv);
 int Ori_Txt2Xml_main(int argc,char ** argv);
 int GCP_Txt2Xml_main(int argc,char ** argv);
-
-
+int VideoVisage_main(int argc,char ** argv);
+int Poisson_main(int argc,char ** argv);
+int GrapheHom_main(int argc,char ** argv);
 
 #if (ELISE_X11)
 int SaisieAppuisInit_main(int argc,char ** argv);
