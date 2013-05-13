@@ -13,7 +13,7 @@ Subject: Hardcoded paths. FHS complient
  
      cEl_GPAO aGPAO;
      int aK=0;
-@@ -96,7 +96,7 @@ void MkFMapCmd
+@@ -103,7 +103,7 @@ void MkFMapCmd
         aNbProc = NbProcSys();
  
      if (FileMk=="") 

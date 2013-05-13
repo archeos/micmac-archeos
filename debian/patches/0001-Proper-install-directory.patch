@@ -8,19 +8,25 @@ Subject: Proper install directory
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -269,13 +269,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG
+@@ -306,8 +306,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG
  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
  
  # DEFINITION : du dossier d'installation
 -set(Install_Dir ${PROJECT_SOURCE_DIR}/bin)
+-set(Install_Dir_lib ${PROJECT_SOURCE_DIR}/lib)
 +set(Install_Dir /usr/bin)
++#set(Install_Dir_lib ${PROJECT_SOURCE_DIR}/lib)
  
  # DEFINITION : du dossier des sources d'Elise
  set(ELISE_DIR src)
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -177,7 +177,7 @@ if(${CUDA_ENABLED})
  
- # CONSTRUCTION : Librairie ELISE
--set( code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
-+set(code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
- include(${code_genere_dir}/Sources.cmake)
- ADD_SUBDIRECTORY(${ELISE_DIR})
+ else()
+ 	 add_library( elise ${Elise_Src_Files} ${IncFiles} )
+-	 INSTALL(TARGETS elise ARCHIVE DESTINATION ${Install_Dir_lib} )
++     #INSTALL(TARGETS elise ARCHIVE DESTINATION ${Install_Dir_lib} )
+ endif()
  
+ # OPTION BUILD : En tetes precompilées pour gcc

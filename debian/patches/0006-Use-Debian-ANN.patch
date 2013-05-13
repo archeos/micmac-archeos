@@ -1,0 +1,64 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -313,7 +313,7 @@ set(Install_Dir /usr/bin)
+ set(ELISE_DIR src)
+ 
+ # CONSTRUCTION : Librairie ANN
+-include(${PROJECT_SOURCE_DIR}/CodeExterne/ANN/CMakeLists.txt)
++# include(${PROJECT_SOURCE_DIR}/CodeExterne/ANN/CMakeLists.txt)
+ # CONSTRUCTION : Librairie ELISE
+ set( code_genere_dir ${PROJECT_SOURCE_DIR}/CodeGenere )
+ include(${code_genere_dir}/Sources.cmake)
+--- a/src/uti_image/Ann/AnnSearcher.h
++++ b/src/uti_image/Ann/AnnSearcher.h
+@@ -11,7 +11,7 @@
+ #include <fstream>
+ 
+ // this can possibly be removed if ANN is not installed
+-#include "../../../CodeExterne/ANN/include/ANN/ANN.h"
++#include <ANN/ANN.h>
+ 
+ #define SIFT_POINT_UNDEFINED_INDEX -1
+ 
+--- a/src/CBinaires/CMakeLists.txt
++++ b/src/CBinaires/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ add_executable(mm3d mm3d.cpp)
+ 
+-target_link_libraries(mm3d elise ${X11_LIBRARIES} ${WINSOCK2_LIBRARY} ${DYN_LIB_LIBRARY} ANN)
++target_link_libraries(mm3d elise ${X11_LIBRARIES} ${WINSOCK2_LIBRARY} ${DYN_LIB_LIBRARY} -lann)
+ 
+ if(${CUDA_ENABLED})
+ 	 target_link_libraries(mm3d ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt})
+@@ -28,7 +28,10 @@ INSTALL(TARGETS mm3d RUNTIME DESTINATION
+ 
+ 
+ if (NOT ${BUILD_ONLY_ELISE})
+-	add_executable(AperiCloud  AperiCloud.c)
++	add_executable(Ann  Ann.c)
++	INSTALL(TARGETS Ann RUNTIME DESTINATION ${Install_Dir})
++
++    add_executable(AperiCloud  AperiCloud.c)
+ 	INSTALL(TARGETS AperiCloud RUNTIME DESTINATION ${Install_Dir})
+ 
+ 	add_executable(Digeo  Digeo.c)
+--- a/src/uti_phgrm/CPP_Pastis.cpp
++++ b/src/uti_phgrm/CPP_Pastis.cpp
+@@ -43,7 +43,7 @@ using namespace NS_ParamChantierPhotogra
+ 
+ #if ELISE_unix
+ 	const std::string TheStrSiftPP = "siftpp_tgi.LINUX";
+-	const std::string TheStrAnnPP  = "ann_mec_filtre.LINUX";
++	const std::string TheStrAnnPP  = "Ann";
+ #elif ELISE_MacOs
+ 	const std::string TheStrSiftPP = "siftpp_tgi.OSX";
+ 	const std::string TheStrAnnPP  = "ann_samplekey200filtre.OSX";
+--- /dev/null
++++ b/src/CBinaires/Ann.c
+@@ -0,0 +1,6 @@
++#include "BinaireUnique.h"
++
++int main(int argc,char ** argv)
++{
++    return BinaireUnique("Ann",argc,argv);
++}
