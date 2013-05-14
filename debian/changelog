@@ -1,3 +1,12 @@
+micmac (1.0+hg951-0archeos1) theodoric; urgency=low
+ 
+  * New upstream version
+  * For full upstream changelog see MicMac's forum
+  * Use mm3d Ann instead of binary ann
+  * Removed "useless" utilities (mailing list handling and ETAPOLYGON)
+
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 13 May 2013 00:00:00 +0100
+
 micmac (1.0+hg560-0archeos2.1) theodoric; urgency=low
 
   [ Romain Janvier ]

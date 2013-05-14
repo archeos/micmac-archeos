@@ -3,21 +3,23 @@ Next releases
 
 - Use a relative path in Elise error reports
 
-- Are headers in include/XML*/ useful? If not, XML* 
-should maybe be installed in /var/...
+- Are headers in include/XML*/ useful? 
+
+- XML_GEN path substitution (but not in Gen* files, they are use internally) 
+
+- Only use mm3d
 
 - Make a watch script
 
 - Look at upstream changes in path organization and 
-finally clean hardcoded stuffs (maybe patch a config.h.in)
+finally clean my hardcoded stuffs
 
 - Auto DicoCamera installation? on first launch mm3D 
 should create $HOME/.micmac/*.xml.
 postinst scripts and /usr/skel  should be avoided
 
-- Re-implement an open source 'Sift' w/ vlfeat:
- * Tiling for big images and good memory management
- * Native support of 8b Tiff (instead of pgm) to integrate 
-   seamlessly w/ Pastis
+- Use Digeo ASAP
 
-- Re-implement an open source Flann based matcher
+- Add GUI(s)
+
+- Integrate Riesling/Dombre patches in a branch

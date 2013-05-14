@@ -1,16 +1,17 @@
 Upstream-Name: MicMac
-Source: http://www.micmac.ign.fr/
-
+Source: http://logiciels.ign.fr/?-Micmac,3-
 
 Files: *
 Copyright: 2007-2013 Institut Géographique National (IGN) www.ign.fr
 Author: 1999-2013 Marc Pierrot Deseilligny, marc.pierrot-deseilligny at ensg.eu
-Contibutors: Grégoire Maillet
+Contibutors: Jérémie Belvaux
              Didier Bolto
-             Arnaud le Bris
-             Matthieu Deveau
+             Arnaud Le Bris
              Gérald Choqueux
-             Jérémie Belvaux  
+    	     Isabelle Cléry
+             Matthieu Deveau
+    	     Luc Girod
+    	     Grégoire Maillet 
 License: CeCILL-B
  An extensive copy of the license is provided in this document.
 References (please cite these when using this software): 
@@ -55,12 +56,13 @@ References: "An Experimental Comparison of Min-Cut/Max-Flow Algorithms for Energ
  Pushmeet Kohli and Philip H.S. Torr International Conference on Computer Vision
  (ICCV), 2005
 
-
 Files: src/uti_phgrm/MergePly
 Copyright: 1994 The Board of Trustees of The Leland Stanford
 Author: Greg Turk
 Contributor: Joao Fradinho Oliveira
 License: GPL-2+
+
+
 
 
 Files: CodeExterne/*
