@@ -4,3 +4,4 @@
 0004-Batch-MkFile-in-workdir.patch
 0005-Remove-runtime-dependencies-in-CmakeLists.patch
 0006-Use-Debian-ANN.patch
+0007-Remove-non-needed-sotware.patch
