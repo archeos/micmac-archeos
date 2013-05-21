@@ -1,0 +1,45 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Thu, 24 Jan 2013 09:40:14 +0100
+Subject: Makefiles-in-tmp-dir
+
+
+@@ -421,7 +421,7 @@ int Tapioca_main(int argc,char ** argv)
+     }
+ */
+ 
+-    MkFT= MMDir() + "MkTapioca";
++    MkFT= std::string("/tmp/MkTapioca");
+     BinPastis = MM3dBinFile("Pastis");
+     ByP= MMNbProc();
+ 
+--- a/src/util/cGPAO.cpp
++++ b/src/util/cGPAO.cpp
+@@ -53,7 +53,7 @@ void cEl_GPAO::DoComInParal(const std::l
+        aNbProc = NbProcSys();
+ 
+     if (FileMk=="") 
+-       FileMk = MMDir() + "MkStdMM";
++       FileMk = std::string("/tmp/MkTapioca");
+ 
+     cEl_GPAO aGPAO;
+     int aK=0;
+@@ -103,7 +103,7 @@ void MkFMapCmd
+        aNbProc = NbProcSys();
+ 
+     if (FileMk=="") 
+-       FileMk = MMDir() + "MkStdMM";
++       FileMk = std::string("/tmp/MkStdMM");
+ 
+ 
+     cEl_GPAO aGPAO;
+--- a/src/uti_phgrm/CPP_Tapioca.cpp
++++ b/src/uti_phgrm/CPP_Tapioca.cpp
+@@ -421,7 +421,7 @@ int Tapioca_main(int argc,char ** argv)
+     }
+ */
+ 
+-    MkFT= MMDir() + "MkTapioca";
++    MkFT= std::string("/tmp/MkTapioca");
+     BinPastis = MM3dBinFile("Pastis");
+     ByP= MMNbProc();
+ 
