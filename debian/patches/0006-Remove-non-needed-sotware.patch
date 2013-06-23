@@ -42,6 +42,15 @@ Subject: Remove non needed sotware
         aRes.push_back(cMMCom("CreateEpip",CreateEpip_main," Tool create epipolar images"));
         aRes.push_back(cMMCom("Dequant",Dequant_main," Tool for dequantifying an image"));
         aRes.push_back(cMMCom("Devlop",Devlop_main," Do some stuff"));
+@@ -245,7 +246,7 @@ const std::vector<cMMCom> & getAvailable
+        aRes.push_back(cMMCom("CmpIm",CmpIm_main," Tool basic for comparison of images"));
+        aRes.push_back(cMMCom("Undist",Undist_main," Tool for removing images distortion"));
+ 
+-       aRes.push_back(cMMCom("CheckDependencies",CheckDependencies_main," check dependencies to third-party tools"));
++//     aRes.push_back(cMMCom("CheckDependencies",CheckDependencies_main," check dependencies to third-party tools"));
+        aRes.push_back(cMMCom("VV",VideoVisage_main,"A very simplified tool for 3D model of visage out of video, just for fun"));
+ 
+        aRes.push_back(cMMCom("XYZ2Im",XYZ2Im_main,"tool to transform a 3D point (text file) to their 2D proj in cam or cloud"));
 --- a/src/uti_files/Sources.cmake
 +++ b/src/uti_files/Sources.cmake
 @@ -2,7 +2,7 @@ set(uti_files_Src_Files
