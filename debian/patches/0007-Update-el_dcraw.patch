@@ -1,6 +1,6 @@
 From: Romain Janvier <romain.janvier@hotmail.fr>
 Date: Sun, 23 Jun 2013 00:00:00 +0100
-Subject: Remove non needed sotware
+Subject: Update el_dcraw with latest dcraw
 Forwarded: no
 --- a/src/tiff/el_dcraw.c
 +++ b/src/tiff/el_dcraw.c
