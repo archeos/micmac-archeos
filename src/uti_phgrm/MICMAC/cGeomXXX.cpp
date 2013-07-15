@@ -55,7 +55,7 @@ bool IsModeInvY(const eModeGeomMNT & aMode)
 
 cGeomDiscR2::cGeomDiscR2
 (
-    const cAppliMICMAC & anAppli
+    cAppliMICMAC & anAppli
 ) :
   mAp    (&anAppli),
   mInvY  (IsModeInvY(anAppli.GeomMNT()))
@@ -107,9 +107,18 @@ void cGeomDiscR2::SetDeZoom(REAL aDz)
    mResolDz  = mResol * aDz;
    mSzDz = round_ni((mP1-mP0)/mResolDz);
    SetClipInit();
-   mDerX = RDiscToR2(Pt2dr(1,0))-RDiscToR2(Pt2dr(0,0));
-   mDerY = RDiscToR2(Pt2dr(0,1))-RDiscToR2(Pt2dr(0,0));
+
+   // Cette formule genere des erreurd d'arrondi qui, sur le calcul final de la boite
+   // peuvent avoir une consequence non negligeable
+   //  mDerX = RDiscToR2(Pt2dr(1,0))-RDiscToR2(Pt2dr(0,0));
+   //  mDerY = RDiscToR2(Pt2dr(0,1))-RDiscToR2(Pt2dr(0,0));
+
+   mDerX = Pt2dr (mResolDz,0);
+   mDerY =  Pt2dr (0,(mInvY?-1:1)*mResolDz);
 }
+
+// std::cout << "DDDD "  << Pt2dr (mResolDz,0) <<  Pt2dr (0,(mInvY?-1:1)*mResolDz) << "\n";
+// std::cout << "ddDDd " << aResolP   << mDerX << mDerY << "\n";
 
 double cGeomDiscR2::ResolDz() const { return mResolDz; }
 double cGeomDiscR2::ResolZ1() const { return mResol; }
@@ -175,6 +184,18 @@ void cGeomDiscR2::Show(const std::string  & aMes) const
         << " SzCl " <<  SzClip() << "\n";
 }
 
+/*
+int cGeomDiscFPx::MaxPrecision() const 
+{
+   ELISE_ASSERT(mTronkExport,"cGeomDiscFPx::MaxPrecision");
+   return mMaxPrecision;
+}
+*/
+bool cGeomDiscFPx::TronkExport() const
+{
+   return mTronkExport;
+}
+
 const Pt2dr & cGeomDiscR2::P0() const {return mP0;}
 const Pt2dr & cGeomDiscR2::P1() const {return mP1;}
 
@@ -188,9 +209,12 @@ const Pt2dr & cGeomDiscR2::P1() const {return mP1;}
 
 cGeomDiscFPx::cGeomDiscFPx
 (
-    const  cAppliMICMAC & anAppli
+    cAppliMICMAC & anAppli
 ) :
-   cGeomDiscR2 (anAppli)
+   cGeomDiscR2     (anAppli),
+   mRDec           (0,0),
+   mRRIsInit       (false),
+   mRCoordIsInit   (false)
 {
 }
 
@@ -202,6 +226,74 @@ cGeomDiscFPx::cGeomDiscFPx
 /*************************************************************************/
 typedef std::list<cListePointsInclus> tLPI;
 typedef std::list<Pt2dr> tLPt;
+
+
+void  cGeomDiscFPx::SetRoundResol(double aRes)
+{
+   double aZ = mAp->DeZoomMin();
+   mRDec = StdRound(aRes*aZ);
+   mAp->AddPrecisionOfDec(mRDec,aZ);
+   mRRIsInit = true;
+   mResol = mRDec.RVal() /aZ;
+}
+
+void  cGeomDiscFPx::SetUnroundResol(double aRes)
+{
+   mResol = aRes;
+   mRRIsInit = false;
+}
+
+void cGeomDiscFPx::SetResol(double aRes,bool Round)
+{
+   if (Round)
+      SetRoundResol(aRes);
+   else
+      SetUnroundResol(aRes);
+}
+
+void cAppliMICMAC::AddPrecisionOfArrondi(const cDecimal & aDec, double aVal)
+{
+   long int anI = lround_ni( ((long double) aVal)  / ((long double) aDec.RVal())  );
+
+   int aP = round_up(log10((long double)(1.+anI))) +  round_up(ElAbs(log10((long double)(1.+aDec.Mant()))));
+   UpdatePrecision(aP);
+}
+void cAppliMICMAC::AddPrecisionOfDec(const cDecimal & aDec,double aZ)
+{
+   int aP = round_up(ElAbs(log10((long double)(1.+aDec.Mant())))) + round_up(ElAbs(log10(aZ)));
+   UpdatePrecision(aP);
+}
+
+void cAppliMICMAC::UpdatePrecision(int aP)
+{
+   ElSetMax(mMaxPrecision,aP);
+   // std::cout  << "UUUUdapPPP  "<< aP << " ===  " << mMaxPrecision << "\n";
+}
+
+
+
+double cGeomDiscFPx::RoundCoord(const double & aV) 
+{
+   if (! mRCoordIsInit) return aV;
+   if (mRRIsInit)
+   {
+       mAp->AddPrecisionOfArrondi(mRDec, aV);
+       return mRDec.Arrondi(aV);
+   }
+   return arrondi_ni(aV,mResol);
+}
+
+Pt2dr  cGeomDiscFPx::RoundCoord(const Pt2dr  & aP)
+{
+   return Pt2dr(RoundCoord(aP.x),RoundCoord(aP.y));
+}
+
+Box2dr  cGeomDiscFPx::RoundCoord(const Box2dr  & aBox)
+{
+   return Box2dr(RoundCoord(aBox._p0),RoundCoord(aBox._p1));
+}
+
+
 
 void cGeomDiscFPx::PostInit()
 {
@@ -315,9 +407,13 @@ if (MPD_MM())
   }
   ELISE_ASSERT(aNbResolGot," Resolution pas trouvee");
   mResol /= aNbResolGot;
+  double aResolNotRound = mResol;
+  // SetResol(mResol,mAp->GeoRefAutoRoundResol().ValWithDef(mAp->ModeGeomMEC()==eGeomMECTerrain)) ;
+  SetResol(mResol,mAp->GeoRefAutoRoundResol().ValWithDef(mAp->GeomMNT()==eGeomMNTEuclid)) ;
   if (aFileExt)
   {
-       mResol = ElAbs(aFileExt->ResolutionPlani().x);
+       SetUnroundResol(ElAbs(aFileExt->ResolutionPlani().x));
+       // mResol = ElAbs(aFileExt->ResolutionPlani().x);
        //  Attention -(-x) != x  avec les flottant 
        ELISE_ASSERT
        (
@@ -328,10 +424,16 @@ if (MPD_MM())
   else if (mAp->Planimetrie().IsInit())
   {
      if  (mAp->RatioResolImage().IsInit())
-         mResol *= mAp->RatioResolImage().Val();
+     {
+         SetResol(aResolNotRound*mAp->RatioResolImage().Val(),mAp->GeoRefAutoRoundResol().ValWithDef(false));
+     }
      if  (mAp->ResolutionTerrain().IsInit())
-         mResol = mAp->ResolutionTerrain().Val();
+     {
+         SetUnroundResol(mAp->ResolutionTerrain().Val());
+     }
+     //     mResol = mAp->ResolutionTerrain().Val();
   } 
+  mRCoordIsInit =  mAp->GeoRefAutoRoundBox().ValWithDef(true);
 
 
   //  Calcul des intervalles de paralaxe
@@ -415,7 +517,7 @@ if (MPD_MM())
      {
         mV0Px[0] = mAp->ExpA2Mm().ProfInVertLoc().Val();
      }
-     else if (mAp->ZMoyen().IsInit())
+     else if (mAp->ZMoyen().IsInit()  && (! mAp->AnamSA()))
      {
          mV0Px[0] = mAp->ZMoyen().Val();
      }
@@ -621,6 +723,7 @@ if ( mAp->DebugMM().Val())
       )
   {
      aBox = mAp->BoxTerrain().Val();
+     mRCoordIsInit =  mAp->GeoRefAutoRoundBox().ValWithDef(false);
      isBoxInit = true;
   }
 
@@ -726,6 +829,7 @@ if ( mAp->DebugMM().Val())
   {
       aBox = mBoxEngl;
   }
+  aBox = RoundCoord(aBox);
   mP0 = aBox._p0;
   mP1 = aBox._p1;
   mBoxEngl  = aBox;  // A priori redondance entre les 2
@@ -755,6 +859,19 @@ if ( mAp->DebugMM().Val())
   }
 
 
+  mTronkExport = mRRIsInit && mRCoordIsInit;
+  if (mTronkExport)
+  {
+     mV0Px[0] = mRDec.Arrondi(mV0Px[0]);
+     mAp->AddPrecisionOfArrondi(mRDec,mV0Px[0]);
+  }
+/*
+  std::cout << "PReccccccc " << mMaxPrecision << "\n";
+  std::cout.precision(mMaxPrecision+1) ;
+  std::cout << "PpppQQ " << mResol << aBox._p0 << aBox._p1 << "\n";
+*/
+
+  /// std::cout << "RESOOL " << mResol << " " << mRRIsInit << " " << mRCoordIsInit << "\n"; getchar();
 
   delete aFileExt;
 }
@@ -800,6 +917,16 @@ void cGeomDiscFPx::SetStep(const REAL * aVStep)
    {
        mStepRel[aD] = aVStep[aD] ;
        mStepAbs[aD] = mStepRel[aD] * mResolDz * mRatioResAltPlani[aD];
+       if ((aD==0) && mTronkExport)
+       {
+           double aRatioDZ = mResolDz /mAp->DeZoomMin();
+           cDecimal aSAr = StdRound(mStepAbs[0]/aRatioDZ);
+           mStepAbs[0] =  aSAr.RVal() * aRatioDZ;
+           mStepRel[0] = mStepAbs[0] / (mResolDz * mRatioResAltPlani[aD]);
+           mAp->AddPrecisionOfDec(aSAr,aRatioDZ);
+       }
+/*
+*/
        // std::cout <<  mStepRel[aD] << " " << mStepAbs[aD] << "\n";
    }
 }
@@ -870,15 +997,26 @@ void cGeomDiscFPx::SetOriResolPlani(Pt2dr & aOriP,Pt2dr & aResolP) const
 {
   aOriP = RDiscToR2(Pt2dr(0,0));
   aResolP = RDiscToR2(Pt2dr(1,1))-aOriP;
+
+  aResolP =  mDerX + mDerY;
+
+//  std::cout << "DDDD "  << Pt2dr (mResolDz,0) <<  Pt2dr (0,(mInvY?-1:1)*mResolDz) << "\n";
+//  std::cout << "ddDDd " << aResolP   -( mDerX + mDerY) << "\n";
 }
 
 
-void cGeomDiscFPx::RemplitOri(cFileOriMnt & aFOM) const
+void cGeomDiscFPx::RemplitOri(cFileOriMnt & aFOM,bool DoZAbs) const
 {
   aFOM.NombrePixels()    = NbPixel();
   SetOriResolPlani(aFOM.OriginePlani() ,aFOM.ResolutionPlani());
   aFOM.OrigineAlti()     = OrigineAlti();
   aFOM.ResolutionAlti()  = ResolutionAlti();
+
+  if (DoZAbs)
+  {
+      aFOM.OrigineAlti()     = 0;
+      aFOM.ResolutionAlti()  = 1.0;
+  }
 
 /*
   aFOM.NombrePixels()    = mSzDz;

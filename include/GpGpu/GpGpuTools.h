@@ -24,7 +24,11 @@ using namespace std;
 typedef unsigned char pixel;
 
 #define NOPAGELOCKEDMEMORY false
+#define WARPSIZE 32
 
+
+#define SIZECU  1
+#define NWARP   1
 
 #define DISPLAYOUTPUT
 #define TexFloat2Layered texture<float2,cudaTextureType2DLayered>
@@ -117,7 +121,7 @@ public:
     static void			OutputValue(T value, uint offset = 3, T defaut = (T)0.0f, float factor = 1.0f);
 
     ///	\brief			Retour chariot
-    static void			OutputReturn(char * out = "");
+    static void			OutputReturn(char * out /*= ""*/);
 
     ///	\brief			multiplie par un facteur
     static float		fValue( float value,float factor );
@@ -516,7 +520,8 @@ private:
 template <class T>
 void CData<T>::MallocInfo()
 {
-    std::cout << "Malloc Info " << CGObject::Name() << " :"<<  _sizeofMalloc / pow(2.0,20) << "/" << _memoryOc / pow(2.0,20) << "\n";
+    std::cout << "Malloc Info " << CGObject::Name() << " Size of Malloc | Memory Oc en Mo     : "<<  _sizeofMalloc / pow(2.0,20) << " | " << _memoryOc / pow(2.0,20) << "\n";
+    std::cout << "Malloc Info " << CGObject::Name() << " Size of Malloc | Memory Oc en octets : "<<  _sizeofMalloc << " | " << _memoryOc  << "\n";
 }
 
 template <class T>
@@ -537,18 +542,18 @@ bool CData<T>::ErrorOutput( cudaError_t err,const char* fonctionName )
     if (err != cudaSuccess)
     {
 
-        std::cout << "--------------------------------------------------------------------------------------\n";
-        std::cout << "-----------------------------    ERROR CUDA GPGPU    ---------------------------------\n";
+        std::cout << "--------------------------------------------------------------------------------------\n";       
         std::cout << "\n";
-        std::cout << "ERREUR " <<  fonctionName  << " SUR " + CGObject::Id();
+        std::cout << "Erreur Cuda         : " <<  fonctionName  << "() | Object " + CGObject::Id() << "\n";
         GpGpuTools::OutputInfoGpuMemory();
         OutputInfo();
-        std::cout << "Pointeur de donnees : " << CData<T>::pData() << "\n";
-        std::cout << "Memoire alloué      : " << _memoryOc << "\n";
-        std::cout << "Taille des donnees  : " << CData<T>::GetSizeofMalloc() << "\n";
+        std::cout << "Pointeur de donnees : " << CData<T>::pData()  << "\n";
+        std::cout << "Memoire allouee     : " << _memoryOc / pow(2.0,20) << " Mo | " << _memoryOc / pow(2.0,10) << " ko | " << _memoryOc  << " octets \n";
+        std::cout << "Taille des donnees  : " << CData<T>::GetSizeofMalloc()  / pow(2.0,20) << " Mo | " << CData<T>::GetSizeofMalloc()  / pow(2.0,10) << " ko | " << CData<T>::GetSizeofMalloc() << " octets \n";
         checkCudaErrors( err );
         std::cout << "\n";
         std::cout << "--------------------------------------------------------------------------------------\n";
+        exit(1);
         return false;
     }
 
@@ -653,12 +658,12 @@ void CData2D<T>::OutputInfo()
 template <class T>
 CData2D<T>::CData2D()
 {
-    ClassTemplate(CGObject::StringClass<T>(CData2D::pData()));
+    CGObject::ClassTemplate(CGObject::StringClass<T>(CData2D::pData()));
 }
 template <class T>
 CData2D<T>::CData2D(uint2 dim)
 {
-    ClassTemplate(CGObject::StringClass<T>(CData2D::pData()));
+    CGObject::ClassTemplate(CGObject::StringClass<T>(CData2D::pData()));
     Realloc(dim);
 }
 
@@ -713,7 +718,9 @@ public:
     /// \brief      Desallocation puis re-allocation memoire pour les tous les elements de la structures avec initialisation de la dimension de la structure
     /// \param      dim : Dimension 2D a initialiser
     /// \param      l : Taille de la 3eme dimension
-    bool			Realloc(uint2 dim, uint l);
+    bool			Realloc(uint2 dim, uint l);    
+    bool			Realloc(uint size);
+    bool			ReallocIf(uint size);
     /// \brief      Nombre d elements de la structure
     uint			Sizeof();
 
@@ -727,14 +734,16 @@ public:
 template <class T>
 void CData3D<T>::OutputInfo()
 {
-    std::cout << "Structure 3D : \n";
+
+    std::cout << "Structure 3D        : " << CGObject::Id() << "\n";
     struct2DLayered::Output();
+    std::cout << "\n";
 }
 
 template <class T>
 CData3D<T>::CData3D()
 {
-    ClassTemplate(CGObject::StringClass<T>(CData3D::pData()));
+    CGObject::ClassTemplate(CGObject::StringClass<T>(CData3D::pData()));
 }
 
 template <class T>
@@ -758,6 +767,20 @@ bool CData3D<T>::Realloc( uint2 dim, uint l )
     bool dB = Dealloc();
     bool dM = Malloc(dim,l);
     return (dB && dM);
+}
+
+template <class T>
+bool CData3D<T>::Realloc(uint size)
+{
+    return Realloc(make_uint2(size,1),1);
+}
+
+template <class T>
+bool CData3D<T>::ReallocIf(uint size)
+{
+    if(size>CData3D<T>::GetSize())
+        return Realloc(make_uint2(size,1),1);
+    return false;
 }
 
 template <class T>
@@ -799,16 +822,22 @@ class CuHostData3D : public CData3D<T>
 
 public:
 
-    CuHostData3D(bool pageLockedmemory);
+    CuHostData3D(bool pageLockedmemory = NOPAGELOCKEDMEMORY);
+
+    /// \brief constructeur avec initialisation de la dimension de la structure
+    /// \param dimX : Dimension 1D a initialiser
+    /// \param dimY : Dimension 1D a initialiser
+    /// \param l : Taille de la 3eme dimension
+    CuHostData3D(uint dimX, uint dimY = 1, uint l = 1, bool pageLockedmemory = NOPAGELOCKEDMEMORY);
 
     /// \brief constructeur avec initialisation de la dimension de la structure
     /// \param dim : Dimension 2D a initialiser
     /// \param l : Taille de la 3eme dimension
-    CuHostData3D(bool pageLockedmemory,uint2 dim, uint l = 1);
+    CuHostData3D(uint2 dim, uint l = 1, bool pageLockedmemory = NOPAGELOCKEDMEMORY);
 
     /// \brief constructeur avec initialisation de la dimension de la structure
     /// \param dim : Dimension 3D a initialiser
-    CuHostData3D(bool pageLockedmemory,uint3 dim);
+    CuHostData3D(uint3 dim,bool pageLockedmemory = NOPAGELOCKEDMEMORY );
 
     ~CuHostData3D(){}
 
@@ -845,7 +874,16 @@ CuHostData3D<T>::CuHostData3D(bool pageLockedmemory):
 }
 
 template <class T>
-CuHostData3D<T>::CuHostData3D(bool pageLockedmemory, uint2 dim, uint l ):
+CuHostData3D<T>::CuHostData3D(uint dimX, uint dimY, uint l, bool pageLockedmemory):
+    _pageLockedmemory(pageLockedmemory)
+{
+    CData<T>::SetSizeofMalloc(0);
+    CGObject::SetType("CuHostData3D");
+    CData3D<T>::Realloc(make_uint2(dimX,dimY),l);
+}
+
+template <class T>
+CuHostData3D<T>::CuHostData3D(uint2 dim, uint l, bool pageLockedmemory ):
     _pageLockedmemory(pageLockedmemory)
 {
     CData<T>::SetSizeofMalloc(0);
@@ -854,7 +892,7 @@ CuHostData3D<T>::CuHostData3D(bool pageLockedmemory, uint2 dim, uint l ):
 }
 
 template <class T>
-CuHostData3D<T>::CuHostData3D(bool pageLockedmemory, uint3 dim):
+CuHostData3D<T>::CuHostData3D(uint3 dim, bool pageLockedmemory):
     _pageLockedmemory(pageLockedmemory)
 {
     CData<T>::SetSizeofMalloc(0);
@@ -896,8 +934,8 @@ template <class T>
 void CuHostData3D<T>::FillRandom(T min, T max)
 {
     T mod = abs(max - min);
-    srand (time(NULL));
-    for(int i=0;i<CData3D<T>::GetSize();i++)
+    //srand (time(NULL));
+    for(uint i=0;i<CData3D<T>::GetSize();i++)
     {
         int rdVal  = rand()%((int)mod);
         double dRdVal = (float)rand() / std::numeric_limits<int>::max();
@@ -917,7 +955,7 @@ bool CuHostData3D<T>::Malloc()
     CData3D<T>::SetSizeofMalloc(CData3D<T>::Sizeof());
     CData3D<T>::AddMemoryOc(CData3D<T>::GetSizeofMalloc());
     if(_pageLockedmemory)
-        return ErrorOutput(cudaMallocHost(CData3D<T>::ppData(),CData3D<T>::Sizeof()),"Malloc");
+        return CData<T>::ErrorOutput(cudaMallocHost(CData3D<T>::ppData(),CData3D<T>::Sizeof()),"Malloc");
     else
         CData3D<T>::SetPData((T*)malloc(CData3D<T>::Sizeof()));
 
@@ -930,7 +968,7 @@ bool CuHostData3D<T>::Dealloc()
     CData3D<T>::SubMemoryOc(CData3D<T>::GetSizeofMalloc());
     CData3D<T>::SetSizeofMalloc(0);
     if(_pageLockedmemory)
-        return ErrorOutput(cudaFreeHost(CData3D<T>::pData()),"Dealloc");
+        return CData<T>::ErrorOutput(cudaFreeHost(CData3D<T>::pData()),"Dealloc");
     else
         free(CData3D<T>::pData());
     return true;
@@ -1017,6 +1055,7 @@ public:
 
     CuDeviceData3D();
     CuDeviceData3D(uint2 dim,uint l, string name = "NoName");
+    CuDeviceData3D(uint dim, string name = "NoName");
     ~CuDeviceData3D(){}
     /// \brief Desallocation memoire globale
     /// \return true si la desallocation a reussie false sinon
@@ -1046,19 +1085,19 @@ public:
 template <class T>
 bool CuDeviceData3D<T>::CopyDevicetoHostASync( T* hostData, cudaStream_t stream )
 {
-    return ErrorOutput(cudaMemcpyAsync ( hostData, CData3D<T>::pData(), CData3D<T>::Sizeof(), cudaMemcpyDeviceToHost, stream),"CopyDevicetoHostASync");
+    return CData<T>::ErrorOutput(cudaMemcpyAsync ( hostData, CData3D<T>::pData(), CData3D<T>::Sizeof(), cudaMemcpyDeviceToHost, stream),"CopyDevicetoHostASync");
 }
 
 template <class T>
 bool CuDeviceData3D<T>::CopyDevicetoHost( T* hostData )
 {
-    return ErrorOutput(cudaMemcpy( hostData, CData3D<T>::pData(), CData3D<T>::Sizeof(), cudaMemcpyDeviceToHost),"CopyDevicetoHost");
+    return CData<T>::ErrorOutput(cudaMemcpy( hostData, CData3D<T>::pData(), CData3D<T>::Sizeof(), cudaMemcpyDeviceToHost),"CopyDevicetoHost");
 }
 
 template <class T>
 bool CuDeviceData3D<T>::CopyHostToDevice(T *hostData)
 {
-    return ErrorOutput(cudaMemcpy( CData3D<T>::pData(),hostData, CData3D<T>::Sizeof(), cudaMemcpyHostToDevice),"CopyHostToDevice");
+    return CData<T>::ErrorOutput(cudaMemcpy( CData3D<T>::pData(),hostData, CData3D<T>::Sizeof(), cudaMemcpyHostToDevice),"CopyHostToDevice");
 }
 
 template <class T>
@@ -1095,18 +1134,26 @@ CuDeviceData3D<T>::CuDeviceData3D(uint2 dim, uint l, string name)
 }
 
 template <class T>
+CuDeviceData3D<T>::CuDeviceData3D(uint dim, string name)
+{
+    CData3D<T>::dataNULL();
+    CGObject::SetType(name);
+    CData3D<T>::Realloc(make_uint2(dim,1),1);
+}
+
+template <class T>
 bool CuDeviceData3D<T>::Malloc()
 {
-    SetSizeofMalloc(CData3D<T>::Sizeof());
-    AddMemoryOc(CData3D<T>::GetSizeofMalloc());
-    return ErrorOutput(cudaMalloc((void **)CData3D<T>::ppData(), CData3D<T>::Sizeof()),"Malloc");
+    CData<T>::SetSizeofMalloc(CData3D<T>::Sizeof());
+    CData<T>::AddMemoryOc(CData3D<T>::GetSizeofMalloc());
+    return CData<T>::ErrorOutput(cudaMalloc((void **)CData3D<T>::ppData(), CData3D<T>::Sizeof()),"Malloc");
 }
 
 template <class T>
 bool CuDeviceData3D<T>::Dealloc()
 {
     cudaError_t erC = cudaSuccess;
-    SubMemoryOc(CData3D<T>::GetSizeofMalloc());
+    CData<T>::SubMemoryOc(CData3D<T>::GetSizeofMalloc());
     CData3D<T>::SetSizeofMalloc(0);
     if (!CData3D<T>::isNULL()) erC = cudaFree(CData3D<T>::pData());
     CData3D<T>::dataNULL();

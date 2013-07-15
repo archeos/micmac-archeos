@@ -125,10 +125,10 @@ void Apero2PMVS(string aFullPattern, string aOri)
         cmdDRUNK=MMDir() + "bin/Drunk " + aNameDir + aFullName + " " + aOri + " Out=" + "pmvs-" + aOri + "/visualize/ Talk=0";
         ListDrunk.push_back(cmdDRUNK);
         #if (ELISE_unix || ELISE_Cygwin || ELISE_MacOs)
-            cmdConv="convert ephemeral:" + aNameDir + "pmvs-" + aOri + "/visualize/" + aFullName + " " + aNameDir + "pmvs-"+ aOri +"/visualize/"+(string)nb + ".jpg";
+            cmdConv="convert ephemeral:" + aNameDir + "pmvs-" + aOri + "/visualize/" + aFullName + ".tif " + aNameDir + "pmvs-"+ aOri +"/visualize/"+(string)nb + ".jpg";
         #endif
         #if (ELISE_windows)
-            cmdConv=MMDir() + "binaire-aux/convert ephemeral:" + aNameDir + "pmvs-" + aOri + "/visualize/" + aFullName + " " + aNameDir + "pmvs-"+ aOri +"/visualize/"+(string)nb + ".jpg";
+            cmdConv=MMDir() + "binaire-aux/convert ephemeral:" + aNameDir + "pmvs-" + aOri + "/visualize/" + aFullName + ".tif " + aNameDir + "pmvs-"+ aOri +"/visualize/"+(string)nb + ".jpg";
         #endif
         ListConvert.push_back(cmdConv);
 
@@ -153,6 +153,8 @@ void Apero2PMVS(string aFullPattern, string aOri)
         fprintf(f,"%0.6f %0.6f %0.6f %0.6f\n", P(0,2),P(1,2),P(2,2),P(3,2));
         fclose(f);
 
+		delete aCS;
+		delete anICNM;
     }//end of "for each image"
 
     //Undistorting the images with Drunk

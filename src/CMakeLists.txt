@@ -37,6 +37,7 @@ set(NEIGH_DIR "neighboor")
 set(OP_BUF_DIR "op_buf")
 set(OPTIM_DIR "optim")
 set(UTI_FILES_DIR "uti_files")
+set(SAMPLESLIBELISE_DIR "SamplesLibElise")
 set(UTI_IMAGE_DIR "uti_image")
 set(UTI_PHGRM_DIR "uti_phgrm")
 set(UTI_ETAPOLY_DIR "EtalonnagePolygone")
@@ -66,6 +67,7 @@ INCLUDE (${OP_BUF_DIR}/Sources.cmake)
 INCLUDE (${OPERATOR_DIR}/Sources.cmake)
 INCLUDE (${OPTIM_DIR}/Sources.cmake)
 INCLUDE (${UTI_FILES_DIR}/Sources.cmake)
+INCLUDE (${SAMPLESLIBELISE_DIR}/Sources.cmake)
 INCLUDE (${UTI_IMAGE_DIR}/Sources.cmake)
 INCLUDE (${UTI_PHGRM_DIR}/Sources.cmake)
 INCLUDE (${ORIPHO_DIR}/Sources.cmake)
@@ -138,14 +140,16 @@ if(${CUDA_ENABLED})
 	 list(APPEND IncCudaFiles ${IncuhCudaFiles})
 
 	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20 -lineinfo)
-	 #set(GENCODE_SM20FM -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20 -use_fast_math)
+	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20 -use_fast_math)
 	 #set(GENCODE_SM21 -gencode=arch=compute_21,code=sm_21 -gencode=arch=compute_21,code=compute_21)
 
-	 set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20)
+	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20)
+
+	 set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20)
 	 set(libStatGpGpuTools GpGpuTools)
 	 set(libStatGpGpuInterfMicMac GpGpuInterfMicMac)
 	 set(libStatGpGpuOpt GpGpuOpt)
-	 set(ExeGpGpuOpt TestGpGpuOpt)
+	 set(TestExeGpGpuOpt TestGpGpuOpt)
 
 	 cuda_add_library(${libStatGpGpuTools}  ${GpGpuTools_Src_Files} STATIC OPTIONS ${GENCODE_SM20})
 
@@ -154,20 +158,15 @@ if(${CUDA_ENABLED})
 	 cuda_add_library(${libStatGpGpuOpt}  ${uti_phgrm_Opt_GpGpu_Src_Files} ${IncCudaFiles} STATIC OPTIONS ${GENCODE_SM20})
 
 	 if (Boost_FOUND)
-
 		  target_link_libraries(${libStatGpGpuInterfMicMac}  ${Boost_LIBRARIES} ${Boost_THREADAPI})
-		  target_link_libraries(${libStatGpGpuInterfMicMac}  rt pthread )
+		  if (NOT WIN32)
+			target_link_libraries(${libStatGpGpuInterfMicMac}  rt pthread )
+		  endif()
 	 endif()
 
-	 cuda_add_executable(${ExeGpGpuOpt} ${uti_Test_Opt_GpGpu_Src_Files})
+	 cuda_add_executable(${TestExeGpGpuOpt} ${uti_Test_Opt_GpGpu_Src_Files})
 
-	 target_link_libraries(${ExeGpGpuOpt}  ${libStatGpGpuOpt} ${libStatGpGpuTools})
-
-	 INSTALL(TARGETS ${ExeGpGpuOpt} RUNTIME DESTINATION ${Install_Dir})
-
-	 INSTALL(TARGETS ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt}
-		    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/lib
-		    ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)
+	 target_link_libraries(${TestExeGpGpuOpt}  ${Boost_LIBRARIES} ${Boost_THREADAPI} ${libStatGpGpuOpt} rt pthread ${libStatGpGpuTools})
 
 	 link_directories(${PROJECT_SOURCE_DIR}/lib/)
 
@@ -175,12 +174,18 @@ if(${CUDA_ENABLED})
 
 	 target_link_libraries(${libElise}  ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt})
 
+	 INSTALL(TARGETS ${TestExeGpGpuOpt} RUNTIME DESTINATION ${Install_Dir})
+
+	 INSTALL(TARGETS ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt}
+		    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/lib
+		    ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)
+
 else()
 	 add_library( elise ${Elise_Src_Files} ${IncFiles} )
 	 INSTALL(TARGETS elise ARCHIVE DESTINATION ${Install_Dir_lib} )
 endif()
 
-# OPTION BUILD : En tetes precompilées pour gcc
+# OPTION BUILD : En tetes precompilees pour gcc
 enable_precompiled_headers_GCC(StdAfx.h ${libElise})
 
 # DEFINITION

@@ -66,6 +66,7 @@ int Tarama_main(int argc,char ** argv)
     std::string Repere= NOREP;
     std::string DirOut="TA";
     double   aZMoy=0;
+    int     aKNadir=-1;
 
     ElInitArgMain
     (
@@ -77,6 +78,7 @@ int Tarama_main(int argc,char ** argv)
                     << EAM(Repere,"Repere",true,"local repair as created with RepLocBascule")	
                     << EAM(DirOut,"Out",true,"drectory for output (Deg=TA)")	
                     << EAM(aZMoy,"ZMoy",true,"Average value of Z")	
+                    << EAM(aKNadir,"KNadir",true,"KBest image od Nadir (when exist)")	
     );
 
 	
@@ -95,6 +97,9 @@ int Tarama_main(int argc,char ** argv)
                        + std::string(" +Aero=") + Aero
                        + std::string(" +DirMEC=") + DirOut
               ;
+
+    if (EAMIsInit(&aKNadir))
+       aCom = aCom + " +KBestMasqNadir=" + ToString(aKNadir);
 
     if (EAMIsInit(&aZMoy))
     {

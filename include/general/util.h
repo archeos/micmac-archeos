@@ -42,11 +42,13 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef _ELISE_UTIL_H
 #define _ELISE_UTIL_H
 
+class tFileOffset;
+
 extern const  std::string  TheFileMMDIR;  // MicMacInstalDir
 void MMD_InitArgcArgv(int argc,char ** argv,int aNbArgMin=-1);
 int NbProcSys();
 
-extern void mem_raz(void *,INT);
+extern void mem_raz(void *,tFileOffset);
 
 #define MEM_RAZ(x,nb) mem_raz((void *)(x),(nb)*sizeof(*(x)))
 
@@ -133,51 +135,62 @@ template <class Type> void GccUse(const Type & ) {}
 
 
 // return the smallest integral value >= r
-inline INT round_up(REAL r)
+template<class Type> inline Type Tpl_round_up(REAL r)
 {
-       INT i = (INT) r;
+       Type i = (Type) r;
        return i + (i < r);
 }
+inline INT round_up(REAL r) { return Tpl_round_up<int>(r); }
+inline long int lround_up(REAL r) { return Tpl_round_up<long int>(r); }
+
 
 // return the smallest integral value > r
-inline INT round_Uup(REAL r)
+template<class Type> inline Type Tpl_round_Uup(REAL r)
 {
-       INT i = (INT) r;
+       Type i = (Type) r;
        return i + (i <= r);
 }
+inline INT round_Uup(REAL r) { return Tpl_round_Uup<int>(r); }
 
 
 // return the highest integral value <= r
-inline INT round_down(REAL r)
+template<class Type> inline Type Tpl_round_down(REAL r)
 {
-       INT i = (INT) r;
+       Type i = (Type) r;
        return i - (i > r);
 }
+inline INT round_down(REAL r) { return Tpl_round_down<int>(r); }
+inline long int lround_down(REAL r) { return Tpl_round_down<long int>(r); }
 
 // return the highest integral value < r
-inline INT round_Ddown(REAL r)
+template<class Type> inline Type Tpl_round_Ddown(REAL r)
 {
-       INT i = (INT) r;
+       Type i = (Type) r;
        return i - (i >= r);
 }
+inline INT round_Ddown(REAL r) { return Tpl_round_Ddown<int>(r); }
 
 
 
 // return the integral value closest to r
 // if r = i +0.5 (i integer) return i+1
-inline INT round_ni(REAL r)
+template<class Type> inline Type Tpl_round_ni(REAL r)
 {
-       INT i = (INT) r;
+       Type i = (Type) r;
        i -= (i > r);
        return i+ ((i+0.5) <= r) ;
 }
 
+inline INT round_ni(REAL r) { return Tpl_round_ni<int>(r); }
+inline long int lround_ni(REAL r) { return Tpl_round_ni<long int>(r); }
+/*
 inline INTByte8 ll_round_ni(REAL r)
 {
        INTByte8 i = (INTByte8) r;
        i -= (i > r);
        return i+ ((i+0.5) <= r) ;
 }
+*/
 
 
 
@@ -251,6 +264,7 @@ inline INT arrondi_sup(INT a,INT b)
 
 double arrondi_inf(double aVal,double aPer);
 double arrondi_sup(double aVal,double aPer);
+double arrondi_ni(double aVal,double aPer);
 
 inline REAL mod_real(REAL a,REAL b)
 {
@@ -259,6 +273,28 @@ inline REAL mod_real(REAL a,REAL b)
    while (res<0) res += b;
    return res;
 }
+
+class cDecimal
+{
+    public :
+        cDecimal(int aMant,int aPow);
+        double RVal() const;
+        const int &    Mant() const;
+        const int &   Exp() const;
+        double Arrondi(double aV) const;
+      // T.Q RVAl = mMant * Mul10() / Div10()
+        long int Mul10() const;
+        long int Div10() const;
+    public :
+        int mMant;
+        int mExp;
+};
+
+
+
+cDecimal StdRound(const double & aD,int aNbDigit,int * aTabR,int aSizeR);
+cDecimal StdRound(const double & aD);
+
 
 REAL angle_mod_real(REAL a,REAL b);
 
@@ -719,9 +755,12 @@ class cTplValGesInit
           }
           cTplValGesInit(const Type & aVal) : 
                 mVal(aVal),
-                mIsInit(false) 
+                mIsInit(true) 
           {
           }
+
+/*
+*/
 	  void SetNoInit() {mIsInit=false;}
           void SetVal(const Type & aVal) {mVal=aVal;mIsInit=true;}
           void SetValIfNotInit(const Type & aVal) 
@@ -763,6 +802,147 @@ class cTplValGesInit
           bool mIsInit;
 };
           
+
+//typedef long long int tFileOffset;
+typedef int64_t tLowLevelFileOffset;
+typedef unsigned int  tByte4AbsFileOffset;
+// typedef long long  int tLowLevelRelFileOffset;
+
+class tFileOffset
+{
+    public :
+
+        
+         const tLowLevelFileOffset & AbsLLO() const
+         {
+               tLowLevelFileOffset aLLO = mLLO.Val();
+               ELISE_ASSERT(aLLO>=0,"AbsLLO neg");
+               return mLLO.Val();
+         }
+         tByte4AbsFileOffset   Byte4AbsLLO() const
+         {
+               tLowLevelFileOffset aLLO = mLLO.Val();
+               ELISE_ASSERT((aLLO>=0) && (aLLO<=0xFFFFFFFFll),"Byt4LLO too big");
+               return (tByte4AbsFileOffset)aLLO;
+         }
+         const tLowLevelFileOffset & BasicLLO() const
+         {
+               return mLLO.Val();
+         }
+         int  IntBasicLLO() const
+         {
+               tLowLevelFileOffset aLLO = mLLO.Val();
+               ELISE_ASSERT((aLLO>-0x7FFFFFFFll) && (aLLO<0x7FFFFFFFll),"Byt4LLO too big");
+               return (int)aLLO;
+         }
+
+         tFileOffset ()
+         {
+             mLLO.SetNoInit();
+         }
+         tFileOffset (const tLowLevelFileOffset & aLLO) :
+           mLLO(aLLO)
+         {
+         }
+
+         tFileOffset operator + (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() + anO2.mLLO.Val();
+         }
+         tFileOffset operator - (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() - anO2.mLLO.Val();
+         }
+         tFileOffset operator / (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() / anO2.mLLO.Val();
+         }
+         tFileOffset operator * (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() * anO2.mLLO.Val();
+         }
+
+         bool operator < (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() < anO2.mLLO.Val();
+         }
+         bool operator > (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() > anO2.mLLO.Val();
+         }
+         bool operator == (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() == anO2.mLLO.Val();
+         }
+         bool operator != (const tFileOffset & anO2) const
+         {
+               return mLLO.Val() != anO2.mLLO.Val();
+         }
+
+         void operator ++ (int)
+         {
+              mLLO.SetVal(mLLO.Val()+1);
+         }
+         void operator +=  (const tFileOffset & anO2)
+         {
+              mLLO.SetVal(mLLO.Val()+anO2.mLLO.Val());
+         }
+         void operator -=  (const tFileOffset & anO2)
+         {
+              mLLO.SetVal(mLLO.Val()-anO2.mLLO.Val());
+         }
+         void operator *=  (const tFileOffset & anO2)
+         {
+              mLLO.SetVal(mLLO.Val()*anO2.mLLO.Val());
+         }
+
+
+/*
+         void SetLLO(const tLowLevelFileOffset & aLLO)
+         {
+              mLLO.SetVal(aLLO);
+         }
+*/
+         bool IsInit() const
+         {
+              return mLLO.IsInit();
+         }
+
+// Deux interface bas niveaus, "tres sales", poiur assurer la communication avec le stockage
+// en int des offset dans les tiffs qui est necessaire pour utiliser le service de tag generiques
+         static  tFileOffset FromReinterpretInt(int anI)
+         {
+               tByte4AbsFileOffset anUI;
+               memcpy(&anUI,&anI,sizeof(tByte4AbsFileOffset));
+               return tFileOffset(anUI);
+         }
+         int ToReinterpretInt() const
+         {
+              int aRes;
+              tByte4AbsFileOffset anOfs4 = Byte4AbsLLO();
+              memcpy(&aRes,&anOfs4,sizeof(tByte4AbsFileOffset));
+              return aRes;
+         }
+    private :
+        cTplValGesInit<tLowLevelFileOffset> mLLO;
+};
+
+inline std::ostream & operator << (std::ostream & ofs,const tFileOffset  &anOffs)
+{
+    ofs << anOffs.BasicLLO();
+    return ofs;
+}
+
+typedef tFileOffset tRelFileOffset;
+
+
+// typedef unsigned int tFileOffset;
+/*
+*/
+ 
+
+tFileOffset RelToAbs(tRelFileOffset anOff);
+
 
 /*****************************************************/
 /*                                                   */
@@ -891,7 +1071,7 @@ class cEl_GPAO
 {
      public :
           // Interface simplifiee quand il n'y a pas de dependance entre les commandes
-          static void DoComInParal(const std::list<std::string> &,std::string  FileMk = "", int   aNbProc = 0 ,bool Exe=true);
+          static void DoComInParal(const std::list<std::string> &,std::string  FileMk = "", int   aNbProc = 0 ,bool Exe=true, bool MoinsK=false);
 
          ~cEl_GPAO();
           cEl_GPAO();
@@ -1049,7 +1229,7 @@ class cAppliBatch
 	std::string  mDirSauv;
 	std::string  mDirTmp;
 
-        bool         mFileByICNM;
+        //bool         mFileByICNM;
 	std::string  mPatF1;
 	std::string  mPatF2;
 	std::string  mCurF1;
@@ -1113,6 +1293,10 @@ class cElHour
       int    H() const;
       int    M() const;
       double S() const;
+      
+      bool operator==( const cElHour &i_b ) const;
+      bool operator!=( const cElHour &i_b ) const;
+      
     private :
        int mH;
        int mM;
@@ -1145,6 +1329,9 @@ class cElDate
 	int    DifInDay(const cElDate&) const;
 	double DifInSec(const cElDate&) const;
 
+		bool operator==( const cElDate &i_b ) const;
+		bool operator!=( const cElDate &i_b ) const;
+      
     private :
          int mD;
          int mM;
@@ -1284,6 +1471,7 @@ void ShowFClose();
 
 void GetSubset(std::vector<std::vector<int> > & aRes,int aNb,int aMax);
 
+bool ElGetStrSys( const std::string & i_base_cmd, std::string &o_result );
 
 void BanniereGlobale();
 

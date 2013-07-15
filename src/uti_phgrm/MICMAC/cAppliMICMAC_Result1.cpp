@@ -156,13 +156,17 @@ void cAppliMICMAC::MakeFileTA()
 // getchar();
     Im2D_U_INT1 aImCpt(aSzClip.x,aSzClip.y,0);
     U_INT1 ** aDCpt = aImCpt.data();
+    Im2D_U_INT1 aImLabel(aSzClip.x,aSzClip.y,255);
+    U_INT1 ** aDataLabel = aImLabel.data();
+
+
     Im2D_U_INT1 aImGray(aSzClip.x,aSzClip.y,0);
     U_INT1 ** aDGr = aImGray.data();
 
 
     Pt2di aSzOr = OrthoTA().Val() ? aSzClip : Pt2di(1,1);
-    Im2D_U_INT2 aImPriOr(aSzOr.x,aSzOr.y,60000);
-    U_INT2 ** aDPI = aImPriOr.data();
+    Im2D_REAL4 aImPriOr(aSzOr.x,aSzOr.y,60000);
+    REAL4 ** aDPI = aImPriOr.data();
 
 
     Im2D_Bits<1>  aImOKIm1(1,1);
@@ -186,6 +190,8 @@ void cAppliMICMAC::MakeFileTA()
     int aLabel = 0;
     cSetName *  aSelector = mICNM->KeyOrPatSelector(FilterTA());
 
+    int aNKB = TAUseMasqNadirKBest().ValWithDef(-1);
+
     for (tCsteIterPDV itFI=PdvBegin(); itFI!=PdvEnd(); itFI++)
     {
         if (aSelector->IsSetIn((*itFI)->Name()))
@@ -207,6 +213,7 @@ void cAppliMICMAC::MakeFileTA()
 #endif 
 		std::cout << "mWM : Preparation de l'image " << num << " / "<< NbPdv()<<std::endl;
 	  }
+          TIm2D<U_INT1,INT> aMasqNadir(Pt2di(1,1));
 	  ++num;
           cGeomImageData  aGID = (*itFI)->Geom().SauvData();
 
@@ -251,6 +258,13 @@ void cAppliMICMAC::MakeFileTA()
          double aPdsT1 = 0.7;
          double aPdsT2 = 0.3;
 
+          if (aNKB >= 0)
+          {
+               aMasqNadir= TIm2D<U_INT1,INT>(Im2D_U_INT1::FromFileStd(aGeomIm.NameMasqImNadir(aNKB)));
+               // std::cout << "NNaddirr " << aMasqNadir.sz() << " " <<  aIm.sz() << "\n";
+               ELISE_ASSERT(euclid(aMasqNadir.sz(),aIm.sz()) <2,"Taille incoherente dans masq nadir TA");
+          }
+
           for (int aX = aP0.x; aX< aP1.x ; aX++)
           {
               for (int aY = aP0.y; aY< aP1.y ; aY++)
@@ -262,7 +276,11 @@ void cAppliMICMAC::MakeFileTA()
                       Pt2dr aP = aGeomIm.CurObj2Im(aP2Ter,aPx0);
                       // Pt2dr aP = aGeomIm.CurObj2Im(aGeomDFPx.DiscToR2(Pt2di(aX,aY)),aPx0);
 
-                      if (aTIm.inside_rab(aP,3))
+                      bool Ok = aTIm.inside_rab(aP,3);
+                      if (aNKB>=0) Ok = Ok && aMasqNadir.get(round_ni(aP),0);
+
+
+                      if (Ok)
                       {
                          int aV = round_ni(aTIm.getr(aP,-1));
 
@@ -286,13 +304,19 @@ void cAppliMICMAC::MakeFileTA()
                              double aTeta1 = acos(scal(aTNCur,aNormEucl));
                              double aTeta2 = acos(scal(aTNCentr,aTNCur));
 
+/*
+std::cout << aPdsT1*aTeta1+aPdsT2*aTeta2 << "\n";
                              int aPri = ElMin(60000,round_ni((aPdsT1*aTeta1+aPdsT2*aTeta2)*50));
+*/
+                             double aPri = aPdsT1*aTeta1+aPdsT2*aTeta2;
+
                              if (aPri<aDPI[aY][aX])
                              {
                                aDPI[aY][aX] = aPri;
                                aDGr [aY][aX] = aV;
-                               aDCpt[aY][aX] = aLabel;
+                               aDataLabel[aY][aX] = aLabel;
                              }
+                             aDCpt[aY][aX]++;
                          }
                       }
                  }
@@ -328,6 +352,11 @@ void cAppliMICMAC::MakeFileTA()
     {
         std::string aNameCpt = DirOfFile(aNameTA) + "Cpt" + NameWithoutDir(aNameTA);
         Tiff_Im::CreateFromIm(aImCpt,aNameCpt);
+        if (OrthoTA().Val())
+        {
+             std::string aNameLabel = DirOfFile(aNameTA) + "Label" + NameWithoutDir(aNameTA);
+             Tiff_Im::CreateFromIm(aImLabel,aNameLabel);
+        }
     }
 }
 
@@ -436,12 +465,24 @@ Tiff_Im cAppliMICMAC::FileMasqOfResol(int aDeZoom)
 
 Fonc_Num cAppliMICMAC::FoncSsPIMasqOfResol(int aDz)
 {
-   return   FileMasqOfResol(aDz).in(0);
+if(0)
+{
+   Tiff_Im aTF =  FileMasqOfResol(aDz);
+   Video_Win aW  = Video_Win::WStd(aTF.sz(),1.0);
+   ELISE_COPY(aW.all_pts(), aTF.in(),aW.ogray());
+   std::cout << "Donne Grayyy " << aTF.name() << "\n"; getchar();
+
+   ELISE_COPY(aW.all_pts(), aTF.in_bool_proj(),aW.odisc());
+   std::cout << "Donne disc \n"; getchar();
+
+
+}
+   return   FileMasqOfResol(aDz).in_bool_proj();
 }
 
 Fonc_Num cAppliMICMAC::FoncMasqOfResol(int aDz)
 {
-   Fonc_Num aFRes =  FileMasqOfResol(aDz).in(0);
+   Fonc_Num aFRes =  FileMasqOfResol(aDz).in_bool_proj();
 
    cCaracOfDeZoom * aCarac = GetCaracOfDZ(aDz);
    if (aCarac->HasMasqPtsInt())
@@ -449,7 +490,7 @@ Fonc_Num cAppliMICMAC::FoncMasqOfResol(int aDz)
        Tiff_Im aFInt = Tiff_Im::BasicConvStd(aCarac->NameMasqInt());
        aFRes = aFRes && aFInt.in(0);
    }
- 
+
    return aFRes;
 }
 
@@ -589,11 +630,13 @@ void cAppliMICMAC::MakeDefImMasq(int aDeZoomCible)
     aGeomDFPx.SetDeZoom(aDeZoomCible);
 
 
+    GenIm::type_el aTypeMask = Xml2EL(TypeMasque().Val());
+
     Tiff_Im aFileMasq
             (
                 aNameMasq.c_str(),
                 aGeomDFPx.SzDz(),
-                Xml2EL(TypeMasque().Val()),
+                aTypeMask,
                 Xml2EL(ComprMasque().Val()),
                 // GenIm::bits1_msbf,
 		// Tiff_Im::No_Compr,
@@ -663,10 +706,13 @@ void cAppliMICMAC::MakeDefImMasq(int aDeZoomCible)
      aFoncMasq = aFoncMasq && aImCont.in();
    }
 
+    int aVMin,aVMax;
+    min_max_type_num(aTypeMask,aVMin,aVMax);
+    // std::cout << "HhhhhhhhhhhhhhhHHHh   "<< aVMax << "\n"; getchar();
     ELISE_COPY
     (
           aFileMasq.all_pts(),
-          aFoncMasq,
+          (aFoncMasq!=0) * (aVMax-1),
           aFileMasq.out() 
     );
     std::cout << ">>  Done Masq Resol 1 " << aNameMasq  <<  "\n";
@@ -679,7 +725,12 @@ cFileOriMnt cAppliMICMAC::OrientFromOneEtape(const cEtapeMecComp & anEtape) cons
    mPDV1->Geom().RemplitOri(aFOM);
    anEtape.RemplitOri(aFOM); ;
 
-    return aFOM;
+   if (mGeomDFPx->TronkExport())
+   {
+       aFOM.mGXml.mPrec =  mMaxPrecision+1;
+   }
+
+   return aFOM;
 }
 
 cFileOriMnt cAppliMICMAC::OrientFromParams(int aDz,REAL aStepZ)
@@ -851,6 +902,8 @@ void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
                       + std::string(".xml");
          cElXMLTree * aTree = ToXMLTree(aFOM);
          FILE * aFP = ElFopen(aName.c_str(),"w");
+
+         
          ELISE_ASSERT(aFP!=0,"cAppliMICMAC::GenereOrientationMnt");
 
          aTree->Show("      ",aFP,0,0,true);
@@ -859,6 +912,18 @@ void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
          ElFclose(aFP);
 
          (itE)->DoRemplitXML_MTD_Nuage();
+
+         // TFW
+         {
+             std::string aNameTFW = StdPrefix(aName) + ".tfw";
+             std::ofstream aFtfw(aNameTFW.c_str());
+             if (aFOM.mGXml.mPrec >=0)
+                aFtfw.precision(aFOM.mGXml.mPrec);
+              aFtfw << aFOM.ResolutionPlani().x << " " << 0 << "\n";
+              aFtfw << 0 << " " << aFOM.ResolutionPlani().y << "\n";
+              aFtfw << aFOM.OriginePlani().x << " " << aFOM.OriginePlani().y << "\n";
+              aFtfw.close();
+          }
 }
 
 /*

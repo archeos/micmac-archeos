@@ -49,6 +49,7 @@ int MMInitialModel_main(int argc,char ** argv)
     bool         DoPly = false;
 
     int aZoom = 8;
+    bool aDo2Z = true;
     double aReducePly=3.0;
 
 
@@ -62,6 +63,7 @@ int MMInitialModel_main(int argc,char ** argv)
                     << EAM(DoPly,"DoPly",true,"Generate ply ,for tuning purpose, (Def=false)")
                     << EAM(aZoom,"Zoom",true,"Zoom of computed models, (def=8)")
                     << EAM(aReducePly,"ReduceExp",true,"Down scaling of cloud , XML and ply, (def = 3)")
+                    << EAM(aDo2Z,"Do2Z",true,"Excute a first step at 2*Zoom (Def=true)")
     );
 	
 	#if (ELISE_windows)
@@ -104,6 +106,9 @@ int MMInitialModel_main(int argc,char ** argv)
 
           if (EAMIsInit(&aZoom))
              aCom = aCom + " +Zoom=" + ToString(aZoom);
+
+          if (EAMIsInit(&aDo2Z))
+             aCom = aCom + " +Do2Z=" + ToString(aDo2Z);
 
           if (EAMIsInit(&aReducePly))
              aCom = aCom + " +ReduceExp=" + ToString(aReducePly);

@@ -132,7 +132,7 @@ class Data_GifIm : public ElDataGenFileIm
         bool        _interlaced;
         bool        _sorted_col_tab;
         INT         _sz_col_tab;
-        FILE_offset _offs_data;
+        tFileOffset _offs_data;
 
 
         virtual   Fonc_Num in()     ;
@@ -205,7 +205,7 @@ class GIF_char_flow : public Flux_Of_Byte
       INT  _i_pack;
       bool _read;
 
-      virtual INT tell() {return _fp.tell();}
+      virtual tFileOffset tell() {return _fp.tell();}
 };
 
 
@@ -396,8 +396,8 @@ class Gif_Fich_Im2d  : public Std_Bitm_Fich_Im_2d
 
    public :
        Gif_Fich_Im2d(Flux_Pts_Computed * flx,Data_GifIm *);
-   private :
-       Data_GifIm * _dgi;
+   //private :
+   //    Data_GifIm * _dgi;
 };
 
 
@@ -520,8 +520,8 @@ Gif_Fich_Im2d::Gif_Fich_Im2d
           dgi->name(),
           alloc_im1d(GenIm::u_int1,flx->sz_buf()),
           true
-     ),
-     _dgi (dgi)
+     )//,
+     //_dgi (dgi)
 {
      init_tile(new Gif_Tile_F2d(dgi),0,1,true);
 }

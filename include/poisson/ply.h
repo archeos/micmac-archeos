@@ -33,6 +33,11 @@
 #ifndef __PLY_H__
 #define __PLY_H__
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+#include <string>
 
 #ifndef WIN32
 	#ifdef __cplusplus
@@ -40,11 +45,7 @@
 	#endif
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-#include <string>
+
 
 using namespace std;
     
@@ -105,9 +106,7 @@ typedef struct sPlyColoredVertexWithAlpha
     unsigned char red, green, blue, alpha;
 } sPlyColoredVertexWithAlpha;
 
-	
-typedef struct sFace 
-{
+typedef struct sFace {
 	unsigned char nverts;    /* number of vertex indices in list */
 	int *verts;              /* vertex index list */
 } sFace;

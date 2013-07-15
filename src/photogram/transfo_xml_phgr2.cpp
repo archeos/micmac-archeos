@@ -800,6 +800,7 @@ cEl_GPAO * DoCmdExePar(const cCmdExePar & aCEP,int aNbProcess)
       std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f "+  aNameMkF + std::string(" -j") +ToString(aNbProcess) + " -k"; 
       VoidSystem(aCom.c_str());
       delete aGPAO;
+       ELISE_fp::RmFile(aNameMkF);
       return 0;
    }
    return aGPAO;
@@ -876,7 +877,9 @@ void AddKeySet
          const std::string &              aKey
      )
 {
+
     const std::vector<std::string>  * aSet = anICNM->Get(aKey);
+
     aRes.insert(aSet->begin(),aSet->end());
 }
 

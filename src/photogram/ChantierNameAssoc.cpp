@@ -366,10 +366,17 @@ bool ElGetStrSys( const std::string & i_base_cmd, std::string &o_result )
 	if ( f==NULL ) return false;
 	
 	// read popen's output
-	char buffer[500];
-	memset( buffer, 0, 500 ) ;
-	while ( fread( buffer, 1, 500, f ) )
-		o_result.append( buffer );	
+	char buffer[501];
+	size_t nbRead;
+	while ( feof( f )==0 )
+	{
+		nbRead = fread( buffer, 1, 500, f );
+		if ( nbRead>0 )
+		{
+			buffer[nbRead-1] = '\0';
+			o_result.append( string( buffer ) );
+		}
+	}
 	pclose( f );
 	
 	return true;
@@ -419,8 +426,11 @@ void MMD_InitArgcArgv(int argc,char ** argv,int aNbMin)
 		{
 			// if the /proc filesystem is not available, try using the "which" command
 			bool whichSucceed = ElGetStrSys( "which "+ std::string( argv[0] ), aFulArg0 );
-			// remove the which's ending '\n'
-			aFulArg0.resize( aFulArg0.size()-1 );
+			
+            // modif Greg: il y a un probleme sous MacOS, on perd le 'd' de mm3d
+            // remove the which's ending '\n'
+			if (aFulArg0[aFulArg0.size()-1] == '\n')
+                aFulArg0.resize( aFulArg0.size()-1 );
 						
 			// if which failed then we're doomed
 			ELISE_ASSERT( whichSucceed, "MMD_InitArgcArgv : unable to retrieve binaries directory" );
@@ -438,11 +448,14 @@ void MMD_InitArgcArgv(int argc,char ** argv,int aNbMin)
 		}
 		CurrentProgramFullName = aFulArg0;
 #endif
+        
 		if ( argc>1 ) CurrentProgramFullName.append( std::string( " " )+argv[1] );
 
 
 	}
 }
+
+
 
 
 int NbProcSys()
@@ -458,6 +471,41 @@ int NbProcSys()
 }
 
 namespace NS_ParamChantierPhotogram{
+
+
+std::string Basic_XML_User_File(const std::string & aName)
+{
+   return MMDir() + "include"+ELISE_CAR_DIR+"XML_User"+ELISE_CAR_DIR+ aName;
+}
+std::string XML_User_Or_MicMac(const std::string & aName)
+{
+  std::string aRes = Basic_XML_User_File(aName);
+  if ( ELISE_fp::exist_file(aRes))
+     return aRes;
+  return Basic_XML_MM_File(aName);
+}
+const cMMUserEnvironment & MMUserEnv()
+{
+    static cMMUserEnvironment * aRes = 0;
+    if (aRes ==0)
+    {
+        std::string aName = XML_User_Or_MicMac("MM-Environment.xml");
+        cMMUserEnvironment aMME =  StdGetObjFromFile<cMMUserEnvironment>
+                                   (
+                                       aName,
+                                       StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
+                                       "MMUserEnvironment",
+                                       "MMUserEnvironment"
+                    );
+        aRes = new cMMUserEnvironment(aMME);
+
+    }
+    return *aRes;
+}
+
+
+
+
 
 std::string MM3DStr = "mm3d";
 
@@ -1231,7 +1279,7 @@ std::string XML_MM_File(const std::string & aFile)
 		) :
 	cInterfChantierNameManipulateur(0,0,aDir),
 		mGlob                          (aGlob),
-		mOrig                          (anOrig),
+		//mOrig                          (anOrig),
 		mSets (cInterfChantierSetNC::StdCalcFromXML(aGlob,aCD.KeyedSetsOfNames())),
 		mAssoc (cInterfChantierNC::StdCalcFromXML(aGlob,aCD.KeyedNamesAssociations())),
 		mAncCompute (0),
@@ -2316,6 +2364,7 @@ std::string XML_MM_File(const std::string & aFile)
 
 		mArgTr.SetDico("MMDir",MMDir(),true);
 		mArgTr.SetDico("MMNbProc",ToString(MMNbProc()),true);
+		mArgTr.SetDico("MMCmdRmFile",SYS_RM,true);
 
 
 		for (int aK=0 ;aK< argc ; aK++)

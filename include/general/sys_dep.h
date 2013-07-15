@@ -267,6 +267,7 @@ const  TY_OPERATING_SYST   ELISE_OS        =  ELISE_WNT;
 /*                                         */
 /*******************************************/
 
+#include <stdint.h>
 #define U_INT4 unsigned  int
 #define INT4   int
 #define U_INT2 unsigned short
@@ -364,6 +365,7 @@ typedef REAL16  tSysCho ;
 #else
 typedef REAL8  tSysCho ;
 #endif
+
 
 #endif /* ! _ELISE_SYS_DEP_H */
 

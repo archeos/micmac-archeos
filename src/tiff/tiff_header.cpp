@@ -277,12 +277,13 @@ ELISE_fp DATA_tiff_header::kth_file(INT & nb,bool read)
              );
 
     fp.set_byte_ordered(_byte_ordered);
+
     fp.seek_begin(Tiff_Im::OFSS_IFD0);
 
     INT i=0 ;
-    INT offs = -2;
+    tFileOffset offs = 0;
 
-    for (offs = fp.read_INT4(); offs && (i<nb) ; i++)
+    for (offs = fp.read_FileOffset4(); offs.BasicLLO() && (i<nb) ; i++)
     {
 
           fp.seek_begin(offs);
@@ -291,7 +292,7 @@ ELISE_fp DATA_tiff_header::kth_file(INT & nb,bool read)
           offs = fp.read_INT4();
     }
     
-    if ( offs)
+    if (offs.BasicLLO())
     {
        fp.seek_begin(offs);
       
@@ -447,6 +448,8 @@ void DATA_Tiff_Ifd::vmodif::init_if_0(INT v0,INT nb)
 }
 
 
+const tFileOffset Tiff_Im::UN_INIT_TILE(0xFFFFFFFFu);
+
 
 
 
@@ -492,6 +495,8 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
        compr = Tiff_Im::PackBits_Compr;
 
     _sz_tile = Tiff_Im::std_sz_tile_of_nbb(_nbb_ch0);
+
+
     _nb_chanel =  Tiff_Im::nb_chan_of_phot_interp(phot_interp);
     _bits_p_chanel = STD_NEW_TAB_USER(_nb_chanel,INT);
     _data_format = STD_NEW_TAB_USER(_nb_chanel,INT);
@@ -658,7 +663,6 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
            mSzFileTile.y = round_up(mSzFileTile.y,_sz_tile.y);
        }
 
-// std::cout << "UUUU " << _sz_tile << "\n";
 
        mUseFileTile =  (mSzFileTile.x<_sz.x) || (mSzFileTile.y<_sz.y) || (! CreateSubTile);
 
@@ -709,23 +713,29 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
     }
     else
     {
-        _tiles_offset = STD_NEW_TAB_USER(_nb_tile_tot,INT);
-        _tiles_byte_count = STD_NEW_TAB_USER(_nb_tile_tot,INT);
+        _tiles_offset = STD_NEW_TAB_USER(_nb_tile_tot.IntBasicLLO(),tFileOffset);
+        _tiles_byte_count = STD_NEW_TAB_USER(_nb_tile_tot.IntBasicLLO(),tFileOffset);
 
         if ( _mode_compr == Tiff_Im::No_Compr)
         {
-              for(INT i = 0 ; i <_nb_tile_tot; i++)
+              for(tFileOffset i = 0 ; i <_nb_tile_tot; i++)
               {
-                  _tiles_offset[i] = 8 + i * _byte_sz_tiles;
-                  _tiles_byte_count[i] =  _byte_sz_tiles;
+                  _tiles_offset[i.IntBasicLLO()] = tFileOffset(8) + i * _byte_sz_tiles;
+                  _tiles_byte_count[i.IntBasicLLO()] =  _byte_sz_tiles;
               }
-              fp.write_INT4(8+_nb_tile_tot*_byte_sz_tiles);
+              fp.write_FileOffset4(tFileOffset(8)+_nb_tile_tot*_byte_sz_tiles);
+
+
               fp.write_dummy(_nb_tile_tot*_byte_sz_tiles);
+
         }
         else
         {
-              for(INT i = 0 ; i <_nb_tile_tot; i++)
-                  _tiles_offset[i] = _tiles_byte_count[i] =  Tiff_Im::UN_INIT_TILE;
+              for(tFileOffset i = 0 ; i <_nb_tile_tot; i++)
+              {
+                  _tiles_offset[i.IntBasicLLO()] =   Tiff_Im::UN_INIT_TILE;
+                  _tiles_byte_count[i.IntBasicLLO()] =  Tiff_Im::UN_INIT_TILE;
+              }
               fp.write_INT4(8);
         }
     }
@@ -791,7 +801,8 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
        // No def values tags
 
     _sz = Pt2di(-1,-1);
-    _phot_interp = (Tiff_Im::PH_INTER_TYPE) -1;
+    //  _phot_interp = (Tiff_Im::PH_INTER_TYPE) -1;
+    _phot_interp = Tiff_Im::BlackIsZero;  // Be lenient because IFP stugart do not know standard
     _tiles_offset = 0;
     _tiles_byte_count = 0;
     _palette = 0;
@@ -873,6 +884,31 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
     // also _tiles_byte_count is a required TAGS , it appears to be absent
     // of some files. As I do not need it for now ...
 
+
+    if (!(  (_sz.x != -1) && (_sz.y != -1)
+             && ((_tiles_offset != 0) || mUseFileTile)
+             && (_resol.x != -1) && (_resol.y != -1)
+             && (_phot_interp != (Tiff_Im::PH_INTER_TYPE) -1)
+          )
+       )
+    {
+         std::cout << "Sz " << _sz 
+                    << " TileOffset " << _tiles_offset
+                    << " Resol " <<   _resol 
+                    << " Ph Interp " << _phot_interp 
+                    << "\n";
+          // Les tags vraiment necessaires
+          if (!(  (_sz.x != -1) && (_sz.y != -1)
+                   && ((_tiles_offset != 0) || mUseFileTile)
+               )
+             )
+          {
+               ELISE_ASSERT(false,"uncomplete TIFF Information File Directory");
+          }
+    }
+
+
+/*
     Tjs_El_User.ElAssert
     (
                 (_sz.x != -1) && (_sz.y != -1)  
@@ -882,6 +918,7 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
           && (_phot_interp != (Tiff_Im::PH_INTER_TYPE) -1),
           EEM0 << "uncomplete TIFF Information File Directory"
     );
+*/
 
 
     if (_phot_interp==Tiff_Im::RGBPalette)
@@ -1077,17 +1114,17 @@ void DATA_Tiff_Ifd::show()
      {
        cout << "TILES : ";
 	 {
-	     for (INT i =0 ; i<ElMin(6,_nb_tile_tot) ; i++)
+	     for (int  i =0 ; i<ElMin(6,_nb_tile_tot.IntBasicLLO()) ; i++)
 		 {
-			 cout << "(" << _tiles_offset[i] << "," ;
+			 cout << "(" << _tiles_offset[i].BasicLLO() << "," ;
 			if   (_tiles_byte_count)
-				  cout << _tiles_byte_count[i];
+				  cout << _tiles_byte_count[i].BasicLLO();
 			else
 				  cout << "?";
 			cout     << ")";
 		}
 	 }
-       if (_nb_tile_tot>5) cout << "...";
+       if (_nb_tile_tot.IntBasicLLO()>5) cout << "...";
        cout << "\n";
      }
      else
@@ -1234,12 +1271,12 @@ INT DATA_Tiff_Ifd::num_tile(INT tx,INT ty,INT kth)
        return  (_nb_tile.y*kth+ty)*_nb_tile.x+tx;
 }
 
-INT DATA_Tiff_Ifd::offset_tile(INT tx,INT ty,INT kth)
+tFileOffset DATA_Tiff_Ifd::offset_tile(INT tx,INT ty,INT kth)
 {
     return  _tiles_offset[num_tile(tx,ty,kth)];
 }
 
-INT DATA_Tiff_Ifd::byte_count_tile(INT tx,INT ty,INT kth)
+tFileOffset DATA_Tiff_Ifd::byte_count_tile(INT tx,INT ty,INT kth)
 {
     return  _tiles_byte_count[num_tile(tx,ty,kth)];
 }
@@ -1251,18 +1288,18 @@ void DATA_Tiff_Ifd::set_value_tile
                     INT tx,
                     INT ty,
                     INT kth_ch,
-                    INT value,
-                    INT offset_file,
-                    INT * tab_val
+                    tFileOffset value,
+                    tFileOffset offset_file,
+                    tFileOffset * tab_val
                 )
 {
 
 
-   INT nt = num_tile(tx,ty,kth_ch);
-   INT offs_cur = fp.tell();
+   tFileOffset nt = num_tile(tx,ty,kth_ch);
+   tFileOffset offs_cur = fp.tell();
 
    fp.seek_begin(offset_file+nt*4);
-   INT4 old_value = fp.read_INT4();
+   tFileOffset old_value = fp.read_FileOffset4();
 
    Tjs_El_User.ElAssert
    (
@@ -1273,8 +1310,8 @@ void DATA_Tiff_Ifd::set_value_tile
    );
 
    fp.seek_cur(-4);
-   fp.write_INT4(value);
-   tab_val[nt] = value;
+   fp.write_FileOffset4(value);
+   tab_val[nt.IntBasicLLO()] = value;
 
    fp.seek_begin(offs_cur);
 }
@@ -1285,7 +1322,7 @@ void DATA_Tiff_Ifd::set_offs_tile
                     INT tx,
                     INT ty,
                     INT kth_ch,
-                    INT value
+                    tFileOffset value
                 )
 {
        set_value_tile(fp,tx,ty,kth_ch,value,_offs_toffs,_tiles_offset);
@@ -1297,7 +1334,7 @@ void DATA_Tiff_Ifd::set_count_tile
                     INT tx,
                     INT ty,
                     INT kth_ch,
-                    INT value
+                    tFileOffset value
                 )
 {
        set_value_tile(fp,tx,ty,kth_ch,value,_offs_bcount,_tiles_byte_count);
@@ -1522,13 +1559,13 @@ GenIm::type_el   Tiff_Im::type_el()
     return dtifd()->type_el();
 }
 
-INT  Tiff_Im::offset_tile(INT x,INT y,INT kth_ch)
+tFileOffset  Tiff_Im::offset_tile(INT x,INT y,INT kth_ch)
 {
 
     return dtifd()->offset_tile(x,y,kth_ch);
 }
 
-INT  Tiff_Im::byte_count_tile(INT x,INT y,INT kth_ch)   
+tFileOffset  Tiff_Im::byte_count_tile(INT x,INT y,INT kth_ch)   
 {
     return dtifd()->byte_count_tile(x,y,kth_ch);
 }
@@ -1732,7 +1769,7 @@ Elise_Tiled_File_Im_2D::Elise_Tiled_File_Im_2D
      Pt2di            sz_tiles,
      bool             clip_last_tile,
      bool             chunk,
-     INT              offset_0      ,
+     tFileOffset      offset_0      ,
      bool             create       ,
      bool             byte_ordered
 ) :
