@@ -8,8 +8,8 @@ Subject: Proper install directory
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -306,8 +306,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG
- set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+@@ -319,8 +319,8 @@ IF (MSVC)
+ endif()
  
  # DEFINITION : du dossier d'installation
 -set(Install_Dir ${PROJECT_SOURCE_DIR}/bin)
@@ -21,7 +21,7 @@ Subject: Proper install directory
  set(ELISE_DIR src)
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -177,7 +177,7 @@ if(${CUDA_ENABLED})
+@@ -182,7 +182,7 @@ if(${CUDA_ENABLED})
  
  else()
  	 add_library( elise ${Elise_Src_Files} ${IncFiles} )
@@ -29,4 +29,4 @@ Subject: Proper install directory
 +     #INSTALL(TARGETS elise ARCHIVE DESTINATION ${Install_Dir_lib} )
  endif()
  
- # OPTION BUILD : En tetes precompilées pour gcc
+ # OPTION BUILD : En tetes precompilees pour gcc

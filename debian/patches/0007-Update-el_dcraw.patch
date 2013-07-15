@@ -5614,26 +5614,7 @@ Forwarded: no
        }
      for (i=0; i < phead[0]/4; i++)
        oprof[i] = htonl(oprof[i]);
-@@ -8303,8 +8728,16 @@ void CLASS convert_to_rgb()
- 	  out_cam[i][j] += out_rgb[output_color-1][i][k] * rgb_cam[k][j];
-   }
-   if (verbose)
--    fprintf (stderr, raw_color ? _("Building histograms...\n") :
--	_("Converting to %s colorspace...\n"), name[output_color-1]);
-+    {
-+      if ( raw_color )
-+    	fprintf(stderr, _("Building histograms...\n") );
-+      else
-+    	fprintf(stderr, _("Converting to %s colorspace...\n"), name[output_color-1] );
-+    /*
-+    +	fprintf (stderr, raw_color ? _("Building histograms...\n") :
-+     	_("Converting to %s colorspace...\n"), name[output_color-1]);
-+    +	*/
-+    }
- 
-   memset (histogram, 0, sizeof histogram);
-   for (img=image[0], row=0; row < height; row++)
-@@ -8319,7 +8752,7 @@ void CLASS convert_to_rgb()
+@@ -8327,7 +8752,7 @@ void CLASS convert_to_rgb()
  	FORC3 img[c] = CLIP((int) out[c]);
        }
        else if (document_mode)
@@ -5642,7 +5623,7 @@ Forwarded: no
        FORCC histogram[c][img[c] >> 3]++;
      }
    if (colors == 4 && output_color) colors = 3;
-@@ -8341,7 +8774,7 @@ void CLASS fuji_rotate()
+@@ -8349,7 +8774,7 @@ void CLASS fuji_rotate()
    step = sqrt(0.5);
    wide = fuji_width / step;
    high = (height - fuji_width) / step;
@@ -5651,7 +5632,7 @@ Forwarded: no
    merror (img, "fuji_rotate()");
  
    for (row=0; row < high; row++)
-@@ -8374,7 +8807,7 @@ void CLASS stretch()
+@@ -8382,7 +8807,7 @@ void CLASS stretch()
    if (verbose) fprintf (stderr,_("Stretching the image...\n"));
    if (pixel_aspect < 1) {
      newdim = height / pixel_aspect + 0.5;
@@ -5660,7 +5641,7 @@ Forwarded: no
      merror (img, "stretch()");
      for (rc=row=0; row < newdim; row++, rc+=pixel_aspect) {
        frac = rc - (c = rc);
-@@ -8386,7 +8819,7 @@ void CLASS stretch()
+@@ -8394,7 +8819,7 @@ void CLASS stretch()
      height = newdim;
    } else {
      newdim = width * pixel_aspect + 0.5;
@@ -5669,7 +5650,7 @@ Forwarded: no
      merror (img, "stretch()");
      for (rc=col=0; col < newdim; col++, rc+=1/pixel_aspect) {
        frac = rc - (c = rc);
-@@ -8517,8 +8950,8 @@ void CLASS tiff_head (struct tiff_hdr *t
+@@ -8525,8 +8950,8 @@ void CLASS tiff_head (struct tiff_hdr *t
    strncpy (th->desc, desc, 512);
    strncpy (th->make, make, 64);
    strncpy (th->model, model, 64);
@@ -5680,7 +5661,7 @@ Forwarded: no
    sprintf (th->date, "%04d:%02d:%02d %02d:%02d:%02d",
        t->tm_year+1900,t->tm_mon+1,t->tm_mday,t->tm_hour,t->tm_min,t->tm_sec);
    strncpy (th->artist, artist, 64);
-@@ -8590,19 +9023,18 @@ void CLASS write_ppm_tiff()
+@@ -8598,19 +9023,18 @@ void CLASS write_ppm_tiff()
  	   FORCC ppm [col*colors+c] = curve[image[soff][c]] >> 8;
        else FORCC ppm2[col*colors+c] = curve[image[soff][c]];
      if (output_bps == 16 && !output_tiff && htons(0x55aa) != 0x55aa)
@@ -5703,7 +5684,7 @@ Forwarded: no
    const char *sp, *bpfile=0, *dark_frame=0, *write_ext;
    char opm, opt, *ofname, *cp;
    struct utimbuf ut;
-@@ -8621,7 +9053,7 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8629,7 +9053,7 @@ int CLASS el_dcraw_main (int argc, const
  #endif
  
    if (argc == 1) {
@@ -5712,7 +5693,7 @@ Forwarded: no
      printf(_("\nby Dave Coffin, dcoffin a cybercom o net\n"));
      printf(_("\nUsage:  %s [OPTION]... [FILE]...\n\n"), argv[0]);
      puts(_("-v        Print verbose messages"));
-@@ -8710,14 +9142,16 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8718,14 +9142,16 @@ int CLASS el_dcraw_main (int argc, const
        case 'i':  identify_only     = 1;  break;
        case 'c':  write_to_stdout   = 1;  break;
        case 'v':  verbose           = 1;  break;
@@ -5732,7 +5713,7 @@ Forwarded: no
        case 'j':  use_fuji_rotate   = 0;  break;
        case 'W':  no_auto_bright    = 1;  break;
        case 'T':  output_tiff       = 1;  break;
-@@ -8740,7 +9174,7 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8748,7 +9174,7 @@ int CLASS el_dcraw_main (int argc, const
        fprintf (stderr,_("Will not write an image to the terminal!\n"));
        return 1;
      }
@@ -5741,7 +5722,7 @@ Forwarded: no
      if (setmode(1,O_BINARY) < 0) {
        perror ("setmode()");
        return 1;
-@@ -8749,6 +9183,7 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8757,6 +9183,7 @@ int CLASS el_dcraw_main (int argc, const
    }
    for ( ; arg < argc; arg++) {
      status = 1;
@@ -5749,7 +5730,7 @@ Forwarded: no
      image = 0;
      oprof = 0;
      meta_data = ofname = 0;
-@@ -8824,7 +9259,7 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8832,7 +9259,7 @@ int CLASS el_dcraw_main (int argc, const
        printf (_("%0.1f sec\n"), shutter);
        printf (_("Aperture: f/%0.1f\n"), aperture);
        printf (_("Focal length: %0.1f mm\n"), focal_len);
@@ -5758,7 +5739,7 @@ Forwarded: no
        printf (_("Embedded ICC profile: %s\n"), profile_length ? _("yes"):_("no"));
        printf (_("Number of raw images: %d\n"), is_raw);
        if (pixel_aspect != 1)
-@@ -8833,17 +9268,24 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8841,17 +9268,24 @@ int CLASS el_dcraw_main (int argc, const
  	printf (_("Thumb size:  %4d x %d\n"), thumb_width, thumb_height);
        printf (_("Full size:   %4d x %d\n"), raw_width, raw_height);
      } else if (!is_raw)
@@ -5789,7 +5770,7 @@ Forwarded: no
  	if (use_fuji_rotate) {
  	  if (fuji_width) {
  	    fuji_width = (fuji_width - 1 + shrink) >> shrink;
-@@ -8861,9 +9303,8 @@ int CLASS el_dcraw_main (int argc, const
+@@ -8869,9 +9303,8 @@ int CLASS el_dcraw_main (int argc, const
  	printf (_("Raw colors: %d"), colors);
  	if (filters) {
  	  printf (_("\nFilter pattern: "));
@@ -5800,7 +5781,7 @@ Forwarded: no
  	}
  	printf (_("\nDaylight multipliers:"));
  	FORCC printf (" %f", pre_mul[c]);
-@@ -8882,12 +9323,17 @@ next:
+@@ -8890,12 +9323,17 @@ next:
        memcpy (rgb_cam, cmatrix, sizeof cmatrix);
        raw_color = 0;
      }
@@ -5820,7 +5801,7 @@ Forwarded: no
      if (verbose)
        fprintf (stderr,_("Loading %s %s image from %s ...\n"),
  	make, model, ifname);
-@@ -8895,7 +9341,22 @@ next:
+@@ -8903,7 +9341,22 @@ next:
        fprintf (stderr,_("%s: \"-s %d\" requests a nonexistent image!\n"),
  	ifname, shot_select);
      fseeko (ifp, data_offset, SEEK_SET);
@@ -5844,7 +5825,7 @@ Forwarded: no
      if (zero_is_bad) remove_zeroes();
      bad_pixels (bpfile);
      if (dark_frame) subtract (dark_frame);
-@@ -8906,21 +9367,30 @@ next:
+@@ -8914,21 +9367,30 @@ next:
      FORC4 cblack[c] -= i;
      black += i;
      if (user_black >= 0) black = user_black;
@@ -5879,7 +5860,7 @@ Forwarded: no
      }
      if (mix_green)
        for (colors=3, i=0; i < height*width; i++)
-@@ -8978,3 +9448,4 @@ cleanup:
+@@ -8986,3 +9448,4 @@ cleanup:
    }
    return status;
  }

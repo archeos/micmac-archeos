@@ -52,7 +52,7 @@ FHS complient
  		    (
 --- a/src/photogram/ChantierNameAssoc.cpp
 +++ b/src/photogram/ChantierNameAssoc.cpp
-@@ -474,7 +474,7 @@ std::string MM3dBinFile(const std::strin
+@@ -522,7 +522,7 @@ std::string MM3dBinFile(const std::strin
  //   MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
  std::string Basic_XML_MM_File(const std::string & aFile)
  {
@@ -77,7 +77,7 @@ FHS complient
     if (ELISE_fp::exist_file(aFullRes) ) 
        return aFullRes;
  
-@@ -1974,7 +1974,7 @@ L_Arg_Opt_Tiff  ArgOpTiffMDP(const std::
+@@ -2011,7 +2011,7 @@ L_Arg_Opt_Tiff  ArgOpTiffMDP(const std::
  Tiff_Im MMIcone(const std::string & aName)
  {
  // std::cout << "IIIICOne" << MMDir() << "\n";
@@ -114,7 +114,7 @@ FHS complient
                         + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
 --- a/src/uti_phgrm/CPP_GCPBascule.cpp
 +++ b/src/uti_phgrm/CPP_GCPBascule.cpp
-@@ -77,7 +77,7 @@ int GCPBascule_main(int argc,char ** arg
+@@ -79,7 +79,7 @@ int GCPBascule_main(int argc,char ** arg
  	MMD_InitArgcArgv(argc,argv);
  	
      std::string aCom =   MMDir() + std::string("bin/Apero ")
@@ -136,7 +136,7 @@ FHS complient
                         + std::string(" +AeroOut=-") + AeroOut
 --- a/src/uti_phgrm/CPP_Malt.cpp
 +++ b/src/uti_phgrm/CPP_Malt.cpp
-@@ -367,7 +367,7 @@ cAppliMalt::cAppliMalt(int argc,char **
+@@ -383,7 +383,7 @@ cAppliMalt::cAppliMalt(int argc,char **
    std::string aNameGeom = (mImMaster=="") ? "eGeomMNTEuclid" : (mIsSperik? "eGeomMNTFaisceauPrChSpherik" :"eGeomMNTFaisceauIm1PrCh_Px1D");
  
    mCom =     MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
@@ -145,7 +145,7 @@ FHS complient
                        + anArgCommuns
  
  /*
-@@ -489,7 +489,7 @@ cAppliMalt::cAppliMalt(int argc,char **
+@@ -515,7 +515,7 @@ cAppliMalt::cAppliMalt(int argc,char **
         std::string aFileOAM  = "MM-Malt-OrthoAnamOnly.xml";
  
  	   mComOA =  MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
@@ -243,7 +243,7 @@ FHS complient
                         //+ std::string(" +PatternAllIm=") + aPat + std::string(" ")
 --- a/src/uti_phgrm/CPP_Tarama.cpp
 +++ b/src/uti_phgrm/CPP_Tarama.cpp
-@@ -88,7 +88,7 @@ int Tarama_main(int argc,char ** argv)
+@@ -90,7 +90,7 @@ int Tarama_main(int argc,char ** argv)
  	MMD_InitArgcArgv(argc,argv);
     
      std::string aCom =   MM3dBinFile( "MICMAC" )

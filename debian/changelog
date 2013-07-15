@@ -1,15 +1,13 @@
-micmac (1.0+hg951-0archeos1) UNRELEASED; urgency=low
- 
+micmac (1.0+hg1340-0archeos1) UNRELEASED; urgency=low
+
   * New upstream version
   * For full upstream changelog see MicMac's forum
   * Use mm3d Ann instead of binary ann
   * Remove "useless" utilities (mailing list handling, ETAPOLYGON,
     checkdependencies)
-  * Update el_dcraw: fixes red images issue with recent cameras (tested on a
-    6D). For further information see this thread (french):
-    http://forum-micmac.forumprod.com/luminosite-differente-entre-les-photos-originales-et-l-ortho-t354.html
+  * Update el_dcraw: add support for recent cameras
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 13 May 2013 00:00:00 +0100
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 15 Jul 2013 23:13:31 +0200
 
 micmac (1.0+hg560-0archeos2.1) theodoric; urgency=low
 

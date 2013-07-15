@@ -1,6 +1,6 @@
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -313,7 +313,7 @@ set(Install_Dir /usr/bin)
+@@ -326,7 +326,7 @@ set(Install_Dir /usr/bin)
  set(ELISE_DIR src)
  
  # CONSTRUCTION : Librairie ANN

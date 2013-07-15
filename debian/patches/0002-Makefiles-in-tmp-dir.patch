@@ -23,7 +23,7 @@ Subject: Makefiles-in-tmp-dir
  
      cEl_GPAO aGPAO;
      int aK=0;
-@@ -103,7 +103,7 @@ void MkFMapCmd
+@@ -104,7 +104,7 @@ void MkFMapCmd
         aNbProc = NbProcSys();
  
      if (FileMk=="") 
@@ -34,7 +34,7 @@ Subject: Makefiles-in-tmp-dir
      cEl_GPAO aGPAO;
 --- a/src/uti_phgrm/CPP_Tapioca.cpp
 +++ b/src/uti_phgrm/CPP_Tapioca.cpp
-@@ -421,7 +421,7 @@ int Tapioca_main(int argc,char ** argv)
+@@ -438,7 +438,7 @@ int Tapioca_main(int argc,char ** argv)
      }
  */
  
