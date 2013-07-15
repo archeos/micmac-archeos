@@ -107,6 +107,12 @@ Files: debian/*
 Copyright: 2013 Romain Janvier romain.janvier@hotmail.fr
 License: GPL-2+
 
+Files: debian/make_source_archive.sh
+Copyright: 2007-2013 Institut Géographique National (IGN) www.ign.fr
+Comment: Modified version of original script
+License: CeCILL-B
+
+
 License: CeCILL-B
  CeCILL-B FREE SOFTWARE LICENSE AGREEMENT
  
