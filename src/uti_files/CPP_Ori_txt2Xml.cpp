@@ -44,6 +44,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 */
 
 
+class cFaceOrC;
 
 
 class  cReadOri : public cReadObject
@@ -103,18 +104,23 @@ class cAttrVoisSom
        }
 
        cAttrVoisSom()   :
-           mCam(0) 
+           mCam(0) ,
+           mFC (0)
        {}
 
        cTxtCam * mCam;
+       cFaceOrC * mFC;
 };
 
 class cAttrVoisA
 {
     public :
-       cAttrVoisA()
+       cAttrVoisA() :
+          mNbPts (0)
        {
        }
+
+       int mNbPts;
 };
 
 
@@ -143,6 +149,7 @@ class cSubGrVois : public ElSubGraphe<cAttrVoisSom,cAttrVoisA>
 };
 
 
+
 tSomVois & SomDif(const ElFilo<tArcVois *>& aF,const tSomVois & aS1,const tSomVois & aS2)
 {
     for (int aK=0 ; aK<aF.nb() ; aK++)
@@ -168,7 +175,12 @@ class cAppli_Ori_Txt2Xml_main
          void operator()(tSomVois*,tSomVois*,bool);  // Delaunay Call back
      private :
 
-         void AddArc(tSomVois*,tSomVois*,int aCoul);
+         std::list<tSomVois *> ListVoisForInit(tSomVois * aSom);
+         void GenerateOrientInit();
+
+
+
+         void AddArc(tSomVois*,tSomVois*,int aCoul,int aFlag);  // aFlag=-1 si unused
 
          void ParseFile();
          void TestRef();
@@ -259,7 +271,9 @@ class cAppli_Ori_Txt2Xml_main
          int                  mSiftLowResol;
          bool                 mUseOnlyC;
          tGrVois              mGrVois;
+         int                     mFlagDelaunay;
          cSubGrVois              mSubAll;
+         cSubGrFlagArc<cSubGrVois>  mSubDel;
          std::vector<tSomVois *> mVSomVois;
          Box2dr                  mBoxC;
          double                  mSzV;
@@ -272,21 +286,46 @@ class cAppli_Ori_Txt2Xml_main
          bool                 mCalibByFile;
          double               mAltiSol;
          double               mProf;
+         Pt2dr                mOffsetXY;
+         std::string         mGenOrFromC;
+         bool                mComputeOrFromC;
+         bool                mComputeCple;
 };
 
 void cAppli_Ori_Txt2Xml_main::operator()(tSomVois* aS1,tSomVois* aS2,bool)  // Delaunay Call back
 {
-    AddArc(aS1,aS2,P8COL::blue);
+    AddArc(aS1,aS2,P8COL::blue,mFlagDelaunay);
 }
 
 
-void cAppli_Ori_Txt2Xml_main::AddArc(tSomVois* aS1,tSomVois* aS2,int aCoul)
+int NbPtsOfFile(const std::string & aName)
+{
+  int aRes = sizeofile(aName.c_str());
+  if (aRes ==0) return 0;
+  return (aRes-52) / 44;
+}
+
+void cAppli_Ori_Txt2Xml_main::AddArc(tSomVois* aS1,tSomVois* aS2,int aCoul,int aFlag)
 {
     tArcVois * anAExist = mGrVois.arc_s1s2(*aS1,*aS2);
     if (! anAExist)
     {
        tArcVois & anArc = mGrVois.add_arc(*aS1,*aS2,cAttrVoisA());
+       if (mComputeOrFromC)
+       {
+           std::string  aN1 = aS1->attr().mCam->mNameIm;
+           std::string  aN2 = aS2->attr().mCam->mNameIm;
+           std::string aF1 = mDir + mICNM->Assoc1To2("NKS-Assoc-CplIm2Hom@@dat",aN1,aN2,true);
+           std::string aF2 = mDir + mICNM->Assoc1To2("NKS-Assoc-CplIm2Hom@@dat",aN2,aN1,true);
+
+           anArc.attr().mNbPts =  NbPtsOfFile(aF1);
+           anArc.arc_rec().attr().mNbPts =  NbPtsOfFile(aF2);
+           
+       }
+
        ShowArc(anArc.s1(),anArc.s2(),aCoul);
+       if (aFlag>=0)
+           anArc.sym_flag_set_kth_true(aFlag);
     }
 }
 
@@ -645,12 +684,17 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
     mSiftResol       (0),
     mSiftLowResol    (0),
     mUseOnlyC        (false),
+    mFlagDelaunay    (mGrVois.alloc_flag_arc()),
+    mSubDel          (mSubAll,mFlagDelaunay),
     mSzV             (800),
     mBordV           (20),
     mW               (0),
-    mLine            (3),
+    mLine            (5),
     mConvOri         (eConvAngPhotoMDegre),
-    mCalibByFile     (true)
+    mCalibByFile     (true),
+    mOffsetXY        (0,0),
+    mGenOrFromC      (),
+    mComputeOrFromC  (false)
 {
 
     bool Help;
@@ -666,6 +710,7 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
     std::vector<std::string> aPrePost;
     std::vector<int>         aVCpt;
     
+    std::string   aNameConvOri;
 
     ElInitArgMain
     (
@@ -677,6 +722,8 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
                       << EAM(aStrChSys,"ChSys",true,"Change coordinate file")
                       << EAM(mFileCalib,"Calib",true,"External XML calibration file")
                       << EAM(mAddCalib,"AddCalib",true,"Try to add calibration, def=true")
+                      << EAM(aNameConvOri,"ConvOri",true,"Orientation convenetion (like eConvAngPhotoMGrade ...)")
+
                       << EAM(aPrePost,"PrePost",true,"[Prefix,Postfix] to generate name of image from id")
                       << EAM(mKeyName2Image,"KN2I",true,"Key 2 compute Name Image from Id in file")
                       << EAM(mDistNeigh,"DN",true,"Neighbooring distance for Image Graphe")
@@ -705,15 +752,21 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
                       << EAM(mCalibByFile,"CBF",true,"Export calib as a link to existing file")
                       << EAM(mAltiSol,"AltiSol",true,"Average altitude of ground")
                       << EAM(mProf,"Prof",true,"Average Prof of images")
+                      << EAM(mOffsetXY,"OffsetXY",true,"Offset to substract from X,Y (To avoid possible round off error)")
+
+                      << EAM(mGenOrFromC,"CalOFC",true,"Calibration Dir to generate orientation from centers")
     );
 
+    mComputeOrFromC = EAMIsInit(&mGenOrFromC);
+
+    mComputeCple =  EAMIsInit(&mNameCple) ||  mComputeOrFromC;
+
+
     if (! EAMIsInit(&mAddDelaunay))
-       mAddDelaunay = EAMIsInit(&mNameCple);
+       mAddDelaunay = mComputeCple;
 
     if (! EAMIsInit(&mAddDelaunayCroist))
        mAddDelaunayCroist = mAddDelaunay ;
-    else
-       mAddDelaunayCroist = mAddDelaunayCroist &&  mAddDelaunayCroist;
 
     mCalcV  = mCalcV
              || EAMIsInit(&mDelay)
@@ -763,6 +816,9 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
         ELISE_ASSERT(Ok,"Arg0 is not a valid format specif");
     }
 
+    if (EAMIsInit(&aNameConvOri))
+        mConvOri = Str2eConventionsOrientation(aNameConvOri);
+
     // cCalibrationInternConique aCIO;
     bool CalibIsInit = EAMIsInit(&mFileCalib) && mAddCalib;
     mCalibByFile = mCalibByFile && CalibIsInit;
@@ -805,6 +861,10 @@ cAppli_Ori_Txt2Xml_main::cAppli_Ori_Txt2Xml_main(int argc,char ** argv) :
     SauvRel();
 
     std::cout << "PATC = " << mPatImCenter << "\n";
+
+
+    if (mComputeOrFromC)
+       GenerateOrientInit();
 }
 
 
@@ -861,22 +921,22 @@ void cAppli_Ori_Txt2Xml_main::VoisInitDelaunayCroist()
 
     std::vector<tSomVois *> aVQ1;
     std::vector<tSomVois *> aVQ2;
-    for (tItSVois itS=mGrVois.begin(mSubAll) ; itS.go_on() ;itS++)
+    for (tItSVois itS=mGrVois.begin(mSubDel) ; itS.go_on() ;itS++)
     {
-        for (tItAVois itA= (*itS).begin(mSubAll) ; itA.go_on() ; itA++)
+        for (tItAVois itA= (*itS).begin(mSubDel) ; itA.go_on() ; itA++)
         {
              tSomVois & aS1 = (*itA).s1();
              tSomVois & aS2 = (*itA).s2();
              if ((*itA).IsOrientedNumCroissant())
              {
                 ElFilo<tArcVois *> aF1;
-                if (face_trigo(*itA,mSubAll,aF1))
+                if (face_trigo(*itA,mSubDel,aF1))
                 {
 
                    if (aF1.nb() == 3)
                    {
                        ElFilo<tArcVois*> aF2;
-                       if (face_trigo((*itA).arc_rec(),mSubAll,aF2))
+                       if (face_trigo((*itA).arc_rec(),mSubDel,aF2))
                        {
                            if (aF2.nb() == 3)
                            {
@@ -901,7 +961,7 @@ void cAppli_Ori_Txt2Xml_main::VoisInitDelaunayCroist()
     }
 
      for  (int aKq=0 ; aKq<int(aVQ1.size()) ; aKq++)
-          AddArc(aVQ1[aKq],aVQ2[aKq],P8COL::green);
+          AddArc(aVQ1[aKq],aVQ2[aKq],P8COL::green,-1);
 
 
 
@@ -962,6 +1022,12 @@ void cAppli_Ori_Txt2Xml_main::ParseFile()
     {
         if (aReadApp.Decode(aLine) && (aCpt>=mCptMin) && (aCpt<mCptMax))
         {
+
+           if (aReadApp.IsDef(aReadApp.mPt) && (EAMIsInit(&mOffsetXY)))
+           {
+              aReadApp.mPt.x -= mOffsetXY.x;
+              aReadApp.mPt.y -= mOffsetXY.y;
+           }
            {
               if (mNbCam==0) 
                  mHasWPK = aReadApp.IsDef(aReadApp.mWPK);
@@ -971,6 +1037,7 @@ void cAppli_Ori_Txt2Xml_main::ParseFile()
            mVCam.push_back(&aNewCam);
            aNewCam.mNum = mNbCam;
            aNewCam.mNameIm = mICNM->Assoc1To1(mKeyName2Image,aReadApp.mName,true);
+
            aNewCam.mNameOri = NameOrientation(mOriOut,aNewCam);
 
 
@@ -1164,7 +1231,7 @@ void cAppli_Ori_Txt2Xml_main::DoTiePCenter()
 
 void cAppli_Ori_Txt2Xml_main::SauvRel()
 {
-    if (! EAMIsInit(&mNameCple))
+    if ( ! mComputeCple)
        return;
 
 
@@ -1186,7 +1253,7 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
            for (int aK2=aK2Min ; aK2<aK2Max ; aK2++)
            {
                 if (aK1 != aK2)
-                   AddArc(mVSomVois[aK1],mVSomVois[aK2],P8COL::white);
+                   AddArc(mVSomVois[aK1],mVSomVois[aK2],P8COL::white,-1);
            }
            
            std::cout << "TTttiim e " << mVSomVois[aK1]->attr().mCam->mTime << "\n";
@@ -1210,7 +1277,8 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
    }
   
 
-   MakeFileXML(aRelIm,mDir+mNameCple);
+   if ( EAMIsInit(&mNameCple))
+      MakeFileXML(aRelIm,mDir+mNameCple);
 /*
     for (int aK1=0 ; aK1<mNbCam ; aK1++)
     {
@@ -1235,7 +1303,164 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
         }
     }
 */
+    if (mW)
+    {
+       std::cout << "CLIK IN WINDOW\n";
+       // mW->clik_in();
+    }
 }
+
+
+std::list<tSomVois *> cAppli_Ori_Txt2Xml_main::ListVoisForInit(tSomVois * aS1)
+{
+   std::list<tSomVois *> aRes;
+
+   // Version delaunay
+   for (tItAVois itA= aS1->begin(mSubDel) ; itA.go_on() ; itA++)
+   {
+       tSomVois & aS2 = (*itA).s2();
+       aRes.push_back(&aS2);
+   }
+
+   return aRes;
+}
+
+class cFaceOrC
+{
+    public :
+         cFaceOrC(const  ElSubFilo<tArcVois *> & Soms , double aCost) :
+             mSoms (Soms),
+             mCost (aCost)
+         {
+         }
+
+         bool operator < (const cFaceOrC & aF2) const
+         {
+              return mCost > aF2.mCost;
+         }
+
+         std::vector<tSomVois *>  mVBelongs;
+         ElSubFilo<tArcVois *>    mSoms;
+         double                   mCost;
+};
+
+
+void AddPat(std::string & aPat,tSomVois * aS)
+{
+   if (aPat!="") aPat += "|";
+   aPat += aS->attr().mCam->mNameIm;
+}
+
+void cAppli_Ori_Txt2Xml_main::GenerateOrientInit()
+{
+   ElPartition<tArcVois *> * aPart = new ElPartition<tArcVois *>;
+   all_face_trigo(mGrVois,mSubDel,*aPart);
+
+   std::vector<cFaceOrC>  & aVF = * (new std::vector<cFaceOrC> );
+   for (int aKF=0 ; aKF<aPart->nb() ; aKF++)
+   {
+         ElSubFilo<tArcVois *> aF = (*aPart)[aKF];
+         std::vector<Pt2dr> aPolyg;
+         if (aF.nb()==3)
+         {
+              int aMinNb=1000000000;
+              for (int aKA=0 ; aKA<aF.nb() ; aKA++)
+              {
+                  aMinNb = ElMin3(aMinNb,aF[aKA]->attr().mNbPts,aF[aKA]->arc_rec().attr().mNbPts);
+                  Pt3dr aP = aF[aKA]->s1().attr().mCam->mC;
+
+                  aPolyg.push_back(Pt2dr(aP.x,aP.y));
+              }
+
+              aVF.push_back(cFaceOrC(aF,aMinNb* ElAbs(surf_or_poly(aPolyg))));
+         }
+   }
+   std::sort(aVF.begin(),aVF.end());
+   for (int aKF=0 ; aKF<int(aVF.size()) ; aKF++)
+   {
+        ElSubFilo<tArcVois *> aF = aVF[aKF].mSoms;
+        for (int aKA=0 ; aKA<aF.nb() ; aKA++)
+        {
+            tSomVois * aS1 = &(aF[aKA]->s1());
+            if (aS1->attr().mFC==0)
+            {
+                aS1->attr().mFC = &(aVF[aKF]);
+                aVF[aKF].mVBelongs.push_back(aS1);
+            }
+        }
+   }
+
+   
+   std::list<std::string> aLCom;
+  // int aCptFOk=0;
+   for (int aKF=0 ; aKF<int(aVF.size()) ; aKF++)
+   {
+        cFaceOrC * aF =  &(aVF[aKF]);
+        if (aF->mVBelongs.size())
+        {
+            std::string aPatIm;
+            std::string aPatSauv;
+            for (int aKS=0 ; aKS<int(aF->mVBelongs.size()) ; aKS++)
+                AddPat(aPatSauv,aF->mVBelongs[aKS]);
+
+            for (int aKA = 0 ; aKA<aF->mSoms.nb() ; aKA++)
+                 AddPat(aPatIm,&(aF->mSoms[aKA]->s1()));
+
+            // std::cout << "  JjjjJ " << aPatSauv << "    ######   " << aPatIm << "\n";
+            std::string aCom =     MM3dBinFile(" Apero")
+                            +  XML_MM_File("Apero-ModelInitFromCenter.xml")
+                            + " DirectoryChantier=" + mDir
+                            + " +CalibIn=" + mGenOrFromC
+                            + " +AeroOut=" + std::string("GenFromC")
+                            + " +BDDC=" + mOriOut
+                            + " +ImC=" +  aF->mVBelongs[0]->attr().mCam->mNameIm
+                            + " +ImSec=" + QUOTE("(" +aPatIm +")") 
+                            + " +ImSauv=" + QUOTE("(" +aPatSauv +")") 
+                         ;
+            // std::cout << aCom << "\n";
+            aLCom.push_back(aCom);
+        }
+   }
+
+   
+    cEl_GPAO::DoComInParal(aLCom,"",-1,true,true);
+
+/*
+   std::list<std::string> aLCom;
+   for (tItSVois itS=mGrVois.begin(mSubAll) ; itS.go_on() ;itS++)
+   {
+        std::string aPatVois;
+        tSomVois * aS1 = &(*itS);
+        std::list<tSomVois *> aLV = ListVoisForInit(aS1);
+        for (std::list<tSomVois *>::iterator itV =aLV.begin() ; itV!=aLV.end() ; itV++)
+        {
+             tSomVois * aS2 = *itV;
+             if (aS1!=aS2)
+             {
+                  if (aPatVois!="") aPatVois+="|";
+                  aPatVois += aS2->attr().mCam->mNameIm;
+             }
+        }
+
+        std::string aCom =     MM3dBinFile(" Apero")
+                            +  XML_MM_File("Apero-ModelInitFromCenter.xml")
+                            + " DirectoryChantier=" + mDir
+                            + " +CalibIn=" + mGenOrFromC
+                            + " +AeroOut=" + std::string("GenFromC")
+                            + " +BDDC=" + mOriOut
+                            + " +ImC=" +  aS1->attr().mCam->mNameIm
+                            + " +ImSec=" + QUOTE("(" +aPatVois +")") ;
+
+//  "mm3d Apero /home/mpd/MMM/culture3d/include/XML_MicMac/Apero-ModelInitFromCenter.xml  DirectoryChantier=
+
+        // std::cout << aCom << "\n";
+        aLCom.push_back(aCom);
+   }
+*/
+
+    // cEl_GPAO::DoComInParal(aLCom,"",-1,true,true);
+}
+
 
 
 //================================================

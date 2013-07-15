@@ -1439,7 +1439,7 @@ ElCamera::ElCamera(bool isDistC2M,eTypeProj aTP) :
     mProfondeurIsDef (false),
     mProfondeur       (0),
     mIdCam               ("NoName"),
-    mPrecisionEmpriseSol (1e30), 
+    //mPrecisionEmpriseSol (1e30), 
     mRayonUtile (-1),
     mHasDomaineSpecial  (false),
     mDoneScanContU      (false),
@@ -1851,6 +1851,11 @@ void ElCamera::SetIntrImaC2M(const tOrIntIma & aOrC2M)
 
 void ElCamera::SetSz(const Pt2di &aSz)
 {
+/*
+static int aCpt = 0; aCpt++;
+std::cout << "Organge " << aCpt << "\n";
+if (aCpt>=8) getchar();
+*/
 
    if (mSz.x != -1)
    {
@@ -1912,6 +1917,12 @@ const std::vector<Pt2dr> &  ElCamera::ContourUtile()
 
 const Pt2di & ElCamera::Sz() const
 {
+/*
+static int aCpt=0; aCpt++;
+std::cout << "SIZE " << aCpt  << " " << mIdCam << "\n";
+if (aCpt == 16) getchar();
+*/
+
    ELISE_ASSERT((mSz.x>0),"ElCamera::Sz non initialisee");
    return mSz;
 }
@@ -1991,7 +2002,7 @@ void  ElCamera::HeritComplAndSz(const ElCamera & aCam)
 void  ElCamera::CamHeritGen(const ElCamera & aCam,bool WithCompl,bool WithOrientInterne)
 {
    SetIdCam(aCam.IdCam());
-// std::cout << "HHHHHH ii " << this << "\n";
+ //  std::cout << "HHHHHH ii " << this << "\n"; dd
 
    if (WithOrientInterne)
    {
@@ -2599,6 +2610,7 @@ cOrientationConique  ElCamera::StdExportCalibGlob() const
 }
 cOrientationConique  ElCamera::StdExportCalibGlob(bool ModeMatr) const
 {
+   // std::cout << "PROFONDEUR " << mProfondeur << "\n";
    return ExportCalibGlob
           (
                Sz(),
@@ -2722,7 +2734,10 @@ cOrientationConique  ElCamera::ExportCalibGlob
    cCalibrationInternConique aCIC = ExportCalibInterne2XmlStruct(aSzIm);
    cOrientationExterneRigide anOER = From_Std_RAff_C2M(_orient.inv(),aModeMatr);
    anOER.AltiSol().SetVal(AltiSol);
-   anOER.Profondeur().SetVal(Prof);
+   if (Prof >0)
+      anOER.Profondeur().SetVal(Prof);
+   else
+      anOER.Profondeur().SetNoInit();
 
 
     if (VitesseIsInit())

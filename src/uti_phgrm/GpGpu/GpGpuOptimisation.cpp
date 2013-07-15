@@ -5,26 +5,157 @@
 #include <helper_cuda.h>
 #include "GpGpu/GpGpuOptimisation.h"
 
-InterfMicMacOptGpGpu::InterfMicMacOptGpGpu():
-    _volumeCost(NOPAGELOCKEDMEMORY)
-{}
-
-InterfMicMacOptGpGpu::~InterfMicMacOptGpGpu(){}
-
-void InterfMicMacOptGpGpu::StructureVolumeCost(CuHostData3D<float> &volumeCost, float defaultValue)
+InterfOptimizGpGpu::InterfOptimizGpGpu():
+    _idbuf(false)
 {
-    uint3   dimVolCost  = make_uint3(volumeCost.GetDimension().x,volumeCost.GetDimension().y,volumeCost.GetNbLayer());
-    uint2   dimRVolCost = make_uint2(dimVolCost.x*dimVolCost.z,dimVolCost.y);
-    uint3   ptTer;
+    _gpGpuThreadOpti = new boost::thread(&InterfOptimizGpGpu::threadFuncOptimi,this);
+    SetDirToCopy(false);
+    SetCompute(false);
+    SetPreCompNextDir(false);
+}
 
-    _volumeCost.SetName("_volumeCost");
-    _volumeCost.Realloc(dimRVolCost,1);
+InterfOptimizGpGpu::~InterfOptimizGpGpu(){
 
-    for(ptTer.x = 0; ptTer.x < dimVolCost.x; ptTer.x++)
-        for(ptTer.y = 0; ptTer.y < dimVolCost.y; ptTer.y++)
-            for(ptTer.z = 0; ptTer.z < dimVolCost.z; ptTer.z++)
-                _volumeCost[make_uint2(dimVolCost.z * ptTer.x + ptTer.z,ptTer.y)] = volumeCost[ptTer] == defaultValue ?  -1 : (int)(volumeCost[ptTer] * 10000.0f);
 
-    //OptimisationOneDirection(_volumeCost, dimVolCost);
+    _gpGpuThreadOpti->interrupt();
+    //_gpGpuThreadOpti->join();
+    delete _gpGpuThreadOpti;
+    _mutexCompu.unlock();
+    _mutexCopy.unlock();
+    _mutexPreCompute.unlock();
+}
+
+void InterfOptimizGpGpu::Dealloc()
+{
+    _H_data2Opt.Dealloc();
+    _D_data2Opt.Dealloc();
+}
+
+void InterfOptimizGpGpu::oneDirOptGpGpu()
+{
+
+    /*
+        uint    dimDeltaMax =   deltaMax * 2 + 1;
+        float   hPen[PENALITE];
+        ushort  hMapIndex[WARPSIZE];
+
+        for(int i=0 ; i < WARPSIZE; i++)
+            hMapIndex[i] = i / dimDeltaMax;
+
+        for(int i=0;i<PENALITE;i++)
+            hPen[i] = ((float)(1 / 10.0f));
+
+        //      Copie des penalites dans le device                              ---------------		-
+
+        checkCudaErrors(cudaMemcpyToSymbol(penalite,    hPen,       sizeof(float)   * PENALITE));
+        checkCudaErrors(cudaMemcpyToSymbol(dMapIndex,   hMapIndex,  sizeof(ushort)  * WARPSIZE));
+    */
+
+    _D_data2Opt.SetNbLine(_H_data2Opt._nbLines);
+    _D_data2Opt.ReallocIf(_H_data2Opt);
+
+    //      Copie du volume de couts dans le device                         ---------------		-
+    _D_data2Opt.CopyHostToDevice(_H_data2Opt);
+
+    //      Kernel optimisation                                             ---------------     -
+    OptimisationOneDirection(_D_data2Opt);
+    getLastCudaError("kernelOptiOneDirection failed");
+
+    //      Copie des couts de passage forcé du device vers le host         ---------------     -
+    _D_data2Opt.CopyDevicetoHost(_H_data2Opt);
 
 }
+
+void InterfOptimizGpGpu::ReallocParam(uint size)
+{
+    _idbuf  = true;
+    _idDir  = 0;
+    _H_data2Opt.ReallocParam(size);
+    _D_data2Opt.ReallocParam(size);
+}
+
+void InterfOptimizGpGpu::createThreadOptGpGpu()
+{
+    _gpGpuThreadOpti = new boost::thread(&InterfOptimizGpGpu::threadFuncOptimi,this);
+}
+
+void InterfOptimizGpGpu::deleteThreadOptGpGpu()
+{
+    _gpGpuThreadOpti->interrupt();
+    delete _gpGpuThreadOpti;
+}
+
+void InterfOptimizGpGpu::SetCompute(bool compute)
+{
+    boost::lock_guard<boost::mutex> guard(_mutexCompu);
+    _compute = compute;
+}
+
+bool InterfOptimizGpGpu::GetCompute()
+{
+    boost::lock_guard<boost::mutex> guard(_mutexCompu);
+    return _compute;
+}
+
+void InterfOptimizGpGpu::SetDirToCopy(bool copy)
+{
+    boost::lock_guard<boost::mutex> guard(_mutexCopy);
+    _copy = copy;
+
+}
+
+bool InterfOptimizGpGpu::GetDirToCopy()
+{
+    boost::lock_guard<boost::mutex> guard(_mutexCopy);
+    return _copy;
+}
+
+bool InterfOptimizGpGpu::GetPreCompNextDir()
+{
+    boost::lock_guard<boost::mutex> guard(_mutexPreCompute);
+    return _precompute;
+
+}
+
+void InterfOptimizGpGpu::SetPreCompNextDir(bool precompute)
+{
+    boost::lock_guard<boost::mutex> guard(_mutexPreCompute);
+    _precompute = precompute;
+}
+
+void InterfOptimizGpGpu::threadFuncOptimi()
+{
+    bool idbuf  = false;
+    uint idDir  = 0;
+
+    while(true)
+    {
+        boost::this_thread::sleep(boost::posix_time::microsec(1));
+        if(/*!GetDirToCopy() && */GetCompute())
+        {
+            //printf("compute[%d]      : %d\n",idbuf,idDir);
+            SetCompute(false);
+
+            _D_data2Opt.SetNbLine(_H_data2Opt._nbLines);
+            _H_data2Opt.ReallocOutputIf(_H_data2Opt._s_InitCostVol.GetSize(),idbuf);
+            _D_data2Opt.ReallocIf(_H_data2Opt);
+
+            //      Transfert des données vers le device                            ---------------		-
+            _D_data2Opt.CopyHostToDevice(_H_data2Opt,idbuf);
+
+            SetPreCompNextDir(true);
+
+            //      Kernel optimisation                                             ---------------     -
+            OptimisationOneDirection(_D_data2Opt);
+            getLastCudaError("kernelOptiOneDirection failed");
+
+            //      Copie des couts de passage forcé du device vers le host         ---------------     -
+            _D_data2Opt.CopyDevicetoHost(_H_data2Opt,idbuf);
+
+            SetDirToCopy(true);
+            idbuf =! idbuf;
+            idDir++;
+        }
+    }
+}
+

@@ -775,7 +775,7 @@ class cGeomDiscR2
 {
        // defini dans GeomXXX.cpp
      public :
-         cGeomDiscR2 (const cAppliMICMAC &);
+         cGeomDiscR2 (cAppliMICMAC &);
 
          // Service essentiel offert par la classe
          Pt2dr    DiscToR2(const  Pt2di & aPRas) const;
@@ -821,7 +821,7 @@ class cGeomDiscR2
        /**********************************/
 
          // Un *, et non un &, pour autoriser le X(const X&)  standard
-         const cAppliMICMAC *   mAp;
+         cAppliMICMAC *   mAp;
          // Zone Terrain et resolution initiale
          Pt2dr                  mP0;
          Pt2dr                  mP1;
@@ -869,7 +869,7 @@ class cGeomDiscFPx : public  cGeomDiscR2
 
          double  CorrectDerivee() const;
 
-         cGeomDiscFPx(const cAppliMICMAC &);
+         cGeomDiscFPx(cAppliMICMAC &);
 
          double RatioResAltiPlani() const;
          double PasPx0() const;
@@ -895,7 +895,7 @@ class cGeomDiscFPx : public  cGeomDiscR2
 
          const REAL *  V0Px() const;
 
-         void RemplitOri(cFileOriMnt & aFOM) const;
+         void RemplitOri(cFileOriMnt & aFOM,bool DoZAbs) const;
 
          Pt2di NbPixel() const;
          double OrigineAlti() const ;
@@ -908,9 +908,26 @@ class cGeomDiscFPx : public  cGeomDiscR2
          {
               return mRatioResAltPlani;
          }
+         double RoundCoord(const double & aV);
+         Pt2dr  RoundCoord(const Pt2dr  & aP) ;
+         Box2dr RoundCoord(const Box2dr  & aP) ;
+
+         bool   TronkExport() const;
+
+
+
+
 
      private :
          int GetEcartInitialGen(double aPas,int aKPx,double anEcart) const;
+
+         void  SetRoundResol(double aRes);
+         void  SetUnroundResol(double aRes);
+         void  SetResol(double aRes,bool Round);
+         // double RoundCoord(const double & aV) const;
+         // double RoundCoord(const Pt2dr & aV) const;
+         // double RoundCoord(const Box2dr & aV) const;
+
 
 
        /**********************************/
@@ -931,6 +948,10 @@ class cGeomDiscFPx : public  cGeomDiscR2
          REAL   mStepAbs[theDimPxMax];
          REAL   mRatioResAltPlani[theDimPxMax];
          double  mCorrectDerivee;
+         cDecimal mRDec;
+         bool    mRRIsInit;
+         bool    mRCoordIsInit;
+         bool    mTronkExport;
 };
 
 // Dans cGeomImage 
@@ -1022,6 +1043,8 @@ class cGeomImage : public cGeomBasculement3D, // Pour pouvoir basculer les MNT e
 
         virtual bool MasqImNadirIsDone();
         virtual void DoMasImNadir(TIm2D<REAL4,REAL8> &,cGeomDiscFPx &);
+        std::string NameMasqImNadir(int aBK);
+
 
 
         std::string NameMasqAnamSA(const std::string & aPost) const;
@@ -2063,6 +2086,7 @@ class cEtapeMecComp
           bool  IsOptIdentite() const;
           bool  IsOptimCont() const;
           bool  IsOptimReel() const;
+          bool  IsExportZAbs() const;
 
           // aP0 - aP1 : definit la zone a basculer
 	  void AllBasculeMnt(Pt2di aP0,Pt2di aP1,float **,INT2 **,Pt2di aSzData);
@@ -2130,6 +2154,7 @@ class cEtapeMecComp
           cCaracOfDeZoom *        mCaracZ;
           bool                    mIsOptDiffer;
           bool                    mIsOptDequant;
+          bool                    mIsExportZAbs;
           bool                    mIsOptIdentite;
           bool                    mIsOtpLeastSQ;
           bool                    mIsOptimCont;
@@ -2612,11 +2637,25 @@ class   cGPU_LoadedImGeom
        tImGpu  ImSomO2();
        tImGpu  ImSom12();
 
-       bool InitValNorms(int anX,int anY);
+       bool InitValNorms(int anX,int anY,int aNbScaleIm);
        double ValNorm(int anX,int anY) const 
        {
             return (mDOrtho[anY][anX]-mMoy) / mSigma;
        }
+       double ValOrthoBasik(int anX,int anY) const 
+       {
+            return mDOrtho[anY][anX] ;
+       }
+       double SumO(int anX,int anY) const 
+       {
+            return mDSomO[anY][anX] ;
+       }
+       double SumO2(int anX,int anY) const 
+       {
+            return mDSomO2[anY][anX] ;
+       }
+
+
        double MoyCal() const {return mMoy;}
        double SigmaCalc() const {return mSigma;}
        cPriseDeVue * PDV();
@@ -2757,6 +2796,12 @@ class cAppliMICMAC  : public   cParamMICMAC,
 {
      public :
 
+         //int    MaxPrecision() const;
+         void AddPrecisionOfArrondi(const cDecimal &, double aVal);
+         void AddPrecisionOfDec(const cDecimal &,double aMul);
+         void UpdatePrecision(int aP);
+
+        bool   CMS_ModeEparse() const;
         cAnamorphoseGeometrieMNT * AnaGeomMNT() const;
         cMakeMaskImNadir * MMImNadir() const;
 
@@ -2897,7 +2942,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
 
         void DoCorrelLeastQuare(const Box2di & aBoxOut,const Box2di & aBoxIn,const cCorrel2DLeastSquare &);
 		void DoGPU_Correl (const Box2di & aBoxInterne,const cMultiCorrelPonctuel *);  
-        void DoOneCorrelSym(int anX,int anY);
+        void DoOneCorrelSym(int anX,int anY,int aNbScale);
         void DoOneCorrelIm1Maitre(int anX,int anY,const cMultiCorrelPonctuel *,int aNbIm,bool VireExtr);
         void DoOneCorrelMaxMinIm1Maitre(int anX,int anY,bool aModeMax,int aNbIm);
 
@@ -3076,13 +3121,13 @@ class cAppliMICMAC  : public   cParamMICMAC,
 
 	std::string ChMpDCraw(const cPriseDeVue *) const;
 
-        void VerifOneEtapes(const cEtapeMEC & anEt) const;
+        void VerifOneEtapes(const cEtapeMEC & anEt) ;
         void VerifEtapesSucc
              (
                   const cEtapeMEC & anEt0,
                   const cEtapeMEC & anEt1
-             ) const;
-        void VerifEtapes() const;
+             ) ;
+        void VerifEtapes() ;
         void VerifTPyr() const;
         void VerifImages() const;
 
@@ -3530,7 +3575,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
        cSurfaceOptimiseur *    mSurfOpt;
        const cCorrelAdHoc *      mCorrelAdHoc;
        const cCorrelMultiScale*  mCMS;
-       bool                      mCMS_ModeDense;
+       bool                      mCMS_ModeEparse;
 
        bool                  mGIm1IsInPax;
        cEl_GPAO *            mGPRed2;
@@ -3562,8 +3607,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
 	// GPGPU
 #ifdef CUDA_ENABLED
 		bool					mLoadTextures;
-		InterfaceMicMacGpGpu	IMmGg;
-        InterfMicMacOptGpGpu    IGpuOpt;
+		InterfaceMicMacGpGpu	IMmGg;        
 #endif	
 
          cMMTP *  mMMTP;
@@ -3572,6 +3616,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
          cAnamorphoseGeometrieMNT * mAnaGeomMNT;
          cMakeMaskImNadir         * mMakeMaskImNadir;
 
+         int     mMaxPrecision;
 };
 
 std::string  StdNameFromCple

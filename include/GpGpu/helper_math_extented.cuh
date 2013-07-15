@@ -55,6 +55,12 @@ struct Rect
 		pt1 = make_int2(p1x,p1y);
     }
 
+    __device__ __host__ Rect(const Rect& rect)
+    {
+        pt0 = rect.pt0;
+        pt1 = rect.pt1;
+    }
+
     /// \brief Renvoie la dimension du rectangle
 	uint2 dimension()
 	{
@@ -103,6 +109,11 @@ inline __device__ __host__ uint size(uint2 v)
 inline __device__ __host__ uint size(int2 v)
 {
 	return v.x * v.y;
+}
+
+inline __device__ __host__ uint size(uint3 v)
+{
+    return v.x * v.y * v.z;
 }
 
 inline __host__ __device__ uint2 operator/(uint2 a, uint2 b)
@@ -186,6 +197,8 @@ inline __host__ __device__ int2 operator+(const uint3 a, uint2 b)
 	return make_int2(a.x + b.x, a.y + b.y);
 }
 
+//      Calcul specifique
+
 inline __host__ __device__ int mdlo(uint a, uint b)
 {
 
@@ -193,6 +206,25 @@ inline __host__ __device__ int mdlo(uint a, uint b)
 	return ((int)a) - (((int)a )/((int)b))*((int)b);
 
 }
+
+inline __host__ __device__ ushort lenght(short2 a)
+{
+
+    return abs(a.y - a.x);
+}
+
+inline __host__ __device__ uint lenght(uint2 a)
+{
+    return (uint)abs((int)a.y - (int)a.x);
+}
+
+
+inline __host__ __device__ ushort count(short2 a)
+{
+    return lenght(a)+1;
+}
+
+//      Test                            --------
 
 inline __host__ __device__ bool aSE(int2 a, int b)
 {
@@ -265,6 +297,8 @@ inline __host__ __device__ bool oI(uint3 a, uint2 b)
 {
 	return ((a.x < b.x) || (a.y < b.y));
 }
+
+//      2D to 1D                                      ------
 
 inline __host__ __device__ uint to1D( uint2 c2D, uint2 dim)
 {

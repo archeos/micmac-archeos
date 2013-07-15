@@ -170,8 +170,10 @@ eModeGeomMEC CalculGeomMEC(const cParamMICMAC & aParam)
                  switch (aParam.GeomMNT())
                  {
                     case eGeomMNTCarto :
+/*-
                     case eGeomMNTFaisceauIm1PrCh_Px1D :
                     case eGeomMNTFaisceauIm1PrCh_Px2D :
+*/
                     {
                         ELISE_ASSERT
                         (
@@ -320,7 +322,8 @@ cAppliMICMAC::cAppliMICMAC
    mGPRed2         (0),
    mDoTheMEC       (true),
    mAnaGeomMNT     (0),
-   mMakeMaskImNadir  (0)
+   mMakeMaskImNadir  (0),
+   mMaxPrecision     (0)
    // mInterpolTabule (10,8,0.0,eTabul_Bilin)
    // mInterpolTabule (10,8,0.0,eTabul_Bicub)
 {
@@ -442,16 +445,16 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
       return;
 
 
+   VerifEtapes();
    mGeomDFPx->PostInit();
    *mGeomDFPxInit =  *mGeomDFPx;
    double aLogDZ = log2(mGeomDFPxInit->SzDz().XtY() / NbPixDefFilesAux().Val());
    mDeZoomFilesAux = ElMax(DeZoomDefMinFileAux().Val(),(1<<ElMax(0,(round_ni(aLogDZ)))));
-   PostInitGeom();
 
+   PostInitGeom();
    InitNadirRank();
 
 
-   VerifEtapes();
    VerifImages();
 
    // InitMecComp();
@@ -697,7 +700,7 @@ void cAppliMICMAC::VerifEtapesSucc
      (
           const cEtapeMEC & anEt0,
           const cEtapeMEC & anEt1
-     ) const
+     ) 
 {
    ELISE_ASSERT
    (
@@ -708,7 +711,7 @@ void cAppliMICMAC::VerifEtapesSucc
 }
 
 // A 
-void cAppliMICMAC::VerifOneEtapes(const cEtapeMEC & anEt) const 
+void cAppliMICMAC::VerifOneEtapes(const cEtapeMEC & anEt) 
 {
      INT aDZ = anEt.DeZoom();
      ELISE_ASSERT
@@ -719,8 +722,21 @@ void cAppliMICMAC::VerifOneEtapes(const cEtapeMEC & anEt) const
 
 }
 
-void cAppliMICMAC::VerifEtapes() const
+
+void cAppliMICMAC::VerifEtapes() 
 {
+std::cout << "==============================cAppliMICMAC::VerifEtapes \n";
+   mDeZoomMax =1;
+   mDeZoomMin =1<<20;
+   for (std::list<cEtapeMEC>::const_iterator itE=  EtapeMEC().begin() ;  itE!= EtapeMEC().end() ; itE++)
+   {
+         int aDz = itE->DeZoom();
+         if (aDz !=-1)
+         {
+              ElSetMax(mDeZoomMax,aDz);
+              ElSetMin(mDeZoomMin,aDz);
+         }
+    }
    std::list<cEtapeMEC>::const_iterator itE = EtapeMEC().begin();
    ELISE_ASSERT(itE->DeZoom()==-1,"Etape Init, Resol != -1");
 
@@ -738,6 +754,7 @@ void cAppliMICMAC::VerifEtapes() const
          itPrec = itE;
          itE++;
     }
+
 }
 
 void cAppliMICMAC::VerifImages() const
@@ -889,10 +906,10 @@ std::string  cAppliMICMAC::NameFileSzW(int aDz)
 }
 
 
+
+
 void cAppliMICMAC::InitMecComp()
 {
-   mDeZoomMax =1;
-   mDeZoomMin =1<<20;
    mHasOneModeIm1Maitre = false;
    std::list<cEtapeMEC>::iterator itE = EtapeMEC().begin();
    itE++;
@@ -925,11 +942,6 @@ void cAppliMICMAC::InitMecComp()
                     );
            mEtapesMecComp.push_back ( anEt);
            int aDz = anEt->EtapeMEC().DeZoom();
-           if (aDz !=-1)
-           {
-              ElSetMax(mDeZoomMax,aDz);
-              ElSetMin(mDeZoomMin,aDz);
-           }
 
 
            if (anEt->UseWAdapt() && (itE->DeZoom()>0) &&  (! CalledByProcess().Val()))
@@ -1053,7 +1065,25 @@ void cAppliMICMAC::InitAnamSA()
     }
     else
     {
-         mAnamSA = cInterfSurfaceAnalytique::Id();
+      // Il y a un probleme avec l'utilisation des surfaces analytique identite car une surface doit etre telle que
+      // la surface moyenne est L=0, donc elle doit etre centree sur le ZMoyen, qui est inconnu ici; repousser la
+      // creation des surface semble aussi assez complique; bref ca se mord la queue de facon difficile a contourner,
+      // Le choix qui est fait est d'imposer la connaissance du Z moyen dans cette configuration aerienne standard;
+      // ceci n'étant utilise que pour la creation d'image nadir, ce sera encapsule dans un appel global, il restera
+      // a traiter aussi la cas des repere locaux qui doivente etre considere comme une surface analytique semi triviale
+      // c'est un peu une usine a gaz ....
+
+         ELISE_ASSERT(mRepCorrel==0,"Ajouter gestion du repere correl sur Masque Image Nadir");
+
+         double aZMoy = -1e30;
+         if (IntervAltimetrie().IsInit())
+         {
+             cIntervAltimetrie * anIA= IntervAltimetrie().PtrVal();
+             if (anIA->ZMoyen().IsInit())
+                aZMoy = anIA->ZMoyen().Val();
+         }
+         ELISE_ASSERT(aZMoy>-1e29,"No ZMoyen in Nadir Masq");
+         mAnamSA = cInterfSurfaceAnalytique::Identite(aZMoy);
     }
 }
 
@@ -1185,6 +1215,19 @@ void cAppliMICMAC::InitImages()
             }
        }
 
+   }
+
+   if (RelGlobSelecteur().IsInit())
+   {
+       int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+       for (int aKV=0 ; aKV<aNbPDV ; aKV++)
+       {
+           std::vector<std::string> aSBR =  GetStrFromGenStrRel(ICNM(),RelGlobSelecteur().Val(),mPrisesDeVue[aKV]->Name());
+           for (int aKV2=0 ; aKV2<int(aSBR.size()) ; aKV2++)
+           {
+               AddAnImage(aSBR[aKV2]);
+           }
+       }
    }
 }
 
@@ -1431,6 +1474,11 @@ const std::vector<Pt2dr>  & cAppliMICMAC::ContSpecIm1() const
 cEl_GPAO *    cAppliMICMAC::GPRed2() const
 {
    return mGPRed2;
+}
+
+bool   cAppliMICMAC::CMS_ModeEparse() const
+{
+    return   mCMS_ModeEparse;
 }
 
 

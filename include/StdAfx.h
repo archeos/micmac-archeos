@@ -69,7 +69,7 @@ extern bool BugDG;
 namespace NS_ParamChantierPhotogram
 {
    class cOrientationConique;
-};
+}
 
 using namespace std;
 
@@ -118,6 +118,7 @@ using namespace std;
 #include "api/el_regex.h"
 #include "general/phgr_san.h"
 #include "general/hassan_arrangt.h"
+#include "general/complex.h"
 
 
 
@@ -283,7 +284,12 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 	#if (ELISE_MinGW)
 		#define _WIN32_WINNT 0x0500 // this is for windows 2000 and higher
 	#endif
+
+	#include <intrin.h>
+	#pragma intrinsic(_InterlockedOr)
+	#pragma intrinsic(_InterlockedCompareExchange64)
     #include <Windows.h>
+
     #include <Psapi.h>
 #endif // _WIN32
 #include "poisson/Poisson.h"

@@ -103,7 +103,7 @@ template <class Type> inline std::istream &  ElStdRead (std::istream &is,Type & 
 extern bool Str2Bool(bool & aRes,const std::string & aStr);
 extern bool Str2BoolForce(const std::string & aStr);
 
-template <> inline std::istream & ElStdRead (std::istream &is, bool & aVal, const ElGramArgMain & G)
+template <> inline std::istream & ElStdRead (std::istream &is, bool & aVal, const ElGramArgMain & /*G*/)
 {
    std::string aStr ;
    is >> aStr;
@@ -434,6 +434,7 @@ int TestSet_main(int argc,char ** argv);
 int TestMTD_main(int argc,char ** argv);
 int TestCmds_main(int argc,char ** argv);
 int Apero2PMVS_main(int argc,char ** argv);
+int Ori2XML_main(int argc,char ** argv);
 
 // uti_images
 int Undist_main(int argc,char ** argv);
@@ -448,6 +449,7 @@ int MpDcraw_main(int argc,char ** argv);
 int PastDevlop_main(int argc,char ** argv);
 int Reduc2MM_main(int argc,char ** argv);
 int ScaleIm_main(int argc,char ** argv);
+int  StatIm_main(int argc,char ** argv);
 int ConvertIm_main(int argc,char ** argv);
 int MakePlancheImage_main(int argc,char ** argv);
 int tiff_info_main(int argc,char ** argv);
@@ -458,8 +460,12 @@ int CmpIm_main(int argc,char ** argv);
 int Drunk_main(int argc,char ** argv);
 int CalcSzWCor_main(int argc,char ** argv);
 int Digeo_main(int argc,char ** argv);
+int Vignette_main(int argc,char ** argv);
+int Arsenic_main(int argc,char ** argv);
 int Sift_main(int argc,char ** argv);
 int Ann_main(int argc,char ** argv);
+int GenMire_main (int argc,char** argv);
+
 
 
 // uti_phgram
@@ -491,6 +497,7 @@ int Tarama_main(int argc,char ** argv);
 int Tawny_main(int argc,char ** argv);
 int TestCam_main(int argc,char ** argv);
 int ScaleNuage_main(int argc,char ** argv);
+int SysCoordPolyn_main(int argc,char ** argv);
 int Gri2Bin_main(int argc,char ** argv);
 int XYZ2Im_main(int argc,char ** argv);
 int Im2XYZ_main(int argc,char ** argv);

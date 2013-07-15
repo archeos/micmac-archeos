@@ -214,10 +214,14 @@ string printResult( const string &i_tool )
 
 int CheckDependencies_main(int argc,char ** argv)
 {
+	#ifdef USE_OPEN_MP
+		cout << "OpenMP is enabled" << endl;
+	#endif
 	cout << printResult( "make" ) << endl;
 	cout << printResult( "exiftool" ) << endl;
 	cout << printResult( "exiv2" ) << endl;
 	cout << printResult( "convert" ) << endl;
+	cout << printResult( "proj" ) << endl;
 	
 	cout << printResult( TheStrSiftPP ) << endl;
 	cout << printResult( TheStrAnnPP ) << endl;

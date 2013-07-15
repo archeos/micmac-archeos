@@ -56,13 +56,13 @@ static Video_Win *  TheWTiePCor = 0;
 static double       TheScaleW = 1.0;
 static Pt2di TheMaxSzW(1000,800);
 
-void ShowPoint(Pt2dr aP,int aCoul,int aModeCoul)
+void ShowPoint(Pt2dr aP,int aCoul,int aModeCoul,int aRab=0)
 {
 #ifdef ELISE_X11
    if (TheWTiePCor)
    {
-       Pt2dr aP0 = aP - Pt2dr(0,0);
-       Pt2dr aP1 = aP + Pt2dr(1,1);
+       Pt2dr aP0 = aP - Pt2dr(aRab,aRab);
+       Pt2dr aP1 = aP + Pt2dr(aRab+1,aRab+1);
        if (aModeCoul==0)
           TheWTiePCor->fill_rect(aP0,aP1,TheWTiePCor->pdisc()(aCoul));
        else if (aModeCoul==1)
@@ -135,6 +135,7 @@ class cCelTiep
               SetCostCorel(4.0);
       }
 
+      int NbCel() const {return mNbCel;}
       void InitCel()
       {
           mNbCel =0;
@@ -300,7 +301,7 @@ cMMTP::cMMTP(const Box2di & aBox,cAppliMICMAC & anAppli) :
    mHeapCTP          (TheCmpCTP),
    mImProf           (mSzTiep.x,mSzTiep.y,0),
    mTImProf          (mImProf),
-   mImMasqInit       (mSzTiep.x,mSzTiep.y),
+   mImMasqInit       (mSzTiep.x,mSzTiep.y,1),
    mTImMasqInit      (mImMasqInit),
    mImMasqFinal      (mSzTiep.x,mSzTiep.y),
    mTImMasqFinal     (mImMasqFinal),
@@ -427,6 +428,8 @@ cResCorTP cAppliMICMAC::CorrelMasqTP(const cMasqueAutoByTieP & aMATP,int anX,int
     double aPdsCum = mVScaIm[aNbScale-1][0]->CumSomPdsMS();
  // std::cout << "NbSssCalll " << aNbScale << "\n";
 
+static int aCptCMT =0 ; aCptCMT++;
+
     std::vector<int> aVOk;
     bool             Ok0 = false;
     for (int aKI=0 ; aKI<mNbIm ; aKI++)
@@ -469,8 +472,11 @@ cResCorTP cAppliMICMAC::CorrelMasqTP(const cMasqueAutoByTieP & aMATP,int anX,int
          }
     }
 
+//std::cout << "AAAAAAAAAAAAA " << Ok0 << " " << aVOk.size() << "\n";
+
     if ((! Ok0) || (aVOk.size() < 2))
        return cResCorTP(4,4,4);
+//std::cout << "BBBbbbb\n";
 
     double aSomDistTot = 0;
     double aMaxDistTot = 0;
@@ -514,20 +520,36 @@ cResCorTP cAppliMICMAC::CorrelMasqTP(const cMasqueAutoByTieP & aMATP,int anX,int
 
 void cAppliMICMAC::CTPAddCell(const cMasqueAutoByTieP & aMATP,int anX,int anY,int aZ,bool Final)
 {
+   static int aCptR[5] ={0,0,0,0,0};
+   if (0)
+   {
+       for (int aK=0 ; aK<5 ; aK++ )
+           std::cout <<  " K"<<aK << "=" << aCptR[aK];
+       std::cout << "\n";
+   }
+
+    aCptR[0] ++;
+
    if (!mMMTP->Inside(anX,anY,aZ))
      return;
-
+   aCptR[1] ++;
 
    if (Final && (! mMMTP->InMasqFinal(Pt2di(anX,anY))))
       return;
+   aCptR[2] ++;
 
    cCelTiep & aCel =  mMMTP->Cel(anX,anY);
 
+
+   // std::cout << "NBCCCEL " << aCel.NbCel() << " " << aZ << "\n";
+
    if (aCel.ZIsExplored(aZ)) 
       return;
+   aCptR[3] ++;
    aCel.SetZExplored(aZ);
 
    cResCorTP aCost = CorrelMasqTP(aMATP,anX,anY,aZ) ;
+   // std::cout << "Cots " << aCost.CSom() << " " << aCost.CMax() << " " << aCost.CMed()  << "\n";
    double aCSom = aCost.CSom();
    if (
          (     (aCSom > aMATP.SeuilSomCostCorrel()) 
@@ -539,6 +561,7 @@ void cAppliMICMAC::CTPAddCell(const cMasqueAutoByTieP & aMATP,int anX,int anY,in
    {
       return ;
    }
+   aCptR[4] ++;
    if (aCSom < aCel.CostCorel())
    {
         aCel.SetCostCorel(aCSom);
@@ -683,8 +706,11 @@ void  cAppliMICMAC::DoMasqueAutoByTieP(const Box2di& aBox,const cMasqueAutoByTie
 
            MakeDerivAllGLI(aXIm,aYIm,aZIm);
            CTPAddCell(aMATP,aXIm,aYIm,aZIm,false);
+
+           ShowPoint(Pt2dr(aXIm,aYIm),P8COL::red,0);
        }
    }
+
 
 
    OneIterFinaleMATP(aMATP,false);

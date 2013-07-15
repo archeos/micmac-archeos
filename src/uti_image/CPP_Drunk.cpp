@@ -88,7 +88,7 @@ void Drunk(string aFullPattern,string aOri,string DirOut, bool Talk)
 
     //Processing the image
     string aNameIm=ListIm.front();
-    string aNameOut=aNameDir + DirOut + aNameIm;
+    string aNameOut=aNameDir + DirOut + aNameIm + ".tif";
 
     //Loading the camera
     string aNameCam="Ori-"+aOri+"/Orientation-"+aNameIm+".xml";
@@ -129,12 +129,13 @@ void Drunk(string aFullPattern,string aOri,string DirOut, bool Talk)
         {
 			ptOut=aCam->DistDirecte(Pt2dr(aX,aY));
 
-			aDataROut[aY][aX] = Reechantillonnage::biline(aDataR, aX, aY, ptOut);
-			aDataGOut[aY][aX] = Reechantillonnage::biline(aDataG, aX, aY, ptOut);
-			aDataBOut[aY][aX] = Reechantillonnage::biline(aDataB, aX, aY, ptOut);
+			aDataROut[aY][aX] = Reechantillonnage::biline(aDataR, aSz.x, aSz.y, ptOut);
+			aDataGOut[aY][aX] = Reechantillonnage::biline(aDataG, aSz.x, aSz.y, ptOut);
+			aDataBOut[aY][aX] = Reechantillonnage::biline(aDataB, aSz.x, aSz.y, ptOut);
+
         }
     }
-	
+
     Tiff_Im  aTOut
              (
                   aNameOut.c_str(),

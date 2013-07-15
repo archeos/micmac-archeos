@@ -58,8 +58,12 @@ InterfaceMicMacGpGpu::InterfaceMicMacGpGpu():
 InterfaceMicMacGpGpu::~InterfaceMicMacGpGpu()
 {
   _gpuThread->interrupt();
-  _gpuThread->join();
+  //_gpuThread->join();
   delete _gpuThread;
+
+  _mutex.unlock();
+  _mutexC.unlock();
+  _mutexCompute.unlock();
 
   for (int s = 0;s<NSTREAM;s++)
     checkCudaErrors( cudaStreamDestroy(*(GetStream(s))));
@@ -167,7 +171,7 @@ void InterfaceMicMacGpGpu::BasicCorrelation( float* hostVolumeCost, float2* host
   // Lancement des algo GPGPU
 
   // Re-dimensionner les strucutres de données si elles ont été modifiées
-  ResizeVolume(nbLayer,_param.ZLocInter);
+  ResizeInputVolume(nbLayer,_param.ZLocInter);
 
   // Calcul de dimension des threads des kernels
   //--------------- calcul de dimension du kernel de correlation ---------------
@@ -223,7 +227,6 @@ void InterfaceMicMacGpGpu::BasicCorrelation( float* hostVolumeCost, float2* host
       KernelmultiCorrelationNA( *(GetStream(s)),blocks_mC_NA, threads_mC_NA,  _volumeCost[s].pData(), _volumeCach[s].pData(), _volumeNIOk[s].pData(), actiThs_NA);
     }
 
-
   // Copier les resultats de calcul des couts du device vers le host!
   _volumeCost[s].CopyDevicetoHost(hostVolumeCost);
 
@@ -236,10 +239,10 @@ void InterfaceMicMacGpGpu::BasicCorrelation( float* hostVolumeCost, float2* host
 void InterfaceMicMacGpGpu::BasicCorrelationStream( float* hostVolumeCost, float2* hostVolumeProj, int nbLayer, uint interZ )
 {
 
-  ResizeVolume(nbLayer,_param.ZLocInter);
+  ResizeInputVolume(nbLayer,_param.ZLocInter);
   uint Z = 0;
 
-  /*--------------- calcul de dimension du kernel de correlation ---------------*/
+  //            calcul de dimension du kernel de correlation                ---------------
 
   dim3	threads( BLOCKDIM, BLOCKDIM, 1);
   uint2	thd2D		= make_uint2(threads);
@@ -247,13 +250,14 @@ void InterfaceMicMacGpGpu::BasicCorrelationStream( float* hostVolumeCost, float2
   uint2	block2D		= iDivUp(_param.dimDTer,actiThsCo);
   dim3	blocks(block2D.x , block2D.y, nbLayer * _param.ZLocInter);
 
-  /*-------------	calcul de dimension du kernel de multi-correlation ------------*/
+  //            Calcul de dimension du kernel de multi-correlation          ---------------
 
   ushort  sNbTh,BLDIM;
   dim3    threads_mC,blocks_mC;
   uint2   actiThs,block2D_mC;
 
-  //-------------	calcul de dimension du kernel de multi-correlation ------------
+  //            Calcul de dimension du kernel de multi-correlation          ---------------
+
   if(_useAtomicFunction)
     {
       // Calcul pour eviter la limitation de nombre de threads par block (ici 1024)
@@ -309,7 +313,7 @@ void InterfaceMicMacGpGpu::BasicCorrelationStream( float* hostVolumeCost, float2
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
-void InterfaceMicMacGpGpu::ResizeVolume( int nbLayer, uint interZ )
+void InterfaceMicMacGpGpu::ResizeInputVolume( int nbLayer, uint interZ )
 {
   for (int s = 0;s<NSTREAM;s++)
     {
@@ -332,6 +336,10 @@ void InterfaceMicMacGpGpu::ResizeVolume( int nbLayer, uint interZ )
       _volumeNIOk[s].Memset(0);
   }
 }
+
+//void InterfaceMicMacGpGpu::ResizeOutputVolume(int nbLayer, uint interZ)
+//{
+//}
 
 void InterfaceMicMacGpGpu::ResizeVolumeAsync(int nbLayer, uint interZ)
 {

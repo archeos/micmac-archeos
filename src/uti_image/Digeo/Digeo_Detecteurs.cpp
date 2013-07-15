@@ -37,7 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 
-#include "Digeo.h"
+//#include "Digeo.h"
 
 
 
@@ -96,6 +96,28 @@ template <class Type> void cTplImInMem<Type>::ExtramDOG(Type *** aC,const Pt2di 
               }
           }
        }
+    }
+}
+
+/*
+   Autre facon de voir les choses :
+
+
+    I(x,y,z) = I0 +  aX + bY + cZ + d X2 + ....  Z2
+
+    On resout au moinde carre
+
+*/
+template <class Type> void LsqAffineDiff
+                      (
+                           Type *** aC,
+                           int      anX,
+                           int      anY,
+                           int      aNiv
+     )
+{
+    for (int aDs = -1 ; aDs <= -1 ; aDs++)
+    {
     }
 }
 
@@ -451,7 +473,7 @@ template <> double** cTplImInMem<float>::theMDog = 0;
 template <> double** cTplImInMem<double>::theMDog = 0;
 
 
-InstantiateClassTplDigeo(cTplImInMem)
+//InstantiateClassTplDigeo(cTplImInMem)
 
 
 

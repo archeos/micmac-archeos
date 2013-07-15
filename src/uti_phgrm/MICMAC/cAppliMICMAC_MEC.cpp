@@ -82,13 +82,13 @@ void cAppliMICMAC::DoAllMEC()
 
 #ifdef CUDA_ENABLED
 	
-	// Cr�ation du contexte GPGPU
+	// Cr�ation du contexte GPGPU
 	cudaDeviceProp deviceProp;
 	// Obtention de l'identifiant de la carte la plus puissante
 	int devID = gpuGetMaxGflopsDeviceId();
 	// Initialisation du contexte 
 	checkCudaErrors(cudaSetDevice(devID));
-	// Obtention des propriétés de la carte
+    // Obtention des proprietes de la carte
 	checkCudaErrors(cudaGetDeviceProperties(&deviceProp, devID));
 	// Affichage des propriétés de la carte
 	printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n", devID, deviceProp.name, deviceProp.major, deviceProp.minor);
@@ -101,7 +101,7 @@ void cAppliMICMAC::DoAllMEC()
 		itE != mEtapesMecComp.end();
 		itE++
      )
-     { 
+     {          
         OneEtapeSetCur(**itE);
         if (mDoTheMEC  && (!DoNothingBut().IsInit()))
            DoOneEtapeMEC(**itE);
@@ -139,7 +139,7 @@ void cAppliMICMAC::DoAllMEC()
 #ifdef CUDA_ENABLED
 
 	checkCudaErrors( cudaDeviceReset() );
-	printf("Reset Device GPGPU.");
+    printf("Reset Device GpGpu.\n");
 
 #endif
 }
@@ -269,6 +269,7 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
 
 
      mCorrelAdHoc = anEM.CorrelAdHoc().PtrVal();
+     mCMS_ModeEparse = false;
      if (mCorrelAdHoc)
      {
          // C'est pour court circuiter les algo cd ChCorrel, c'est indépendant de ce qui est fait dans le code specifique
@@ -284,6 +285,7 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
          ELISE_ASSERT(mCurSurEchWCor==1,"Sur ech in GPU");
 
         mCMS = mCorrelAdHoc->CorrelMultiScale().PtrVal();
+        mCMS_ModeEparse = (mCMS!=0) && (! mCMS->ModeDense().ValWithDef( mModeIm1Maitre));
 /*
          ELISE_ASSERT(mCurEtape->EtapeMEC().AggregCorr().Val()==eAggregSymetrique,"Aggreg non sym in GPU");
          ELISE_ASSERT(mCurEtape->EtapeMEC().ModeInterpolation().Val()==eInterpolMPD,"Interp non MPD in GPU");
@@ -459,7 +461,7 @@ std::cout << "CCMMM = " << aBoxClip._p0 << " " << aBoxClip._p1 << "\n"; getchar(
                if ( mShowMes)
                {
                   mCout << "   -- BEGIN BLOC  "
-                        << "  Bloc= " << mKBox 
+                        << "  Bloc= " << mKBox+1 
                         << ", Out of " << aDecInterv.NbInterv()  
                         << aDecInterv.KthIntervOut(mKBox)._p0
                         << aDecInterv.KthIntervOut(mKBox)._p1
@@ -1386,7 +1388,7 @@ void   cAppliMICMAC::CalcCorrelByRect(Box2di aBox,int * aPx)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant �  la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1402,17 +1404,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
-manipuler et qui le réserve donc �  des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
-logiciel �  leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

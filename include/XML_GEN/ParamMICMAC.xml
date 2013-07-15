@@ -506,9 +506,14 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
              <MulZMax Nb="1" Type="double"> </MulZMax>
        </IntervSpecialZInv>
 
-       <!-- Adapte  a la geometrie terrain -->
+        <!-- limite le nombre de decimale des fichiers de geo-ref, mis a true par defaut car
+         on suppose (espere) que ce ne posera pas de pb de compat -->
+        <GeoRefAutoRoundResol Nb="?" Type="bool"> </GeoRefAutoRoundResol>
+        <GeoRefAutoRoundBox Nb="?" Type="bool"> </GeoRefAutoRoundBox>
 
+       <!-- Adapte  a la geometrie terrain -->
         <Planimetrie Nb="?">
+
              <!-- 
                    La zone terrain est definie par l'union de Box Terrain
                 (si elle existe) et de la projection en terrain, avec la
@@ -657,6 +662,7 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
 		  <I2FromI1SensDirect Nb="1" Type="bool"> </I2FromI1SensDirect>
 	     </FCND_CalcIm2fromIm1>
 
+
              <ImPat Nb="*" Type="std::string">   </ImPat>
              <!-- Utilise le mecanisem ImSecOfMaster d'Apero -->
              <ImSecCalcApero Nb="?">
@@ -668,6 +674,7 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
                   <NbMax Nb="?" Type="int" Def="1000"> </NbMax>  
                   <OnEmpty Nb="?" Type="eOnEmptyImSecApero" Def="eOEISA_error"> </OnEmpty>  
              </ImSecCalcApero>
+             <RelGlobSelecteur Nb="?" RefType="ParamGenereStrVois" RefFile="SuperposImage.xml"> </RelGlobSelecteur>
              <Filter Nb="?" 
                      RefType="NameFilter"
                      RefFile="ParamChantierPhotogram.xml"
@@ -1049,6 +1056,8 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
             <SurEchWCor Nb="?"  Type="int"> </SurEchWCor>
 
 	    <AlgoRegul Nb="?" Type="eAlgoRegul"> </AlgoRegul>
+            <!-- Uniquemenet accepte pour les algos continus -->
+            <ExportZAbs Nb="?" Type="bool" Def="false"> </ExportZAbs>
 	    <AlgoWenCxRImpossible Nb="?" Type="eAlgoRegul"> </AlgoWenCxRImpossible>
 
 
@@ -1789,12 +1798,14 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
 	 et modif par lignes de commandes-->
 	 <GenereXMLComp Nb="?" Def="true" Type="bool"> </GenereXMLComp>
 
+         <TAUseMasqNadirKBest Nb="?" Type="int"> </TAUseMasqNadirKBest>
 	 <ZoomMakeTA Nb="?"  Type="int"> </ZoomMakeTA>
          <SaturationTA  Nb="?" Type="double" Def="50.0"> </SaturationTA>
          <!-- Si true le TA ressemble + a une ortho, avec prise en compte du nadir, la
           coloration est   un etiquettage -->
          <OrthoTA Nb="?" Type="bool" Def="false"> </OrthoTA>
 	 <ZoomMakeMasq Nb="?"  Type="int"> </ZoomMakeMasq>
+         
 
          <!-- Si true le masque terrain n'est calcule qu'a la resolution necessaire, cela fait gagner un temps
               non negligeable en proportion lorque l'on s'arrete a des resol basse; false par defaut au cas

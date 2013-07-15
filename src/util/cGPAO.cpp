@@ -47,7 +47,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 /*********************************************************/
 
 
-void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileMk , int   aNbProc ,bool Exe)
+void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileMk , int   aNbProc ,bool Exe,bool MoinsK)
 {
     if (aNbProc<=0)  
        aNbProc = NbProcSys();
@@ -72,7 +72,8 @@ void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileM
 
     aGPAO.GenerateMakeFile(FileMk);
 
-    std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc);
+    std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc) + " ";
+    if (MoinsK) aCom = aCom + " -k ";
     if (Exe)
     {
         VoidSystem(aCom.c_str());
@@ -290,7 +291,7 @@ void cElTask::GenerateMakeFile(FILE * aFP) const
     for (int aK=0;aK<int(mDeps.size());aK++)
        fprintf(aFP,"%s ", mDeps[aK]->mName.c_str());
     fprintf(aFP,"\n");
-
+	
     for 
     (
        std::list<std::string>::const_iterator itBR=mBR.begin();
@@ -298,6 +299,15 @@ void cElTask::GenerateMakeFile(FILE * aFP) const
        itBR++
     )
     {
+		#if (ELISE_windows)
+			// avoid a '\' at the end of a line in a makefile
+			if ( *(itBR->rbegin())=='\\' )
+			{
+					string str = *itBR+' ';
+					fprintf(aFP,"\t %s\n",str.c_str());
+			}
+			else
+		#endif
         fprintf(aFP,"\t %s\n",itBR->c_str());
     }
 }

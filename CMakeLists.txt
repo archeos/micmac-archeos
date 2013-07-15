@@ -93,6 +93,8 @@ if (${CUDA_ENABLED})
 	INCLUDE(FindCUDA)
 	INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/inc)
 	#IFNOT(${WITH_IGN_ORI})
+	set(Boost_USE_STATIC_LIBS TRUE)
+	set(BOOST_USE_SYSTEM FALSE)
 	FIND_PACKAGE( Boost 1.48.0 COMPONENTS system serialization thread REQUIRED )
 	#chrono
 	 IF(NOT ${WITH_IGN_ORI})
@@ -258,13 +260,19 @@ if(NOT WIN32)
 
 	# VERIFICATION si X11 est présent sous MacOS et Linux
 	FIND_PACKAGE(X11)
+
+	IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
+		set( DYN_LIB_LIBRARY dl )
+	endif()
+
 	IF (X11_FOUND)
-		#MESSAGE("X11 Found : ${X11_INCLUDE_DIRS} | ${X11_LIBRARIES} | ${X11_LIBRARY_DIRS}")
+		message("X11 Found : ")
+        message("   include dir   : " ${X11_INCLUDE_DIR} )
+        message("   libraries     : " ${X11_LIBRARIES} )
+        message("   libraries dir : " ${X11_LIBRARY_DIR} )
+        INCLUDE_DIRECTORIES( ${X11_INCLUDE_DIR} )
 	ELSE()
 		add_definitions(-DNO_X11)
-        IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
-            set( DYN_LIB_LIBRARY dl )
-        endif()
 		MESSAGE("X11 Not Found : pas de SaisieMasq")
 	ENDIF()
 ELSE()
@@ -284,7 +292,7 @@ ENDIF()
 
 # DEFINITION : des preprocesseurs windows
 IF (MSVC)
-	add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4661 /wd4267 /nologo" )
+	add_definitions( "-Zm131 /W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4661 /wd4267 /nologo" )
 
 	if(MSVC80 OR MSVC90 OR MSVC10)
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
@@ -302,8 +310,10 @@ ENDIF()
 
 # DEFINITION : Windows : le projet debug est généré directement sous bin pour avoir les informations de Debug
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+IF (MSVC)
+	 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+	 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+endif()
 
 # DEFINITION : du dossier d'installation
 set(Install_Dir ${PROJECT_SOURCE_DIR}/bin)

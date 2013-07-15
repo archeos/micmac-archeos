@@ -605,12 +605,12 @@ class ElProjStenope : public ElProj32 ,
 class ElDistortion22_Gen
 {
      public :
+        virtual NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const ElCamera *) const;
         void SetName(const char * aName);
         virtual std::string Type() const;
         std::string Name() const;
 
         static NS_ParamChantierPhotogram::cCalibDistortion  XmlDistNoVal();
-        virtual NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const ElCamera *) const;
         virtual  NS_ParamChantierPhotogram::cPreCondGrid GetAsPreCond() const;
         static ElDistortion22_Gen * AllocPreC
                 (const NS_ParamChantierPhotogram::cPreCondGrid&);
@@ -728,6 +728,7 @@ private :
         bool   mDist22Gen_SupressPreCondInInverse;
 protected :
         const char * mName;
+private :
 };
 
 
@@ -1064,7 +1065,7 @@ class ElDistPolyDegre2 : public ElDistortion22_Gen
 
 		PolyDegre2XY mPolX;
 		PolyDegre2XY mPolY;
-		REAL         mEpsilon;
+		//REAL         mEpsilon;
 };
 
 
@@ -1729,7 +1730,7 @@ class ElCamera : public cCapture3D
 
          std::string  mIdCam;
 
-         double      mPrecisionEmpriseSol;
+         //double      mPrecisionEmpriseSol;
          cElPolygone mEmpriseSol;
          Box2dr      mBoxSol;
 
@@ -1753,10 +1754,10 @@ class ElCamera : public cCapture3D
 };
 
 
-// Represente les camera a projection parallele (focale infini),
+// Represente les cameras a projection parallele (focale infinie),
 //
-//  La focale et le point principal sont indissociable de la translation,
-//  ce sont des parametre extrinseque represente dans la transaltion
+//  La focale et le point principal sont indissociables de la translation,
+//  ce sont des parametres extrinseques representes dans la translation
 //  (via le R3toL3/L3toR3)
 
 class cCameraOrtho : public ElCamera

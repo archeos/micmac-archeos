@@ -153,10 +153,16 @@ template <> class TCompl<double>
 template <> class TCompl<float>
 {
     public :
-        typedef int  TypeCompl;
-        static float FromC(int aV) {return (float)aV;} 
+        typedef double  TypeCompl;
+        static float FromC(double aV) {return (float)aV;} 
 };
 
+template <> class TCompl<long double>
+{
+    public :
+        typedef double  TypeCompl;
+        static long double FromC(double aV) {return (long double)aV;} 
+};
 
 
 template <class Type> class Pt2d : public  ElStdTypeScal<Type>
@@ -204,6 +210,7 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
         return   Pt2d<Type>(ElStdTypeScal<Type>::RtoT(cos(teta)*rho),ElStdTypeScal<Type>::RtoT(sin(teta)*rho));
      }
 
+	 static Pt2d<double> polar(const Pt2d<double> & p,REAL AngDef);
 
  // Operateurs
 
@@ -333,6 +340,14 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
 };
 
 template <class Type>
+Pt2d<double> Pt2d<Type>::polar( const Pt2d<double> & p,REAL AngDef )
+{
+	if ((p.x==0) && (p.y== 0))
+        return Pt2d<double>(0,AngDef);
+    return Pt2d<double>(hypot(p.x,p.y),atan2(p.y,p.x));
+}
+
+template <class Type>
  Type  dist4(const Pt2d<Type> & p){return ElAbs(p.x)+  ElAbs(p.y);}
 
 template <class Type>
@@ -397,6 +412,7 @@ template <class Type>Pt2d<Type> Sup3 (const Pt2d<Type> & p1,const Pt2d<Type> & p
 
 typedef  Pt2d<INT> Pt2di;
 typedef  Pt2d<REAL> Pt2dr;
+typedef  Pt2d<long double> Pt2dlr;
 typedef  Pt2d<float> Pt2df;
 double DMaxCoins(Pt2dr aSzIm,Pt2dr aC);
 double DMaxCoins(Pt2dr aP0,Pt2dr aP1,Pt2dr aC);
@@ -622,7 +638,9 @@ template <class Type> void assert_not_nul(const Pt2d<Type> &){}
 REAL  angle(const Pt2dr & p);  
 REAL  angle(const Pt2dr & p1,const Pt2dr & p2);
 
-Pt2dr polar(const Pt2dr & p,REAL AngDef);
+
+// La fonction polar est maintenant dans la classe Pt2d !!!
+// Pt2dr polar(const Pt2dr & p,REAL AngDef);
 
 // angle de droite (entre -pi/2 et pi/2),
 //  angle de droite non oriente (entre 0 et pi/2, symetrique)
@@ -887,6 +905,13 @@ template <class Type> Box2d<Type> Inf(const Box2d<Type> & b1, const Box2d<Type> 
 template <class Type> bool InterVide(const Box2d<Type> & b1, const Box2d<Type> & b2);
 
 
+inline Pt2dr ToPt2dr(const Pt2dr & aP) {return aP;}
+inline Pt2dr ToPt2dr(const Pt2di & aP) {return Pt2dr(aP.x,aP.y);}
+inline Pt2dr ToPt2dr(const Pt2dlr & aP){return Pt2dr(aP.x,aP.y);}
+inline Pt2di ToPt2di(const Pt2dr & aP) {return Pt2di(round_ni(aP.x),round_ni(aP.y));}
+inline Pt2di ToPt2di(const Pt2di & aP) {return aP;}
+inline Pt2di ToPt2di(const Pt2dlr & aP){return Pt2di(round_ni(aP.x),round_ni(aP.y));}
+
 
 class Flux_Pts;
 template <class Type> class Box2d
@@ -910,10 +935,10 @@ template <class Type> class Box2d
      Pt2d<Type>  _p1;
      Pt2d<Type> milieu() const { return (_p0+_p1) / 2;}
      Pt2d<Type> sz() const { return _p1 - _p0;}
-     Pt2d<Type> FromCoordLoc(Pt2dr aP) const { return Pt2d<Type>(Pt2dr(_p0)+aP.mcbyc(Pt2dr(sz())));}
+     Pt2d<Type> FromCoordLoc(Pt2dr aP) const { return Pt2d<Type>(ToPt2dr(_p0)+aP.mcbyc(ToPt2dr(sz())));}
 
 
-     Pt2dr ToCoordLoc(Pt2dr aP) const { return (aP-Pt2dr(_p0)).dcbyc(Pt2dr(sz()));}
+     Pt2dr ToCoordLoc(Pt2dr aP) const { return (aP-ToPt2dr(_p0)).dcbyc(ToPt2dr(sz()));}
 
      Type   hauteur() const { return _p1.y-_p0.y;}
      Type   largeur() const { return _p1.x-_p0.x;}
@@ -938,6 +963,7 @@ template <class Type> class Box2d
      Box2d(const Pt2d<Type> *,INT aNb);
      Box2d(Pt2di,Pt2di);
      Box2d(Pt2dr,Pt2dr);  // cast up and down
+     Box2d(Pt2dlr,Pt2dlr);  // cast up and down
      Box2d(const Type *,const Type *,INT);
      bool include_in(const Box2d<Type> & b2) const;
      Box2d<Type>  erode(Pt2d<Type>) const;      
@@ -962,6 +988,10 @@ template <class Type> class Box2d
 		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
      bool contains(const Pt2d<double> & pt) const
+     {
+		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
+     }
+     bool contains(const Pt2d<long double> & pt) const
      {
 		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
@@ -1333,7 +1363,7 @@ bool operator < (const Pt3di & aP1,const Pt3di & aP2);
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1349,17 +1379,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

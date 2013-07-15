@@ -306,13 +306,14 @@ void  cArgMpDCRaw::DevJpg()
 	 // we use m_fullName instead of callName() because of Windows' exception for convert
 	 // callName() in this case is not equivalent to what we would have enter on a terminal
 	 // double quotes are added to protect spaces in the path
-	 std::string  aCom =     std::string("\"")+g_externalToolHandler.get( "convert" ).m_fullName+ "\" "
+	 std::string  aCom =     std::string("\"")+g_externalToolHandler.get( "convert" ).callName()+ "\" "
                          +   aFullNJPG +  std::string(" ")
                          +   std::string(" -compress None ")
                          +   (mConsCol ? " " :   (std::string(" -colorspace ") + (EnGray ? "Gray " : "RGB ")))
                          +   std::string(" -depth ") + (En8B ? "8 " : "16 ")
                          +   aTmp;
 
+   //std::cout << aCom << "\n";
 
     VoidSystem(aCom.c_str());
 
@@ -346,6 +347,7 @@ void  cArgMpDCRaw::DevJpg()
 
      if (En8B)
         aFRes = Min(255,aFRes);
+
      ELISE_COPY
      (
           aFTmp.all_pts(),

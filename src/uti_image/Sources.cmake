@@ -13,6 +13,8 @@ list( APPEND uti_image_Src_Files ${uti_image_Sift_Src_Files})
 list( APPEND uti_image_Src_Files ${uti_image_Ann_Src_Files})
 
 list( APPEND uti_image_Src_Files
+	${UTI_IMAGE_DIR}/CPP_Vignette.cpp
+	${UTI_IMAGE_DIR}/CPP_Arsenic.cpp
     ${UTI_IMAGE_DIR}/CPP_Undist.cpp
     ${UTI_IMAGE_DIR}/CPP_CmpIm.cpp
     ${UTI_IMAGE_DIR}/CPP_EstimFlatField.cpp
@@ -20,6 +22,7 @@ list( APPEND uti_image_Src_Files
     ${UTI_IMAGE_DIR}/CPP_Devlop.cpp
     ${UTI_IMAGE_DIR}/CPP_ElDcraw.cpp
     ${UTI_IMAGE_DIR}/CPP_GenXML2Cpp.cpp
+    ${UTI_IMAGE_DIR}/CPP_GenMire.cpp
     ${UTI_IMAGE_DIR}/CPP_GrShade.cpp
     ${UTI_IMAGE_DIR}/CPP_MpDcraw.cpp
     ${UTI_IMAGE_DIR}/CPP_PastDevlop.cpp
@@ -36,6 +39,7 @@ list( APPEND uti_image_Src_Files
     ${UTI_IMAGE_DIR}/CPP_MPDtest.cpp
     ${UTI_IMAGE_DIR}/CPP_Sift.cpp
     ${UTI_IMAGE_DIR}/CPP_Ann.cpp
+    ${UTI_IMAGE_DIR}/CPP_StatImage.cpp
     ${UTI_IMAGE_DIR}/CPP_Digeo.cpp )
 
 SOURCE_GROUP(${SrcGrp_Uti_Image}\\outils FILES ${uti_image_Src_Files})

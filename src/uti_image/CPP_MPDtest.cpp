@@ -49,6 +49,8 @@ void f()
 
 
 #include "StdAfx.h"
+#include "hassan/reechantillonnage.h"
+
 
 #if (ELISE_X11)
 
@@ -166,11 +168,104 @@ void TestXMLNuageNodData()
     }
 }
 
+void TestRound()
+{
+   while(1)
+   {
+       double aV,aBig;
+       cin >> aV >> aBig;
+       cDecimal aD  = StdRound(aV);
+       double Arrond = aD.Arrondi(aBig);
+       printf("%9.9f %9.9f\n",aD.RVal(),Arrond);
+       std::cout << "Round " << aD.RVal() << "\n";
+   }
+}
 
+
+
+void Test_Arrondi_LG()
+{
+    Pt2di aSz(100,100);
+    double aVTest = 117;
+
+    Im2D_REAL16 anIm(aSz.x,aSz.y);
+    TIm2D<REAL16,REAL16> aTIm(anIm);
+
+    ELISE_COPY(anIm.all_pts(),aVTest,anIm.out());
+
+    while (1)
+    {
+         Pt2dr aP0 = Pt2dr(10,10) + Pt2dr(NRrandom3(),NRrandom3()) *50.123456701765;
+         double aV0 = aTIm.getr(aP0);
+         double aV1 = Reechantillonnage::biline(anIm.data(),aSz.x,aSz.y,aP0);
+         
+         std::cout << " TEST " << (aV0-aVTest) * 1e50 << " " << (aV1-aVTest) * 1e50  << " " << aP0 << "\n";
+         getchar();
+    }
+}
 
 int MPDtest_main (int argc,char** argv)
 {
-   TestXMLNuageNodData();
+    std::cout << MMUserEnv().TiePDetect().ValWithDef("toto") << "\n";
+    std::cout << MMUserEnv().TiePMatch().ValWithDef("titi") << "\n";
+    getchar();
+
+
+    int aT = 12;
+    double aV =  3.44e7 + aT/1e5;
+
+    for (int aP=0 ; aP < 20 ; aP++)
+    {
+        std::cout.precision(aP);
+        std::cout << "P=" << aP << " " << aV << "\n";
+    }
+    getchar();
+
+
+    Test_Arrondi_LG();
+
+   while (1)
+   {
+       double x;
+       double y ;
+         std::cin >> x >> y;
+       double V = 177;
+
+       double aRes = x*y*V ;
+       aRes += x*(1-y) * V;
+       aRes += (1-x)*(1-y) * V;
+       aRes += (1-x)*y * V;
+
+      printf("%15.15f\n",aRes);
+   }
+   TestRound();
+
+
+    Tiff_Im  aFile
+             (
+                 "toto.tif",
+                 Pt2di(2000,3000),
+                  GenIm::u_int2,
+                  Tiff_Im::No_Compr,
+                  Tiff_Im::BlackIsZero
+             );
+
+/*
+Tiff_Im  aFile("/media/data2/Aerien/Euro-SDR/VaihingenEnz_GSD20cm/MEC-Final/Z_000_DeZoom64_LeChantier.tif");
+*/
+
+std::cout << "BBBB\n";
+
+
+    ELISE_COPY(rectangle(Pt2di(20,20),Pt2di(100,100)),FX,aFile.out());
+
+std::cout << "CCCCC SzL " << sizeof(long) << "\n";
+int aDif;
+    ELISE_COPY(rectangle(Pt2di(-20,-20),Pt2di(100,100)),aFile.in_proj(),sigma(aDif));
+std::cout << "DDDD  " << aDif << "\n";
+
+
+   // TestXMLNuageNodData();
    return 0;
 //    TestKL();
 //    BanniereMM3D();
@@ -183,7 +278,7 @@ int MPDtest_main (int argc,char** argv)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -199,17 +294,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/
