@@ -4,15 +4,13 @@ Next releases
 - update to a version not affected by the rounded coord bug As soon as it's
   published
 
+-compile Poisson with openMP
+
 - Use a relative path in Elise error logs
 
 - Are headers in include/XML*/ useful? 
 
 - XML_GEN path substitution (but not in Gen* files, they are use internally) 
-
-- Only use mm3d => micmac.install
-
-- Make a watch script
 
 - Look at upstream changes in path organization and 
 finally clean my hardcoded stuffs
