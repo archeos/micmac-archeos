@@ -1,24 +1,21 @@
 Next releases
 =============
 
-- update to a version not affected by the rounded coord bug As soon as it's
-  published
-
 - Use a relative path in Elise error logs
 
 - Are headers in include/XML*/ useful? 
 
-- Remove XML_GEN from mm3d
-
 - Look at upstream changes in path organization and 
 finally clean my hardcoded stuffs
 
-- Auto DicoCamera installation? on first launch mm3D 
-should create $HOME/.micmac/*.xml.
-postinst scripts and /usr/skel  should be avoided
+- Auto DicoCamera installation? on first launch mm3D should create 
+$HOME/.micmac/*.xml. postinst scripts and /usr/skel  should be avoided
 
 - Use Digeo ASAP
 
-- Add GUI(s)
+- update to a version not affected by the rounded coord bug As soon as it's
+  published
+
+- Add Saisie2D + 3D: multiple binary or bundled in the same package ?
 
 - Integrate Riesling/Dombre patches in a branch
