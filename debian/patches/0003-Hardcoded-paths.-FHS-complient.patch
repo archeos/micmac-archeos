@@ -322,7 +322,64 @@ FHS complient
                                                       argc-2,argv+2,
                                                       argv[1],
 -                                                     "include/XML_GEN/SuperposImage.xml",
-+                                                     "/usr/share/micmac/XML_GEN/SuperposImage.xml",
++                                                     StdGetFileXMLSpec("SuperposImage.xml"),
                                                       "CreateOrtho",
                                                       "CreateOrtho",
                                                        "WorkDir",
+--- a/src/photogram/FiltrageSpatial_CNA.cpp
++++ b/src/photogram/FiltrageSpatial_CNA.cpp
+@@ -60,7 +60,7 @@ cFichier_Trajecto * GetTrajFromString(co
+    cFichier_Trajecto  aFT = StdGetObjFromFile<cFichier_Trajecto>
+                             (
+                                 aNameFile,
+-                                "include/XML_GEN/SuperposImage.xml",
++                                StdGetFileXMLSpec("SuperposImage.xml"),
+                                 "Fichier_Trajecto",
+                                 "Fichier_Trajecto"
+                             );
+--- a/src/uti_phgrm/CPP_MICMAC.cpp
++++ b/src/uti_phgrm/CPP_MICMAC.cpp
+@@ -67,7 +67,7 @@ int MICMAC_main(int argc,char ** argv)
+   MicMacRequiresBinaireAux();
+   AddEntryStringifie
+   (
+-     "include" ELISE_STR_DIR "XML_GEN" ELISE_STR_DIR "ParamMICMAC.xml",
++     StdGetFileXMLSpec("ParamMICMAC.xml"),
+      theNameVar_ParamMICMAC,
+      true
+   ); 
+--- a/src/uti_phgrm/CPP_Apero.cpp
++++ b/src/uti_phgrm/CPP_Apero.cpp
+@@ -63,11 +63,7 @@ int Apero_main(int argc,char ** argv)
+ 
+    AddEntryStringifie
+    (
+-#if ELISE_windows
+-        "include\\XML_GEN\\ParamApero.xml",
+-#else
+-		"include/XML_GEN/ParamApero.xml",
+-#endif
++        StdGetFileXMLSpec("ParamApero.xml"),
+          theNameVar_ParamApero,
+          true
+    );
+--- a/src/uti_image/Digeo/Digeo.cpp
++++ b/src/uti_image/Digeo/Digeo.cpp
+@@ -93,7 +93,7 @@ int Digeo_main_(int argc,char ** argv)
+ //std::cout << "RRRRRRRRRRRRRRRRRRRRRRAAAAAAAAAAAAAAAAAAAAAAAAYYON UTILE \n";
+    AddEntryStringifie
+    (
+-        "include/XML_GEN/ParamDigeo.xml",
++        StdGetFileXMLSpec("ParamDigeo.xml"),
+          theNameVar_ParamDigeo,
+          true
+    );
+@@ -177,7 +177,7 @@ cAppliDigeo * DigeoCPP
+ {
+    AddEntryStringifie
+    (
+-        "include/XML_GEN/ParamDigeo.xml",
++         StdGetFileXMLSpec("ParamDigeo.xml"),
+          theNameVar_ParamDigeo,
+          true
+    );

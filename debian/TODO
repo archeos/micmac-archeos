@@ -8,7 +8,7 @@ Next releases
 
 - Are headers in include/XML*/ useful? 
 
-- XML_GEN path substitution (but not in Gen* files, they are use internally) 
+- Remove XML_GEN from mm3d
 
 - Look at upstream changes in path organization and 
 finally clean my hardcoded stuffs
