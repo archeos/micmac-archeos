@@ -4,8 +4,6 @@ Next releases
 - update to a version not affected by the rounded coord bug As soon as it's
   published
 
--compile Poisson with openMP
-
 - Use a relative path in Elise error logs
 
 - Are headers in include/XML*/ useful? 

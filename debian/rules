@@ -8,7 +8,8 @@ export DEB_BUILD_OPTIONS=parallel=$(NPROCS)
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- -- -DBUILD_ONLY_ELISE=ON \
+	dh_auto_configure -- -DBUILD_ONLY_ELISE=ON \
+		-DWITH_OPEN_MP=ON
 
 override_dh_auto_install:
 	dh_auto_install

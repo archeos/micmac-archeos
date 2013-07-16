@@ -6,7 +6,9 @@ micmac (1.0+hg1340-0archeos1) UNRELEASED; urgency=low
   * Remove "useless" utilities (mailing list handling, ETAPOLYGON,
     checkdependencies)
   * Update el_dcraw: add support for recent cameras
+  * Build and package only mm3d binary
   * Add basic Bash completions
+  * Build with OpenMP support (poisson)
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 15 Jul 2013 23:13:31 +0200
 
