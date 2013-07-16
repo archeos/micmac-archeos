@@ -1,0 +1,44 @@
+#!bash
+#
+# very simple bash/zsh completion support for MicMac.
+#
+# Copyright (C) 2013 Romain Janvier <romain.janvier@hotmail.fr>
+# Distributed under the GNU General Public License, version 2.0.
+#
+_mm3d(){
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "${prev}" in 
+        mm3d)
+           opts=$(for x in `mm3d | awk '{print $1}'`; do echo ${x} ; done )
+           COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
+           return 0
+           ;;
+        malt | Malt)
+           local optMalt="GeomImage Ortho UrbanMNE"
+           COMPREPLY=($(compgen -W "${optMalt}" -- ${cur}))
+           return 0
+           ;;
+        tapioca | Tapioca)
+           local optTapioca="All Line MulScale File" #TODO: ADD "Graph"
+           COMPREPLY=($(compgen -W "${optTapioca}" -- ${cur}))
+           return 0
+           ;;
+       tapas | Tapas)
+           local optTapas="RadialBasic RadialExtended Fraser FishEyeEqui AutoCal Figee HemiEqui
+    RadialStdFraserBasic FishEyeBasic FE_EquiSolBasic"
+           COMPREPLY=($(compgen -W "${optTapas}" -- ${cur}))
+           return 0
+           ;;
+        *) 
+           _filedir
+           return 0
+           ;;
+    esac
+    return 0
+}
+
+complete -F _mm3d mm3d

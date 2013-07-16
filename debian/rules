@@ -6,3 +6,8 @@ export DEB_BUILD_OPTIONS=parallel=$(NPROCS)
 
 %:
 	dh $@ --parallel
+
+override_dh_auto_install:
+	dh_auto_install
+	dh_bash-completion
+
