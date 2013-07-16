@@ -1,3 +1,10 @@
+micmac (1.0+hg1340-0archeos2) UNRELEASED; urgency=low
+
+  * More respect toward FHS
+  * Remove GenXML2CPP command from mm3d  
+
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 16 Jul 2013 23:49:35 +0200
+
 micmac (1.0+hg1340-0archeos1) theodoric; urgency=low
 
   * New upstream version
