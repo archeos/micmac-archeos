@@ -2,30 +2,6 @@ From: Romain Janvier <romain.janvier@hotmail.fr>
 Date: Mon, 13 May 2013 00:00:00 +0100
 Subject: Remove non needed sotware
 
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -29,7 +29,7 @@ OPTION(WITH_HEADER_PRECOMP "En-tetes pre
- OPTION(BUILD_ONLY_ELISE "Projet Elise uniquement" OFF )
- 
- # construire l'interface graphique
--OPTION(WITH_ETALONPOLY  "build etalonnage polygone" ON)
-+OPTION(WITH_ETALONPOLY  "build etalonnage polygone" OFF)
- 
- # Utiliser Cuda
- OPTION(CUDA_ENABLED "Utilisation de cuda" OFF )
---- a/src/CBinaires/CMakeLists.txt
-+++ b/src/CBinaires/CMakeLists.txt
-@@ -58,8 +58,8 @@ if (NOT ${BUILD_ONLY_ELISE})
- 	add_executable(Dequant  Dequant.c)
- 	INSTALL(TARGETS Dequant RUNTIME DESTINATION ${Install_Dir})
- 
--	add_executable(vic  vic.c)
--	INSTALL(TARGETS vic RUNTIME DESTINATION ${Install_Dir})
-+    #	add_executable(vic  vic.c)
-+    #INSTALL(TARGETS vic RUNTIME DESTINATION ${Install_Dir})
- 
- 	add_executable(Devlop  Devlop.c)
- 	INSTALL(TARGETS Devlop RUNTIME DESTINATION ${Install_Dir})
 --- a/src/CBinaires/mm3d.cpp
 +++ b/src/CBinaires/mm3d.cpp
 @@ -170,9 +170,10 @@ const std::vector<cMMCom> & getAvailable

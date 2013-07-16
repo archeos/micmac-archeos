@@ -8,7 +8,7 @@ Subject: Proper install directory
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -319,8 +319,8 @@ IF (MSVC)
+@@ -316,8 +316,8 @@ IF (MSVC)
  endif()
  
  # DEFINITION : du dossier d'installation
