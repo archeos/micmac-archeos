@@ -1,21 +1,23 @@
 micmac (1.0+hg1340-0archeos2) UNRELEASED; urgency=low
 
-  * More respect toward FHS
-  * Remove GenXML2CPP command from mm3d  
+  * More respect toward FHS (Corrects patch 3)
+  * Removes GenXML2CPP command from mm3d  
+  * Adapts more or less hardcoded binary calls to the single binary  
+    policy (Patch 9) 
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 16 Jul 2013 23:49:35 +0200
 
 micmac (1.0+hg1340-0archeos1) theodoric; urgency=low
 
   * New upstream version
-  * For full upstream changelog see MicMac's forum
-  * Use mm3d Ann
-  * Remove "useless" utilities (mailing list handling, ETAPOLYGON,
+    For full upstream changelog see MicMac's forum
+  * Uses mm3d Ann
+  * Removes "useless" utilities (mailing list handling, ETAPOLYGON,
     checkdependencies)
-  * Update el_dcraw: add support for recent cameras
-  * Build and package only mm3d binary
+  * Updates el_dcraw: add support for recent cameras
+  * Builds and package only mm3d binary
   * Add basic Bash completions
-  * Build with OpenMP support (poisson)
+  * Builds with OpenMP support (poisson)
 
  -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 15 Jul 2013 23:13:31 +0200
 

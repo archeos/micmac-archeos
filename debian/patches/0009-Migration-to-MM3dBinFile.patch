@@ -1,0 +1,301 @@
+Description: Migration to MM3dBinFile
+ Binary calls in various MM utilities are still using
+ old fashioned path building (i.e use of MMBin() or MMdir()) and do
+ not take into account the single binary (i.e. calls without "mm3d" prefix).
+ These inconsistencies lead to crash, because we provides only the single
+ binary (mm3d).
+ This patch doesn't take into account un-packaged utilities (ETAPOLY...).
+Author: romain.janvier@hotmail.fr
+Date: Wed, 17 Jul 2013 12:26:50 +0200
+Forwarded: no
+
+--- a/src/util/cGPAO.cpp
++++ b/src/util/cGPAO.cpp
+@@ -133,7 +133,7 @@ void MkFMapCmdFileCoul8B
+         aDir,
+         "Tmp-MM-Dir/",
+         "_Ch3.tif",
+-         MMBin() + "PastDevlop ",
++         MM3dBinFile("PastDevlop "),
+          " Coul8B=true",
+          aSet
+     );
+--- a/src/uti_phgrm/CPP_Tapioca.cpp
++++ b/src/uti_phgrm/CPP_Tapioca.cpp
+@@ -125,7 +125,7 @@ void DoDevelopp(int aSz1,int aSz2)
+         std::string  aNOri = anICNM->Dir()+*iT;
+         std::string  aNTif = NameFileStd(aNOri,1,false,true,false);
+ 
+-        std::string aCom = MMBin() + "PastDevlop " + aNOri + " Sz1=" +ToString(aSz1) + " Sz2="+ToString(aSz2);
++        std::string aCom = MM3dBinFile("PastDevlop ") + aNOri + " Sz1=" +ToString(aSz1) + " Sz2="+ToString(aSz2);
+ 
+         aGPAO.GetOrCreate(aNTif,aCom);
+         aGPAO.TaskOfName("all").AddDep(aNTif);
+--- a/src/uti_phgrm/MICMAC/FusionCarteProf.cpp
++++ b/src/uti_phgrm/MICMAC/FusionCarteProf.cpp
+@@ -907,7 +907,7 @@ int FusionCarteProf_main(int argc,char *
+ 
+   Tiff_Im::SetDefTileFile(50000);
+ 
+-  std::string aCom0 = MMBin()+ "mm3d "+ MakeStrFromArgcARgv(argc,argv);
++  std::string aCom0 = MM3dBinFile(MakeStrFromArgcARgv(argc,argv));
+   // std::cout << aCom0 << "\n"; getchar();
+ 
+ 
+--- a/src/uti_phgrm/MICMAC/cAppliMICMAC_Result2.cpp
++++ b/src/uti_phgrm/MICMAC/cAppliMICMAC_Result2.cpp
+@@ -362,7 +362,7 @@ void cAppliMICMAC::MakeImagePx8Bits
+       aStrOff = std::string(" Offset=") + ToString(anOffset.Val());
+       
+    std::string aStr =   
+-           MMBin() + std::string("to8Bits ")
++           MM3dBinFile("to8Bits ")
+          + anEtape.KPx(aKFile).NameFile()
+          + std::string(" VisuAff=0")
+          + aStrOff
+--- a/src/uti_phgrm/MICMAC/cStdTiffModuleImageLoader.cpp
++++ b/src/uti_phgrm/MICMAC/cStdTiffModuleImageLoader.cpp
+@@ -444,7 +444,7 @@ std::string     cStdTiffModuleImageLoade
+    if (aGPAO && ForPrepare)
+    {
+        CreateFileOfResol(aDeZoom/2,ForPrepare);
+-       std::string aCom =    MMBin() + "Reduc2MM "
++       std::string aCom =  MM3dBinFile("Reduc2MM ")
+                            + aNameIn + " "
+                            + aName + " " 
+                            + ToString(int(aType)) + " "
+--- a/src/uti_image/CPP_Devlop.cpp
++++ b/src/uti_image/CPP_Devlop.cpp
+@@ -72,7 +72,7 @@ int Devlop_main(int argc,char ** argv)
+     std::string aPref = StdPrefix(aPatFile);
+ 
+ 
+-    std::string aCom = MMBin() + "MapCmd ";
++    std::string aCom = MM3dBinFile("MapCmd ");
+     std::string aPat= QUOTE("P=" + aDir+ "("+aPref+")." + aPost);
+ 
+     // if (aNameOut =="") aNameOut = "\\$1" + (aPostAdd=="None"?"":aPostAdd)  + ".tif" ;
+@@ -80,7 +80,7 @@ int Devlop_main(int argc,char ** argv)
+     std::string aSubst=  "\\$1" + (aPostAdd=="None"?"":aPostAdd)  + ".tif";
+ 
+     {
+-       aCom = aCom + MMBin() +"MpDcraw " + aPat + " Add16B8B=0 ";
++       aCom = aCom + MM3dBinFile("MpDcraw ") + aPat + " Add16B8B=0 ";
+        if (aSplit!="")
+        {
+              aCom = aCom + " " + QUOTE("Split="+aSplit);
+--- a/src/uti_image/MpDcraw/cNChanel.cpp
++++ b/src/uti_image/MpDcraw/cNChanel.cpp
+@@ -269,8 +269,8 @@ cNChannel cNChannel::Std(const cArgMpDCR
+                            + std::string(M16B?" -4 ":"") 
+                            + ToStrBlkCorr(aNameFile) + " > " + aNameTmp;
+ */
+-    std::string aNameCom =    MMBin() 
+-                           + std::string("ElDcraw -c -t 0 ") + Options
++    std::string aNameCom = MM3dBinFile("ElDcraw ") 
++                           + std::string("-c -t 0 ") + Options
+                            + std::string(M16B?" -4 ":"") 
+                            + ToStrBlkCorr(aNameFile) + " > " + aNameTmp;
+ 
+--- a/src/uti_image/CPP_Drunk.cpp
++++ b/src/uti_image/CPP_Drunk.cpp
+@@ -74,7 +74,7 @@ void Drunk(string aFullPattern,string aO
+ 		{
+             string aFullName=ListIm.front();
+             ListIm.pop_front();
+-            cmdDRUNK=MMDir() + "bin/Drunk " + aNameDir + aFullName + " " + aOri + " Out=" + DirOut + " Talk=0";
++            cmdDRUNK=MM3dBinFile("Drunk ") + aNameDir + aFullName + " " + aOri + " Out=" + DirOut + " Talk=0";
+             ListDrunk.push_back(cmdDRUNK);
+         }
+         cEl_GPAO::DoComInParal(ListDrunk,aNameDir + "MkDrunk");
+@@ -163,7 +163,7 @@ int Drunk_main(int argc,char ** argv)
+         argv[1]=(char*)"";//Compulsory to call MMD_InitArgcArgv
+         MMD_InitArgcArgv(argc,argv);
+         string cmdhelp;
+-        cmdhelp=MMDir()+"bin/Drunk -help";
++        cmdhelp=MM3dBinFile("Drunk -help");
+         system_call(cmdhelp.c_str());
+     }
+ 	else
+--- a/src/EtalonnagePolygone/lib/cEtalonnage.cpp
++++ b/src/EtalonnagePolygone/lib/cEtalonnage.cpp
+@@ -1375,7 +1375,7 @@ std::cout << "LOEMI " << mParam.CalibSpe
+    // bool isCDL =  mParam.CDistLibre(true) || (! OptionFigeC);
+    // std::string aLibCD = isCDL ? "eLib_PP_CD_11" : "eLib_PP_CD_Lies" ;
+ 
+-   std::string aCom =   MMDir() +  std::string("bin/Apero ")
++   std::string aCom =   MM3dBinFile("Apero ")
+                         + std::string(" ") + MMDir() + aParamComp
+                         + std::string(" DirectoryChantier=") + mDir
+                         + std::string(" \"+PatternIm=") + mParam.PatternGlob() +std::string("\"")
+--- a/src/uti_image/CPP_Arsenic.cpp
++++ b/src/uti_image/CPP_Arsenic.cpp
+@@ -72,7 +72,7 @@ vector<ArsenicImage> LoadGrpImages(strin
+ 	//If a vignette correction is entered
+ 	string postfix="";
+ 	if(InVig!=""){
+-		string cmdVig=MMDir() + "bin/mm3d Vodka " + aPatIm + " DoCor=1 Out=" + InVig + " InCal=" + InVig;
++		string cmdVig=MM3dBinFile("Vodka ") + aPatIm + " DoCor=1 Out=" + InVig + " InCal=" + InVig;
+ 		postfix="_Vodka.tif";
+ 		ListVig.push_back(cmdVig);
+ 		cEl_GPAO::DoComInParal(ListVig,aDir + "MkVig");
+@@ -81,7 +81,7 @@ vector<ArsenicImage> LoadGrpImages(strin
+ 
+ 	for (int aK1=0 ; aK1<nbIm ; aK1++)
+     {
+-		string cmdConv=MMDir() + "bin/ScaleIm " + InVig + (aVectIm)[aK1] + postfix + " " + (string)SzMMInitch + " F8B=1 Out=" + (aVectIm)[aK1] + "_Scaled.tif";
++		string cmdConv=MM3dBinFile("ScaleIm ") + InVig + (aVectIm)[aK1] + postfix + " " + (string)SzMMInitch + " F8B=1 Out=" + (aVectIm)[aK1] + "_Scaled.tif";
+ 		ListConvert.push_back(cmdConv);
+ 
+ 		VectMasq.push_back("Masq-TieP-" + (aVectIm)[aK1] + "/RN" + (aVectIm)[aK1] + "_Masq.tif");
+--- a/src/uti_phgrm/CPP_MakeGrid.cpp
++++ b/src/uti_phgrm/CPP_MakeGrid.cpp
+@@ -75,11 +75,7 @@ int MakeGrid_main(int argc,char ** argv)
+     SplitDirAndFile(aDir,aPat,aFullDir);
+ 
+ 
+-#if (ELISE_windows)
+-    std::string aCom =     MMDir() + std::string("bin\\Apero ")
+-#else
+-	std::string aCom =     MMDir() + std::string("bin/Apero ")
+-#endif
++	std::string aCom = MM3dBinFile("Apero ")
+                        +  MMDir() + std::string("share/micmac/XML_MicMac/AperoGrid.xml ")
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+--- a/src/uti_phgrm/CPP_SaisieAppuisInit.cpp
++++ b/src/uti_phgrm/CPP_SaisieAppuisInit.cpp
+@@ -104,7 +104,7 @@ int SaisieAppuisInit_main(int argc,char
+      getchar();
+   }
+ 
+-  std::string aCom =     MMDir() +"bin/SaisiePts "
++  std::string aCom =     MM3dBinFile("SaisiePts ")
+                       +  MMDir() +"share/micmac/XML_MicMac/SaisieInitiale.xml "
+                       +  std::string(" DirectoryChantier=") + aDir
+                       +  std::string(" +Image=") + QUOTE(aName)
+--- a/src/uti_phgrm/CPP_Malt.cpp
++++ b/src/uti_phgrm/CPP_Malt.cpp
+@@ -382,7 +382,7 @@ cAppliMalt::cAppliMalt(int argc,char **
+ 
+   std::string aNameGeom = (mImMaster=="") ? "eGeomMNTEuclid" : (mIsSperik? "eGeomMNTFaisceauPrChSpherik" :"eGeomMNTFaisceauIm1PrCh_Px1D");
+ 
+-  mCom =     MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
++  mCom =     MM3dBinFile("MICMAC ")
+                       +  MMDir() +"share/micmac"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+aFileMM // MM-Malt.xml
+                       + anArgCommuns
+ 
+@@ -514,7 +514,7 @@ cAppliMalt::cAppliMalt(int argc,char **
+   {
+        std::string aFileOAM  = "MM-Malt-OrthoAnamOnly.xml";
+ 
+-	   mComOA =  MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
++	   mComOA =  MM3dBinFile("MICMAC ")
+                + MMDir() +"share/micmac"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+aFileOAM // MM-Malt.xml 
+                + anArgCommuns;
+ 
+--- a/src/uti_phgrm/CPP_GCPBascule.cpp
++++ b/src/uti_phgrm/CPP_GCPBascule.cpp
+@@ -78,7 +78,7 @@ int GCPBascule_main(int argc,char ** arg
+ 		
+ 	MMD_InitArgcArgv(argc,argv);
+ 	
+-    std::string aCom =   MMDir() + std::string("bin/Apero ")
++    std::string aCom =   MM3dBinFile("Apero ")
+                        + MMDir() + std::string("share/micmac/XML_MicMac/Apero-GCP-Bascule.xml ")
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+--- a/src/uti_phgrm/CPP_CenterBascule.cpp
++++ b/src/uti_phgrm/CPP_CenterBascule.cpp
+@@ -76,7 +76,7 @@ int CentreBascule_main(int argc,char **
+     SplitDirAndFile(aDir,aPat,aFullDir);
+ 		
+ 	
+-    std::string aCom =   MMDir() + std::string("bin/Apero ")
++    std::string aCom =   MM3dBinFile("Apero ")
+                        + XML_MM_File("Apero-Center-Bascule.xml")
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+--- a/src/uti_phgrm/CPP_Pasta.cpp
++++ b/src/uti_phgrm/CPP_Pasta.cpp
+@@ -70,7 +70,7 @@ int Pasta_main(int argc,char ** argv)
+     SplitDirAndFile(aDir,aPat,aFullDir);
+ 
+ 
+-    std::string aCom =     MMDir() + std::string("bin")+ELISE_CAR_DIR+"mm3d Tapas RadialBasic ";
++    std::string aCom =     MM3dBinFile("Tapas ") + "RadialBasic ";
+     for (int aK=1 ; aK<argc ; aK++)
+         aCom = aCom + " " + argv[aK];
+                            
+--- a/src/uti_phgrm/CPP_SaisieBasc.cpp
++++ b/src/uti_phgrm/CPP_SaisieBasc.cpp
+@@ -101,7 +101,7 @@ int SaisieBasc_main(int argc,char ** arg
+   //anOri = "NKS-Assoc-Im2Orient@-" + anOri;
+   aCINM->MakeStdOrient(anOri,true);
+ 
+-  std::string aCom =     MMDir() +"bin/mm3d SaisiePts "
++  std::string aCom =     MM3dBinFile("SaisiePts ")
+                       +  MMDir() +"share/micmac/XML_MicMac/SaisieLine.xml "
+                       +  std::string(" DirectoryChantier=") + aDir
+                       +  std::string(" +Image=") + QUOTE(aName)
+--- a/src/uti_phgrm/CPP_Bascule.cpp
++++ b/src/uti_phgrm/CPP_Bascule.cpp
+@@ -238,13 +238,8 @@ int Bascule_main(int argc,char ** argv)
+        aStrFixS =  " +DistFS=" + ToString(DistFE);
+    }
+ 
+-#ifdef ELISE_windows
+-    std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
++    std::string aCom =   MM3dBinFile("Apero ")
+                        + MMDir() + std::string("share/micmac" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
+-#else
+-    std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
+-                       + MMDir() + std::string("share/micmac" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
+-#endif
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                        + std::string(" +AeroOut=") + aPrefOut + AeroOut
+--- a/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
++++ b/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
+@@ -101,7 +101,7 @@ int  SaisieAppuisPredic_main(int argc,ch
+   aCINM->MakeStdOrient(anOri,false);
+ 
+ 
+-  std::string aCom =     MMDir() +"bin/SaisiePts "
++  std::string aCom =     MM3dBinFile("SaisiePts ")
+                       +  MMDir() +"share/micmac/XML_MicMac/SaisieAppuisPredic.xml " 
+                       +  std::string(" DirectoryChantier=") + aDir
+                       +  std::string(" +Images=") + QUOTE(aName)
+--- a/src/util/dates.cpp
++++ b/src/util/dates.cpp
+@@ -1124,7 +1124,7 @@ cMetaDataPhoto cMetaDataPhoto::CreateNew
+ 		for (int aKTest=0 ; (aKTest<2) && (! OK)  ; aKTest++)
+ 		{
+ 			aModeDCRaw  = (aKTest==0);
+-          std::string aStrCom = aModeDCRaw ? (STRLANG+MMDir()+"bin"+ELISE_CAR_DIR+"ElDcraw -i -v ") : (STRLANG+ " exiv2 ");
++          std::string aStrCom = aModeDCRaw ? (STRLANG + MM3dBinFile("ElDcraw ") "-i -v " : (STRLANG+ " exiv2 ");
+ 			aStrTMP = ExeCom(aStrCom,aNameFile);
+ 			aNameFileTMP = aStrTMP.c_str();
+ 			if (sizeofile(aNameFileTMP ) != 0)
+--- a/src/uti_files/CPP_Apero2PMVS.cpp
++++ b/src/uti_files/CPP_Apero2PMVS.cpp
+@@ -122,7 +122,7 @@ void Apero2PMVS(string aFullPattern, str
+         sprintf(nb, "%08d", i);
+ 
+         //Creating the lists of DRUNK and Convert commands
+-        cmdDRUNK=MMDir() + "bin/Drunk " + aNameDir + aFullName + " " + aOri + " Out=" + "pmvs-" + aOri + "/visualize/ Talk=0";
++        cmdDRUNK=MM3dBinFile("Drunk ") + aNameDir + aFullName + " " + aOri + " Out=" + "pmvs-" + aOri + "/visualize/ Talk=0";
+         ListDrunk.push_back(cmdDRUNK);
+         #if (ELISE_unix || ELISE_Cygwin || ELISE_MacOs)
+             cmdConv="convert ephemeral:" + aNameDir + "pmvs-" + aOri + "/visualize/" + aFullName + ".tif " + aNameDir + "pmvs-"+ aOri +"/visualize/"+(string)nb + ".jpg";
+--- a/include/XML_MicMac/MM-ModelInitial.xml
++++ b/include/XML_MicMac/MM-ModelInitial.xml
+@@ -203,7 +203,7 @@ MICMAC  /home/marc/MMM/culture3d/include
+      <#WHEN  VTEST=${DoPly}>
+         <PostProcess>
+             <OneCmdPar>
+-                <OneCmdSer>  ${MMDir}bin/Nuage2Ply ${ThisDir}MM-PreProc-${Im1}/NuageImProf_LeChantier_Etape_5.xml Attr=MM-PreProc-${Im1}/Correl_LeChantier_Num_4.tif Scale=2 Out=${Im1}.ply </OneCmdSer>
++                <OneCmdSer>  ${MMDir}bin/mm3d Nuage2Ply ${ThisDir}MM-PreProc-${Im1}/NuageImProf_LeChantier_Etape_5.xml Attr=MM-PreProc-${Im1}/Correl_LeChantier_Num_4.tif Scale=2 Out=${Im1}.ply </OneCmdSer>
+              </OneCmdPar>
+         </PostProcess>
+      </#WHEN>
