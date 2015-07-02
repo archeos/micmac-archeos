@@ -39,10 +39,11 @@ rm -rf $OUT_MICMAC_DIR/src/ANN
 rm -rf $OUT_MICMAC_DIR/.hg .hgignore
 
 # tmp files
-find $OUT_MICMAC_DIR/ -name *~ | xargs rm
+find $OUT_MICMAC_DIR/ -name *~ -exec rm {} \;
 
 # Sanitize perms
-find -type f | xargs chmod -R 644 $OUT_MICMAC_DIR/*.*
+# TODO: I am not so sure about that...
+find $OUT_MICMAC_DIR/ -type f -exec chmod -R 644 {} \;
 
 ###########################
 # TODO: Sanitize encoding #
