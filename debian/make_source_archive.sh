@@ -48,12 +48,5 @@ find -type f | xargs chmod -R 644 $OUT_MICMAC_DIR/*.*
 # TODO: Sanitize encoding #
 ###########################
 
-# We (ArcheOS) still provide siftpp_tgi in the package, 
-# because included sift doesn't tile (very bad for parallelism on small
-# configurations), and Digeo isn't fully operational yet (?).
-mkdir $OUT_MICMAC_DIR/binaire-aux
-cp binaire-aux/siftpp_tgi.LINUX $OUT_MICMAC_DIR/binaire-aux
-chmod u+x $OUT_MICMAC_DIR/binaire-aux/siftpp_tgi.LINUX
-
 tar czf $ARCHIVE_NAME.tar.gz $OUT_MICMAC_DIR
 rm -fr $OUT_MICMAC_DIR
