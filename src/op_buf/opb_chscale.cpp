@@ -193,13 +193,13 @@ class cPixelSortie_Convol
             double                   aDilate
        );
 
-       cPixelSortie_Convol(const cPixelSortie_Convol & aMPS)
+       cPixelSortie_Convol(const cPixelSortie_Convol & aMPS):
+			mVPds(aMPS.mVPds),
+			mVPdsInit(aMPS.mVPdsInit)
        {
             mPixIn0 =   aMPS.mPixIn0;
             mPixIn1 =   aMPS.mPixIn1;
             mPixOut =   aMPS.mPixOut;
-            mVPds =     aMPS.mVPds;
-            mVPdsInit = aMPS.mVPdsInit;
             mPdsInit  = &(mVPdsInit[0]) - mPixIn0;
             mPds      = &(    mVPds[0]) - mPixIn0;
        }
@@ -545,6 +545,14 @@ Fonc_Num  StdFoncChScale_Gen
              cFiltreInterpol * aIntY
           )
 {
+   
+  Pt2di aITr = round_ni(aTr);
+  if ( (aSc==Pt2dr(1,1)) && (aTr == Pt2dr(aITr)))
+  {
+      return trans(aFonc,aITr);
+  }
+
+
    aFonc = Rconv(aFonc);
    return create_op_buf_simple_tpl
           (

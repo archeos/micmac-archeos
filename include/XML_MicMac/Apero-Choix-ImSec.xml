@@ -14,7 +14,18 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
             <Symb>  PatternAllIm=XXXX  </Symb>
             <Symb>  Ext=XXXX  </Symb>
             <Symb>  SeuilP3d=1.5  </Symb>
-            <Symb>  TetaOpt=0.17   </Symb>
+            <Symb>  PatternExport=.*   </Symb>
+            <Symb>  CalPerIm=false   </Symb>
+
+
+            <Symb>  FocMin=0 </Symb>
+            <Symb>  FocMax=1000000 </Symb>
+            <Symb>  SetIm=NKS-Set-OfPatternAndFoc@[[${PatternAllIm}]]@${FocMin}@${FocMax} </Symb>
+
+            <Symb>  PenalNbIm=0.3333   </Symb>
+            <Symb>  TetaOpt=0.17   </Symb>  <!-- 10 degre, why not -->
+            <Symb>  UseMasq3D=false   </Symb>  <!-- 10 degre, why not -->
+            <Symb>  Masq3D=XXXX   </Symb>  <!-- 10 degre, why not -->
        </DicoLoc>
 
        <SectionBDD_Observation>
@@ -33,7 +44,22 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
        <SectionInconnues>
 
              <CalibrationCameraInc>
-                   <Name> GenerateKC-Others   </Name>
+                   <Name> GenerateKC-CalPerIm   </Name>
+                   <CalValueInit>
+                         <CalFromFileExtern>
+                              <NameFile>   ####  </NameFile>
+                               <NameTag>    Interne </NameTag>
+                              <AutorizeNonExisting > true </AutorizeNonExisting>
+                         </CalFromFileExtern>
+                   </CalValueInit>
+                   <CalibPerPose>
+                         <KeyPose2Cal> NKS-Assoc-Id </KeyPose2Cal>
+                         <KeyInitFromPose> NKS-Assoc-Im2Orient@${AeroIn} </KeyInitFromPose>
+                   </CalibPerPose>
+             </CalibrationCameraInc>
+
+             <CalibrationCameraInc>
+                   <Name> GenerateKC-CalPerFoc   </Name>
                    <CalValueInit>
                          <CalFromFileExtern>
                               <NameFile>   ####  </NameFile>
@@ -42,25 +68,47 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
                          </CalFromFileExtern>
                    </CalValueInit>
                    <CalibPerPose>
-                        <KeyPose2Cal> NKS-Assoc-FromFocMm@TheKeyCalib_@ </KeyPose2Cal>
-                        <KeyInitFromPose>  NKS-Assoc-FromFocMm@Ori${AeroIn}/AutoCal@.xml  </KeyInitFromPose>
-                    </CalibPerPose>
-              </CalibrationCameraInc>
+                         <KeyPose2Cal> NKS-Assoc-FromFocMm@TheKeyCalib_@ </KeyPose2Cal>
+                         <KeyInitFromPose>  NKS-Assoc-FromFocMm@Ori${AeroIn}/AutoCal@.xml  </KeyInitFromPose>
+                   </CalibPerPose>
+             </CalibrationCameraInc>
 
 
              <PoseCameraInc>
-	           <PatternName>    ${PatternAllIm}    </PatternName>
-	           <CalcNameCalib>  GenerateKC-Others </CalcNameCalib>
+                   <PatternName>     ${SetIm}   </PatternName>
+
+                   <CalcNameCalibAux>
+                        <CalcNameOnExistingTag>
+                               <KeyCalcFileOriExt>  NKS-Assoc-Im2Orient@${AeroIn} </KeyCalcFileOriExt>
+                               <KeyCalcName >  NKS-Assoc-Cste@GenerateKC-CalPerFoc      </KeyCalcName>
+                               <TagExist>    FileInterne      </TagExist>
+                               <TagNotExist> Interne      </TagNotExist>
+                               <ExigCohTags> true  </ExigCohTags>
+                        </CalcNameOnExistingTag>
+                   </CalcNameCalibAux>
+                   <CalcNameCalibAux>
+                        <CalcNameOnExistingTag>
+                               <KeyCalcFileOriExt>  NKS-Assoc-Im2Orient@${AeroIn} </KeyCalcFileOriExt>
+                               <KeyCalcName >  NKS-Assoc-Cste@GenerateKC-CalPerIm      </KeyCalcName>
+                               <TagExist>    Interne      </TagExist>
+                               <TagNotExist> FileInterne      </TagNotExist>
+                               <ExigCohTags> true  </ExigCohTags>
+                        </CalcNameOnExistingTag>
+                   </CalcNameCalibAux>
 
                    <PosValueInit>
-                       <PosFromBDOrient> Or-Init </PosFromBDOrient>
+                            <PosFromBDOrient> Or-Init </PosFromBDOrient>
                    </PosValueInit>
              </PoseCameraInc>
+
 
         </SectionInconnues>
 
 
         <SectionChantier>
+             <IsChoixImSec> true </IsChoixImSec>
+<!--
+-->
 	     <DirectoryChantier> ThisDir </DirectoryChantier>
         </SectionChantier>
 
@@ -103,15 +151,22 @@ Apero  /home/marc/MMM/culture3d/include/XML_MicMac/Apero-Choix-ImSec.xml  Direct
                    <SectionExport>
                      <ChoixImMM>
                           <ChoixImSec>
+                               <KeyExistingFile> NKS-Assoc-Pts3dIm@${Out} </KeyExistingFile>
+                               <FileImSel> Ori${Out}/FileImSel.xml </FileImSel>
                                <KeyAssoc> NKS-Assoc-ImSec@${Out}  </KeyAssoc>
-                               <PatternSel>  .* </PatternSel>
+                               <PatternSel>  ${PatternExport}  </PatternSel>
                                <NbMin >  4 </NbMin>
                                <IdBdl > Id_Pastis_Hom </IdBdl>
                                <NbMinPtsHom > 15 </NbMinPtsHom>
                                <TetaMinPreSel> 0.025</TetaMinPreSel>
-                               <TetaOpt > 0.17 </TetaOpt>
+                               <TetaOpt > ${TetaOpt} </TetaOpt>
                                <TetaMaxPreSel> 0.8 </TetaMaxPreSel>
                                <NbMaxPresel>  15</NbMaxPresel>
+                               <NbTestPrecis>  15</NbTestPrecis>
+                               <PenalNbIm> ${PenalNbIm} </PenalNbIm>
+                               <#WHEN VTEST=${UseMasq3D}>
+                                    <Masq3D> ${Masq3D} </Masq3D>
+                               </#WHEN>
                           </ChoixImSec>
                      </ChoixImMM>
                      <ExportNuage>

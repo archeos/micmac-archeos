@@ -25,6 +25,7 @@ set(Photogram_Src_Files
 	${PHOTOGR_DIR}/phgr_laser_image.cpp
 	${PHOTOGR_DIR}/phgr_low_level.cpp
 	${PHOTOGR_DIR}/phgr_mep_rel.cpp
+	${PHOTOGR_DIR}/phgr_mep_util.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen00.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen1.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen2.cpp
@@ -32,6 +33,7 @@ set(Photogram_Src_Files
 	${PHOTOGR_DIR}/phgr_or_code_gen4.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen5.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen6.cpp
+	${PHOTOGR_DIR}/phgr_or_code_gen7.cpp
 	${PHOTOGR_DIR}/phgr_or_opt.cpp
 	${PHOTOGR_DIR}/phgr_or_param_extr.cpp
 	${PHOTOGR_DIR}/phgr_or_param_intr.cpp
@@ -43,6 +45,13 @@ set(Photogram_Src_Files
 	${PHOTOGR_DIR}/phgr_triangul.cpp
 	${PHOTOGR_DIR}/transfo_xml_phgr.cpp
 	${PHOTOGR_DIR}/transfo_xml_phgr2.cpp
+	${PHOTOGR_DIR}/cEq12Param.cpp
+	${PHOTOGR_DIR}/cCameraBilin.cpp
+	${PHOTOGR_DIR}/OffsetGPS.cpp
+	${PHOTOGR_DIR}/OriCombiBundle.cpp
+	${PHOTOGR_DIR}/phgr_mep_cocentrik.cpp
+	${PHOTOGR_DIR}/phgr_mep_patch_plane.cpp
+	${PHOTOGR_DIR}/phgr_quickm33.cpp
 )
 
 SOURCE_GROUP(Photogram FILES ${Photogram_Src_Files})

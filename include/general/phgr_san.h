@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -43,20 +43,21 @@ Header-MicMac-eLiSe-25/06/2007*/
 class cCylindreRevolution;
 class cCylindreRevolFormel;
 class cInterfSurfaceAnalytique ;
+class cProjOrthoCylindrique;
+class cProjTore;
 
 
-namespace NS_SuperposeImage {
+  class cXmlToreRevol;
   class cXmlOrthoCyl;
   class cXmlCylindreRevolution;
   class cXmlDescriptionAnalytique;
   class cXmlModeleSurfaceComplexe;
   class cXmlOneSurfaceAnalytique;
-};
 
 
 // Decrit la facon dont une demi droite coupe une surface:
 
-typedef enum 
+typedef enum
 {
      eSurfPseudoInter, // Fausse intersection, par projection
      eSurfInterTgt,     // Intersection par tangence
@@ -72,16 +73,16 @@ class cInterSurfSegDroite
     public :
        double mLamba;
        eTypeInterSurDemiDr   mType;
-       
+
        cInterSurfSegDroite(double,eTypeInterSurDemiDr);
 };
 
 
          //============ GLOBAL =====================
 
-const NS_SuperposeImage::cXmlOneSurfaceAnalytique & SFromId
+const cXmlOneSurfaceAnalytique & SFromId
       (
-          const NS_SuperposeImage::cXmlModeleSurfaceComplexe & aModCompl,
+          const cXmlModeleSurfaceComplexe & aModCompl,
           const std::string & anId
       );
 
@@ -90,36 +91,92 @@ cInterfSurfaceAnalytique * SFromFile
                                 const std::string & aFile,
                                 const std::string & anId,  // Nom
                                 std::string  aTag="",  // Si defaut valeur xml
-                                NS_SuperposeImage::cXmlOneSurfaceAnalytique * aMemXML = 0
+                                cXmlOneSurfaceAnalytique * aMemXML = 0
                            );
 
 
          //==========================================
 
-         
-class cInterfSurfaceAnalytique 
+class cParamISAPly
+{
+    public :
+       cParamISAPly();
+
+       double mSzRep;
+       double mSzSphere;
+       double mDensiteSurf;
+};
+
+class cPlyCloud
+{
+     public :
+         void PutFile(const std::string & aName);
+
+         typedef Pt3di tCol;
+         std::vector<tCol>  mVCol;
+         std::vector<Pt3dr>  mVPt;
+
+         void AddSphere(const tCol& ,const Pt3dr & aC,const double & aRay,const int & aNbPerRay);
+         void AddSeg(const tCol &,const Pt3dr & aP1,const Pt3dr & aP2,const int & aNbPerRay);
+         void AddPt(const tCol &,const Pt3dr & aPt);
+         void AddCercle(const tCol &,const Pt3dr & aC,const Pt3dr &aNorm,const double & aRay,const int & aNb);
+
+         static const tCol Red;
+         static const tCol Green;
+         static const tCol Blue;
+         static const tCol Yellow;
+         static const tCol Cyan;
+         static const tCol Magenta;
+         static const tCol Black;
+         static const tCol White;
+         static tCol Gray(const double & aGr); // Entre 0 et 1
+};
+
+class cInterfSurfaceAnalytique
 {
     // UV coordonnee parametrique de la surface , L + ou -
-    // troisiemme coordonnee (genre faisceau de normal)
+    // troisieme coordonnee (genre faisceau de normal)
      public :
 
          // renvoie une surface identite, utile pour beneficier
          // de certaine fonction MicMac passant par l'interface
          static cInterfSurfaceAnalytique * Identite(double aZ); 
 
+         void MakePly   (const cParamISAPly & , cPlyCloud & ,const std::vector<ElCamera *> &);
+         // aProfMoy : Prof /10
+         virtual void V_MakePly (const cParamISAPly & , cPlyCloud & ,const std::vector<ElCamera *> &,const Box2dr & aBox,const double aProfMoy);
+
+
+
+         virtual double SeuilDistPbTopo() const;
+
+         // renvoie une surface identite, utile pour beneficier
+         // de certaine fonction MicMac passant par l'interface
+         static cInterfSurfaceAnalytique * Identite(double aZ);
+         static cInterfSurfaceAnalytique * FromCCC(const cChCoCart & );
+
          virtual Pt3dr E2UVL(const Pt3dr & aP) const = 0;
          virtual Pt3dr UVL2E(const Pt3dr & aP) const = 0;
-         virtual NS_SuperposeImage::cXmlDescriptionAnalytique Xml() const=0;
+         virtual cXmlDescriptionAnalytique Xml() const=0;
+         virtual cXmlModeleSurfaceComplexe SimpleXml(const std::string &Id) const;
 
 
-        virtual bool HasOrthoLoc() const = 0;
+        virtual bool HasOrthoLoc() const = 0;  // Apparement identique en pratique a OrthoLocIsXCste ?
+                                              // En theorie plus general, indique qu'il doit se desanamorphoser ...
         virtual Pt3dr ToOrLoc(const Pt3dr & aP) const ; // Def Err fatale
         virtual Pt3dr FromOrLoc(const Pt3dr & aP) const ; // Def Err fatale
-        virtual bool OrthoLocIsXCste() const ;
+        virtual bool OrthoLocIsXCste() const ; // Si vrai les ligne F(X,Y,Z0) = F(Y,Z0), la desanamorphose est automatique
+        virtual bool IsAnamXCsteOfCart() const ; // Vrai pour Orthocyl faux pour les autres
 
 
+        // Defaut return 0
+         virtual cInterfSurfaceAnalytique * ChangeRepDictPts(const std::map<std::string,Pt3dr> &) const;
 
-         static cInterfSurfaceAnalytique * FromXml(const NS_SuperposeImage::cXmlOneSurfaceAnalytique &);
+         virtual cInterfSurfaceAnalytique * DuplicateWithExter(bool IsExt) ;
+
+
+         static cInterfSurfaceAnalytique * FromXml(const cXmlOneSurfaceAnalytique &);
+         static cInterfSurfaceAnalytique * FromFile(const std::string &);
 
 // Pour gerer d'eventuels pb de topologie, a la faculte de modifier la boite
          virtual void AdaptBox(Pt2dr & aP0,Pt2dr & aP1) const = 0;
@@ -129,22 +186,28 @@ class cInterfSurfaceAnalytique
        // si aucune "vraie" solution renvoie la droite des moindre carres et IsVraiSol = false
        // Peut etre un jour ecrire un valeur par defaut fonctionnant par dichotomie (sinon
        //  mettre virtuelle pure)
-       
+
 
          virtual  std::vector<cInterSurfSegDroite>  InterDroite(const ElSeg3D &,double aZ0) const  = 0;
 
          // Rnvoie rei:q
          cTplValGesInit<Pt3dr> InterDemiDroiteVisible(const ElSeg3D &,double aZ0) const ;
+         cTplValGesInit<Pt3dr> PImageToSurf0(const cCapture3D & aCap,const Pt2dr & aPIm) const; // Coord UVL
 
-         // Si SurfExt, on selectionne les rayons rentantrant
+         // Si SurfExt, on selectionne les rayons rentantrant, coord UVL
          Pt3dr BestInterDemiDroiteVisible(const ElSeg3D &,double aZ0) const ;
 
          virtual ~cInterfSurfaceAnalytique();
          cInterfSurfaceAnalytique(bool isVueExt);
-         bool IsVueExt() const;
+         bool VueDeLext() const; // Change le nom pour grep / mIsVueExt
          int SignDZSensRayCam()const;
+
+        // Rappiecage pour pouvoir dynamiquement inhiber l'anamorphose verticale sans toucher au reste
+         void SetUnusedAnamXCSte();
+     protected :
+         bool mUnUseAnamXCSte;
      private :
-         cTplValGesInit<Pt3dr> InterDemiDroiteVisible(bool Force,const ElSeg3D &,double aZ0) const ;
+         cTplValGesInit<Pt3dr> InterDemiDroiteVisible(bool Force,const ElSeg3D &,double aZ0) const ;  // En UVL
          bool mIsVueExt;
 };
 
@@ -152,10 +215,10 @@ class cInterfSurfaceAnalytique
 // Dans SAN/cylindre.cpp
 
 
-// Une cInterfSurfAn_Formelle est a la fois un allocateurs 
-// d'inconnue (comme une rotation, ici les parametre de la surface) 
-// et un equation d'observation (comme  l'equation d'appuis, ici
-// la projection d'un point 3d sur la surface). 
+// Une cInterfSurfAn_Formelle est a la fois un allocateur
+// d'inconnue (comme une rotation, ici les parametres de la surface)
+// et une equation d'observation (comme  l'equation d'appuis, ici
+// la projection d'un point 3d sur la surface).
 //
 // Rien n'empeche que d'autres equations soient utilisees sur
 // une surface.
@@ -196,12 +259,16 @@ class cInterfSurfAn_Formelle : public cElemEqFormelle,
 };
 
 
-//  Cylindre de revolution 
+//  Cylindre de revolution
 
 class cCylindreRevolution : public cInterfSurfaceAnalytique
 {
       public :
 
+        // UVL  = Teta *Ray,   Z   ,   R-R0
+         virtual double SeuilDistPbTopo() const;
+
+         friend class cProjTore;
      // aPOnCyl fixe a la fois le rayon et le premier axe
      // du plan Ortho, origine des angles
         cCylindreRevolution
@@ -211,6 +278,12 @@ class cCylindreRevolution : public cInterfSurfaceAnalytique
               const Pt3dr & aPOnCyl
         );
 
+         cInterfSurfaceAnalytique * ChangeRepDictPts(const std::map<std::string,Pt3dr> &) const;
+         cCylindreRevolution *      CR_ChangeRepDictPts(const std::map<std::string,Pt3dr> &) const;
+
+         cInterfSurfaceAnalytique * DuplicateWithExter(bool IsExt) ;
+         cCylindreRevolution * CR_DuplicateWithExter(bool IsExt) ;
+
         static cCylindreRevolution WithRayFixed
                     (
                           bool  isVueExt,
@@ -219,16 +292,16 @@ class cCylindreRevolution : public cInterfSurfaceAnalytique
                           const Pt3dr & aPOnCyl
                     );
          static cCylindreRevolution FromXml(
-                                         const NS_SuperposeImage::cXmlOneSurfaceAnalytique&,
-                                         const NS_SuperposeImage::cXmlCylindreRevolution&
+                                         const cXmlOneSurfaceAnalytique&,
+                                         const cXmlCylindreRevolution&
                                     );
 
          bool HasOrthoLoc() const ;
          Pt3dr POnCylInit() const;
          Pt3dr E2UVL(const Pt3dr & aP) const;
          Pt3dr UVL2E(const Pt3dr & aP) const;
-         NS_SuperposeImage::cXmlDescriptionAnalytique Xml() const;
-         NS_SuperposeImage::cXmlCylindreRevolution XmlCyl() const;
+         cXmlDescriptionAnalytique Xml() const;
+         cXmlCylindreRevolution XmlCyl() const;
          std::vector<cInterSurfSegDroite>  InterDroite(const ElSeg3D &,double aZ0) const ;
          void AdaptBox(Pt2dr & aP0,Pt2dr & aP1) const ;
 
@@ -236,16 +309,19 @@ class cCylindreRevolution : public cInterfSurfaceAnalytique
          const Pt3dr & W() const;
          const Pt3dr & U() const;
          double  Ray() const;
+         ElSeg3D Axe() const;
 
          Pt3dr  PluckerDir();
          Pt3dr  PluckerOrigine();
       private :
+         void V_MakePly (const cParamISAPly & , cPlyCloud & ,const std::vector<ElCamera *> &,const Box2dr & aBox,const double aProfMoy);
 
          Pt3dr mP0; // Point sur l'axe
          double mRay;
          Pt3dr mU;  // vecteur du plan pointant sur P0
          Pt3dr mV;  //
          Pt3dr mW;  //   axe du cylinde
+         int   mSign;
 };
 
 class cCylindreRevolFormel  : public cInterfSurfAn_Formelle
@@ -273,7 +349,7 @@ class cCylindreRevolFormel  : public cInterfSurfAn_Formelle
         Pt3dr  mDirPlk0;
         Pt3dr  mOriPlk0;
         double mRay0;
-        
+
         Pt3dr  mDirPlkCur;
         Pt3dr  mOriPlkCur;
         double mRayCur;
@@ -291,15 +367,56 @@ class cCylindreRevolFormel  : public cInterfSurfAn_Formelle
         double    mTolFctrOrtho;
 };
 
+class cProjTore : public cInterfSurfaceAnalytique
+{
+     public :
+        cProjTore(const cCylindreRevolution & aCyl,const Pt3dr & aPEuclDiamTor);
+        virtual double SeuilDistPbTopo() const;
+   //   Euclidien <=> Torique
+        Pt3dr E2UVL(const Pt3dr & aP) const;
+        Pt3dr UVL2E(const Pt3dr & aP) const;
+   // Fonction virtuelle generale , cree un objet multi type
+        cXmlDescriptionAnalytique Xml() const;
+   // Fonction specifique
+        cXmlToreRevol  XmlTore() const;
+// En pratique identique a OrthoLocIsXCste
+// En theorie plus general, indique qu'il doit se desanamorphoser ...
+        bool HasOrthoLoc() const ;
+        bool OrthoLocIsXCste() const ; // Si vrai les ligne F(X,Y,Z0) = F(Y,Z0), la desanamorphose est automatique
+
+// Utilise dans la desanamorphose selon les ligne "verticale"  ,
+        Pt3dr ToOrLoc(const Pt3dr & aP) const ; // Def Err fatale
+        Pt3dr FromOrLoc(const Pt3dr & aP) const ; // Def Err fatale
+
+        // Defaut return 0
+         static cProjTore  FromXml(const cXmlOneSurfaceAnalytique &,const cXmlToreRevol &);
+// Pour gerer d'eventuels pb de topologie, a la faculte de modifier la boite
+         void AdaptBox(Pt2dr & aP0,Pt2dr & aP1) const ;
+         std::vector<cInterSurfSegDroite>  InterDroite(const ElSeg3D &,double aZ0) const ;
+
+         cXmlModeleSurfaceComplexe SimpleXml(const std::string &Id) const;
+         // X'  ,  Y'*D/(D-Z') , Z'
+         // UVL         <----->             X'Y'Z'          <----->   XYZ
+         // Torique                         Cylindrique     Abs
+         //                                              => mRToE =>
+      private :
+         inline Pt3dr Cyl2Tore(const Pt3dr &) const;
+         inline Pt3dr Tore2Cyl(const Pt3dr &) const;
+
+         cCylindreRevolution    mCyl;
+         Pt3dr                  mDiamEucl;
+         Pt3dr                  mDiamCyl;
+         bool                   mAngulCorr;
+};
 
 class cProjOrthoCylindrique : public cInterfSurfaceAnalytique
 {
      public :
 
-        
+
          // Pour de la generation d'otrtho anOri, anOx, anOy est le plan principal
          // de redressement
-         cProjOrthoCylindrique 
+         cProjOrthoCylindrique
          (
                const cChCoCart & aL2A,
                const ElSeg3D & aSegAbs,
@@ -309,39 +426,37 @@ class cProjOrthoCylindrique : public cInterfSurfaceAnalytique
          //  (X' , b Y' , D + c X')
 
          // Creation a partir des elements "naturels" le plan de projection et l'axe du cylindre;
-         // le P0 de la droite projete sur le plan fixe l'origine; si prio au plan la droite est 
+         // le P0 de la droite projete sur le plan fixe l'origine; si prio au plan la droite est
          // modifiee pour etre // , et lycee de versailles
 
          Pt3dr E2UVL(const Pt3dr & aP) const;
          Pt3dr UVL2E(const Pt3dr & aP) const;
-         NS_SuperposeImage::cXmlDescriptionAnalytique Xml() const;
-         NS_SuperposeImage::cXmlOrthoCyl XmlOCyl() const;
+         cXmlDescriptionAnalytique Xml() const;
+         cXmlOrthoCyl XmlOCyl() const;
          void AdaptBox(Pt2dr & aP0,Pt2dr & aP1) const ;
          std::vector<cInterSurfSegDroite>  InterDroite(const ElSeg3D &,double aZ0) const ;
 
          static cProjOrthoCylindrique FromXml(
-                                         const NS_SuperposeImage::cXmlOneSurfaceAnalytique&,
-                                         const NS_SuperposeImage::cXmlOrthoCyl&
+                                         const cXmlOneSurfaceAnalytique&,
+                                         const cXmlOrthoCyl&
                                     );
         bool OrthoLocIsXCste() const ;
+        bool IsAnamXCsteOfCart() const ; // Vrai pour Orthocyl faux pour les autres
         bool HasOrthoLoc() const ;
         Pt3dr ToOrLoc(const Pt3dr & aP) const ; // Def Err fatale
         Pt3dr FromOrLoc(const Pt3dr & aP) const ; // Def Err fatale
-
-
-
-         // static cInterfSurfaceAnalytique * FromXml(const NS_SuperposeImage::cXmlOneSurfaceAnalytique &);
 
      private :
          inline Pt3dr Loc2Abs(const Pt3dr &) const;
          inline Pt3dr Ab2Loc(const Pt3dr &) const;
 
          inline Pt3dr Cyl2Loc(const Pt3dr &) const;
-         inline Pt3dr Loc2Cyl(const Pt3dr &) const;   
+         inline Pt3dr Loc2Cyl(const Pt3dr &) const;
          // X'  ,  Y'*D/(D-Z') , Z'
-         // UVL         <----->             X'Y'Z'          <----->   XYZ 
-         // Cylindrique                     Local                     Abs                                
+         // UVL         <----->             X'Y'Z'          <----->   XYZ
+         // Cylindrique                     Local                     Abs
          //                                              => mRToE =>
+
          cChCoCart  mL2A;
          cChCoCart  mA2L;
          ElSeg3D    mSegAbs;
@@ -359,13 +474,13 @@ class cProjOrthoCylindrique : public cInterfSurfaceAnalytique
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -375,17 +490,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

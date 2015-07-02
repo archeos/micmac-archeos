@@ -82,7 +82,6 @@ Script :
 
 #include "StdAfx.h"
 
-using namespace NS_ParamChantierPhotogram;
 
 
 typedef const std::string * tCStrPtr;
@@ -379,6 +378,8 @@ struct cCiblePointeScore
            INT  mId;
 	   cCamIncEtalonage * mCam;
 };
+
+extern bool AllowUnsortedVarIn_SetMappingCur;
 
 class cEtalonnage
 {

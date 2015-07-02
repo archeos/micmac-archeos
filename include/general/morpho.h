@@ -259,7 +259,7 @@ class ParamConcOpb : public Mcheck
 Fonc_Num  BoxedConc(Fonc_Num f,Pt2di SzBox,bool V8,ParamConcOpb * param,bool aCatInit = false);
 Fonc_Num  BoxedConc(Fonc_Num f,Pt2di SzBox,bool V8,bool aCatInit = false);
 
-//  Not to use, only for bench pupose
+//  Not to use, only for bench purpose
 Fonc_Num  BoxedConc(Fonc_Num f,Pt2di SzBox,bool V8,ParamConcOpb * param,INT per_reaf,bool aCatInit = false);
 
 
@@ -273,11 +273,11 @@ Fonc_Num  BoxedConc(Fonc_Num f,Pt2di SzBox,bool V8,ParamConcOpb * param,INT per_
 class ElImplemDequantifier
 {
      public :
-         // Anncienne interaface, anEquid est un pametre idiot !
+         // Anncienne interface, anEquid est un parametre idiot !
          // void Dequant(Pt2di aSzIm,Fonc_Num f2Deq,INT anEquid);
 
 
-         // aVerifI verfie que l'image est entiere
+         // aVerifI verifie que l'image est entiere
          void DoDequantif(Pt2di aSzIm,Fonc_Num f2Deq,bool  aVerifI= false);
 
          ElImplemDequantifier (Pt2di aSz);
@@ -368,6 +368,18 @@ class cResProj32
 };
 
 cResProj32 Projection32(Fonc_Num aF,Pt2di aSz);
+
+//  Filtrage divers adapte aux carte de profondeur :
+
+class cParamFiltreDepthByPrgDyn;
+Im2D_Bits<1>    FiltrageDepthByProgDyn(Im2D_REAL4 aImDepth,Im2D_U_INT1 aImLab,const cParamFiltreDepthByPrgDyn & aParam);
+
+class cParamFiltreDetecRegulProf;
+extern Im2D_Bits<1>  FiltreDetecRegulProf(Im2D_REAL4 aImProf,Im2D_Bits<1> aIMasq,const cParamFiltreDetecRegulProf & aParam);
+
+Im2D_REAL4 ReduceImageProf(double aDifStd,Im2D_Bits<1> aIMasq,Im2D_REAL4 aImProf, const Box2dr &aBox,double aScale,Im2D_REAL4 aImPds,std::vector<Im2DGen*>  aVNew,std::vector<Im2DGen*> aVOld);
+Im2D_REAL4 ReduceImageProf(double aDifStd,Im2D_Bits<1> aIMasq,Im2D_INT2 aImProf, const Box2dr &aBox,double aScale,Im2D_REAL4 aImPds,std::vector<Im2DGen*>  aVNew,std::vector<Im2DGen*> aVOld);
+
 
 
 #endif // _ELISE_GENERAL_MORPHO_H

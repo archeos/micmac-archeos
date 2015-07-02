@@ -103,6 +103,9 @@ void cElRanGen::cResetNRrand()
 
 void cElRanGen::InitOfTime(int aNb) //  aNb=1000
 {
+// std::cout << "cElRanGen::InitOfTime::AAAAAAlllll\n"; getchar();
+
+
    double aT = ElTimeOfDay();
    aT = aT -round_down(aT);
    aNb  = round_ni(aT * aNb);
@@ -152,6 +155,17 @@ float cElRanGen::ran3 (int * idum)
 	mj=ma[inext]-ma[inextp];
 	if (mj < MZ) mj += MBIG;
 	ma[inext]=mj;
+
+if (0)
+{
+static int aCpt=0; aCpt++;
+static  int aMajic =0;
+aMajic  = (aMajic+mj) % 1287;
+if (0==(aCpt%100))
+{
+std::cout << "RRRand " << aCpt << " => " << mj << " " << aMajic << "\n"; // getchar();
+}
+}
 	return (float)(mj*FAC);
 }
 
@@ -302,6 +316,21 @@ bool cRandNParmiQ::GetNext()
 
    return aRes;
 
+}
+
+
+std::vector<int> RandPermut(int aN)
+{
+    std::vector<Pt2dr> aV;
+    for (int aK=0 ; aK<aN ; aK++)
+       aV.push_back(Pt2dr(NRrandom3(),aK));
+
+   std::sort(aV.begin(),aV.end());
+   std::vector<int> aRes;
+   for (int aK=0 ; aK<aN ; aK++)
+       aRes.push_back(round_ni(aV[aK].y));
+
+  return aRes;
 }
 
 

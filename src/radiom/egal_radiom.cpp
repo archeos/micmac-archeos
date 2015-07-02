@@ -41,15 +41,13 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 #include "ext_stl/numeric.h"
 
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
 
 static bool Debug = true;
 
 
 void AssertNoNan(const double&  x,const int & aLine,const std::string & aFile)
 {
-    if (isnan(x))
+    if (std_isnan(x))
     {
        std::cout << "At Line " << aLine << " of file " << aFile << "\n";
        ELISE_ASSERT(false,"Unexpected Nan Number")
@@ -1166,16 +1164,16 @@ void cER_Global::DoComputeL1Cple()
    //   Pour chaque image i on a une fonction Fi a trois param  Ki, Ai Bi
    //        Fi(x,y) = e(Ki+Aix + Biy)   t.q Ri Fi soit normalisee    RiFi = Rj Fj
    //
-   //    On a les fonctions de transfert Tij calulee par moindre L1 precendte telles que
+   //    On a les fonctions de transfert Tij calculees par moindre L1 precedentes telles que
    //   
    //         Ri(x,y) Tij(x,y) = Rj(x,y)
    //       
    //         Rj / Ri = Tij = Fi/Fj
    //      (1)    Log(Tij) = Ki + Ai x + BiY - Kj - Aj x - Bj y
    //      L'equation (1) doit etre verifiee pour les points du domaine de calcul de Tij,
-   //      ici on prend 5 point definis par l'ellipse d'inertie
+   //      ici on prend 5 points definis par l'ellipse d'inertie
    //      Pour que le systeme soit defini, on rajoute une contrainte Sigma(Ki) = 0
-   //      On rajoute aussi Sima(Ai) = 0, Sigma(Bi) = 0 car sinon indet dans le cas habituel
+   //      On rajoute aussi Sigma(Ai) = 0, Sigma(Bi) = 0 car sinon indet dans le cas habituel
    //      ou x1 et X2 sont en tranlation
 
 
@@ -1274,7 +1272,7 @@ void cER_Global::DoComputeL1Cple()
 
    if (mGotOnePbL1)
    {
-       std::cout << "=================LIST OF IMAGE WITH NO MEASURE====================\n";
+       std::cout << "=================LIST OF IMAGES WITH NO MEASURE====================\n";
        for (int aKIm=0 ; aKIm<int(mVecIm.size()) ; aKIm++)
        {
            if (mVecIm[aKIm]->NbMesValidL1() == 0)
@@ -1282,7 +1280,7 @@ void cER_Global::DoComputeL1Cple()
                    std::cout << "   No Valide Measures for " << mVecIm[aKIm]->Name() << "\n";
            }
        }
-       ELISE_ASSERT(false,"There wer images with no validated measures");
+       ELISE_ASSERT(false,"There were images with no validated measures");
    }
 }
 
@@ -2054,7 +2052,7 @@ void cER_Global::Show1() const
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -2070,17 +2068,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

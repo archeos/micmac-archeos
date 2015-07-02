@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -40,7 +40,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
-using namespace NS_SaisiePts;
 
 
 /*************************************************/
@@ -50,7 +49,7 @@ using namespace NS_SaisiePts;
 /*************************************************/
 
 
-cImage::cImage(const std::string & aName,cAppli_SaisiePts & anAppli) :
+cImage::cImage(const std::string & aName,cAppli_SaisiePts & anAppli,bool Visualizable) :
    mAppli (anAppli),
    mName  (aName),
    mTif   (0),
@@ -61,13 +60,117 @@ cImage::cImage(const std::string & aName,cAppli_SaisiePts & anAppli) :
    mSzIm  (-1,-1),
    mWAff  (0),
    mPrio  (0),
-   mInitCamNDone (false)
+   mInitCamNDone (false),
+   mCptAff       (0),
+   mVisualizable (Visualizable),
+   mPImsNuage         (0),
+   mPNSeuilAlti       (25.0),
+   mPNSeuilPlani      (5.0),
+   mLastLoaded        (false),
+   mCurLoaded         (false)
 {
 }
 
+void cImage::SetMemoLoaded()
+{
+   mLastLoaded = mCurLoaded;
+   mCurLoaded  = false;
+}
+void  cImage::SetLoaded()
+{
+   mCurLoaded = true;
+}
+
+void cImage::OnModifLoad()
+{
+
+   if (mCurLoaded==mLastLoaded) return;
+
+   if (mCurLoaded)
+   {
+      cMMByImNM * aMMI =   mAppli.PIMsFilter ();
+      if (aMMI)
+      {
+           std::string aNameDepth = aMMI->NameFileXml(eTMIN_Depth,mName);
+           mPImsNuage = cElNuage3DMaille::FromFileIm(aNameDepth);
+
+      }
+   }
+   else
+   {
+       delete mPImsNuage;
+       mPImsNuage =0;
+   }
+}
+
+bool  cImage::PIMsValideVis(const Pt3dr & aPTer)
+{
+   if (mPImsNuage==0) return true;
+
+   Pt2dr aPIm = mPImsNuage->Terrain2Index(aPTer);
+   Pt2di aIPIm = round_ni(aPIm);
+
+
+   double aProfMax= -1e20;
+   double aProfMin= 1e20;
+   int aDil = round_up(mPNSeuilPlani);
+
+   for (int aDx= -aDil ; aDx <= aDil ; aDx++)
+   {
+       for (int aDy= -aDil ; aDy <= aDil ; aDy++)
+       {
+            Pt2di aPVois(aIPIm.x+aDx,aIPIm.y+aDy);
+            if ((mPImsNuage->IndexHasContenu(aPVois)) && (euclid(Pt2dr(aPVois)-aPIm)<mPNSeuilPlani))
+            {
+                double aProfNu = mPImsNuage->ProfEnPixel(aPVois);
+                ElSetMax(aProfMax,aProfNu);
+                ElSetMin(aProfMin,aProfNu);
+            }
+       }
+   }
+
+
+   Pt3dr aTerInNu = mPImsNuage->Euclid2ProfPixelAndIndex(aPTer);
+   double aProfTer = aTerInNu.z;
+
+    return (aProfTer >= (aProfMin-mPNSeuilAlti)) && (aProfTer<=(aProfMax+mPNSeuilAlti));
+
+/*
+std::cout << "Valll   BBBBBBB\n";
+   if (! aEnv->IndexHasContenuForInterpol(aPIm))
+   {
+       // A Parametrer eventuellement
+       return false;
+   }
+
+   Pt3dr aTerInNu = aEnv->Euclid2ProfPixelAndIndex(aPTer);
+   double aProfTer = aTerInNu.z;
+   double aProfNu = aEnv->ProfInterpEnPixel(aPIm);
+
+   bool isDessus = (aProfTer >= aProfNu);
+
+std::cout << "Valll   CCCCCCC " << aProfTer << " " << aProfNu << " \n";
+
+   return aMin ?  isDessus : (! isDessus);
+*/
+
+  return false;
+
+}
+
+
+
+bool  cImage::Visualizable() const
+{
+   return mVisualizable;
+}
+
+
+int & cImage::CptAff() {return mCptAff;}
+
 Pt2di  cImage::SzIm() const
 {
-   if (mSzIm.x <=0) 
+   if (mSzIm.x <=0)
       mSzIm = Tif().sz();
 
   return mSzIm;
@@ -81,14 +184,16 @@ bool cImage::InImage(const Pt2dr & aP)
 
 Pt2dr cImage::PointArbitraire()  const
 {
-   
+
    Pt2dr aSz = Pt2dr(SzIm());
    Box2dr aBox(aSz*0.25,aSz*0.75);
 
+#if (ELISE_X11)
    if (mWAff)
    {
        aBox = mWAff->BoxImageVisible();
    }
+#endif
 
 
    return aBox.RandomlyGenereInside();
@@ -116,11 +221,11 @@ Tiff_Im &  cImage::Tif() const
 
 void cImage::InitCameraAndNuage()
 {
-   if (mInitCamNDone) 
+   if (mInitCamNDone)
       return;
    mInitCamNDone = true;
 
-   if (! mAppli.HasOrientation()) 
+   if (! mAppli.HasOrientation())
       return;
 
    std::string aKey = mAppli.Param().KeyAssocOri().Val();
@@ -139,6 +244,11 @@ void cImage::InitCameraAndNuage()
    {
       mCaptNuage = aRMso.Nuage();
       // std::cout << "mCaptNuage " << mName << " " << mCaptNuage
+   }
+
+   if (0)
+   {
+      std::cout << "ICAN "  << mName << " Cap3D " << mCapt3d  << " Cam " << mCaptCam << " Nuage " << mCaptNuage << "\n";
    }
 }
 
@@ -159,8 +269,6 @@ cElNuage3DMaille * cImage::CaptNuage()
     return mCaptNuage;
 }
 
-
-
 void cImage::SetSPIM(cSaisiePointeIm * aSPIM)
 {
     ELISE_ASSERT(mSPIm==0,"Multiple cImage::SetSPIM");
@@ -174,16 +282,16 @@ const std::vector<cSP_PointeImage *> &  cImage::VP()
 
 cSP_PointeImage * cImage::PointeOfNameGlobSVP(const std::string & aNameGlob)
 {
-   std::map<std::string,cSP_PointeImage *>::iterator anIt = mPointes.find(aNameGlob);
-   if  (anIt == mPointes.end()) return 0;
-   return anIt->second;
+    std::map<std::string,cSP_PointeImage *>::iterator anIt = mPointes.find(aNameGlob);
+    if  (anIt == mPointes.end()) return 0;
+    return anIt->second;
 }
 
-void cImage::AddAPointe(cOneSaisie * anOS,cSP_PointGlob * aPG,bool FromFile)
+void cImage::AddAImPointe(cOneSaisie * anOS,cSP_PointGlob * aPG,bool FromFile)
 {
-    if (PointeOfNameGlobSVP(aPG->PG()->Name())) 
+   if (PointeOfNameGlobSVP(aPG->PG()->Name()))
        return;
-  
+
    if (mSPIm==0)
    {
       mAppli.SOSPI().SaisiePointeIm().push_back(cSaisiePointeIm());
@@ -199,11 +307,11 @@ void cImage::AddAPointe(cOneSaisie * anOS,cSP_PointGlob * aPG,bool FromFile)
    cSP_PointeImage * aPIm = new cSP_PointeImage(anOS,this,aPG);
    mPointes[aPG->PG()->Name()] = aPIm;
    mVP.push_back(aPIm);
-   aPG->AddAPointe(aPIm);
+   aPG->AddAGlobPointe(aPIm);
 }
 
 
-double  cImage::CalcPriority(cSP_PointGlob * aPP) const
+double  cImage::CalcPriority(cSP_PointGlob * aPP,bool UseCpt) const
 {
    double aRes = 0;
    for (int aKS=0; aKS<int(mVP.size()) ; aKS++)
@@ -215,6 +323,11 @@ double  cImage::CalcPriority(cSP_PointGlob * aPP) const
           )
           aPrio = (1+aPrio) * 1e4;
        aRes += aPrio;
+   }
+
+   if (UseCpt)
+   {
+       aRes = aRes - mCptAff * 1e7 - mCurLoaded*1e10;
    }
 
    return aRes;
@@ -233,14 +346,16 @@ void  cImage::SetPrio(double aPrio)
 
 bool cImage::PtInImage(const Pt2dr aP)
 {
+   if (mCapt3d && (!mCapt3d->CaptHasData(aP))) return false; 
    return    (aP.x>0)
           && (aP.y>0)
           && (aP.x<SzIm().x)
           && (aP.y<SzIm().y);
 }
 
-
-void cImage::CreatePGFromPointeMono(Pt2dr  aPtIm,eTypePts aType,double aSz,cCaseNamePoint * aCNP)
+// CREATE point ground From Pointe Mono
+//
+cSP_PointGlob * cImage::CreatePGFromPointeMono(Pt2dr  aPtIm,eTypePts aType,double aSz,cCaseNamePoint * aCNP)
 {
 
     //bool PIsInit = false;
@@ -248,7 +363,7 @@ void cImage::CreatePGFromPointeMono(Pt2dr  aPtIm,eTypePts aType,double aSz,cCase
     bool PInit = false;
     // Pt3dr aP1(0,0,0);
     // Pt3dr aP2(0,0,0);
-    
+
     cCapture3D *  aCapt3d = Capt3d();
     if (aCapt3d)
     {
@@ -260,48 +375,54 @@ void cImage::CreatePGFromPointeMono(Pt2dr  aPtIm,eTypePts aType,double aSz,cCase
        }
     }
 
-
             //PIsInit = true;
     cPointGlob aPG;
-    std::pair<int,std::string> anId = mAppli.IdNewPts(aCNP);
+    std::pair<int,std::string> anId = mAppli.Interface()->IdNewPts(aCNP);
     if (anId.second=="NONE")
-       return;
-    mAppli.ChangeFreeNameP(anId.second,false);
+       return NULL;
+    mAppli.Interface()->ChangeFreeNamePoint(anId.second,false);
 
     aPG.Type() = aType;
     aPG.Name() = anId.second;
     aPG.NumAuto().SetVal(anId.first);
     aPG.ContenuPt().SetNoInit();  // OK
-    aPG.SzRech().SetVal(aSz);  // OKK 
+    aPG.SzRech().SetVal(aSz);  // OKK
 
     if (PInit)
-       aPG.P3D().SetVal(aPt);
+        aPG.P3D().SetVal(aPt);
     else
         aPG.P3D().SetNoInit();
 
     cSP_PointGlob * aSPG = mAppli.AddPointGlob(aPG,true);
 
-    if (aSPG==0)
+    if (aSPG==0) //already exists
     {
-       return;
-       // ELISE_ASSERT(aSPG!=0,"Incoherence (1) in cImage::CreatePGFromPointeMono");
+       //ELISE_ASSERT(aSPG!=0,"Incoherence (1) in cImage::CreatePGFromPointeMono");
+       return NULL;
     }
+
     aSPG->SuprDisp();
 
+    mAppli.AddPGInAllImages(aSPG);
 
-    mAppli.AddPGInAllImage(aSPG);
 
     cSP_PointeImage * aPIm = PointeOfNameGlobSVP(aSPG->PG()->Name());
-    ELISE_ASSERT(aPIm!=0,"Incoherence (2) in cImage::CreatePGFromPointeMono");
+    if (aPIm==0)
+    {
+        std::cout << "For-Name " << aSPG->PG()->Name()  << " SzDico = " << mPointes.size() << "\n";
+        ELISE_ASSERT(aPIm!=0,"Incoherence (2) in cImage::CreatePGFromPointeMono");
+    }
     aPIm->Saisie()->Etat() = eEPI_Valide;
     aPIm->Saisie()->PtIm() = aPtIm;
     mAppli.HighLightSom(aSPG);
 
     aSPG->ReCalculPoints();
 
+    mAppli.RedrawAllWindows();
+    mAppli.Save();
 
-    mAppli.ReaffAllW();
-    mAppli.Sauv();
+    return aSPG;
+
 }
 
 
@@ -313,7 +434,7 @@ Fonc_Num  cImage::FilterImage(Fonc_Num aFonc,eTypePts aType,cPointGlob * aPG)
 {
     InitCameraAndNuage();
 
-    if (! mCapt3d) 
+    if (! mCapt3d)
        return aFonc;
     double aResol = (aPG && aPG->P3D().IsInit()) ? mCapt3d->ResolSolOfPt(aPG->P3D().Val()) : mCapt3d->ResolSolGlob() ;
 
@@ -335,18 +456,32 @@ Fonc_Num  cImage::FilterImage(Fonc_Num aFonc,eTypePts aType,cPointGlob * aPG)
     return aFonc;
 }
 
+void cImage::UpdateMapPointes(const std::string& aName)
+{
+    std::map<std::string,cSP_PointeImage *>::iterator It = mPointes.begin();
+    for ( ; It != mPointes.end(); It++)
+    {
+        if (It->second->Saisie()->NamePt() == aName)
+        {
+            std::string oldName = It->first;
+            cSP_PointeImage* aPIm = It->second;
 
+            mPointes.erase(oldName);
+            mPointes[aName] = aPIm;
+        }
+    }
+}
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -356,17 +491,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

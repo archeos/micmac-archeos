@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
 std::vector<cRecorrel*> RC2VCR(cRecorrel & aRC)
 {
@@ -63,7 +61,7 @@ cRecorrel::cRecorrel
    mBestDec   (0.0,0.0),
    mBestCorrel (-1)
 {
-   const CamStenope * aCS  = aPose->CF()->CameraCourante();
+   const CamStenope * aCS  = aPose->CurCam();
 
    mPImInitAbs = aCS->R3toF2(aVPM.PTer00());
    mDx = aCS->R3toF2(aVPM.PTer00()+aVPM.X_VecTer()) - mPImInitAbs;
@@ -244,7 +242,6 @@ void cRecorrel::Udpate(const Pt2dr & aDec,double aCorrel)
 }
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

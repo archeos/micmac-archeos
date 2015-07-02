@@ -1,10 +1,30 @@
 #ifndef _ELISE_STDAFX_H
 #define _ELISE_STDAFX_H
 
+#define NS_ParamMICMAC
+#define NS_ParamApero
+#define NS_Casa
+#define NS_ParamDigeo
+#define NS_SaisiePts
+#define NS_SuperposeImage
+#define NS_ParamChantierPhotogram
+#define ELISE_ORILIB
+
+// #define NOMINMAX
+// #include "vld.h"
+
 #if (  __VERBOSE__>1 )
-	#define __TRACE_SYSTEM__
+    #define __TRACE_SYSTEM__
 #endif
 
+template <class Type> void DoNothingButRemoveWarningUnused(const Type & ) { }
+
+
+// touch -t 01040000 toto
+//  janv.  4 00:00 toto ....
+
+#include <memory>
+#include <cctype>
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -21,14 +41,16 @@
 #include <stdlib.h>
 #include <string>
 #include <set>
+#include <limits>
 #include <vector>
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
 #include <sys/stat.h>
+#include <assert.h>
 #ifndef _WIN32
-	#include <unistd.h>
-	#include <errno.h>
+    #include <unistd.h>
+    #include <errno.h>
 #endif
 
 extern bool BugDG;
@@ -36,45 +58,42 @@ extern bool BugDG;
 #define ELISE_INSERT_CODE_GEN 1
 
 #ifndef ELISE_unix
-	#ifdef _WIN32
-		#define USE_NOYAU 0
-		#define ELISE_unix 0
-		#define ELISE_windows 1
-		#define ELISE_MacOs 0
-		#define ELISE_POSIX 0
-		#if __MINGW__
-			#define ELISE_MinGW 1
-		#else
-			#define ELISE_MinGW 0
-		#endif
-	#elif __APPLE__
-		#define USE_NOYAU 0
-		#define ELISE_unix 0
-		#define ELISE_MacOs 1
-		#define ELISE_windows 0
-		#define ELISE_MinGW 0
-		#define ELISE_POSIX 1
-	#else
-		#define USE_NOYAU 0
-		#define ELISE_unix 1
-		#define ELISE_MacOs 0
-		#define ELISE_windows 0
-		#define ELISE_MinGW 0
-		#define ELISE_POSIX 1
-	#endif
+    #ifdef _WIN32
+        #define USE_NOYAU 0
+        #define ELISE_unix 0
+        #define ELISE_windows 1
+        #define ELISE_MacOs 0
+        #define ELISE_POSIX 0
+        #if __MINGW__
+            #define ELISE_MinGW 1
+        #else
+            #define ELISE_MinGW 0
+        #endif
+    #elif __APPLE__
+        #define USE_NOYAU 0
+        #define ELISE_unix 0
+        #define ELISE_MacOs 1
+        #define ELISE_windows 0
+        #define ELISE_MinGW 0
+        #define ELISE_POSIX 1
+    #else
+        #define USE_NOYAU 0
+        #define ELISE_unix 1
+        #define ELISE_MacOs 0
+        #define ELISE_windows 0
+        #define ELISE_MinGW 0
+        #define ELISE_POSIX 1
+    #endif
 #endif
 
 //  =================
 
-namespace NS_ParamChantierPhotogram
-{
    class cOrientationConique;
-}
 
 using namespace std;
 
 
-#include "general/MM_InstalDir.h"
+#include "general/HG_defines.h"
 #include "general/sys_dep.h"
 #include "general/opt_debug.h"
 #include "general/allocation.h"
@@ -104,6 +123,7 @@ using namespace std;
 #include "general/optim.h"
 #include "general/error.h"
 #include "general/arg_main.h"
+#include "general/cMMSpecArg.h"
 #include "general/compr_im.h"
 #include "general/correl.h"
 #include "general/ijpeg.h"
@@ -119,7 +139,7 @@ using namespace std;
 #include "general/phgr_san.h"
 #include "general/hassan_arrangt.h"
 #include "general/complex.h"
-
+#include "general/ply_struct.h"
 
 
 //  ==== AJOUT  =====
@@ -179,13 +199,13 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 // ---------
 
 #if (ELISE_POSIX)
-	#include <grp.h>
-	#include <pwd.h>
+    #include <grp.h>
+    #include <pwd.h>
 #endif
 
 #ifdef MATLAB_MEX_FILE
-	#include "mex.h"
-	#include "matrix.h"
+    #include "mex.h"
+    #include "matrix.h"
 #endif
 
 
@@ -213,6 +233,7 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #include "im_tpl/algo_cc.h"
 #include "im_tpl/reduc_im.h"
 #include "im_tpl/impainting.h"
+#include "im_tpl/output.h"
 
 #include "ext_stl/fifo.h"
 #include "ext_stl/intheap.h"
@@ -251,14 +272,14 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 
 #include "../src/uti_image/MpDcraw/MpDcraw.h"
 
-#include "../src/uti_phgrm/ReducHom/ReducHom.h"
+// #include "../src/uti_phgrm/ReducHom/ReducHom.h"
 
 #include "../src/uti_phgrm/Apero/cParamApero.h"
 #include "../src/uti_phgrm/Apero/Apero.h"
 
 
 #include "../src/uti_phgrm/MICMAC/cParamMICMAC.h"
-#include "../src/uti_phgrm/MICMAC/MICMAC.h"
+//#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 #include "../src/uti_phgrm/Porto/Porto.h"
 
 #include "../src/uti_phgrm/SaisiePts/cParamSaisiePts.h"
@@ -269,31 +290,47 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #include "private/externalToolHandler.h"
 
 #ifdef ETA_POLYGON
-	#include "../src/EtalonnagePolygone/lib/all_etal.h"
-	#include "../src/EtalonnagePolygone/lib/pointe.h"
+    #include "../src/EtalonnagePolygone/lib/all_etal.h"
+    #include "../src/EtalonnagePolygone/lib/pointe.h"
 #endif
 
-// POISSON
 #if (ELISE_windows)
     #ifdef INT
         #undef INT
     #endif
-	#ifndef NOMINMAX
-		#define NOMINMAX
-	#endif
-	#if (ELISE_MinGW)
-		#define _WIN32_WINNT 0x0500 // this is for windows 2000 and higher
-	#endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #if (ELISE_MinGW)
+        #ifndef _WIN32_WINNT
+            #define _WIN32_WINNT 0x0500 // this is for windows 2000 and higher
+        #endif
+    #endif
 
-	#include <intrin.h>
-	#pragma intrinsic(_InterlockedOr)
-	#pragma intrinsic(_InterlockedCompareExchange64)
+    #if (ELISE_MinGW)
+        #include <x86intrin.h>
+    #else
+        #include <intrin.h>
+    #endif
+
+#ifndef __GNUC__
+    #pragma intrinsic(_InterlockedOr)
+    #pragma intrinsic(_InterlockedCompareExchange64)
+#endif
     #include <Windows.h>
 
     #include <Psapi.h>
+    #include <process.h>
 #endif // _WIN32
-#include "poisson/Poisson.h"
+
+#ifndef INT
+    #define INT int
+#endif
+
+#include "../src/uti_image/Ann/AnnSearcher.h"
+#include "../src/uti_image/Digeo/DigeoPoint.h"
 
 #include <stdarg.h>
+#include "XML_GEN/xml_gen2_mmByp.h"
 
 #endif //_ELISE_STDAFX_H

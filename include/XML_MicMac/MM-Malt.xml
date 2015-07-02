@@ -31,12 +31,11 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
    <Symb>   DefCor=0.2      </Symb>
    <Symb>   CostTrans=2.0      </Symb>
    <Symb>   NbMinIV=3       </Symb>
-   <Symb>   ZIncCalc=0.3       </Symb>
    <Symb>   Repere="NO-REPERE"  </Symb>
    <Symb>   FileAnam=EmptyXML.xml  </Symb>
    <Symb>   FileZMoy=EmptyXML.xml  </Symb>
-
-
+   <Symb>   UseGpu=false </Symb>
+   <eSymb>  NotUseGpu=! ${UseGpu} </eSymb>
 
 
    <Symb>  FileMasqT=MM-MasqTerrain.xml </Symb>
@@ -100,17 +99,102 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
     <eSymb> AddZoom64=Sup ${ZoomInit} 64 </eSymb>
     <eSymb> AddZoom32=Sup ${ZoomInit} 32 </eSymb>
     <eSymb> AddZoom16=Sup ${ZoomInit} 16 </eSymb>
+    <eSymb> AddZoom8=Sup ${ZoomInit} 8 </eSymb>
+    <eSymb> AddZoom4=Sup ${ZoomInit} 4 </eSymb>
 
     <eSymb>  DoNotMEC=! ${DoMEC} </eSymb>
+    <Symb>   ButDoOrtho=true </Symb>
   
     <!-- GESTION DES MASQUE IMAGE -->
     <Symb>  UseMasqPerIm=false </Symb>
     <Symb>  MasqPerIm="XXXXXX" </Symb>
+    <Symb>  UseGlobMasqPerIm=false </Symb>
+    <Symb>  GlobMasqPerIm="XXXXXX" </Symb>
+
 
     <!-- GESTION DES IMAGES MAX MIN -->
     <Symb>  UseImMaxMin="false" </Symb>
     <Symb>  ImMin="XXXXXX" </Symb>
     <Symb>  ImMax="XXXXXX" </Symb>
+
+
+    <Symb>  DoAnam=false </Symb>
+    <Symb>  ParamAnam=XXXXX </Symb>
+    <Symb>  IncidMax= 0.75 </Symb>
+    <Symb>  DoIncid=false </Symb>
+    <Symb>  DoMaskNadir=false </Symb>
+
+
+    <eSymb>  NotZoom8="Neq 8 ${ZoomFinal}" </eSymb>
+    <Symb>   UseClip=false </Symb>
+    <Symb>   X0Clip=0 </Symb>
+    <Symb>   Y0Clip=0 </Symb>
+    <Symb>   X1Clip=1 </Symb>
+    <Symb>   Y1Clip=1 </Symb>
+	
+	
+	<Symb>   UseBoxTerrain=false </Symb>
+    <Symb>   X0Terrain=0 </Symb>
+    <Symb>   Y0Terrain=0 </Symb>
+    <Symb>   X1Terrain=1 </Symb>
+    <Symb>   Y1Terrain=1 </Symb>
+
+    <Symb>   UseRR=false </Symb>
+    <Symb>   RoundResol=XXXX </Symb>
+    <Symb>   GCC=false </Symb>
+
+
+    <eSymb>  NotCorMS=! ${CorMS}  </eSymb>
+
+    <!-- GESTION DES CLASSES D'EQUIV -->
+
+   <Symb>  UseEqui=false </Symb>
+   <Symb>  UseClas1=false </Symb>
+   <Symb>  Clas1=.* </Symb>
+   <Symb>  UseClas2=false </Symb>
+   <Symb>  Clas2=.* </Symb>
+   <Symb>  UseClas3=false </Symb>
+   <Symb>  Clas3=.* </Symb>
+   <Symb>  EZA=false </Symb>
+   <Symb>  SzRec=50 </Symb>  <!-- Valeur par defaut actuel pour compatibilite -->
+   <Symb>   AlgoMaxFlow=false </Symb>
+
+   <Symb> UseMasq3D=false </Symb>
+   <Symb> NameMasq3D=XXXX </Symb>
+
+   <Symb> UseResolTerrain=false </Symb>
+   <Symb> ResolTerrain=0 </Symb>
+<!--
+
+    <Symb>  UseEqui=t=rue </Symb>
+    <Symb>  UseClas1=true </Symb>
+    <Symb>  Clas1=FD2A2B_fx00064.* </Symb>
+-->
+
+
+     <Symb> ZIncCalc=0.3       </Symb>
+     <Symb> Conik=true   </Symb>                   <!-- true -->
+     <eSymb>NonConik=! ${Conik} </eSymb>           <!--  ??? -->
+     <Symb> PxIsProp=${Conik}          </Symb> 
+     <Symb> ModeOriIm=eGeomImageOri  </Symb>  
+     <Symb> ModeOrientStd=${Conik}     </Symb>   
+     <Symb> MSDense=true     </Symb>   
+
+     <Symb> SpecDirFaisc="false" </Symb>
+     <Symb> DirFaisX="XXXXX" </Symb>
+     <Symb> DirFaisY="XXXXX" </Symb>
+     <Symb> DirFaisZ="XXXXX" </Symb>
+
+     <eSymb> UseMasqImGlobOrLoc= Or ${UseMasqPerIm} ${UseGlobMasqPerIm} </eSymb>
+
+     <eSymb> InParal= Neq 0 ${NbProc} </eSymb>
+
+
+     <Symb> UsePtDebug=false </Symb>
+     <Symb> PtDebugX=-10000000 </Symb>
+     <Symb> PtDebugY=-10000000 </Symb>
+     <Symb> RSRT=false </Symb>
+
 </DicoLoc>
 
 <!--  M2 : Describe the ground zone where the matching is to be done -->
@@ -129,18 +213,30 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
        </IntervSpecialZInv>
 
       <Planimetrie>
+           <#WHEN VTEST=${UseResolTerrain}>
+                  <ResolutionTerrain> ${ResolTerrain} </ResolutionTerrain>
+           </#WHEN>
+           <RoundSpecifiedRT>  ${RSRT} </RoundSpecifiedRT>
            <IncludeFileLoc>  ${FileMasqT} </IncludeFileLoc>
            <FilterEstimTerrain> ${ImMNT} </FilterEstimTerrain>
+		   
+		   
+		<#WHEN VTEST=${UseBoxTerrain}>
+          <BoxTerrain>  ${X0Terrain} ${Y0Terrain} ${X1Terrain} ${Y1Terrain} </BoxTerrain>
+		</#WHEN>
+		   
       </Planimetrie>
 
-
+      <#WHEN VTEST=${UseRR}>
+          <GeoRefAutoRoundResol> ${RoundResol} </GeoRefAutoRoundResol>
+      </#WHEN>
 
 </Section_Terrain>
 
 <!--  M3 : describe the set of images to match -->
 <Section_PriseDeVue >   
      <SingulariteInCorresp_I1I2> true</SingulariteInCorresp_I1I2>
-     <GeomImages> eGeomImageOri </GeomImages>
+     <GeomImages> ${ModeOriIm} </GeomImages>
      <Images >
            <IncludeFileLoc>  ${FileIm1} </IncludeFileLoc>
            <ImPat>    ${ImPat}  </ImPat>
@@ -157,35 +253,108 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
            </#WHEN>
      </Images>
 
-     <NomsGeometrieImage>
-         <FCND_Mode_GeomIm>
-               <FCND_GeomCalc>  NKS-Assoc-Im2Orient@-${Ori} </FCND_GeomCalc>
-         </FCND_Mode_GeomIm>
-     </NomsGeometrieImage>
+     <#IF VTEST=${ModeOrientStd}>
+         <NomsGeometrieImage>
+             <FCND_Mode_GeomIm>
+                   <FCND_GeomCalc>  NKS-Assoc-Im2Orient@-${Ori} </FCND_GeomCalc>
+             </FCND_Mode_GeomIm>
+         </NomsGeometrieImage>
+         <NomsGeometrieImage>
+                <PatternSel>  (.*)\.[0-9,a-z,A-Z,_]{3,4} </PatternSel>
+                <PatNameGeom> $1.${Ori}    </PatNameGeom>
+          </NomsGeometrieImage>
+     </#IF>
+
+
+     <#WHEN VTEST=${UseGlobMasqPerIm}>
+         <MasqImageIn>
+             <OneMasqueImage>
+                 <PatternSel> .*   </PatternSel>
+                 <NomMasq>  ${GlobMasqPerIm}    </NomMasq>
+             </OneMasqueImage>
+         </MasqImageIn>
+     </#WHEN>
+
      <#WHEN VTEST=${UseMasqPerIm}>
          <MasqImageIn>
              <OneMasqueImage>
-                <PatternSel> (.*)\.(.*)   </PatternSel>
-                <NomMasq>  $1_${MasqPerIm}.tif    </NomMasq>
+                 <PatternSel> (.*)\.(.*)   </PatternSel>
+                 <NomMasq>  $1${MasqPerIm}.tif    </NomMasq>
              </OneMasqueImage>
              <AcceptNonExistingFile> true </AcceptNonExistingFile>
         </MasqImageIn>
+     </#WHEN>
+     
+     <#WHEN VTEST=${UseEqui}>
+        <ClassEquivalenceImage>
+             <MapN2NByAutom>
+                 <#WHEN VTEST=${UseClas1}>
+                    <OneAutomMapN2N>
+                         <MatchPattern> ${Clas1} </MatchPattern>
+                         <Result> Classe1 </Result>
+                    </OneAutomMapN2N>
+                 </#WHEN>
+                 <#WHEN VTEST=${UseClas2}>
+                    <OneAutomMapN2N>
+                         <MatchPattern> ${Clas2} </MatchPattern>
+                         <Result> Classe2 </Result>
+                    </OneAutomMapN2N>
+                 </#WHEN>
+                 <#WHEN VTEST=${UseClas3}>
+                    <OneAutomMapN2N>
+                         <MatchPattern> ${Clas3} </MatchPattern>
+                         <Result> Classe3 </Result>
+                    </OneAutomMapN2N>
+                 </#WHEN>
+                 <OneAutomMapN2N>
+                         <MatchPattern> .* </MatchPattern>
+                         <Result> ClasseDef </Result>
+                 </OneAutomMapN2N>
+             </MapN2NByAutom>
+        </ClassEquivalenceImage>
      </#WHEN>
 </Section_PriseDeVue>
 
 
 <Section_MEC >
 
+      <#WHEN VTEST=${UseClip}>
+          <ProportionClipMEC>  ${X0Clip} ${Y0Clip} ${X1Clip} ${Y1Clip} </ProportionClipMEC>
+      </#WHEN>
+
       <PasIsInPixel>  ${PasInPixel} </PasIsInPixel>
       <NbMinImagesVisibles>  ${NbMinIV} </NbMinImagesVisibles>
       <ChantierFullImage1> ${FullIm1} </ChantierFullImage1>
+      <#WHEN VTEST=${UseMasq3D}>
+           <MMUseMasq3D>
+                <NameMasq> ${NameMasq3D} </NameMasq>
+                <ZoomBegin> 16 </ZoomBegin>
+                <Dilate> 2 </Dilate>
+           </MMUseMasq3D>
+      </#WHEN>
+
 
       <EtapeMEC>
              <DeZoom >  -1                      </DeZoom>
              <SzW >      ${SzW}             </SzW>
-             <AlgoRegul>  eAlgo2PrgDyn </AlgoRegul>
+
+             <#WHEN VTEST=${NotUseGpu}>
+                <#IF VTEST=${AlgoMaxFlow}>
+                    <AlgoRegul>  eAlgoCoxRoy </AlgoRegul>
+                    <AlgoRegul>  eAlgo2PrgDyn </AlgoRegul>
+                 </#IF>
+             </#WHEN>
+
+
+             <CoxRoy8Cnx> true </CoxRoy8Cnx>  
+             <CoxRoyUChar> false </CoxRoyUChar> 
+
+             <#WHEN VTEST=${UseGpu}>
+                <AlgoRegul>  eAlgoTestGPU </AlgoRegul>
+             </#WHEN>
 
              <GenImagesCorrel > true </GenImagesCorrel>
+             <GenCubeCorrel > ${GCC} </GenCubeCorrel>
 
              <ZPas>        ${ZPas} </ZPas>
              <ModeInterpolation> eInterpolBiCub </ModeInterpolation>
@@ -213,11 +382,25 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
 
 
             <AggregCorr> ${ModeAgrCor} </AggregCorr>
-            <CorrelAdHoc>
-                 <TypeCAH>
-                      <GPU_Correl> </GPU_Correl>
-                 </TypeCAH>
-            </CorrelAdHoc>
+            <!---->
+            <#WHEN VTEST=${CorMS}>
+                 <#WHEN VTEST=${NotUseGpu}>
+                     <CorrelAdHoc>
+                          <TypeCAH>
+                               <GPU_Correl> </GPU_Correl>
+                          </TypeCAH>
+                     </CorrelAdHoc>
+                  </#WHEN>
+
+            </#WHEN>
+            <#WHEN VTEST=${UseGpu}>
+               <CorrelAdHoc>
+                   <SzBlocAH > 128 </SzBlocAH>
+                   <TypeCAH>
+                           <GPU_CorrelBasik >  true   </GPU_CorrelBasik>
+                   </TypeCAH>
+               </CorrelAdHoc>
+            </#WHEN>
             
         </EtapeMEC>
 	     
@@ -257,15 +440,9 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
         </#WHEN>
 
 
-<!--
-        <IncludeFileLoc>  ${FileZ64} </IncludeFileLoc>
-        <IncludeFileLoc>  ${FileZ32} </IncludeFileLoc>
-        <IncludeFileLoc>  ${FileZ16PC} </IncludeFileLoc>
--->
 
-
-
-        <EtapeMEC> 
+        <#WHEN VTEST=${AddZoom8}>
+            <EtapeMEC> 
                  <ModeInterpolation Portee="Globale"> eInterpolSinCard </ModeInterpolation>
                  <DeZoom >        8        </DeZoom> 
 	         <ZDilatAlti>  4    </ZDilatAlti>
@@ -282,17 +459,19 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
                                 <ReInjectMask>  false   </ReInjectMask>
                          </ArgMaskAuto>
                    </ModulationProgDyn>
-                   <GenerePartiesCachees >
-                        <SeuilUsePC> 4 </SeuilUsePC>
-                        <ByMkF> true </ByMkF>
-                        <KeyCalcPC> NKS-Assoc-AddDirAndPref@${DirQO}@PC_ </KeyCalcPC>
-                        <IncludeFileLoc>  ${FileOthoQ} </IncludeFileLoc>
-                   </GenerePartiesCachees>
+                   <#WHEN VTEST=${NotZoom8}>
+                        <GenerePartiesCachees >
+                             <SeuilUsePC> 4 </SeuilUsePC>
+                             <ByMkF> true </ByMkF>
+                        </GenerePartiesCachees>
+                   </#WHEN>
                    <#WHEN VTEST=${CorMS}>
-                       <SzW> 1 </SzW>
+                       <SzW Portee="Globale"> 1 </SzW>
                        <CorrelAdHoc Portee="Globale">
                            <CorrelMultiScale>
-                                  <ModeDense> true </ModeDense>
+                                  <UseGpGpu> ${UseGpu} </UseGpGpu>
+                                  <ModeDense> ${MSDense} </ModeDense>
+                                  <UseWAdapt>  false </UseWAdapt>
                                   <OneParamCMS>
                                        <SzW> 1 1 </SzW>
                                        <Sigma> 0 </Sigma>
@@ -304,33 +483,46 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
                                        <Pds> 0.5 </Pds>
                                   </OneParamCMS>
                                   <OneParamCMS>
-                                       <SzW> 2 2 </SzW>
-                                       <Sigma> 1.0 </Sigma>
+                                       <SzW> 4 4 </SzW>
+                                       <Sigma> 2.0 </Sigma>
                                        <Pds> 0.25 </Pds>
                                   </OneParamCMS>
                            </CorrelMultiScale>
-                            <TypeCAH>
-                                  <GPU_Correl> </GPU_Correl>
-                            </TypeCAH>
+                           <#WHEN VTEST=${NotUseGpu}>
+                               <TypeCAH>
+                                      <GPU_Correl> </GPU_Correl>
+                                </TypeCAH>
+                            </#WHEN>
+                            <#WHEN VTEST=${UseGpu}>
+                                <SzBlocAH > 128 </SzBlocAH>
+                                <TypeCAH>
+                                        <GPU_CorrelBasik >  true   </GPU_CorrelBasik>
+                                </TypeCAH>
+                            </#WHEN>
                        </CorrelAdHoc>
                    </#WHEN>
 
-        </EtapeMEC>
+            </EtapeMEC>
+        </#WHEN>
 
         <IncludeFileLoc>  ${FileZ4PC} </IncludeFileLoc>
         <IncludeFileLoc>  ${FileZ2PC} </IncludeFileLoc>
 
-        <EtapeMEC> 
-                <DeZoom >        ${ZoomFinal}        </DeZoom> 
-        </EtapeMEC>
+        <#WHEN VTEST=${NotZoom8}>
+            <EtapeMEC> 
+                <DeZoom>        ${ZoomFinal}        </DeZoom> 
+            </EtapeMEC>
+        </#WHEN>
 
         <IncludeFileLoc>  ${FileZ1Raff} </IncludeFileLoc>
 
 
         <EtapeMEC> 
-               <DeZoom >        ${ZoomFinal}        </DeZoom> 
+               <DeZoom>        ${ZoomFinal}        </DeZoom> 
                <ZPas>          1.0       </ZPas>
                <AlgoRegul>  eAlgoDequant </AlgoRegul>
+               <ExportZAbs> ${EZA} </ExportZAbs>
+
 
                <ImageSelecteur>
                    <ModeExclusion > false </ModeExclusion>
@@ -346,6 +538,13 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
 
 <!--  M4 : Specify the output geometry -->
 <Section_Results >
+
+    <#WHEN  VTEST=${SpecDirFaisc}>
+         <X_DirPlanInterFaisceau> ${DirFaisX} </X_DirPlanInterFaisceau>
+         <Y_DirPlanInterFaisceau> ${DirFaisY} </Y_DirPlanInterFaisceau>
+         <Z_DirPlanInterFaisceau> ${DirFaisZ} </Z_DirPlanInterFaisceau>
+    </#WHEN>
+
     <GeomMNT> ${Geom}  </GeomMNT> 
     <RepereCorrel>   ${Repere}  </RepereCorrel>
     <IncludeFileLoc>  ${FileAnam} </IncludeFileLoc>
@@ -354,13 +553,43 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
 <!--
 -->
     <ZoomMakeTA> 8 </ZoomMakeTA>
+    <OrthoTA> true </OrthoTA>
+
     <IncludeFileLoc>  ${FileDoNothing} </IncludeFileLoc>
     <#WHEN VTEST=${DoNotMEC}>
         <DoNothingBut>
-            <ButDoOrtho>  true </ButDoOrtho>
+            <ButDoOrtho>  ${ButDoOrtho} </ButDoOrtho>
             <ButDoMemPart>  true </ButDoMemPart>
+            <ButDoOriMNT>  true </ButDoOriMNT>
         </DoNothingBut>
     </#WHEN>
+
+
+    <#WHEN VTEST=${DoIncid}>
+          <AnamorphoseGeometrieMNT>
+               <AnamLimAngleVisib> ${IncidMax} </AnamLimAngleVisib>
+                <AnamDeZoomMasq> 16 </AnamDeZoomMasq>
+                <#WHEN VTEST=${DoAnam}>
+                     <AnamSurfaceAnalytique>
+                            <NameFile> ${ParamAnam}</NameFile>
+                            <Id> TheSurf </Id>
+                      </AnamSurfaceAnalytique>
+                </#WHEN>
+                <#WHEN VTEST=${DoMaskNadir}>
+                      <MakeMaskImNadir>
+                           <DynIncid > 1e4</DynIncid>
+                           <MakeAlsoMaskTerrain> true </MakeAlsoMaskTerrain>
+                           <KBest  >  1  </KBest>
+                           <IncertAngle  > 0.1 </IncertAngle>
+                           <Dilat32 >  6 </Dilat32>
+                           <Erod32>  3</Erod32>
+                      </MakeMaskImNadir>
+                </#WHEN>
+          </AnamorphoseGeometrieMNT>
+    </#WHEN>
+
+
+
 <!--
     <RepereCorrel>  Repere.xml </RepereCorrel>
  <DoNothingBut>
@@ -378,10 +607,15 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
      <TmpMEC>    ${DirMEC}  </TmpMEC>
      <TmpResult> ${DirMEC}  </TmpResult>
      <TmpPyr>    Pyram/  </TmpPyr>
+<!--
      <ByProcess>   ${MMNbProc}  </ByProcess>
+-->
+     <ByProcess>   ${NbProc}  </ByProcess>
      <NomChantier> ${Chantier} </NomChantier>
 
      <PurgeMECResultBefore>  ${Purge} </PurgeMECResultBefore>
+
+     <SzRecouvrtDalles> ${SzRec}</SzRecouvrtDalles>
 
 
 <!--
@@ -394,7 +628,12 @@ MICMAC /home/marc/micmac/include/XML_MicMac/Param-MNS-Ortho.xml  WorkDir=/home/m
 </Section_WorkSpace>
 
 
-<Section_Vrac> </Section_Vrac>
+<Section_Vrac> 
+    <#WHEN VTEST=${UsePtDebug}>
+        <PtDebug>  ${PtDebugX} ${PtDebugY} </PtDebug>
+    </#WHEN>
+  
+</Section_Vrac>
 
 
 </ParamMICMAC>

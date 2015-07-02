@@ -1,5 +1,6 @@
-#include "cParamDigeo.h"
-//namespace NS_ParamDigeo{
+#include "StdAfx.h"
+	#include "cParamDigeo.h"
+//
 eTypeTopolPt  Str2eTypeTopolPt(const std::string & aName)
 {
    if (aName=="eTtpSommet")
@@ -49,6 +50,20 @@ cElXMLTree * ToXMLTree(const std::string & aNameTag,const eTypeTopolPt & anObj)
       return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
 }
 
+void  BinaryDumpInFile(ELISE_fp & aFp,const eTypeTopolPt & anObj)
+{
+   BinaryDumpInFile(aFp,int(anObj));
+}
+
+void  BinaryUnDumpFromFile(eTypeTopolPt & anObj,ELISE_fp & aFp)
+{
+   int aIVal;
+   BinaryUnDumpFromFile(aIVal,aFp);
+   anObj=(eTypeTopolPt) aIVal;
+}
+
+std::string  Mangling( eTypeTopolPt *) {return "CC0F34E54BDAE3A5FE3F";};
+
 eReducDemiImage  Str2eReducDemiImage(const std::string & aName)
 {
    if (aName=="eRDI_121")
@@ -86,249 +101,70 @@ cElXMLTree * ToXMLTree(const std::string & aNameTag,const eReducDemiImage & anOb
       return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
 }
 
-eTest12345  Str2eTest12345(const std::string & aName)
+void  BinaryDumpInFile(ELISE_fp & aFp,const eReducDemiImage & anObj)
 {
-   if (aName=="eTest12345_A")
-      return eTest12345_A;
-   else if (aName=="eTest12345_B")
-      return eTest12345_B;
-   else if (aName=="eTest12345_C")
-      return eTest12345_C;
+   BinaryDumpInFile(aFp,int(anObj));
+}
+
+void  BinaryUnDumpFromFile(eReducDemiImage & anObj,ELISE_fp & aFp)
+{
+   int aIVal;
+   BinaryUnDumpFromFile(aIVal,aFp);
+   anObj=(eReducDemiImage) aIVal;
+}
+
+std::string  Mangling( eReducDemiImage *) {return "AB929125A8D1908BFF3F";};
+
+ePointRefinement  Str2ePointRefinement(const std::string & aName)
+{
+   if (aName=="eRefine2D")
+      return eRefine2D;
+   else if (aName=="eRefine3D")
+      return eRefine3D;
+   else if (aName=="eRefineNone")
+      return eRefineNone;
   else
   {
-      cout << aName << " is not a correct value for enum eTest12345\n" ;
+      cout << aName << " is not a correct value for enum ePointRefinement\n" ;
       ELISE_ASSERT(false,"XML enum value error");
   }
-  return (eTest12345) 0;
+  return (ePointRefinement) 0;
 }
-void xml_init(eTest12345 & aVal,cElXMLTree * aTree)
+void xml_init(ePointRefinement & aVal,cElXMLTree * aTree)
 {
-   aVal= Str2eTest12345(aTree->Contenu());
+   aVal= Str2ePointRefinement(aTree->Contenu());
 }
-std::string  eToString(const eTest12345 & anObj)
+std::string  eToString(const ePointRefinement & anObj)
 {
-   if (anObj==eTest12345_A)
-      return  "eTest12345_A";
-   if (anObj==eTest12345_B)
-      return  "eTest12345_B";
-   if (anObj==eTest12345_C)
-      return  "eTest12345_C";
- std::cout << "Enum = eTest12345\n";
+   if (anObj==eRefine2D)
+      return  "eRefine2D";
+   if (anObj==eRefine3D)
+      return  "eRefine3D";
+   if (anObj==eRefineNone)
+      return  "eRefineNone";
+ std::cout << "Enum = ePointRefinement\n";
    ELISE_ASSERT(false,"Bad Value in eToString for enum value ");
    return "";
 }
 
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const eTest12345 & anObj)
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const ePointRefinement & anObj)
 {
       return  cElXMLTree::ValueNode(aNameTag,eToString(anObj));
 }
 
-
-cTplValGesInit< int > & cParamExtractCaracIm::SzMinImDeZoom()
+void  BinaryDumpInFile(ELISE_fp & aFp,const ePointRefinement & anObj)
 {
-   return mSzMinImDeZoom;
+   BinaryDumpInFile(aFp,int(anObj));
 }
 
-const cTplValGesInit< int > & cParamExtractCaracIm::SzMinImDeZoom()const 
+void  BinaryUnDumpFromFile(ePointRefinement & anObj,ELISE_fp & aFp)
 {
-   return mSzMinImDeZoom;
+   int aIVal;
+   BinaryUnDumpFromFile(aIVal,aFp);
+   anObj=(ePointRefinement) aIVal;
 }
 
-cElXMLTree * ToXMLTree(const cParamExtractCaracIm & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ParamExtractCaracIm",eXMLBranche);
-   if (anObj.SzMinImDeZoom().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("SzMinImDeZoom"),anObj.SzMinImDeZoom().Val())->ReTagThis("SzMinImDeZoom"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cParamExtractCaracIm & anObj,cElXMLTree * aTree)
-{
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.SzMinImDeZoom(),aTree->Get("SzMinImDeZoom",1),int(500)); //tototo 
-}
-
-
-cTplValGesInit< int > & cParamVisuCarac::DynGray()
-{
-   return mDynGray;
-}
-
-const cTplValGesInit< int > & cParamVisuCarac::DynGray()const 
-{
-   return mDynGray;
-}
-
-
-std::string & cParamVisuCarac::Dir()
-{
-   return mDir;
-}
-
-const std::string & cParamVisuCarac::Dir()const 
-{
-   return mDir;
-}
-
-
-cTplValGesInit< int > & cParamVisuCarac::Zoom()
-{
-   return mZoom;
-}
-
-const cTplValGesInit< int > & cParamVisuCarac::Zoom()const 
-{
-   return mZoom;
-}
-
-
-double & cParamVisuCarac::Dyn()
-{
-   return mDyn;
-}
-
-const double & cParamVisuCarac::Dyn()const 
-{
-   return mDyn;
-}
-
-
-cTplValGesInit< std::string > & cParamVisuCarac::Prefix()
-{
-   return mPrefix;
-}
-
-const cTplValGesInit< std::string > & cParamVisuCarac::Prefix()const 
-{
-   return mPrefix;
-}
-
-
-cTplValGesInit< bool > & cParamVisuCarac::ShowCaracEchec()
-{
-   return mShowCaracEchec;
-}
-
-const cTplValGesInit< bool > & cParamVisuCarac::ShowCaracEchec()const 
-{
-   return mShowCaracEchec;
-}
-
-cElXMLTree * ToXMLTree(const cParamVisuCarac & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ParamVisuCarac",eXMLBranche);
-   if (anObj.DynGray().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("DynGray"),anObj.DynGray().Val())->ReTagThis("DynGray"));
-   aRes->AddFils(::ToXMLTree(std::string("Dir"),anObj.Dir())->ReTagThis("Dir"));
-   if (anObj.Zoom().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("Zoom"),anObj.Zoom().Val())->ReTagThis("Zoom"));
-   aRes->AddFils(::ToXMLTree(std::string("Dyn"),anObj.Dyn())->ReTagThis("Dyn"));
-   if (anObj.Prefix().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("Prefix"),anObj.Prefix().Val())->ReTagThis("Prefix"));
-   if (anObj.ShowCaracEchec().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("ShowCaracEchec"),anObj.ShowCaracEchec().Val())->ReTagThis("ShowCaracEchec"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cParamVisuCarac & anObj,cElXMLTree * aTree)
-{
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.DynGray(),aTree->Get("DynGray",1),int(128)); //tototo 
-
-   xml_init(anObj.Dir(),aTree->Get("Dir",1)); //tototo 
-
-   xml_init(anObj.Zoom(),aTree->Get("Zoom",1),int(1)); //tototo 
-
-   xml_init(anObj.Dyn(),aTree->Get("Dyn",1)); //tototo 
-
-   xml_init(anObj.Prefix(),aTree->Get("Prefix",1),std::string("VisuCarac_")); //tototo 
-
-   xml_init(anObj.ShowCaracEchec(),aTree->Get("ShowCaracEchec",1),bool(false)); //tototo 
-}
-
-
-cTplValGesInit< std::string > & cPredicteurGeom::Unused()
-{
-   return mUnused;
-}
-
-const cTplValGesInit< std::string > & cPredicteurGeom::Unused()const 
-{
-   return mUnused;
-}
-
-cElXMLTree * ToXMLTree(const cPredicteurGeom & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"PredicteurGeom",eXMLBranche);
-   if (anObj.Unused().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("Unused"),anObj.Unused().Val())->ReTagThis("Unused"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cPredicteurGeom & anObj,cElXMLTree * aTree)
-{
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.Unused(),aTree->Get("Unused",1)); //tototo 
-}
-
-
-cTplValGesInit< cParamVisuCarac > & cImageDigeo::VisuCarac()
-{
-   return mVisuCarac;
-}
-
-const cTplValGesInit< cParamVisuCarac > & cImageDigeo::VisuCarac()const 
-{
-   return mVisuCarac;
-}
-
-
-std::string & cImageDigeo::KeyOrPat()
-{
-   return mKeyOrPat;
-}
-
-const std::string & cImageDigeo::KeyOrPat()const 
-{
-   return mKeyOrPat;
-}
-
-
-cTplValGesInit< std::string > & cImageDigeo::KeyCalcCalib()
-{
-   return mKeyCalcCalib;
-}
-
-const cTplValGesInit< std::string > & cImageDigeo::KeyCalcCalib()const 
-{
-   return mKeyCalcCalib;
-}
-
-
-cTplValGesInit< Box2di > & cImageDigeo::BoxImR1()
-{
-   return mBoxImR1;
-}
-
-const cTplValGesInit< Box2di > & cImageDigeo::BoxImR1()const 
-{
-   return mBoxImR1;
-}
+std::string  Mangling( ePointRefinement *) {return "00F2FE9D1EAAAAD9FE3F";};
 
 
 cTplValGesInit< double > & cImageDigeo::ResolInit()
@@ -342,28 +178,6 @@ const cTplValGesInit< double > & cImageDigeo::ResolInit()const
 }
 
 
-cTplValGesInit< std::string > & cImageDigeo::Unused()
-{
-   return PredicteurGeom().Val().Unused();
-}
-
-const cTplValGesInit< std::string > & cImageDigeo::Unused()const 
-{
-   return PredicteurGeom().Val().Unused();
-}
-
-
-cTplValGesInit< cPredicteurGeom > & cImageDigeo::PredicteurGeom()
-{
-   return mPredicteurGeom;
-}
-
-const cTplValGesInit< cPredicteurGeom > & cImageDigeo::PredicteurGeom()const 
-{
-   return mPredicteurGeom;
-}
-
-
 cTplValGesInit< double > & cImageDigeo::NbOctetLimitLoadImageOnce()
 {
    return mNbOctetLimitLoadImageOnce;
@@ -374,21 +188,40 @@ const cTplValGesInit< double > & cImageDigeo::NbOctetLimitLoadImageOnce()const
    return mNbOctetLimitLoadImageOnce;
 }
 
+void  BinaryUnDumpFromFile(cImageDigeo & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ResolInit().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ResolInit().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ResolInit().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NbOctetLimitLoadImageOnce().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NbOctetLimitLoadImageOnce().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NbOctetLimitLoadImageOnce().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cImageDigeo & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.ResolInit().IsInit());
+    if (anObj.ResolInit().IsInit()) BinaryDumpInFile(aFp,anObj.ResolInit().Val());
+    BinaryDumpInFile(aFp,anObj.NbOctetLimitLoadImageOnce().IsInit());
+    if (anObj.NbOctetLimitLoadImageOnce().IsInit()) BinaryDumpInFile(aFp,anObj.NbOctetLimitLoadImageOnce().Val());
+}
+
 cElXMLTree * ToXMLTree(const cImageDigeo & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ImageDigeo",eXMLBranche);
-   if (anObj.VisuCarac().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.VisuCarac().Val())->ReTagThis("VisuCarac"));
-   aRes->AddFils(::ToXMLTree(std::string("KeyOrPat"),anObj.KeyOrPat())->ReTagThis("KeyOrPat"));
-   if (anObj.KeyCalcCalib().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("KeyCalcCalib"),anObj.KeyCalcCalib().Val())->ReTagThis("KeyCalcCalib"));
-   if (anObj.BoxImR1().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("BoxImR1"),anObj.BoxImR1().Val())->ReTagThis("BoxImR1"));
    if (anObj.ResolInit().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ResolInit"),anObj.ResolInit().Val())->ReTagThis("ResolInit"));
-   if (anObj.PredicteurGeom().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.PredicteurGeom().Val())->ReTagThis("PredicteurGeom"));
    if (anObj.NbOctetLimitLoadImageOnce().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("NbOctetLimitLoadImageOnce"),anObj.NbOctetLimitLoadImageOnce().Val())->ReTagThis("NbOctetLimitLoadImageOnce"));
   aRes->mGXml = anObj.mGXml;
@@ -398,23 +231,15 @@ cElXMLTree * ToXMLTree(const cImageDigeo & anObj)
 
 void xml_init(cImageDigeo & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
-
-   xml_init(anObj.VisuCarac(),aTree->Get("VisuCarac",1)); //tototo 
-
-   xml_init(anObj.KeyOrPat(),aTree->Get("KeyOrPat",1)); //tototo 
-
-   xml_init(anObj.KeyCalcCalib(),aTree->Get("KeyCalcCalib",1)); //tototo 
-
-   xml_init(anObj.BoxImR1(),aTree->Get("BoxImR1",1)); //tototo 
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.ResolInit(),aTree->Get("ResolInit",1),double(1.0)); //tototo 
 
-   xml_init(anObj.PredicteurGeom(),aTree->Get("PredicteurGeom",1)); //tototo 
-
    xml_init(anObj.NbOctetLimitLoadImageOnce(),aTree->Get("NbOctetLimitLoadImageOnce",1),double(1e8)); //tototo 
 }
+
+std::string  Mangling( cImageDigeo *) {return "78483F12E97D85F4FE3F";};
 
 
 eTypeNumerique & cTypeNumeriqueOfNiv::Type()
@@ -438,6 +263,18 @@ const int & cTypeNumeriqueOfNiv::Niv()const
    return mNiv;
 }
 
+void  BinaryUnDumpFromFile(cTypeNumeriqueOfNiv & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.Type(),aFp);
+    BinaryUnDumpFromFile(anObj.Niv(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cTypeNumeriqueOfNiv & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Type());
+    BinaryDumpInFile(aFp,anObj.Niv());
+}
+
 cElXMLTree * ToXMLTree(const cTypeNumeriqueOfNiv & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -451,13 +288,15 @@ cElXMLTree * ToXMLTree(const cTypeNumeriqueOfNiv & anObj)
 
 void xml_init(cTypeNumeriqueOfNiv & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.Type(),aTree->Get("Type",1)); //tototo 
 
    xml_init(anObj.Niv(),aTree->Get("Niv",1)); //tototo 
 }
+
+std::string  Mangling( cTypeNumeriqueOfNiv *) {return "96E7077E62871A8DFD3F";};
 
 
 cTplValGesInit< int > & cPyramideGaussienne::NbByOctave()
@@ -526,6 +365,17 @@ const int & cPyramideGaussienne::NivOctaveMax()const
 }
 
 
+cTplValGesInit< bool > & cPyramideGaussienne::SampledConvolutionKernels()
+{
+   return mSampledConvolutionKernels;
+}
+
+const cTplValGesInit< bool > & cPyramideGaussienne::SampledConvolutionKernels()const 
+{
+   return mSampledConvolutionKernels;
+}
+
+
 cTplValGesInit< double > & cPyramideGaussienne::ConvolFirstImage()
 {
    return mConvolFirstImage;
@@ -580,6 +430,126 @@ const cTplValGesInit< bool > & cPyramideGaussienne::ConvolIncrem()const
    return mConvolIncrem;
 }
 
+void  BinaryUnDumpFromFile(cPyramideGaussienne & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NbByOctave().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NbByOctave().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NbByOctave().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Sigma0().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Sigma0().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Sigma0().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SigmaN().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SigmaN().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SigmaN().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NbInLastOctave().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NbInLastOctave().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NbInLastOctave().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.IndexFreqInFirstOctave().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.IndexFreqInFirstOctave().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.IndexFreqInFirstOctave().SetNoInit();
+  } ;
+    BinaryUnDumpFromFile(anObj.NivOctaveMax(),aFp);
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SampledConvolutionKernels().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SampledConvolutionKernels().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SampledConvolutionKernels().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ConvolFirstImage().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ConvolFirstImage().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ConvolFirstImage().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.EpsilonGauss().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.EpsilonGauss().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.EpsilonGauss().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NbShift().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NbShift().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NbShift().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SurEchIntegralGauss().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SurEchIntegralGauss().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SurEchIntegralGauss().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ConvolIncrem().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ConvolIncrem().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ConvolIncrem().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cPyramideGaussienne & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.NbByOctave().IsInit());
+    if (anObj.NbByOctave().IsInit()) BinaryDumpInFile(aFp,anObj.NbByOctave().Val());
+    BinaryDumpInFile(aFp,anObj.Sigma0().IsInit());
+    if (anObj.Sigma0().IsInit()) BinaryDumpInFile(aFp,anObj.Sigma0().Val());
+    BinaryDumpInFile(aFp,anObj.SigmaN().IsInit());
+    if (anObj.SigmaN().IsInit()) BinaryDumpInFile(aFp,anObj.SigmaN().Val());
+    BinaryDumpInFile(aFp,anObj.NbInLastOctave().IsInit());
+    if (anObj.NbInLastOctave().IsInit()) BinaryDumpInFile(aFp,anObj.NbInLastOctave().Val());
+    BinaryDumpInFile(aFp,anObj.IndexFreqInFirstOctave().IsInit());
+    if (anObj.IndexFreqInFirstOctave().IsInit()) BinaryDumpInFile(aFp,anObj.IndexFreqInFirstOctave().Val());
+    BinaryDumpInFile(aFp,anObj.NivOctaveMax());
+    BinaryDumpInFile(aFp,anObj.SampledConvolutionKernels().IsInit());
+    if (anObj.SampledConvolutionKernels().IsInit()) BinaryDumpInFile(aFp,anObj.SampledConvolutionKernels().Val());
+    BinaryDumpInFile(aFp,anObj.ConvolFirstImage().IsInit());
+    if (anObj.ConvolFirstImage().IsInit()) BinaryDumpInFile(aFp,anObj.ConvolFirstImage().Val());
+    BinaryDumpInFile(aFp,anObj.EpsilonGauss().IsInit());
+    if (anObj.EpsilonGauss().IsInit()) BinaryDumpInFile(aFp,anObj.EpsilonGauss().Val());
+    BinaryDumpInFile(aFp,anObj.NbShift().IsInit());
+    if (anObj.NbShift().IsInit()) BinaryDumpInFile(aFp,anObj.NbShift().Val());
+    BinaryDumpInFile(aFp,anObj.SurEchIntegralGauss().IsInit());
+    if (anObj.SurEchIntegralGauss().IsInit()) BinaryDumpInFile(aFp,anObj.SurEchIntegralGauss().Val());
+    BinaryDumpInFile(aFp,anObj.ConvolIncrem().IsInit());
+    if (anObj.ConvolIncrem().IsInit()) BinaryDumpInFile(aFp,anObj.ConvolIncrem().Val());
+}
+
 cElXMLTree * ToXMLTree(const cPyramideGaussienne & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -595,6 +565,8 @@ cElXMLTree * ToXMLTree(const cPyramideGaussienne & anObj)
    if (anObj.IndexFreqInFirstOctave().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("IndexFreqInFirstOctave"),anObj.IndexFreqInFirstOctave().Val())->ReTagThis("IndexFreqInFirstOctave"));
    aRes->AddFils(::ToXMLTree(std::string("NivOctaveMax"),anObj.NivOctaveMax())->ReTagThis("NivOctaveMax"));
+   if (anObj.SampledConvolutionKernels().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("SampledConvolutionKernels"),anObj.SampledConvolutionKernels().Val())->ReTagThis("SampledConvolutionKernels"));
    if (anObj.ConvolFirstImage().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ConvolFirstImage"),anObj.ConvolFirstImage().Val())->ReTagThis("ConvolFirstImage"));
    if (anObj.EpsilonGauss().IsInit())
@@ -612,8 +584,8 @@ cElXMLTree * ToXMLTree(const cPyramideGaussienne & anObj)
 
 void xml_init(cPyramideGaussienne & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.NbByOctave(),aTree->Get("NbByOctave",1),int(3)); //tototo 
 
@@ -627,6 +599,8 @@ void xml_init(cPyramideGaussienne & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.NivOctaveMax(),aTree->Get("NivOctaveMax",1)); //tototo 
 
+   xml_init(anObj.SampledConvolutionKernels(),aTree->Get("SampledConvolutionKernels",1),bool(false)); //tototo 
+
    xml_init(anObj.ConvolFirstImage(),aTree->Get("ConvolFirstImage",1),double(-1)); //tototo 
 
    xml_init(anObj.EpsilonGauss(),aTree->Get("EpsilonGauss",1),double(1e-3)); //tototo 
@@ -637,6 +611,8 @@ void xml_init(cPyramideGaussienne & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.ConvolIncrem(),aTree->Get("ConvolIncrem",1),bool(true)); //tototo 
 }
+
+std::string  Mangling( cPyramideGaussienne *) {return "8EE136D8A9BC88EFFE3F";};
 
 
 cTplValGesInit< int > & cTypePyramide::NivPyramBasique()
@@ -716,6 +692,17 @@ const int & cTypePyramide::NivOctaveMax()const
 }
 
 
+cTplValGesInit< bool > & cTypePyramide::SampledConvolutionKernels()
+{
+   return PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+const cTplValGesInit< bool > & cTypePyramide::SampledConvolutionKernels()const 
+{
+   return PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+
 cTplValGesInit< double > & cTypePyramide::ConvolFirstImage()
 {
    return PyramideGaussienne().Val().ConvolFirstImage();
@@ -781,6 +768,34 @@ const cTplValGesInit< cPyramideGaussienne > & cTypePyramide::PyramideGaussienne(
    return mPyramideGaussienne;
 }
 
+void  BinaryUnDumpFromFile(cTypePyramide & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NivPyramBasique().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NivPyramBasique().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NivPyramBasique().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PyramideGaussienne().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PyramideGaussienne().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PyramideGaussienne().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cTypePyramide & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.NivPyramBasique().IsInit());
+    if (anObj.NivPyramBasique().IsInit()) BinaryDumpInFile(aFp,anObj.NivPyramBasique().Val());
+    BinaryDumpInFile(aFp,anObj.PyramideGaussienne().IsInit());
+    if (anObj.PyramideGaussienne().IsInit()) BinaryDumpInFile(aFp,anObj.PyramideGaussienne().Val());
+}
+
 cElXMLTree * ToXMLTree(const cTypePyramide & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -796,13 +811,15 @@ cElXMLTree * ToXMLTree(const cTypePyramide & anObj)
 
 void xml_init(cTypePyramide & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.NivPyramBasique(),aTree->Get("NivPyramBasique",1)); //tototo 
 
    xml_init(anObj.PyramideGaussienne(),aTree->Get("PyramideGaussienne",1)); //tototo 
 }
+
+std::string  Mangling( cTypePyramide *) {return "A4C549CAAE9889A5FF3F";};
 
 
 std::list< cTypeNumeriqueOfNiv > & cPyramideImage::TypeNumeriqueOfNiv()
@@ -926,6 +943,17 @@ const int & cPyramideImage::NivOctaveMax()const
 }
 
 
+cTplValGesInit< bool > & cPyramideImage::SampledConvolutionKernels()
+{
+   return TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+const cTplValGesInit< bool > & cPyramideImage::SampledConvolutionKernels()const 
+{
+   return TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+
 cTplValGesInit< double > & cPyramideImage::ConvolFirstImage()
 {
    return TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
@@ -1002,6 +1030,61 @@ const cTypePyramide & cPyramideImage::TypePyramide()const
    return mTypePyramide;
 }
 
+void  BinaryUnDumpFromFile(cPyramideImage & anObj,ELISE_fp & aFp)
+{
+   { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
+             cTypeNumeriqueOfNiv aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.TypeNumeriqueOfNiv().push_back(aVal);
+        }
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.MaximDyn().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.MaximDyn().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.MaximDyn().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ValMaxForDyn().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ValMaxForDyn().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ValMaxForDyn().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ReducDemiImage().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ReducDemiImage().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ReducDemiImage().SetNoInit();
+  } ;
+    BinaryUnDumpFromFile(anObj.TypePyramide(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cPyramideImage & anObj)
+{
+    BinaryDumpInFile(aFp,(int)anObj.TypeNumeriqueOfNiv().size());
+    for(  std::list< cTypeNumeriqueOfNiv >::const_iterator iT=anObj.TypeNumeriqueOfNiv().begin();
+         iT!=anObj.TypeNumeriqueOfNiv().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
+    BinaryDumpInFile(aFp,anObj.MaximDyn().IsInit());
+    if (anObj.MaximDyn().IsInit()) BinaryDumpInFile(aFp,anObj.MaximDyn().Val());
+    BinaryDumpInFile(aFp,anObj.ValMaxForDyn().IsInit());
+    if (anObj.ValMaxForDyn().IsInit()) BinaryDumpInFile(aFp,anObj.ValMaxForDyn().Val());
+    BinaryDumpInFile(aFp,anObj.ReducDemiImage().IsInit());
+    if (anObj.ReducDemiImage().IsInit()) BinaryDumpInFile(aFp,anObj.ReducDemiImage().Val());
+    BinaryDumpInFile(aFp,anObj.TypePyramide());
+}
+
 cElXMLTree * ToXMLTree(const cPyramideImage & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -1026,8 +1109,8 @@ cElXMLTree * ToXMLTree(const cPyramideImage & anObj)
 
 void xml_init(cPyramideImage & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.TypeNumeriqueOfNiv(),aTree->GetAll("TypeNumeriqueOfNiv",false,1));
 
@@ -1040,251 +1123,295 @@ void xml_init(cPyramideImage & anObj,cElXMLTree * aTree)
    xml_init(anObj.TypePyramide(),aTree->Get("TypePyramide",1)); //tototo 
 }
 
+std::string  Mangling( cPyramideImage *) {return "76CA980EA1C910CAFD3F";};
 
-std::list< cImageDigeo > & cSectionImages::ImageDigeo()
+
+cTplValGesInit< double > & cDigeoSectionImages::ResolInit()
+{
+   return ImageDigeo().ResolInit();
+}
+
+const cTplValGesInit< double > & cDigeoSectionImages::ResolInit()const 
+{
+   return ImageDigeo().ResolInit();
+}
+
+
+cTplValGesInit< double > & cDigeoSectionImages::NbOctetLimitLoadImageOnce()
+{
+   return ImageDigeo().NbOctetLimitLoadImageOnce();
+}
+
+const cTplValGesInit< double > & cDigeoSectionImages::NbOctetLimitLoadImageOnce()const 
+{
+   return ImageDigeo().NbOctetLimitLoadImageOnce();
+}
+
+
+cImageDigeo & cDigeoSectionImages::ImageDigeo()
 {
    return mImageDigeo;
 }
 
-const std::list< cImageDigeo > & cSectionImages::ImageDigeo()const 
+const cImageDigeo & cDigeoSectionImages::ImageDigeo()const 
 {
    return mImageDigeo;
 }
 
 
-std::list< cTypeNumeriqueOfNiv > & cSectionImages::TypeNumeriqueOfNiv()
+std::list< cTypeNumeriqueOfNiv > & cDigeoSectionImages::TypeNumeriqueOfNiv()
 {
    return PyramideImage().TypeNumeriqueOfNiv();
 }
 
-const std::list< cTypeNumeriqueOfNiv > & cSectionImages::TypeNumeriqueOfNiv()const 
+const std::list< cTypeNumeriqueOfNiv > & cDigeoSectionImages::TypeNumeriqueOfNiv()const 
 {
    return PyramideImage().TypeNumeriqueOfNiv();
 }
 
 
-cTplValGesInit< bool > & cSectionImages::MaximDyn()
+cTplValGesInit< bool > & cDigeoSectionImages::MaximDyn()
 {
    return PyramideImage().MaximDyn();
 }
 
-const cTplValGesInit< bool > & cSectionImages::MaximDyn()const 
+const cTplValGesInit< bool > & cDigeoSectionImages::MaximDyn()const 
 {
    return PyramideImage().MaximDyn();
 }
 
 
-cTplValGesInit< double > & cSectionImages::ValMaxForDyn()
+cTplValGesInit< double > & cDigeoSectionImages::ValMaxForDyn()
 {
    return PyramideImage().ValMaxForDyn();
 }
 
-const cTplValGesInit< double > & cSectionImages::ValMaxForDyn()const 
+const cTplValGesInit< double > & cDigeoSectionImages::ValMaxForDyn()const 
 {
    return PyramideImage().ValMaxForDyn();
 }
 
 
-cTplValGesInit< eReducDemiImage > & cSectionImages::ReducDemiImage()
+cTplValGesInit< eReducDemiImage > & cDigeoSectionImages::ReducDemiImage()
 {
    return PyramideImage().ReducDemiImage();
 }
 
-const cTplValGesInit< eReducDemiImage > & cSectionImages::ReducDemiImage()const 
+const cTplValGesInit< eReducDemiImage > & cDigeoSectionImages::ReducDemiImage()const 
 {
    return PyramideImage().ReducDemiImage();
 }
 
 
-cTplValGesInit< int > & cSectionImages::NivPyramBasique()
+cTplValGesInit< int > & cDigeoSectionImages::NivPyramBasique()
 {
    return PyramideImage().TypePyramide().NivPyramBasique();
 }
 
-const cTplValGesInit< int > & cSectionImages::NivPyramBasique()const 
+const cTplValGesInit< int > & cDigeoSectionImages::NivPyramBasique()const 
 {
    return PyramideImage().TypePyramide().NivPyramBasique();
 }
 
 
-cTplValGesInit< int > & cSectionImages::NbByOctave()
+cTplValGesInit< int > & cDigeoSectionImages::NbByOctave()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
 }
 
-const cTplValGesInit< int > & cSectionImages::NbByOctave()const 
+const cTplValGesInit< int > & cDigeoSectionImages::NbByOctave()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
 }
 
 
-cTplValGesInit< double > & cSectionImages::Sigma0()
+cTplValGesInit< double > & cDigeoSectionImages::Sigma0()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
 }
 
-const cTplValGesInit< double > & cSectionImages::Sigma0()const 
+const cTplValGesInit< double > & cDigeoSectionImages::Sigma0()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
 }
 
 
-cTplValGesInit< double > & cSectionImages::SigmaN()
+cTplValGesInit< double > & cDigeoSectionImages::SigmaN()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
 }
 
-const cTplValGesInit< double > & cSectionImages::SigmaN()const 
+const cTplValGesInit< double > & cDigeoSectionImages::SigmaN()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
 }
 
 
-cTplValGesInit< int > & cSectionImages::NbInLastOctave()
+cTplValGesInit< int > & cDigeoSectionImages::NbInLastOctave()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
 }
 
-const cTplValGesInit< int > & cSectionImages::NbInLastOctave()const 
+const cTplValGesInit< int > & cDigeoSectionImages::NbInLastOctave()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
 }
 
 
-cTplValGesInit< int > & cSectionImages::IndexFreqInFirstOctave()
+cTplValGesInit< int > & cDigeoSectionImages::IndexFreqInFirstOctave()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
 }
 
-const cTplValGesInit< int > & cSectionImages::IndexFreqInFirstOctave()const 
+const cTplValGesInit< int > & cDigeoSectionImages::IndexFreqInFirstOctave()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
 }
 
 
-int & cSectionImages::NivOctaveMax()
+int & cDigeoSectionImages::NivOctaveMax()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
 }
 
-const int & cSectionImages::NivOctaveMax()const 
+const int & cDigeoSectionImages::NivOctaveMax()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
 }
 
 
-cTplValGesInit< double > & cSectionImages::ConvolFirstImage()
+cTplValGesInit< bool > & cDigeoSectionImages::SampledConvolutionKernels()
+{
+   return PyramideImage().TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+const cTplValGesInit< bool > & cDigeoSectionImages::SampledConvolutionKernels()const 
+{
+   return PyramideImage().TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+
+cTplValGesInit< double > & cDigeoSectionImages::ConvolFirstImage()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
 }
 
-const cTplValGesInit< double > & cSectionImages::ConvolFirstImage()const 
+const cTplValGesInit< double > & cDigeoSectionImages::ConvolFirstImage()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
 }
 
 
-cTplValGesInit< double > & cSectionImages::EpsilonGauss()
+cTplValGesInit< double > & cDigeoSectionImages::EpsilonGauss()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
 }
 
-const cTplValGesInit< double > & cSectionImages::EpsilonGauss()const 
+const cTplValGesInit< double > & cDigeoSectionImages::EpsilonGauss()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
 }
 
 
-cTplValGesInit< int > & cSectionImages::NbShift()
+cTplValGesInit< int > & cDigeoSectionImages::NbShift()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
 }
 
-const cTplValGesInit< int > & cSectionImages::NbShift()const 
+const cTplValGesInit< int > & cDigeoSectionImages::NbShift()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
 }
 
 
-cTplValGesInit< int > & cSectionImages::SurEchIntegralGauss()
+cTplValGesInit< int > & cDigeoSectionImages::SurEchIntegralGauss()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
 }
 
-const cTplValGesInit< int > & cSectionImages::SurEchIntegralGauss()const 
+const cTplValGesInit< int > & cDigeoSectionImages::SurEchIntegralGauss()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
 }
 
 
-cTplValGesInit< bool > & cSectionImages::ConvolIncrem()
+cTplValGesInit< bool > & cDigeoSectionImages::ConvolIncrem()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
 }
 
-const cTplValGesInit< bool > & cSectionImages::ConvolIncrem()const 
+const cTplValGesInit< bool > & cDigeoSectionImages::ConvolIncrem()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
 }
 
 
-cTplValGesInit< cPyramideGaussienne > & cSectionImages::PyramideGaussienne()
+cTplValGesInit< cPyramideGaussienne > & cDigeoSectionImages::PyramideGaussienne()
 {
    return PyramideImage().TypePyramide().PyramideGaussienne();
 }
 
-const cTplValGesInit< cPyramideGaussienne > & cSectionImages::PyramideGaussienne()const 
+const cTplValGesInit< cPyramideGaussienne > & cDigeoSectionImages::PyramideGaussienne()const 
 {
    return PyramideImage().TypePyramide().PyramideGaussienne();
 }
 
 
-cTypePyramide & cSectionImages::TypePyramide()
+cTypePyramide & cDigeoSectionImages::TypePyramide()
 {
    return PyramideImage().TypePyramide();
 }
 
-const cTypePyramide & cSectionImages::TypePyramide()const 
+const cTypePyramide & cDigeoSectionImages::TypePyramide()const 
 {
    return PyramideImage().TypePyramide();
 }
 
 
-cPyramideImage & cSectionImages::PyramideImage()
+cPyramideImage & cDigeoSectionImages::PyramideImage()
 {
    return mPyramideImage;
 }
 
-const cPyramideImage & cSectionImages::PyramideImage()const 
+const cPyramideImage & cDigeoSectionImages::PyramideImage()const 
 {
    return mPyramideImage;
 }
 
-cElXMLTree * ToXMLTree(const cSectionImages & anObj)
+void  BinaryUnDumpFromFile(cDigeoSectionImages & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.ImageDigeo(),aFp);
+    BinaryUnDumpFromFile(anObj.PyramideImage(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cDigeoSectionImages & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.ImageDigeo());
+    BinaryDumpInFile(aFp,anObj.PyramideImage());
+}
+
+cElXMLTree * ToXMLTree(const cDigeoSectionImages & anObj)
 {
   XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"SectionImages",eXMLBranche);
-  for
-  (       std::list< cImageDigeo >::const_iterator it=anObj.ImageDigeo().begin();
-      it !=anObj.ImageDigeo().end();
-      it++
-  ) 
-      aRes->AddFils(ToXMLTree((*it))->ReTagThis("ImageDigeo"));
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"DigeoSectionImages",eXMLBranche);
+   aRes->AddFils(ToXMLTree(anObj.ImageDigeo())->ReTagThis("ImageDigeo"));
    aRes->AddFils(ToXMLTree(anObj.PyramideImage())->ReTagThis("PyramideImage"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
 }
 
-void xml_init(cSectionImages & anObj,cElXMLTree * aTree)
+void xml_init(cDigeoSectionImages & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
-   xml_init(anObj.ImageDigeo(),aTree->GetAll("ImageDigeo",false,1));
+   xml_init(anObj.ImageDigeo(),aTree->Get("ImageDigeo",1)); //tototo 
 
    xml_init(anObj.PyramideImage(),aTree->Get("PyramideImage",1)); //tototo 
 }
+
+std::string  Mangling( cDigeoSectionImages *) {return "D4A979FFD0B7AE9AFF3F";};
 
 
 eTypeTopolPt & cOneCarac::Type()
@@ -1295,6 +1422,16 @@ eTypeTopolPt & cOneCarac::Type()
 const eTypeTopolPt & cOneCarac::Type()const 
 {
    return mType;
+}
+
+void  BinaryUnDumpFromFile(cOneCarac & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.Type(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cOneCarac & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Type());
 }
 
 cElXMLTree * ToXMLTree(const cOneCarac & anObj)
@@ -1309,11 +1446,13 @@ cElXMLTree * ToXMLTree(const cOneCarac & anObj)
 
 void xml_init(cOneCarac & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.Type(),aTree->Get("Type",1)); //tototo 
 }
+
+std::string  Mangling( cOneCarac *) {return "A4C8D304A8CED5B2FF3F";};
 
 
 std::list< cOneCarac > & cCaracTopo::OneCarac()
@@ -1324,6 +1463,29 @@ std::list< cOneCarac > & cCaracTopo::OneCarac()
 const std::list< cOneCarac > & cCaracTopo::OneCarac()const 
 {
    return mOneCarac;
+}
+
+void  BinaryUnDumpFromFile(cCaracTopo & anObj,ELISE_fp & aFp)
+{
+   { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
+             cOneCarac aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.OneCarac().push_back(aVal);
+        }
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cCaracTopo & anObj)
+{
+    BinaryDumpInFile(aFp,(int)anObj.OneCarac().size());
+    for(  std::list< cOneCarac >::const_iterator iT=anObj.OneCarac().begin();
+         iT!=anObj.OneCarac().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
 }
 
 cElXMLTree * ToXMLTree(const cCaracTopo & anObj)
@@ -1343,11 +1505,13 @@ cElXMLTree * ToXMLTree(const cCaracTopo & anObj)
 
 void xml_init(cCaracTopo & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.OneCarac(),aTree->GetAll("OneCarac",false,1));
 }
+
+std::string  Mangling( cCaracTopo *) {return "6AE63E2144CE7F94FF3F";};
 
 
 cTplValGesInit< bool > & cSiftCarac::DoMax()
@@ -1404,6 +1568,85 @@ const cTplValGesInit< double > & cSiftCarac::RatioGrad()const
    return mRatioGrad;
 }
 
+
+cTplValGesInit< ePointRefinement > & cSiftCarac::RefinementMethod()
+{
+   return mRefinementMethod;
+}
+
+const cTplValGesInit< ePointRefinement > & cSiftCarac::RefinementMethod()const 
+{
+   return mRefinementMethod;
+}
+
+void  BinaryUnDumpFromFile(cSiftCarac & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DoMax().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DoMax().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DoMax().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DoMin().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DoMin().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DoMin().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NivEstimGradMoy().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NivEstimGradMoy().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NivEstimGradMoy().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.RatioAllongMin().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.RatioAllongMin().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.RatioAllongMin().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.RatioGrad().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.RatioGrad().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.RatioGrad().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.RefinementMethod().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.RefinementMethod().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.RefinementMethod().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cSiftCarac & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.DoMax().IsInit());
+    if (anObj.DoMax().IsInit()) BinaryDumpInFile(aFp,anObj.DoMax().Val());
+    BinaryDumpInFile(aFp,anObj.DoMin().IsInit());
+    if (anObj.DoMin().IsInit()) BinaryDumpInFile(aFp,anObj.DoMin().Val());
+    BinaryDumpInFile(aFp,anObj.NivEstimGradMoy().IsInit());
+    if (anObj.NivEstimGradMoy().IsInit()) BinaryDumpInFile(aFp,anObj.NivEstimGradMoy().Val());
+    BinaryDumpInFile(aFp,anObj.RatioAllongMin().IsInit());
+    if (anObj.RatioAllongMin().IsInit()) BinaryDumpInFile(aFp,anObj.RatioAllongMin().Val());
+    BinaryDumpInFile(aFp,anObj.RatioGrad().IsInit());
+    if (anObj.RatioGrad().IsInit()) BinaryDumpInFile(aFp,anObj.RatioGrad().Val());
+    BinaryDumpInFile(aFp,anObj.RefinementMethod().IsInit());
+    if (anObj.RefinementMethod().IsInit()) BinaryDumpInFile(aFp,anObj.RefinementMethod().Val());
+}
+
 cElXMLTree * ToXMLTree(const cSiftCarac & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -1418,6 +1661,8 @@ cElXMLTree * ToXMLTree(const cSiftCarac & anObj)
       aRes->AddFils(::ToXMLTree(std::string("RatioAllongMin"),anObj.RatioAllongMin().Val())->ReTagThis("RatioAllongMin"));
    if (anObj.RatioGrad().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("RatioGrad"),anObj.RatioGrad().Val())->ReTagThis("RatioGrad"));
+   if (anObj.RefinementMethod().IsInit())
+      aRes->AddFils(ToXMLTree(std::string("RefinementMethod"),anObj.RefinementMethod().Val())->ReTagThis("RefinementMethod"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -1425,8 +1670,8 @@ cElXMLTree * ToXMLTree(const cSiftCarac & anObj)
 
 void xml_init(cSiftCarac & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.DoMax(),aTree->Get("DoMax",1),bool(true)); //tototo 
 
@@ -1437,7 +1682,11 @@ void xml_init(cSiftCarac & anObj,cElXMLTree * aTree)
    xml_init(anObj.RatioAllongMin(),aTree->Get("RatioAllongMin",1),double(8.0)); //tototo 
 
    xml_init(anObj.RatioGrad(),aTree->Get("RatioGrad",1),double(0.01)); //tototo 
+
+   xml_init(anObj.RefinementMethod(),aTree->Get("RefinementMethod",1),ePointRefinement(eRefine3D)); //tototo 
 }
+
+std::string  Mangling( cSiftCarac *) {return "987AC5843E4A5BB8FD3F";};
 
 
 bool & cSectionCaracImages::ComputeCarac()
@@ -1528,6 +1777,17 @@ const cTplValGesInit< double > & cSectionCaracImages::RatioGrad()const
 }
 
 
+cTplValGesInit< ePointRefinement > & cSectionCaracImages::RefinementMethod()
+{
+   return SiftCarac().Val().RefinementMethod();
+}
+
+const cTplValGesInit< ePointRefinement > & cSectionCaracImages::RefinementMethod()const 
+{
+   return SiftCarac().Val().RefinementMethod();
+}
+
+
 cTplValGesInit< cSiftCarac > & cSectionCaracImages::SiftCarac()
 {
    return mSiftCarac;
@@ -1536,6 +1796,36 @@ cTplValGesInit< cSiftCarac > & cSectionCaracImages::SiftCarac()
 const cTplValGesInit< cSiftCarac > & cSectionCaracImages::SiftCarac()const 
 {
    return mSiftCarac;
+}
+
+void  BinaryUnDumpFromFile(cSectionCaracImages & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.ComputeCarac(),aFp);
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.CaracTopo().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.CaracTopo().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.CaracTopo().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SiftCarac().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SiftCarac().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SiftCarac().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionCaracImages & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.ComputeCarac());
+    BinaryDumpInFile(aFp,anObj.CaracTopo().IsInit());
+    if (anObj.CaracTopo().IsInit()) BinaryDumpInFile(aFp,anObj.CaracTopo().Val());
+    BinaryDumpInFile(aFp,anObj.SiftCarac().IsInit());
+    if (anObj.SiftCarac().IsInit()) BinaryDumpInFile(aFp,anObj.SiftCarac().Val());
 }
 
 cElXMLTree * ToXMLTree(const cSectionCaracImages & anObj)
@@ -1554,8 +1844,8 @@ cElXMLTree * ToXMLTree(const cSectionCaracImages & anObj)
 
 void xml_init(cSectionCaracImages & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.ComputeCarac(),aTree->Get("ComputeCarac",1)); //tototo 
 
@@ -1564,208 +1854,332 @@ void xml_init(cSectionCaracImages & anObj,cElXMLTree * aTree)
    xml_init(anObj.SiftCarac(),aTree->Get("SiftCarac",1)); //tototo 
 }
 
+std::string  Mangling( cSectionCaracImages *) {return "1789B64C6B1D2580FF3F";};
 
-int & cGenereRandomRect::NbRect()
+
+cTplValGesInit< bool > & cDigeoTestOutput::OutputGaussians()
 {
-   return mNbRect;
+   return mOutputGaussians;
 }
 
-const int & cGenereRandomRect::NbRect()const 
+const cTplValGesInit< bool > & cDigeoTestOutput::OutputGaussians()const 
 {
-   return mNbRect;
+   return mOutputGaussians;
 }
 
 
-int & cGenereRandomRect::SzRect()
+cTplValGesInit< std::string > & cDigeoTestOutput::OutputGaussiansDirectory()
 {
-   return mSzRect;
+   return mOutputGaussiansDirectory;
 }
 
-const int & cGenereRandomRect::SzRect()const 
+const cTplValGesInit< std::string > & cDigeoTestOutput::OutputGaussiansDirectory()const 
 {
-   return mSzRect;
+   return mOutputGaussiansDirectory;
 }
 
-cElXMLTree * ToXMLTree(const cGenereRandomRect & anObj)
+
+cTplValGesInit< bool > & cDigeoTestOutput::OutputTiles()
+{
+   return mOutputTiles;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::OutputTiles()const 
+{
+   return mOutputTiles;
+}
+
+
+cTplValGesInit< std::string > & cDigeoTestOutput::OutputTilesDirectory()
+{
+   return mOutputTilesDirectory;
+}
+
+const cTplValGesInit< std::string > & cDigeoTestOutput::OutputTilesDirectory()const 
+{
+   return mOutputTilesDirectory;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::OutputGradients()
+{
+   return mOutputGradients;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::OutputGradients()const 
+{
+   return mOutputGradients;
+}
+
+
+cTplValGesInit< std::string > & cDigeoTestOutput::OutputGradientsNormDirectory()
+{
+   return mOutputGradientsNormDirectory;
+}
+
+const cTplValGesInit< std::string > & cDigeoTestOutput::OutputGradientsNormDirectory()const 
+{
+   return mOutputGradientsNormDirectory;
+}
+
+
+cTplValGesInit< std::string > & cDigeoTestOutput::OutputGradientsAngleDirectory()
+{
+   return mOutputGradientsAngleDirectory;
+}
+
+const cTplValGesInit< std::string > & cDigeoTestOutput::OutputGradientsAngleDirectory()const 
+{
+   return mOutputGradientsAngleDirectory;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::MergeTiles()
+{
+   return mMergeTiles;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::MergeTiles()const 
+{
+   return mMergeTiles;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::SuppressTiles()
+{
+   return mSuppressTiles;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::SuppressTiles()const 
+{
+   return mSuppressTiles;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::ForceGradientComputation()
+{
+   return mForceGradientComputation;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::ForceGradientComputation()const 
+{
+   return mForceGradientComputation;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::PlotPointsOnTiles()
+{
+   return mPlotPointsOnTiles;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::PlotPointsOnTiles()const 
+{
+   return mPlotPointsOnTiles;
+}
+
+
+cTplValGesInit< bool > & cDigeoTestOutput::RawOutput()
+{
+   return mRawOutput;
+}
+
+const cTplValGesInit< bool > & cDigeoTestOutput::RawOutput()const 
+{
+   return mRawOutput;
+}
+
+void  BinaryUnDumpFromFile(cDigeoTestOutput & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputGaussians().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputGaussians().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputGaussians().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputGaussiansDirectory().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputGaussiansDirectory().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputGaussiansDirectory().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputTiles().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputTiles().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputTiles().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputTilesDirectory().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputTilesDirectory().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputTilesDirectory().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputGradients().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputGradients().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputGradients().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputGradientsNormDirectory().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputGradientsNormDirectory().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputGradientsNormDirectory().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.OutputGradientsAngleDirectory().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.OutputGradientsAngleDirectory().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.OutputGradientsAngleDirectory().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.MergeTiles().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.MergeTiles().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.MergeTiles().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SuppressTiles().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SuppressTiles().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SuppressTiles().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ForceGradientComputation().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ForceGradientComputation().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ForceGradientComputation().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PlotPointsOnTiles().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PlotPointsOnTiles().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PlotPointsOnTiles().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.RawOutput().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.RawOutput().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.RawOutput().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cDigeoTestOutput & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.OutputGaussians().IsInit());
+    if (anObj.OutputGaussians().IsInit()) BinaryDumpInFile(aFp,anObj.OutputGaussians().Val());
+    BinaryDumpInFile(aFp,anObj.OutputGaussiansDirectory().IsInit());
+    if (anObj.OutputGaussiansDirectory().IsInit()) BinaryDumpInFile(aFp,anObj.OutputGaussiansDirectory().Val());
+    BinaryDumpInFile(aFp,anObj.OutputTiles().IsInit());
+    if (anObj.OutputTiles().IsInit()) BinaryDumpInFile(aFp,anObj.OutputTiles().Val());
+    BinaryDumpInFile(aFp,anObj.OutputTilesDirectory().IsInit());
+    if (anObj.OutputTilesDirectory().IsInit()) BinaryDumpInFile(aFp,anObj.OutputTilesDirectory().Val());
+    BinaryDumpInFile(aFp,anObj.OutputGradients().IsInit());
+    if (anObj.OutputGradients().IsInit()) BinaryDumpInFile(aFp,anObj.OutputGradients().Val());
+    BinaryDumpInFile(aFp,anObj.OutputGradientsNormDirectory().IsInit());
+    if (anObj.OutputGradientsNormDirectory().IsInit()) BinaryDumpInFile(aFp,anObj.OutputGradientsNormDirectory().Val());
+    BinaryDumpInFile(aFp,anObj.OutputGradientsAngleDirectory().IsInit());
+    if (anObj.OutputGradientsAngleDirectory().IsInit()) BinaryDumpInFile(aFp,anObj.OutputGradientsAngleDirectory().Val());
+    BinaryDumpInFile(aFp,anObj.MergeTiles().IsInit());
+    if (anObj.MergeTiles().IsInit()) BinaryDumpInFile(aFp,anObj.MergeTiles().Val());
+    BinaryDumpInFile(aFp,anObj.SuppressTiles().IsInit());
+    if (anObj.SuppressTiles().IsInit()) BinaryDumpInFile(aFp,anObj.SuppressTiles().Val());
+    BinaryDumpInFile(aFp,anObj.ForceGradientComputation().IsInit());
+    if (anObj.ForceGradientComputation().IsInit()) BinaryDumpInFile(aFp,anObj.ForceGradientComputation().Val());
+    BinaryDumpInFile(aFp,anObj.PlotPointsOnTiles().IsInit());
+    if (anObj.PlotPointsOnTiles().IsInit()) BinaryDumpInFile(aFp,anObj.PlotPointsOnTiles().Val());
+    BinaryDumpInFile(aFp,anObj.RawOutput().IsInit());
+    if (anObj.RawOutput().IsInit()) BinaryDumpInFile(aFp,anObj.RawOutput().Val());
+}
+
+cElXMLTree * ToXMLTree(const cDigeoTestOutput & anObj)
 {
   XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"GenereRandomRect",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("NbRect"),anObj.NbRect())->ReTagThis("NbRect"));
-   aRes->AddFils(::ToXMLTree(std::string("SzRect"),anObj.SzRect())->ReTagThis("SzRect"));
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"DigeoTestOutput",eXMLBranche);
+   if (anObj.OutputGaussians().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputGaussians"),anObj.OutputGaussians().Val())->ReTagThis("OutputGaussians"));
+   if (anObj.OutputGaussiansDirectory().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputGaussiansDirectory"),anObj.OutputGaussiansDirectory().Val())->ReTagThis("OutputGaussiansDirectory"));
+   if (anObj.OutputTiles().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputTiles"),anObj.OutputTiles().Val())->ReTagThis("OutputTiles"));
+   if (anObj.OutputTilesDirectory().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputTilesDirectory"),anObj.OutputTilesDirectory().Val())->ReTagThis("OutputTilesDirectory"));
+   if (anObj.OutputGradients().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputGradients"),anObj.OutputGradients().Val())->ReTagThis("OutputGradients"));
+   if (anObj.OutputGradientsNormDirectory().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputGradientsNormDirectory"),anObj.OutputGradientsNormDirectory().Val())->ReTagThis("OutputGradientsNormDirectory"));
+   if (anObj.OutputGradientsAngleDirectory().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("OutputGradientsAngleDirectory"),anObj.OutputGradientsAngleDirectory().Val())->ReTagThis("OutputGradientsAngleDirectory"));
+   if (anObj.MergeTiles().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("MergeTiles"),anObj.MergeTiles().Val())->ReTagThis("MergeTiles"));
+   if (anObj.SuppressTiles().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("SuppressTiles"),anObj.SuppressTiles().Val())->ReTagThis("SuppressTiles"));
+   if (anObj.ForceGradientComputation().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ForceGradientComputation"),anObj.ForceGradientComputation().Val())->ReTagThis("ForceGradientComputation"));
+   if (anObj.PlotPointsOnTiles().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("PlotPointsOnTiles"),anObj.PlotPointsOnTiles().Val())->ReTagThis("PlotPointsOnTiles"));
+   if (anObj.RawOutput().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("RawOutput"),anObj.RawOutput().Val())->ReTagThis("RawOutput"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
 }
 
-void xml_init(cGenereRandomRect & anObj,cElXMLTree * aTree)
+void xml_init(cDigeoTestOutput & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
-
-   xml_init(anObj.NbRect(),aTree->Get("NbRect",1)); //tototo 
-
-   xml_init(anObj.SzRect(),aTree->Get("SzRect",1)); //tototo 
-}
-
-
-int & cGenereCarroyage::PerX()
-{
-   return mPerX;
-}
-
-const int & cGenereCarroyage::PerX()const 
-{
-   return mPerX;
-}
-
-
-int & cGenereCarroyage::PerY()
-{
-   return mPerY;
-}
-
-const int & cGenereCarroyage::PerY()const 
-{
-   return mPerY;
-}
-
-cElXMLTree * ToXMLTree(const cGenereCarroyage & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"GenereCarroyage",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("PerX"),anObj.PerX())->ReTagThis("PerX"));
-   aRes->AddFils(::ToXMLTree(std::string("PerY"),anObj.PerY())->ReTagThis("PerY"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cGenereCarroyage & anObj,cElXMLTree * aTree)
-{
    anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
 
-   xml_init(anObj.PerX(),aTree->Get("PerX",1)); //tototo 
+   xml_init(anObj.OutputGaussians(),aTree->Get("OutputGaussians",1),bool(false)); //tototo 
 
-   xml_init(anObj.PerY(),aTree->Get("PerY",1)); //tototo 
+   xml_init(anObj.OutputGaussiansDirectory(),aTree->Get("OutputGaussiansDirectory",1),std::string("gaussians")); //tototo 
+
+   xml_init(anObj.OutputTiles(),aTree->Get("OutputTiles",1),bool(false)); //tototo 
+
+   xml_init(anObj.OutputTilesDirectory(),aTree->Get("OutputTilesDirectory",1),std::string("tiles")); //tototo 
+
+   xml_init(anObj.OutputGradients(),aTree->Get("OutputGradients",1),bool(false)); //tototo 
+
+   xml_init(anObj.OutputGradientsNormDirectory(),aTree->Get("OutputGradientsNormDirectory",1),std::string("gradients/norm")); //tototo 
+
+   xml_init(anObj.OutputGradientsAngleDirectory(),aTree->Get("OutputGradientsAngleDirectory",1),std::string("gradients/angle")); //tototo 
+
+   xml_init(anObj.MergeTiles(),aTree->Get("MergeTiles",1),bool(true)); //tototo 
+
+   xml_init(anObj.SuppressTiles(),aTree->Get("SuppressTiles",1),bool(true)); //tototo 
+
+   xml_init(anObj.ForceGradientComputation(),aTree->Get("ForceGradientComputation",1),bool(false)); //tototo 
+
+   xml_init(anObj.PlotPointsOnTiles(),aTree->Get("PlotPointsOnTiles",1),bool(false)); //tototo 
+
+   xml_init(anObj.RawOutput(),aTree->Get("RawOutput",1),bool(false)); //tototo 
 }
 
-
-int & cGenereAllRandom::SzFilter()
-{
-   return mSzFilter;
-}
-
-const int & cGenereAllRandom::SzFilter()const 
-{
-   return mSzFilter;
-}
-
-cElXMLTree * ToXMLTree(const cGenereAllRandom & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"GenereAllRandom",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("SzFilter"),anObj.SzFilter())->ReTagThis("SzFilter"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cGenereAllRandom & anObj,cElXMLTree * aTree)
-{
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.SzFilter(),aTree->Get("SzFilter",1)); //tototo 
-}
-
-
-int & cSectionTest::NbRect()
-{
-   return GenereRandomRect().Val().NbRect();
-}
-
-const int & cSectionTest::NbRect()const 
-{
-   return GenereRandomRect().Val().NbRect();
-}
-
-
-int & cSectionTest::SzRect()
-{
-   return GenereRandomRect().Val().SzRect();
-}
-
-const int & cSectionTest::SzRect()const 
-{
-   return GenereRandomRect().Val().SzRect();
-}
-
-
-cTplValGesInit< cGenereRandomRect > & cSectionTest::GenereRandomRect()
-{
-   return mGenereRandomRect;
-}
-
-const cTplValGesInit< cGenereRandomRect > & cSectionTest::GenereRandomRect()const 
-{
-   return mGenereRandomRect;
-}
-
-
-int & cSectionTest::PerX()
-{
-   return GenereCarroyage().Val().PerX();
-}
-
-const int & cSectionTest::PerX()const 
-{
-   return GenereCarroyage().Val().PerX();
-}
-
-
-int & cSectionTest::PerY()
-{
-   return GenereCarroyage().Val().PerY();
-}
-
-const int & cSectionTest::PerY()const 
-{
-   return GenereCarroyage().Val().PerY();
-}
-
-
-cTplValGesInit< cGenereCarroyage > & cSectionTest::GenereCarroyage()
-{
-   return mGenereCarroyage;
-}
-
-const cTplValGesInit< cGenereCarroyage > & cSectionTest::GenereCarroyage()const 
-{
-   return mGenereCarroyage;
-}
-
-
-int & cSectionTest::SzFilter()
-{
-   return GenereAllRandom().Val().SzFilter();
-}
-
-const int & cSectionTest::SzFilter()const 
-{
-   return GenereAllRandom().Val().SzFilter();
-}
-
-
-cTplValGesInit< cGenereAllRandom > & cSectionTest::GenereAllRandom()
-{
-   return mGenereAllRandom;
-}
-
-const cTplValGesInit< cGenereAllRandom > & cSectionTest::GenereAllRandom()const 
-{
-   return mGenereAllRandom;
-}
+std::string  Mangling( cDigeoTestOutput *) {return "C0B1A5DC2CEAC2E4FCBF";};
 
 
 cTplValGesInit< bool > & cSectionTest::VerifExtrema()
@@ -1778,18 +2192,185 @@ const cTplValGesInit< bool > & cSectionTest::VerifExtrema()const
    return mVerifExtrema;
 }
 
+
+cTplValGesInit< bool > & cSectionTest::OutputGaussians()
+{
+   return DigeoTestOutput().Val().OutputGaussians();
+}
+
+const cTplValGesInit< bool > & cSectionTest::OutputGaussians()const 
+{
+   return DigeoTestOutput().Val().OutputGaussians();
+}
+
+
+cTplValGesInit< std::string > & cSectionTest::OutputGaussiansDirectory()
+{
+   return DigeoTestOutput().Val().OutputGaussiansDirectory();
+}
+
+const cTplValGesInit< std::string > & cSectionTest::OutputGaussiansDirectory()const 
+{
+   return DigeoTestOutput().Val().OutputGaussiansDirectory();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::OutputTiles()
+{
+   return DigeoTestOutput().Val().OutputTiles();
+}
+
+const cTplValGesInit< bool > & cSectionTest::OutputTiles()const 
+{
+   return DigeoTestOutput().Val().OutputTiles();
+}
+
+
+cTplValGesInit< std::string > & cSectionTest::OutputTilesDirectory()
+{
+   return DigeoTestOutput().Val().OutputTilesDirectory();
+}
+
+const cTplValGesInit< std::string > & cSectionTest::OutputTilesDirectory()const 
+{
+   return DigeoTestOutput().Val().OutputTilesDirectory();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::OutputGradients()
+{
+   return DigeoTestOutput().Val().OutputGradients();
+}
+
+const cTplValGesInit< bool > & cSectionTest::OutputGradients()const 
+{
+   return DigeoTestOutput().Val().OutputGradients();
+}
+
+
+cTplValGesInit< std::string > & cSectionTest::OutputGradientsNormDirectory()
+{
+   return DigeoTestOutput().Val().OutputGradientsNormDirectory();
+}
+
+const cTplValGesInit< std::string > & cSectionTest::OutputGradientsNormDirectory()const 
+{
+   return DigeoTestOutput().Val().OutputGradientsNormDirectory();
+}
+
+
+cTplValGesInit< std::string > & cSectionTest::OutputGradientsAngleDirectory()
+{
+   return DigeoTestOutput().Val().OutputGradientsAngleDirectory();
+}
+
+const cTplValGesInit< std::string > & cSectionTest::OutputGradientsAngleDirectory()const 
+{
+   return DigeoTestOutput().Val().OutputGradientsAngleDirectory();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::MergeTiles()
+{
+   return DigeoTestOutput().Val().MergeTiles();
+}
+
+const cTplValGesInit< bool > & cSectionTest::MergeTiles()const 
+{
+   return DigeoTestOutput().Val().MergeTiles();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::SuppressTiles()
+{
+   return DigeoTestOutput().Val().SuppressTiles();
+}
+
+const cTplValGesInit< bool > & cSectionTest::SuppressTiles()const 
+{
+   return DigeoTestOutput().Val().SuppressTiles();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::ForceGradientComputation()
+{
+   return DigeoTestOutput().Val().ForceGradientComputation();
+}
+
+const cTplValGesInit< bool > & cSectionTest::ForceGradientComputation()const 
+{
+   return DigeoTestOutput().Val().ForceGradientComputation();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::PlotPointsOnTiles()
+{
+   return DigeoTestOutput().Val().PlotPointsOnTiles();
+}
+
+const cTplValGesInit< bool > & cSectionTest::PlotPointsOnTiles()const 
+{
+   return DigeoTestOutput().Val().PlotPointsOnTiles();
+}
+
+
+cTplValGesInit< bool > & cSectionTest::RawOutput()
+{
+   return DigeoTestOutput().Val().RawOutput();
+}
+
+const cTplValGesInit< bool > & cSectionTest::RawOutput()const 
+{
+   return DigeoTestOutput().Val().RawOutput();
+}
+
+
+cTplValGesInit< cDigeoTestOutput > & cSectionTest::DigeoTestOutput()
+{
+   return mDigeoTestOutput;
+}
+
+const cTplValGesInit< cDigeoTestOutput > & cSectionTest::DigeoTestOutput()const 
+{
+   return mDigeoTestOutput;
+}
+
+void  BinaryUnDumpFromFile(cSectionTest & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.VerifExtrema().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.VerifExtrema().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.VerifExtrema().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DigeoTestOutput().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DigeoTestOutput().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DigeoTestOutput().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionTest & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.VerifExtrema().IsInit());
+    if (anObj.VerifExtrema().IsInit()) BinaryDumpInFile(aFp,anObj.VerifExtrema().Val());
+    BinaryDumpInFile(aFp,anObj.DigeoTestOutput().IsInit());
+    if (anObj.DigeoTestOutput().IsInit()) BinaryDumpInFile(aFp,anObj.DigeoTestOutput().Val());
+}
+
 cElXMLTree * ToXMLTree(const cSectionTest & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"SectionTest",eXMLBranche);
-   if (anObj.GenereRandomRect().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.GenereRandomRect().Val())->ReTagThis("GenereRandomRect"));
-   if (anObj.GenereCarroyage().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.GenereCarroyage().Val())->ReTagThis("GenereCarroyage"));
-   if (anObj.GenereAllRandom().IsInit())
-      aRes->AddFils(ToXMLTree(anObj.GenereAllRandom().Val())->ReTagThis("GenereAllRandom"));
    if (anObj.VerifExtrema().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("VerifExtrema"),anObj.VerifExtrema().Val())->ReTagThis("VerifExtrema"));
+   if (anObj.DigeoTestOutput().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.DigeoTestOutput().Val())->ReTagThis("DigeoTestOutput"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -1797,17 +2378,15 @@ cElXMLTree * ToXMLTree(const cSectionTest & anObj)
 
 void xml_init(cSectionTest & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
-
-   xml_init(anObj.GenereRandomRect(),aTree->Get("GenereRandomRect",1)); //tototo 
-
-   xml_init(anObj.GenereCarroyage(),aTree->Get("GenereCarroyage",1)); //tototo 
-
-   xml_init(anObj.GenereAllRandom(),aTree->Get("GenereAllRandom",1)); //tototo 
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.VerifExtrema(),aTree->Get("VerifExtrema",1),bool(false)); //tototo 
+
+   xml_init(anObj.DigeoTestOutput(),aTree->Get("DigeoTestOutput",1)); //tototo 
 }
+
+std::string  Mangling( cSectionTest *) {return "0FF5E79E3B5A818AFF3F";};
 
 
 cTplValGesInit< std::string > & cSauvPyram::Dir()
@@ -1875,6 +2454,74 @@ const cTplValGesInit< double > & cSauvPyram::Dyn()const
    return mDyn;
 }
 
+void  BinaryUnDumpFromFile(cSauvPyram & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Dir().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Dir().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Dir().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Glob().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Glob().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Glob().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Key().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Key().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Key().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.StripTifFile().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.StripTifFile().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.StripTifFile().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Force8B().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Force8B().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Force8B().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Dyn().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Dyn().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Dyn().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cSauvPyram & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Dir().IsInit());
+    if (anObj.Dir().IsInit()) BinaryDumpInFile(aFp,anObj.Dir().Val());
+    BinaryDumpInFile(aFp,anObj.Glob().IsInit());
+    if (anObj.Glob().IsInit()) BinaryDumpInFile(aFp,anObj.Glob().Val());
+    BinaryDumpInFile(aFp,anObj.Key().IsInit());
+    if (anObj.Key().IsInit()) BinaryDumpInFile(aFp,anObj.Key().Val());
+    BinaryDumpInFile(aFp,anObj.StripTifFile().IsInit());
+    if (anObj.StripTifFile().IsInit()) BinaryDumpInFile(aFp,anObj.StripTifFile().Val());
+    BinaryDumpInFile(aFp,anObj.Force8B().IsInit());
+    if (anObj.Force8B().IsInit()) BinaryDumpInFile(aFp,anObj.Force8B().Val());
+    BinaryDumpInFile(aFp,anObj.Dyn().IsInit());
+    if (anObj.Dyn().IsInit()) BinaryDumpInFile(aFp,anObj.Dyn().Val());
+}
+
 cElXMLTree * ToXMLTree(const cSauvPyram & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -1898,8 +2545,8 @@ cElXMLTree * ToXMLTree(const cSauvPyram & anObj)
 
 void xml_init(cSauvPyram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.Dir(),aTree->Get("Dir",1),std::string("")); //tototo 
 
@@ -1913,6 +2560,8 @@ void xml_init(cSauvPyram & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.Dyn(),aTree->Get("Dyn",1),double(1.0)); //tototo 
 }
+
+std::string  Mangling( cSauvPyram *) {return "8F0D268600300694FEBF";};
 
 
 int & cDigeoDecoupageCarac::SzDalle()
@@ -1936,6 +2585,18 @@ const int & cDigeoDecoupageCarac::Bord()const
    return mBord;
 }
 
+void  BinaryUnDumpFromFile(cDigeoDecoupageCarac & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.SzDalle(),aFp);
+    BinaryUnDumpFromFile(anObj.Bord(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cDigeoDecoupageCarac & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.SzDalle());
+    BinaryDumpInFile(aFp,anObj.Bord());
+}
+
 cElXMLTree * ToXMLTree(const cDigeoDecoupageCarac & anObj)
 {
   XMLPushContext(anObj.mGXml);
@@ -1949,118 +2610,74 @@ cElXMLTree * ToXMLTree(const cDigeoDecoupageCarac & anObj)
 
 void xml_init(cDigeoDecoupageCarac & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.SzDalle(),aTree->Get("SzDalle",1)); //tototo 
 
    xml_init(anObj.Bord(),aTree->Get("Bord",1)); //tototo 
 }
 
+std::string  Mangling( cDigeoDecoupageCarac *) {return "DC9552C198A336A1FE3F";};
 
-int & cModifGCC::NbByOctave()
+
+cTplValGesInit< std::string > & cGenereCodeConvol::DirectoryCodeConvol()
 {
-   return mNbByOctave;
+   return mDirectoryCodeConvol;
 }
 
-const int & cModifGCC::NbByOctave()const 
+const cTplValGesInit< std::string > & cGenereCodeConvol::DirectoryCodeConvol()const 
 {
-   return mNbByOctave;
-}
-
-
-bool & cModifGCC::ConvolIncrem()
-{
-   return mConvolIncrem;
-}
-
-const bool & cModifGCC::ConvolIncrem()const 
-{
-   return mConvolIncrem;
+   return mDirectoryCodeConvol;
 }
 
 
-eTypeNumerique & cModifGCC::TypeNum()
+cTplValGesInit< std::string > & cGenereCodeConvol::FileBaseCodeConvol()
 {
-   return mTypeNum;
+   return mFileBaseCodeConvol;
 }
 
-const eTypeNumerique & cModifGCC::TypeNum()const 
+const cTplValGesInit< std::string > & cGenereCodeConvol::FileBaseCodeConvol()const 
 {
-   return mTypeNum;
+   return mFileBaseCodeConvol;
 }
 
-cElXMLTree * ToXMLTree(const cModifGCC & anObj)
+void  BinaryUnDumpFromFile(cGenereCodeConvol & anObj,ELISE_fp & aFp)
 {
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ModifGCC",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("NbByOctave"),anObj.NbByOctave())->ReTagThis("NbByOctave"));
-   aRes->AddFils(::ToXMLTree(std::string("ConvolIncrem"),anObj.ConvolIncrem())->ReTagThis("ConvolIncrem"));
-   aRes->AddFils(::ToXMLTree(std::string("TypeNum"),anObj.TypeNum())->ReTagThis("TypeNum"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DirectoryCodeConvol().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DirectoryCodeConvol().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DirectoryCodeConvol().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.FileBaseCodeConvol().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.FileBaseCodeConvol().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.FileBaseCodeConvol().SetNoInit();
+  } ;
 }
 
-void xml_init(cModifGCC & anObj,cElXMLTree * aTree)
+void  BinaryDumpInFile(ELISE_fp & aFp,const cGenereCodeConvol & anObj)
 {
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.NbByOctave(),aTree->Get("NbByOctave",1)); //tototo 
-
-   xml_init(anObj.ConvolIncrem(),aTree->Get("ConvolIncrem",1)); //tototo 
-
-   xml_init(anObj.TypeNum(),aTree->Get("TypeNum",1)); //tototo 
-}
-
-
-cTplValGesInit< std::string > & cGenereCodeConvol::Dir()
-{
-   return mDir;
-}
-
-const cTplValGesInit< std::string > & cGenereCodeConvol::Dir()const 
-{
-   return mDir;
-}
-
-
-cTplValGesInit< std::string > & cGenereCodeConvol::File()
-{
-   return mFile;
-}
-
-const cTplValGesInit< std::string > & cGenereCodeConvol::File()const 
-{
-   return mFile;
-}
-
-
-std::vector< cModifGCC > & cGenereCodeConvol::ModifGCC()
-{
-   return mModifGCC;
-}
-
-const std::vector< cModifGCC > & cGenereCodeConvol::ModifGCC()const 
-{
-   return mModifGCC;
+    BinaryDumpInFile(aFp,anObj.DirectoryCodeConvol().IsInit());
+    if (anObj.DirectoryCodeConvol().IsInit()) BinaryDumpInFile(aFp,anObj.DirectoryCodeConvol().Val());
+    BinaryDumpInFile(aFp,anObj.FileBaseCodeConvol().IsInit());
+    if (anObj.FileBaseCodeConvol().IsInit()) BinaryDumpInFile(aFp,anObj.FileBaseCodeConvol().Val());
 }
 
 cElXMLTree * ToXMLTree(const cGenereCodeConvol & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"GenereCodeConvol",eXMLBranche);
-   if (anObj.Dir().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("Dir"),anObj.Dir().Val())->ReTagThis("Dir"));
-   if (anObj.File().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("File"),anObj.File().Val())->ReTagThis("File"));
-  for
-  (       std::vector< cModifGCC >::const_iterator it=anObj.ModifGCC().begin();
-      it !=anObj.ModifGCC().end();
-      it++
-  ) 
-      aRes->AddFils(ToXMLTree((*it))->ReTagThis("ModifGCC"));
+   if (anObj.DirectoryCodeConvol().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("DirectoryCodeConvol"),anObj.DirectoryCodeConvol().Val())->ReTagThis("DirectoryCodeConvol"));
+   if (anObj.FileBaseCodeConvol().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("FileBaseCodeConvol"),anObj.FileBaseCodeConvol().Val())->ReTagThis("FileBaseCodeConvol"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -2068,69 +2685,15 @@ cElXMLTree * ToXMLTree(const cGenereCodeConvol & anObj)
 
 void xml_init(cGenereCodeConvol & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
-
-   xml_init(anObj.Dir(),aTree->Get("Dir",1),std::string("src/uti_image/Digeo/")); //tototo 
-
-   xml_init(anObj.File(),aTree->Get("File",1),std::string("GenConvolSpec")); //tototo 
-
-   xml_init(anObj.ModifGCC(),aTree->GetAll("ModifGCC",false,1));
-}
-
-
-std::string & cFenVisu::Name()
-{
-   return mName;
-}
-
-const std::string & cFenVisu::Name()const 
-{
-   return mName;
-}
-
-
-Pt2di & cFenVisu::Sz()
-{
-   return mSz;
-}
-
-const Pt2di & cFenVisu::Sz()const 
-{
-   return mSz;
-}
-
-cElXMLTree * ToXMLTree(const cFenVisu & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"FenVisu",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("Name"),anObj.Name())->ReTagThis("Name"));
-   aRes->AddFils(::ToXMLTree(std::string("Sz"),anObj.Sz())->ReTagThis("Sz"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cFenVisu & anObj,cElXMLTree * aTree)
-{
    anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
 
-   xml_init(anObj.Name(),aTree->Get("Name",1)); //tototo 
+   xml_init(anObj.DirectoryCodeConvol(),aTree->Get("DirectoryCodeConvol",1),std::string("src/uti_image/Digeo/")); //tototo 
 
-   xml_init(anObj.Sz(),aTree->Get("Sz",1)); //tototo 
+   xml_init(anObj.FileBaseCodeConvol(),aTree->Get("FileBaseCodeConvol",1),std::string("GenConvolSpec")); //tototo 
 }
 
-
-cTplValGesInit< std::string > & cSectionWorkSpace::DirectoryChantier()
-{
-   return mDirectoryChantier;
-}
-
-const cTplValGesInit< std::string > & cSectionWorkSpace::DirectoryChantier()const 
-{
-   return mDirectoryChantier;
-}
+std::string  Mangling( cGenereCodeConvol *) {return "4FFD61CE3D3486ABFD3F";};
 
 
 cTplValGesInit< std::string > & cSectionWorkSpace::Dir()
@@ -2254,6 +2817,28 @@ const cTplValGesInit< bool > & cSectionWorkSpace::ExigeCodeCompile()const
 }
 
 
+cTplValGesInit< std::string > & cSectionWorkSpace::DirectoryCodeConvol()
+{
+   return GenereCodeConvol().Val().DirectoryCodeConvol();
+}
+
+const cTplValGesInit< std::string > & cSectionWorkSpace::DirectoryCodeConvol()const 
+{
+   return GenereCodeConvol().Val().DirectoryCodeConvol();
+}
+
+
+cTplValGesInit< std::string > & cSectionWorkSpace::FileBaseCodeConvol()
+{
+   return GenereCodeConvol().Val().FileBaseCodeConvol();
+}
+
+const cTplValGesInit< std::string > & cSectionWorkSpace::FileBaseCodeConvol()const 
+{
+   return GenereCodeConvol().Val().FileBaseCodeConvol();
+}
+
+
 cTplValGesInit< cGenereCodeConvol > & cSectionWorkSpace::GenereCodeConvol()
 {
    return mGenereCodeConvol;
@@ -2276,17 +2861,6 @@ const cTplValGesInit< int > & cSectionWorkSpace::ShowTimes()const
 }
 
 
-std::list< cFenVisu > & cSectionWorkSpace::FenVisu()
-{
-   return mFenVisu;
-}
-
-const std::list< cFenVisu > & cSectionWorkSpace::FenVisu()const 
-{
-   return mFenVisu;
-}
-
-
 cTplValGesInit< bool > & cSectionWorkSpace::ShowConvolSpec()
 {
    return mShowConvolSpec;
@@ -2297,12 +2871,99 @@ const cTplValGesInit< bool > & cSectionWorkSpace::ShowConvolSpec()const
    return mShowConvolSpec;
 }
 
+
+cTplValGesInit< bool > & cSectionWorkSpace::Verbose()
+{
+   return mVerbose;
+}
+
+const cTplValGesInit< bool > & cSectionWorkSpace::Verbose()const 
+{
+   return mVerbose;
+}
+
+void  BinaryUnDumpFromFile(cSectionWorkSpace & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SauvPyram().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SauvPyram().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SauvPyram().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DigeoDecoupageCarac().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DigeoDecoupageCarac().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DigeoDecoupageCarac().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ExigeCodeCompile().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ExigeCodeCompile().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ExigeCodeCompile().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.GenereCodeConvol().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.GenereCodeConvol().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.GenereCodeConvol().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ShowTimes().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ShowTimes().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ShowTimes().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ShowConvolSpec().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ShowConvolSpec().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ShowConvolSpec().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.Verbose().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.Verbose().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.Verbose().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionWorkSpace & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.SauvPyram().IsInit());
+    if (anObj.SauvPyram().IsInit()) BinaryDumpInFile(aFp,anObj.SauvPyram().Val());
+    BinaryDumpInFile(aFp,anObj.DigeoDecoupageCarac().IsInit());
+    if (anObj.DigeoDecoupageCarac().IsInit()) BinaryDumpInFile(aFp,anObj.DigeoDecoupageCarac().Val());
+    BinaryDumpInFile(aFp,anObj.ExigeCodeCompile().IsInit());
+    if (anObj.ExigeCodeCompile().IsInit()) BinaryDumpInFile(aFp,anObj.ExigeCodeCompile().Val());
+    BinaryDumpInFile(aFp,anObj.GenereCodeConvol().IsInit());
+    if (anObj.GenereCodeConvol().IsInit()) BinaryDumpInFile(aFp,anObj.GenereCodeConvol().Val());
+    BinaryDumpInFile(aFp,anObj.ShowTimes().IsInit());
+    if (anObj.ShowTimes().IsInit()) BinaryDumpInFile(aFp,anObj.ShowTimes().Val());
+    BinaryDumpInFile(aFp,anObj.ShowConvolSpec().IsInit());
+    if (anObj.ShowConvolSpec().IsInit()) BinaryDumpInFile(aFp,anObj.ShowConvolSpec().Val());
+    BinaryDumpInFile(aFp,anObj.Verbose().IsInit());
+    if (anObj.Verbose().IsInit()) BinaryDumpInFile(aFp,anObj.Verbose().Val());
+}
+
 cElXMLTree * ToXMLTree(const cSectionWorkSpace & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"SectionWorkSpace",eXMLBranche);
-   if (anObj.DirectoryChantier().IsInit())
-      aRes->AddFils(::ToXMLTree(std::string("DirectoryChantier"),anObj.DirectoryChantier().Val())->ReTagThis("DirectoryChantier"));
    if (anObj.SauvPyram().IsInit())
       aRes->AddFils(ToXMLTree(anObj.SauvPyram().Val())->ReTagThis("SauvPyram"));
    if (anObj.DigeoDecoupageCarac().IsInit())
@@ -2313,14 +2974,10 @@ cElXMLTree * ToXMLTree(const cSectionWorkSpace & anObj)
       aRes->AddFils(ToXMLTree(anObj.GenereCodeConvol().Val())->ReTagThis("GenereCodeConvol"));
    if (anObj.ShowTimes().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ShowTimes"),anObj.ShowTimes().Val())->ReTagThis("ShowTimes"));
-  for
-  (       std::list< cFenVisu >::const_iterator it=anObj.FenVisu().begin();
-      it !=anObj.FenVisu().end();
-      it++
-  ) 
-      aRes->AddFils(ToXMLTree((*it))->ReTagThis("FenVisu"));
    if (anObj.ShowConvolSpec().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ShowConvolSpec"),anObj.ShowConvolSpec().Val())->ReTagThis("ShowConvolSpec"));
+   if (anObj.Verbose().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("Verbose"),anObj.Verbose().Val())->ReTagThis("Verbose"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -2328,10 +2985,8 @@ cElXMLTree * ToXMLTree(const cSectionWorkSpace & anObj)
 
 void xml_init(cSectionWorkSpace & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
-
-   xml_init(anObj.DirectoryChantier(),aTree->Get("DirectoryChantier",1),std::string("")); //tototo 
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.SauvPyram(),aTree->Get("SauvPyram",1)); //tototo 
 
@@ -2343,10 +2998,12 @@ void xml_init(cSectionWorkSpace & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.ShowTimes(),aTree->Get("ShowTimes",1),int(0)); //tototo 
 
-   xml_init(anObj.FenVisu(),aTree->GetAll("FenVisu",false,1));
-
    xml_init(anObj.ShowConvolSpec(),aTree->Get("ShowConvolSpec",1),bool(false)); //tototo 
+
+   xml_init(anObj.Verbose(),aTree->Get("Verbose",1),bool(false)); //tototo 
 }
+
+std::string  Mangling( cSectionWorkSpace *) {return "525D8493C8970985FE3F";};
 
 
 cTplValGesInit< cChantierDescripteur > & cParamDigeo::DicoLoc()
@@ -2360,234 +3017,267 @@ const cTplValGesInit< cChantierDescripteur > & cParamDigeo::DicoLoc()const
 }
 
 
-std::list< cImageDigeo > & cParamDigeo::ImageDigeo()
+cTplValGesInit< double > & cParamDigeo::ResolInit()
 {
-   return SectionImages().ImageDigeo();
+   return DigeoSectionImages().ImageDigeo().ResolInit();
 }
 
-const std::list< cImageDigeo > & cParamDigeo::ImageDigeo()const 
+const cTplValGesInit< double > & cParamDigeo::ResolInit()const 
 {
-   return SectionImages().ImageDigeo();
+   return DigeoSectionImages().ImageDigeo().ResolInit();
+}
+
+
+cTplValGesInit< double > & cParamDigeo::NbOctetLimitLoadImageOnce()
+{
+   return DigeoSectionImages().ImageDigeo().NbOctetLimitLoadImageOnce();
+}
+
+const cTplValGesInit< double > & cParamDigeo::NbOctetLimitLoadImageOnce()const 
+{
+   return DigeoSectionImages().ImageDigeo().NbOctetLimitLoadImageOnce();
+}
+
+
+cImageDigeo & cParamDigeo::ImageDigeo()
+{
+   return DigeoSectionImages().ImageDigeo();
+}
+
+const cImageDigeo & cParamDigeo::ImageDigeo()const 
+{
+   return DigeoSectionImages().ImageDigeo();
 }
 
 
 std::list< cTypeNumeriqueOfNiv > & cParamDigeo::TypeNumeriqueOfNiv()
 {
-   return SectionImages().PyramideImage().TypeNumeriqueOfNiv();
+   return DigeoSectionImages().PyramideImage().TypeNumeriqueOfNiv();
 }
 
 const std::list< cTypeNumeriqueOfNiv > & cParamDigeo::TypeNumeriqueOfNiv()const 
 {
-   return SectionImages().PyramideImage().TypeNumeriqueOfNiv();
+   return DigeoSectionImages().PyramideImage().TypeNumeriqueOfNiv();
 }
 
 
 cTplValGesInit< bool > & cParamDigeo::MaximDyn()
 {
-   return SectionImages().PyramideImage().MaximDyn();
+   return DigeoSectionImages().PyramideImage().MaximDyn();
 }
 
 const cTplValGesInit< bool > & cParamDigeo::MaximDyn()const 
 {
-   return SectionImages().PyramideImage().MaximDyn();
+   return DigeoSectionImages().PyramideImage().MaximDyn();
 }
 
 
 cTplValGesInit< double > & cParamDigeo::ValMaxForDyn()
 {
-   return SectionImages().PyramideImage().ValMaxForDyn();
+   return DigeoSectionImages().PyramideImage().ValMaxForDyn();
 }
 
 const cTplValGesInit< double > & cParamDigeo::ValMaxForDyn()const 
 {
-   return SectionImages().PyramideImage().ValMaxForDyn();
+   return DigeoSectionImages().PyramideImage().ValMaxForDyn();
 }
 
 
 cTplValGesInit< eReducDemiImage > & cParamDigeo::ReducDemiImage()
 {
-   return SectionImages().PyramideImage().ReducDemiImage();
+   return DigeoSectionImages().PyramideImage().ReducDemiImage();
 }
 
 const cTplValGesInit< eReducDemiImage > & cParamDigeo::ReducDemiImage()const 
 {
-   return SectionImages().PyramideImage().ReducDemiImage();
+   return DigeoSectionImages().PyramideImage().ReducDemiImage();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::NivPyramBasique()
 {
-   return SectionImages().PyramideImage().TypePyramide().NivPyramBasique();
+   return DigeoSectionImages().PyramideImage().TypePyramide().NivPyramBasique();
 }
 
 const cTplValGesInit< int > & cParamDigeo::NivPyramBasique()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().NivPyramBasique();
+   return DigeoSectionImages().PyramideImage().TypePyramide().NivPyramBasique();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::NbByOctave()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
 }
 
 const cTplValGesInit< int > & cParamDigeo::NbByOctave()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbByOctave();
 }
 
 
 cTplValGesInit< double > & cParamDigeo::Sigma0()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
 }
 
 const cTplValGesInit< double > & cParamDigeo::Sigma0()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().Sigma0();
 }
 
 
 cTplValGesInit< double > & cParamDigeo::SigmaN()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
 }
 
 const cTplValGesInit< double > & cParamDigeo::SigmaN()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SigmaN();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::NbInLastOctave()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
 }
 
 const cTplValGesInit< int > & cParamDigeo::NbInLastOctave()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbInLastOctave();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::IndexFreqInFirstOctave()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
 }
 
 const cTplValGesInit< int > & cParamDigeo::IndexFreqInFirstOctave()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().IndexFreqInFirstOctave();
 }
 
 
 int & cParamDigeo::NivOctaveMax()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
 }
 
 const int & cParamDigeo::NivOctaveMax()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NivOctaveMax();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::SampledConvolutionKernels()
+{
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::SampledConvolutionKernels()const 
+{
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SampledConvolutionKernels();
 }
 
 
 cTplValGesInit< double > & cParamDigeo::ConvolFirstImage()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
 }
 
 const cTplValGesInit< double > & cParamDigeo::ConvolFirstImage()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolFirstImage();
 }
 
 
 cTplValGesInit< double > & cParamDigeo::EpsilonGauss()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
 }
 
 const cTplValGesInit< double > & cParamDigeo::EpsilonGauss()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().EpsilonGauss();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::NbShift()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
 }
 
 const cTplValGesInit< int > & cParamDigeo::NbShift()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().NbShift();
 }
 
 
 cTplValGesInit< int > & cParamDigeo::SurEchIntegralGauss()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
 }
 
 const cTplValGesInit< int > & cParamDigeo::SurEchIntegralGauss()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().SurEchIntegralGauss();
 }
 
 
 cTplValGesInit< bool > & cParamDigeo::ConvolIncrem()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
 }
 
 const cTplValGesInit< bool > & cParamDigeo::ConvolIncrem()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne().Val().ConvolIncrem();
 }
 
 
 cTplValGesInit< cPyramideGaussienne > & cParamDigeo::PyramideGaussienne()
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne();
 }
 
 const cTplValGesInit< cPyramideGaussienne > & cParamDigeo::PyramideGaussienne()const 
 {
-   return SectionImages().PyramideImage().TypePyramide().PyramideGaussienne();
+   return DigeoSectionImages().PyramideImage().TypePyramide().PyramideGaussienne();
 }
 
 
 cTypePyramide & cParamDigeo::TypePyramide()
 {
-   return SectionImages().PyramideImage().TypePyramide();
+   return DigeoSectionImages().PyramideImage().TypePyramide();
 }
 
 const cTypePyramide & cParamDigeo::TypePyramide()const 
 {
-   return SectionImages().PyramideImage().TypePyramide();
+   return DigeoSectionImages().PyramideImage().TypePyramide();
 }
 
 
 cPyramideImage & cParamDigeo::PyramideImage()
 {
-   return SectionImages().PyramideImage();
+   return DigeoSectionImages().PyramideImage();
 }
 
 const cPyramideImage & cParamDigeo::PyramideImage()const 
 {
-   return SectionImages().PyramideImage();
+   return DigeoSectionImages().PyramideImage();
 }
 
 
-cSectionImages & cParamDigeo::SectionImages()
+cDigeoSectionImages & cParamDigeo::DigeoSectionImages()
 {
-   return mSectionImages;
+   return mDigeoSectionImages;
 }
 
-const cSectionImages & cParamDigeo::SectionImages()const 
+const cDigeoSectionImages & cParamDigeo::DigeoSectionImages()const 
 {
-   return mSectionImages;
+   return mDigeoSectionImages;
 }
 
 
@@ -2679,6 +3369,17 @@ const cTplValGesInit< double > & cParamDigeo::RatioGrad()const
 }
 
 
+cTplValGesInit< ePointRefinement > & cParamDigeo::RefinementMethod()
+{
+   return SectionCaracImages().SiftCarac().Val().RefinementMethod();
+}
+
+const cTplValGesInit< ePointRefinement > & cParamDigeo::RefinementMethod()const 
+{
+   return SectionCaracImages().SiftCarac().Val().RefinementMethod();
+}
+
+
 cTplValGesInit< cSiftCarac > & cParamDigeo::SiftCarac()
 {
    return SectionCaracImages().SiftCarac();
@@ -2701,94 +3402,6 @@ const cSectionCaracImages & cParamDigeo::SectionCaracImages()const
 }
 
 
-int & cParamDigeo::NbRect()
-{
-   return SectionTest().Val().GenereRandomRect().Val().NbRect();
-}
-
-const int & cParamDigeo::NbRect()const 
-{
-   return SectionTest().Val().GenereRandomRect().Val().NbRect();
-}
-
-
-int & cParamDigeo::SzRect()
-{
-   return SectionTest().Val().GenereRandomRect().Val().SzRect();
-}
-
-const int & cParamDigeo::SzRect()const 
-{
-   return SectionTest().Val().GenereRandomRect().Val().SzRect();
-}
-
-
-cTplValGesInit< cGenereRandomRect > & cParamDigeo::GenereRandomRect()
-{
-   return SectionTest().Val().GenereRandomRect();
-}
-
-const cTplValGesInit< cGenereRandomRect > & cParamDigeo::GenereRandomRect()const 
-{
-   return SectionTest().Val().GenereRandomRect();
-}
-
-
-int & cParamDigeo::PerX()
-{
-   return SectionTest().Val().GenereCarroyage().Val().PerX();
-}
-
-const int & cParamDigeo::PerX()const 
-{
-   return SectionTest().Val().GenereCarroyage().Val().PerX();
-}
-
-
-int & cParamDigeo::PerY()
-{
-   return SectionTest().Val().GenereCarroyage().Val().PerY();
-}
-
-const int & cParamDigeo::PerY()const 
-{
-   return SectionTest().Val().GenereCarroyage().Val().PerY();
-}
-
-
-cTplValGesInit< cGenereCarroyage > & cParamDigeo::GenereCarroyage()
-{
-   return SectionTest().Val().GenereCarroyage();
-}
-
-const cTplValGesInit< cGenereCarroyage > & cParamDigeo::GenereCarroyage()const 
-{
-   return SectionTest().Val().GenereCarroyage();
-}
-
-
-int & cParamDigeo::SzFilter()
-{
-   return SectionTest().Val().GenereAllRandom().Val().SzFilter();
-}
-
-const int & cParamDigeo::SzFilter()const 
-{
-   return SectionTest().Val().GenereAllRandom().Val().SzFilter();
-}
-
-
-cTplValGesInit< cGenereAllRandom > & cParamDigeo::GenereAllRandom()
-{
-   return SectionTest().Val().GenereAllRandom();
-}
-
-const cTplValGesInit< cGenereAllRandom > & cParamDigeo::GenereAllRandom()const 
-{
-   return SectionTest().Val().GenereAllRandom();
-}
-
-
 cTplValGesInit< bool > & cParamDigeo::VerifExtrema()
 {
    return SectionTest().Val().VerifExtrema();
@@ -2800,6 +3413,149 @@ const cTplValGesInit< bool > & cParamDigeo::VerifExtrema()const
 }
 
 
+cTplValGesInit< bool > & cParamDigeo::OutputGaussians()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGaussians();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::OutputGaussians()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGaussians();
+}
+
+
+cTplValGesInit< std::string > & cParamDigeo::OutputGaussiansDirectory()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGaussiansDirectory();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::OutputGaussiansDirectory()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGaussiansDirectory();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::OutputTiles()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputTiles();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::OutputTiles()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputTiles();
+}
+
+
+cTplValGesInit< std::string > & cParamDigeo::OutputTilesDirectory()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputTilesDirectory();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::OutputTilesDirectory()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputTilesDirectory();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::OutputGradients()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradients();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::OutputGradients()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradients();
+}
+
+
+cTplValGesInit< std::string > & cParamDigeo::OutputGradientsNormDirectory()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradientsNormDirectory();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::OutputGradientsNormDirectory()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradientsNormDirectory();
+}
+
+
+cTplValGesInit< std::string > & cParamDigeo::OutputGradientsAngleDirectory()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradientsAngleDirectory();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::OutputGradientsAngleDirectory()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().OutputGradientsAngleDirectory();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::MergeTiles()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().MergeTiles();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::MergeTiles()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().MergeTiles();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::SuppressTiles()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().SuppressTiles();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::SuppressTiles()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().SuppressTiles();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::ForceGradientComputation()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().ForceGradientComputation();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::ForceGradientComputation()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().ForceGradientComputation();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::PlotPointsOnTiles()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().PlotPointsOnTiles();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::PlotPointsOnTiles()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().PlotPointsOnTiles();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::RawOutput()
+{
+   return SectionTest().Val().DigeoTestOutput().Val().RawOutput();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::RawOutput()const 
+{
+   return SectionTest().Val().DigeoTestOutput().Val().RawOutput();
+}
+
+
+cTplValGesInit< cDigeoTestOutput > & cParamDigeo::DigeoTestOutput()
+{
+   return SectionTest().Val().DigeoTestOutput();
+}
+
+const cTplValGesInit< cDigeoTestOutput > & cParamDigeo::DigeoTestOutput()const 
+{
+   return SectionTest().Val().DigeoTestOutput();
+}
+
+
 cTplValGesInit< cSectionTest > & cParamDigeo::SectionTest()
 {
    return mSectionTest;
@@ -2808,17 +3564,6 @@ cTplValGesInit< cSectionTest > & cParamDigeo::SectionTest()
 const cTplValGesInit< cSectionTest > & cParamDigeo::SectionTest()const 
 {
    return mSectionTest;
-}
-
-
-cTplValGesInit< std::string > & cParamDigeo::DirectoryChantier()
-{
-   return SectionWorkSpace().DirectoryChantier();
-}
-
-const cTplValGesInit< std::string > & cParamDigeo::DirectoryChantier()const 
-{
-   return SectionWorkSpace().DirectoryChantier();
 }
 
 
@@ -2943,6 +3688,28 @@ const cTplValGesInit< bool > & cParamDigeo::ExigeCodeCompile()const
 }
 
 
+cTplValGesInit< std::string > & cParamDigeo::DirectoryCodeConvol()
+{
+   return SectionWorkSpace().GenereCodeConvol().Val().DirectoryCodeConvol();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::DirectoryCodeConvol()const 
+{
+   return SectionWorkSpace().GenereCodeConvol().Val().DirectoryCodeConvol();
+}
+
+
+cTplValGesInit< std::string > & cParamDigeo::FileBaseCodeConvol()
+{
+   return SectionWorkSpace().GenereCodeConvol().Val().FileBaseCodeConvol();
+}
+
+const cTplValGesInit< std::string > & cParamDigeo::FileBaseCodeConvol()const 
+{
+   return SectionWorkSpace().GenereCodeConvol().Val().FileBaseCodeConvol();
+}
+
+
 cTplValGesInit< cGenereCodeConvol > & cParamDigeo::GenereCodeConvol()
 {
    return SectionWorkSpace().GenereCodeConvol();
@@ -2965,17 +3732,6 @@ const cTplValGesInit< int > & cParamDigeo::ShowTimes()const
 }
 
 
-std::list< cFenVisu > & cParamDigeo::FenVisu()
-{
-   return SectionWorkSpace().FenVisu();
-}
-
-const std::list< cFenVisu > & cParamDigeo::FenVisu()const 
-{
-   return SectionWorkSpace().FenVisu();
-}
-
-
 cTplValGesInit< bool > & cParamDigeo::ShowConvolSpec()
 {
    return SectionWorkSpace().ShowConvolSpec();
@@ -2984,6 +3740,17 @@ cTplValGesInit< bool > & cParamDigeo::ShowConvolSpec()
 const cTplValGesInit< bool > & cParamDigeo::ShowConvolSpec()const 
 {
    return SectionWorkSpace().ShowConvolSpec();
+}
+
+
+cTplValGesInit< bool > & cParamDigeo::Verbose()
+{
+   return SectionWorkSpace().Verbose();
+}
+
+const cTplValGesInit< bool > & cParamDigeo::Verbose()const 
+{
+   return SectionWorkSpace().Verbose();
 }
 
 
@@ -2997,13 +3764,47 @@ const cSectionWorkSpace & cParamDigeo::SectionWorkSpace()const
    return mSectionWorkSpace;
 }
 
+void  BinaryUnDumpFromFile(cParamDigeo & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DicoLoc().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DicoLoc().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DicoLoc().SetNoInit();
+  } ;
+    BinaryUnDumpFromFile(anObj.DigeoSectionImages(),aFp);
+    BinaryUnDumpFromFile(anObj.SectionCaracImages(),aFp);
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.SectionTest().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.SectionTest().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.SectionTest().SetNoInit();
+  } ;
+    BinaryUnDumpFromFile(anObj.SectionWorkSpace(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cParamDigeo & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.DicoLoc().IsInit());
+    if (anObj.DicoLoc().IsInit()) BinaryDumpInFile(aFp,anObj.DicoLoc().Val());
+    BinaryDumpInFile(aFp,anObj.DigeoSectionImages());
+    BinaryDumpInFile(aFp,anObj.SectionCaracImages());
+    BinaryDumpInFile(aFp,anObj.SectionTest().IsInit());
+    if (anObj.SectionTest().IsInit()) BinaryDumpInFile(aFp,anObj.SectionTest().Val());
+    BinaryDumpInFile(aFp,anObj.SectionWorkSpace());
+}
+
 cElXMLTree * ToXMLTree(const cParamDigeo & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ParamDigeo",eXMLBranche);
    if (anObj.DicoLoc().IsInit())
       aRes->AddFils(ToXMLTree(anObj.DicoLoc().Val())->ReTagThis("DicoLoc"));
-   aRes->AddFils(ToXMLTree(anObj.SectionImages())->ReTagThis("SectionImages"));
+   aRes->AddFils(ToXMLTree(anObj.DigeoSectionImages())->ReTagThis("DigeoSectionImages"));
    aRes->AddFils(ToXMLTree(anObj.SectionCaracImages())->ReTagThis("SectionCaracImages"));
    if (anObj.SectionTest().IsInit())
       aRes->AddFils(ToXMLTree(anObj.SectionTest().Val())->ReTagThis("SectionTest"));
@@ -3015,12 +3816,12 @@ cElXMLTree * ToXMLTree(const cParamDigeo & anObj)
 
 void xml_init(cParamDigeo & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
 
    xml_init(anObj.DicoLoc(),aTree->Get("DicoLoc",1)); //tototo 
 
-   xml_init(anObj.SectionImages(),aTree->Get("SectionImages",1)); //tototo 
+   xml_init(anObj.DigeoSectionImages(),aTree->Get("DigeoSectionImages",1)); //tototo 
 
    xml_init(anObj.SectionCaracImages(),aTree->Get("SectionCaracImages",1)); //tototo 
 
@@ -3029,4 +3830,5 @@ void xml_init(cParamDigeo & anObj,cElXMLTree * aTree)
    xml_init(anObj.SectionWorkSpace(),aTree->Get("SectionWorkSpace",1)); //tototo 
 }
 
-// };
+std::string  Mangling( cParamDigeo *) {return "A64F722F98747E93FCBF";};
+

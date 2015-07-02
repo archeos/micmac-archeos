@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -57,7 +57,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 //                                 le symbole n'a pas encore de valeur
 //
 //
-//  Ligne de commande : 
+//  Ligne de commande :
 //
 //         aTag=machin  -> modifie le tag aTag, en lui donnant la valeur machin,
 //                         assez restrictif sur la non ambiguite qu'il doit y avoir
@@ -76,11 +76,11 @@ Header-MicMac-eLiSe-25/06/2007*/
 
                      |                     \
                      |                      \
-    
-           cStdChantierMonoManipulateur     cStdChantierMultiManipulateur 
+
+           cStdChantierMonoManipulateur     cStdChantierMultiManipulateur
                                             {
                                                   cStdChantierMultiManipulateur
-	                                          std::vector<cInterfChantierNameManipulateur *>  mVM; => Ce sont
+                                              std::vector<cInterfChantierNameManipulateur *>  mVM; => Ce sont
                                                     en fait des cStdChantierMonoManipulateur
                                             }
 
@@ -97,21 +97,37 @@ void  AddExtensionToSubdir(std::string & aName ,const std::string & aDirExt);
 void UseRequirement(const std::string &,const cTplValGesInit<cBatchRequirement> &);
 
 
-namespace NS_ParamChantierPhotogram{ 
 cMicMacConfiguration * MMC();
-std::string _MMDir();
 std::string MMDir();
 std::string MMBin();
-std::string getCurrentProgramFullName();
+std::string current_program_fullname();   // mm3d's full name (absolute path + executable name)
+std::string current_program_subcommand(); // mm3d's subcommand (Tapioca, Apero, etc.)
 int MMNbProc();
 bool MPD_MM(); // Est ce que c'est ma machine, afin de ne pas polluer les autres en phase de test !!!!
 
-extern std::string MM3DStr;
+#if(ELISE_QT_VERSION >= 4)
+	string MMQtLibraryPath();
+	void setQtLibraryPath( const string &i_path );
+	void initQtLibraryPath();
+#endif
 
-//   Binaire a "l'ancienne"  MMDir() + std::string("bin" ELISE_STR_DIR  COMMANDE) 
+inline bool isUsingSeparateDirectories();
+extern const string temporarySubdirectory; // = "Tmp-MM-Dir/" (see src/photogram/ChantierNameAssoc.cpp)
+void setInputDirectory( const std::string &i_directory );
+bool isInputDirectorySet();
+std::string MMInputDirectory(); // is the directory containing base pictures (must be set by setInputDirectory before use)
+std::string MMTemporaryDirectory(); // equals MMUserEnvironment.OutputDirectory (or "./" if not set) + temporarySubdirectory 
+std::string MMOutputDirectory(); // equals MMUserEnvironment.OutputDirectory (if set) or MMInputDirectory (if set) or ./
+std::string MMLogDirectory(); // equals MMUserEnvironment.LogDirectory or ./ if not set
+
+extern std::string MM3DStr;
+extern const  std::string TheStringLastNuageMM;
+
+//   Binaire a "l'ancienne"  MMDir() + std::string("bin" ELISE_STR_DIR  COMMANDE)
 std::string MMBinFile(const std::string &);
-//   Nouveau par mm3d   MMDir() + std::string("bin" ELISE_STR_DIR "mm3d"  COMMANDE) 
+//   Nouveau par mm3d   MMDir() + std::string("bin" ELISE_STR_DIR "mm3d"  COMMANDE)
 std::string MM3dBinFile(const std::string &);
+std::string MM3dBinFile_quotes(const std::string &);
 //   MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
 std::string XML_MM_File(const std::string &);
 std::string Basic_XML_MM_File(const std::string &);
@@ -120,7 +136,9 @@ std::string XML_User_Or_MicMac(const std::string & aName);
 
 const cMMUserEnvironment & MMUserEnv();
 
+extern const  std::string BLANK;
 
+class cMMByImNM;
 
 
 
@@ -177,12 +195,15 @@ class cResulMSO
        ElCamera *           mCam;
        cElNuage3DMaille *   mNuage;
        cCapture3D *         mCapt3d;
-      
+
 };
 
-class cInterfChantierNameManipulateur  
+class cInterfChantierNameManipulateur
 {
      public :
+
+         std::string StdNameCalib(const std::string & anOri,const std::string & aNameIm);
+         CamStenope *  StdCamOfNames(const std::string & anOri,const std::string & aNameIm);
 
          std::list<std::string> GetListImByDelta(const cListImByDelta &,const std::string & aN0);
 
@@ -195,13 +216,13 @@ class cInterfChantierNameManipulateur
          const Pt3dr  & GetPt3dr(const std::string& anIdBase,const std::string& anIdVal) ;
          const double  & GetScal(const std::string& anIdBase,const std::string& anIdVal) ;
     // Si le fichier n'existe pas , mais que le sym existe,
-    // le cree 
+    // le cree
         std::string NamePackWithAutoSym
                     (
                         const std::string & aKey,
                         const std::string & aName1,
                         const std::string & aName2,
-                        bool  SVP = false  // Si SVP et aucun existe, renvoie le 1er 
+                        bool  SVP = false  // Si SVP et aucun existe, renvoie le 1er
                     );
 
 
@@ -210,37 +231,38 @@ class cInterfChantierNameManipulateur
         void SetMapCmp(const std::list<cCmdMappeur> &, int argc,char ** argv);
 
         static const char theCharModifDico; // A priori +
+        static const char theCharSymbOptGlob; // A priori @
 
         cInterfChantierNameManipulateur(int argc,char ** argv,const std::string & aDir);
         virtual ~cInterfChantierNameManipulateur();
         typedef  std::vector<std::string>   tNuplet;
         typedef  std::vector<std::string>   tSet;
-	typedef  std::string             tKey;
+    typedef  std::string             tKey;
 
         virtual  cTplValGesInit<cResBoxMatr> GetBoxOfMatr(const tKey&,const std::string&)=0;
 
-	typedef std::vector<cCpleString>  tRel;
+    typedef std::vector<cCpleString>  tRel;
 
 
-	virtual bool  RelHasKey(const tKey &)  = 0;
+    virtual bool  RelHasKey(const tKey &)  = 0;
         virtual const tRel * GetRel(const tKey &) = 0;
 
         tSet  GetSetOfRel(const tKey &,const std::string & aStr0,bool Sym=true);
 
-         
+
 
         virtual const tSet *  Get(const tKey &) = 0;
         virtual cSetName *  GetSet(const tKey &) = 0;
         virtual cStrRelEquiv *  GetEquiv(const tKey &) = 0;
 
-	std::string  Assoc1To1(const tKey &,const std::string & aName,bool isDir);
-	std::string  Assoc1To1(const std::list<tKey> &,const std::string & aName,bool isDir);
+    std::string  Assoc1To1(const tKey &,const std::string & aName,bool isDir);
+    std::string  Assoc1To1(const std::list<tKey> &,const std::string & aName,bool isDir);
 
-	std::string  Assoc1ToN(const tKey &,const tSet & aVNames,bool isDir);
-	std::string  Assoc1To2(const tKey &,const std::string & aName,const std::string & aName2,bool isDir);
-	std::string  Assoc1To3(const tKey &,const std::string & aName,const std::string & aName2,const std::string & aName3,bool isDir);
+    std::string  Assoc1ToN(const tKey &,const tSet & aVNames,bool isDir);
+    std::string  Assoc1To2(const tKey &,const std::string & aName,const std::string & aName2,bool isDir);
+    std::string  Assoc1To3(const tKey &,const std::string & aName,const std::string & aName2,const std::string & aName3,bool isDir);
 
-	std::pair<std::string,std::string> Assoc2To1(const tKey &,const std::string & aName,bool isDir);
+    std::pair<std::string,std::string> Assoc2To1(const tKey &,const std::string & aName,bool isDir);
 
         virtual tNuplet  Direct(const tKey &,const tNuplet&) = 0 ;
         virtual tNuplet  Inverse(const tKey &,const tNuplet&) =0;
@@ -248,72 +270,73 @@ class cInterfChantierNameManipulateur
         virtual bool AssocHasKey(const tKey & aKey) const = 0;
         std::string StdKeyOrient(const tKey &); // Elle meme si existe sinon NKS
         virtual bool SetHasKey(const tKey & aKey) const = 0;
-	//  Renvoie true si c'est un fichier et pas une cle
-	//  Renvoie false si c'est une cle et pas un fichier
-	//  Genere une erreur si c'est aucun ou les deux
-	bool  IsFile(const std::string &);
+    //  Renvoie true si c'est un fichier et pas une cle
+    //  Renvoie false si c'est une cle et pas un fichier
+    //  Genere une erreur si c'est aucun ou les deux
+    bool  IsFile(const std::string &);
 
          // Si IsFile(aKeyOrFile), le renvoie aKeyOrFile sinon utilise comme cle
-	 // pour transformer anEntry
+     // pour transformer anEntry
          std::string  StdCorrect
-	              (
-		          const std::string & aKeyOrFile,
-			  const std::string & anEntry,
-			  bool Direct
+                  (
+                  const std::string & aKeyOrFile,
+              const std::string & anEntry,
+              bool Direct
                       );
          std::string  StdCorrect2
-	              (
-		          const std::string & aKeyOrFile,
-			  const std::string & anEntry1,
-			  const std::string & anEntry2,
-			  bool Direct
+                  (
+                  const std::string & aKeyOrFile,
+              const std::string & anEntry1,
+              const std::string & anEntry2,
+              bool Direct
                       );
 
          // Prof par defaut 2, par compat avec l'existant
          std::list<std::string>  StdGetListOfFile(const std::string & aKeyOrPat, int aProf=2);
      // Quatre  dictionnaire sont charges :
-     //   Priorite 0 : 
+     //   Priorite 0 :
      //   Priorite 1 : aDir/aName.Val()  (si aName est initialise)
      //   Priorite 2 : aDir/LocalChantierDescripteur.xml (s'il existe)
      //   Priorite 3 : applis/XML-Pattron/DefautChantierDescripteur.xml
      //
-	static cInterfChantierNameManipulateur* StdAlloc
-	                 (
+    static cInterfChantierNameManipulateur* StdAlloc
+                     (
                                int argc,char **argv,
                                const std::string & aDir,
-			       const cTplValGesInit<std::string> aName,
-			       cChantierDescripteur * aCDisc  = 0,
+                   const cTplValGesInit<std::string> aName,
+                   cChantierDescripteur * aCDisc  = 0,
                                bool                   DoMkDB  = true
-	                 );
+                     );
 
            static cInterfChantierNameManipulateur* BasicAlloc(const std::string & aDir);
 
-      // A cause du facteur d'echelle, l'a priori depend de la paire d'image a 
+      // A cause du facteur d'echelle, l'a priori depend de la paire d'image a
       // apparier
-       std::pair<cCompileCAPI,cCompileCAPI> 
+       std::pair<cCompileCAPI,cCompileCAPI>
             APrioriAppar
-	    (
-	          const std::string & aN1,
-		  const std::string & aN2,
-		  const std::string & aKEY1,
-		  const std::string & aKEY2,
-		  double              aSzMax  // Si >0 ajuste les echelle pour que
-		                                 // la plus grande dimension soit aSzMax
+        (
+              const std::string & aN1,
+          const std::string & aN2,
+          const std::string & aKEY1,
+          const std::string & aKEY2,
+          double              aSzMax  // Si >0 ajuste les echelle pour que
+                                         // la plus grande dimension soit aSzMax
             );
 
        cContenuAPrioriImage  APrioriWithDef(const std::string &,const std::string & aKey);
-                                      
-	  virtual cContenuAPrioriImage * GetAPriori
+
+      virtual cContenuAPrioriImage * GetAPriori
                                          (
                                            const std::string &,
                                            const std::string & aKey,
                                            cInterfChantierNameManipulateur * ancetre
                                          ) = 0;
 
-	  const std::string   & Dir () const;
+      const std::string   & Dir () const;
+      void setDir( const std::string &i_directory );
           cArgCreatXLMTree &  ArgTree();
 
-         // Assez sale, interface pour aller taper dans 
+         // Assez sale, interface pour aller taper dans
          // StdChantierMonoManipulateu
            virtual void CD_Add(cChantierDescripteur *);
            virtual const cBatchChantDesc * BatchDesc(const tKey &) const = 0;
@@ -350,11 +373,14 @@ class cInterfChantierNameManipulateur
 
 
           static cInterfChantierNameManipulateur * Glob();
-          
-     private :
-          bool  TestStdOrient (const std::string & Manquant, const std::string & Prf, std::string & anOri);
 
-          
+          void CorrecNameOrient(std::string & aNameOri) ;
+
+
+     private :
+          bool  TestStdOrient (const std::string & Manquant, const std::string & Prf, std::string & anOri,bool AddNKS);
+
+
           double BiggestDim(const cContenuAPrioriImage &,const std::string & aNameIm);
           std::string  mDir;
 
@@ -395,7 +421,7 @@ cResultSubstAndStdGetFile
       const std::string & aNameTagDirectory,   // La directory
       const std::string & aNameTagFDC , // Eventuellement un File Chantier Descripteur,
       const char *  aNameSauv = 0
-)  
+)
 {
    cElXMLTree aTree(aNameFileObj,0,false);
 
@@ -412,9 +438,9 @@ cResultSubstAndStdGetFile
         SplitDirAndFile(mDC,aNF,aNameFileObj);
    }
 
-	#if (ELISE_windows)
-		replace( mDC.begin(), mDC.end(), '\\', '/' );
-	#endif
+    #if (ELISE_windows)
+        replace( mDC.begin(), mDC.end(), '\\', '/' );
+    #endif
 
    {
       std::string aDef;
@@ -514,16 +540,16 @@ class cInterfNameCalculator
         typedef  std::vector<std::string>   tNuplet;
         virtual ~cInterfNameCalculator();
 
-	static  const tNuplet & NotDef();  // size 0; Valeur renoyee en cas d'echec
-	static bool IsDefined(const tNuplet &);
+    static  const tNuplet & NotDef();  // size 0; Valeur renoyee en cas d'echec
+    static bool IsDefined(const tNuplet &);
 
-	static cInterfNameCalculator * StdCalcFromXML
-	                               (
+    static cInterfNameCalculator * StdCalcFromXML
+                                   (
                                             cInterfChantierNameManipulateur *,
                                             const cAssocNameToName &
                                        );
-	static cMultiNC * StdCalcFromXML
-	                  (
+    static cMultiNC * StdCalcFromXML
+                      (
                               const cKeyedNamesAssociations &,
                               cInterfChantierNameManipulateur *,
                               const std::string& aSubDir,
@@ -555,11 +581,11 @@ class cInterfChantierNC
         tNuplet  DefinedInverse(const tKey &,const tNuplet&);
         virtual tNuplet  Direct(const tKey &,const tNuplet&) = 0;
         virtual tNuplet  Inverse(const tKey &,const tNuplet&) = 0;
-	virtual bool AssocHasKey(const tKey & aKey) const = 0;
+    virtual bool AssocHasKey(const tKey & aKey) const = 0;
 
         cInterfChantierNC();
-	virtual ~cInterfChantierNC();
-	static cDicoChantierNC *  StdCalcFromXML
+    virtual ~cInterfChantierNC();
+    static cDicoChantierNC *  StdCalcFromXML
                (
                    cInterfChantierNameManipulateur * aICNM,
                    const std::list<cKeyedNamesAssociations> &
@@ -572,18 +598,18 @@ class cInterfChantierSetNC
 {
      public :
          typedef  std::vector<std::string>   tSet;
-	 typedef  std::string             tKey;
+     typedef  std::string             tKey;
 
        // renvoie 0 si pas trouve
          virtual const tSet *  Get(const tKey &) = 0;
-	 virtual const bool  * SetIsIn(const tKey &,const std::string & aName) = 0;
-	 virtual bool SetHasKey(const tKey & aKey) const=0;
+     virtual const bool  * SetIsIn(const tKey &,const std::string & aName) = 0;
+     virtual bool SetHasKey(const tKey & aKey) const=0;
          static cDicoSetNC * StdCalcFromXML
-	                     (
-			            cInterfChantierNameManipulateur *,
-				    const std::list<cKeyedSetsOfNames> &
-		             );
-	 virtual ~cInterfChantierSetNC();
+                         (
+                        cInterfChantierNameManipulateur *,
+                    const std::list<cKeyedSetsOfNames> &
+                     );
+     virtual ~cInterfChantierSetNC();
          virtual cSetName *  GetSet(const tKey &) = 0;
      private :
 };
@@ -642,20 +668,20 @@ class cStdChantierRel
 {
     public :
         cStdChantierRel
-	( 
+    (
            cInterfChantierNameManipulateur &,
-	   const cNameRelDescriptor &
+       const cNameRelDescriptor &
         );
 
 
-	 std::vector<cCpleString> * GetRel();
-	void Add(const cCpleString &);
+     std::vector<cCpleString> * GetRel();
+    void Add(const cCpleString &);
         const cNameRelDescriptor &  NRD() const;
     private :
         bool AddAFile(std::string  aName,bool must_exist);
         void Compute();
         void ComputeFiltrageSpatial();
-	void Add(const std::string& aPre,const cCpleString &,const std::string& aPost);
+    void Add(const std::string& aPre,const cCpleString &,const std::string& aPost);
 
         void AddAllCpleKeySet
              (
@@ -678,18 +704,19 @@ class cStdChantierRel
                     // const cTplValGesInit<cFiltreDeRelationOrient> &,
                     // cComputeFiltreRelSsEch * & aFSsEch,
                     bool aSym,
-                    bool IsCirc
+                    bool IsCirc,
+                    int aSampling=1  // <=0  vide ,  1 no sampling, >1 => sampling
              );
 
 
 
         cInterfChantierNameManipulateur & mICNM;
         cNameRelDescriptor  mNRD;
-	bool                mIsComp;
-	bool                mIsReflexif;
+    bool                mIsComp;
+    bool                mIsReflexif;
 
-	std::vector<cCpleString>  mIncl;
-	std::set<cCpleString>  mExcl;
+    std::vector<cCpleString>  mIncl;
+    std::set<cCpleString>  mExcl;
 
 
 
@@ -702,32 +729,32 @@ class cCompileCAPI : public cContenuAPrioriImage
         cCompileCAPI();
 
         cCompileCAPI
-	(
+    (
             cInterfChantierNameManipulateur &,
-	    const cContenuAPrioriImage &,
-	    const std::string aDir,
-	    const std::string & aName,
+        const cContenuAPrioriImage &,
+        const std::string &aDir,
+        const std::string & aName,
             const std::string & aName2
         );
 
-	Pt2dr Rectif2Init(const Pt2dr &);
-	const std::string & NameRectif() const;
+    Pt2dr Rectif2Init(const Pt2dr &);
+    const std::string & NameRectif() const;
      private :
         // Valeur qui ne tient pas compte des bords
-	Pt2dr V0Init2Rectif(const Pt2dr &);
-	Pt2dr V0Rectif2Init(const Pt2dr &);
+    Pt2dr V0Init2Rectif(const Pt2dr &);
+    Pt2dr V0Rectif2Init(const Pt2dr &);
 
 
-	std::string mFullNameFinal;
-	double   mScale;
-	double   mTeta;
-	Box2di   mBox;
-	// Tiff_Im  mFileInit;
-	Pt2di    mSzIm;
-	Pt2dr    mRotI2R;
-	ElSimilitude  mRTr_I2R;
-	ElSimilitude  mRTr_R2I;
-	ElSimilitude  mSim_R2I;
+    std::string mFullNameFinal;
+    double   mScale;
+    double   mTeta;
+    Box2di   mBox;
+    // Tiff_Im  mFileInit;
+    Pt2di    mSzIm;
+    Pt2dr    mRotI2R;
+    ElSimilitude  mRTr_I2R;
+    ElSimilitude  mRTr_R2I;
+    ElSimilitude  mSim_R2I;
 };
 
 template <class Type>  class  cMapIdName2Val
@@ -737,7 +764,7 @@ template <class Type>  class  cMapIdName2Val
           Type * Get(const std::string& anIdBase,const std::string& anIdVal);
           const Type * Get(const std::string& anIdBase,const std::string& anIdVal) const;
 
-          
+
       private :
 
           typedef std::map<std::string,Type> tOneBase;
@@ -745,7 +772,7 @@ template <class Type>  class  cMapIdName2Val
           tAllBases mDatas;
 };
 
-template <class tBase,class tEntriesXML>  
+template <class tBase,class tEntriesXML>
         void Add2Base(tBase &,const std::string & aNameBase,const std::list<tEntriesXML>&);
 
 
@@ -769,25 +796,25 @@ class cStdChantierMonoManipulateur : public cInterfChantierNameManipulateur
         cTplValGesInit<cResBoxMatr> GetBoxOfMatr(const tKey&,const std::string&);
          const cBatchChantDesc  * BatchDesc(const tKey &) const;
          const cShowChantDesc * ShowChant(const tKey &) const ;
-	 static cStdChantierMonoManipulateur * 
-	         StdGetFromFile
-		 (
+     static cStdChantierMonoManipulateur *
+             StdGetFromFile
+         (
                      eOriSCMN,
-		     cInterfChantierNameManipulateur * aGlob,
-		     const std::string & aDir,
-		     const std::string & aFileXML,
+             cInterfChantierNameManipulateur * aGlob,
+             const std::string & aDir,
+             const std::string & aFileXML,
                      bool  AddCamDB
-		 );
+         );
 
          cStdChantierMonoManipulateur
-	 (
+     (
              eOriSCMN,
-	     cInterfChantierNameManipulateur * aGlob,
-	     const std::string & aDir,
-	     const cChantierDescripteur &
-	 );
+         cInterfChantierNameManipulateur * aGlob,
+         const std::string & aDir,
+         const cChantierDescripteur &
+     );
 
-	 cContenuAPrioriImage * GetAPriori(const std::string &,const std::string & aKey,cInterfChantierNameManipulateur * ancetre);
+     cContenuAPrioriImage * GetAPriori(const std::string &,const std::string & aKey,cInterfChantierNameManipulateur * ancetre);
      protected :
          const Pt3dr  * SvpGetPt3dr(const std::string& anIdBase,const std::string& anIdVal) const;
          const double * SvpGetScal(const std::string& anIdBase,const std::string& anIdVal) const;
@@ -798,13 +825,13 @@ class cStdChantierMonoManipulateur : public cInterfChantierNameManipulateur
          const tSet *  Get(const tKey &) ;
          tNuplet  Direct(const tKey &,const tNuplet&);
          tNuplet  Inverse(const tKey &,const tNuplet&);
-	 const bool  * SetIsIn(const tKey & aKey,const std::string & aName);
-	 bool AssocHasKey(const tKey & aKey) const;
-	 bool SetHasKey(const tKey & aKey) const;
+     const bool  * SetIsIn(const tKey & aKey,const std::string & aName);
+     bool AssocHasKey(const tKey & aKey) const;
+     bool SetHasKey(const tKey & aKey) const;
 
-	 bool  RelHasKey(const tKey &)  ;
+     bool  RelHasKey(const tKey &)  ;
          cStrRelEquiv *  GetEquiv(const tKey &) ;
-         const tRel * GetRel(const tKey &); 
+         const tRel * GetRel(const tKey &);
 
          static std::map<std::string,cStdChantierMonoManipulateur *> theDicAlloc;
          void Compute(cInterfChantierNameManipulateur * ancetre);
@@ -816,21 +843,21 @@ class cStdChantierMonoManipulateur : public cInterfChantierNameManipulateur
                );
 
 
-	 cInterfChantierNameManipulateur * mGlob;
+     cInterfChantierNameManipulateur * mGlob;
          //eOriSCMN                mOrig;
          cInterfChantierSetNC  * mSets;
-	 cInterfChantierNC  * mAssoc;
-	 std::map<tKey,cStdChantierRel *> mRels;
-	 std::map<tKey,cStrRelEquiv *> mEquivs;
-	 std::map<std::string,cContenuAPrioriImage *>  mDicAP;
+     cInterfChantierNC  * mAssoc;
+     std::map<tKey,cStdChantierRel *> mRels;
+     std::map<tKey,cStrRelEquiv *> mEquivs;
+     std::map<std::string,cContenuAPrioriImage *>  mDicAP;
          std::vector<cContenuAPrioriImage *>           mVecAP;
          cInterfChantierNameManipulateur *             mAncCompute;
          std::list<cBatchChantDesc>                    mLBatch;
          std::list<cKeyedMatrixStruct>                 mLKMatr;
          std::list<cShowChantDesc>                     mLShow;
-         
-         cMapIdName2Val<Pt3dr>                         mBasesPt3dr;        
-         cMapIdName2Val<double>                        mBasesScal;        
+
+         cMapIdName2Val<Pt3dr>                         mBasesPt3dr;
+         cMapIdName2Val<double>                        mBasesScal;
 };
 
 class cStdChantierMultiManipulateur : public cInterfChantierNameManipulateur
@@ -846,91 +873,114 @@ class cStdChantierMultiManipulateur : public cInterfChantierNameManipulateur
          const Pt3dr  * SvpGetPt3dr(const std::string& anIdBase,const std::string& anIdVal) const;
          const double * SvpGetScal(const std::string& anIdBase,const std::string& anIdVal) const;
      private :
-	 cContenuAPrioriImage * GetAPriori(const std::string &,const std::string & aKey,cInterfChantierNameManipulateur * ancetre);
+     cContenuAPrioriImage * GetAPriori(const std::string &,const std::string & aKey,cInterfChantierNameManipulateur * ancetre);
          const tSet *  Get(const tKey &) ;
          tNuplet  Direct(const tKey &,const tNuplet&);
          tNuplet  Inverse(const tKey &,const tNuplet&);
-	 const bool  * SetIsIn(const tKey & aKey,const std::string & aName);
-	 bool AssocHasKey(const tKey & aKey) const;
-	 bool SetHasKey(const tKey & aKey) const;
+     const bool  * SetIsIn(const tKey & aKey,const std::string & aName);
+     bool AssocHasKey(const tKey & aKey) const;
+     bool SetHasKey(const tKey & aKey) const;
 
-	 std::vector<cInterfChantierNameManipulateur *>  mVM;
+     std::vector<cInterfChantierNameManipulateur *>  mVM;
 
-	 bool  RelHasKey(const tKey &) ;
-         const tRel * GetRel(const tKey &); 
+     bool  RelHasKey(const tKey &) ;
+         const tRel * GetRel(const tKey &);
          cStrRelEquiv *  GetEquiv(const tKey &) ;
          void CD_Add(cChantierDescripteur *);
 };
 
 
-     // 
+     //
 /*
-class  cSetName 
+class  cSetName
 {
      public :
           typedef cInterfChantierSetNC::tSet tSet;
           virtual const tSet  * Get() = 0;
-	  virtual ~cSetName();
-	  virtual bool IsIn(const std::string & aName) = 0;
+      virtual ~cSetName();
+      virtual bool IsIn(const std::string & aName) = 0;
 };
 
 
 class  cSetNameByAutom : public cSetName
 */
+
+class cLStrOrRegEx
+{
+    public :
+       //void Add(const std::string & aName);
+       //void Add(cElRegex * anAutom);
+       void  AddName(const std::string & aName,cInterfChantierNameManipulateur *anICNM);
+       cLStrOrRegEx();
+       bool AuMoinsUnMatch(const std::string & aName);
+       
+    private  :
+       std::set<std::string>     mSet;
+       std::list<cElRegex *>     mAutom;
+};
+
+
+
+
 class  cSetName
 {
       public :
           typedef cInterfChantierSetNC::tSet tSet;
           const tSet  * Get();
-	  cSetName(cInterfChantierNameManipulateur *,const cSetNameDescriptor &);
-	  bool SetBasicIsIn(const std::string & aName);
+          cSetName(cInterfChantierNameManipulateur *,const cSetNameDescriptor &);
+          bool SetBasicIsIn(const std::string & aName);
 
           // ce devrait etre SetBasicIsIn, mais par compat avec ce qui marche on ne change pas
-	  bool IsSetIn(const std::string & aName);
+          bool IsSetIn(const std::string & aName);
 
           const cSetNameDescriptor & SND() const;
           cInterfChantierNameManipulateur * ICNM();
-
+          string Dir() const { return mDir; }
+          void setDir( const string &i_directory ) { mDir = i_directory; }
       private :
           void CompileDef();
+          void AddListName(cLStrOrRegEx & aLorReg,const std::list<std::string> & aLName,cInterfChantierNameManipulateur *anICNM);
 
-	  bool mExtIsCalc;
-	  bool mDefIsCalc;
+          void InternalAddList(const std::list<std::string> &);
+
+          bool mExtIsCalc;
+          bool mDefIsCalc;
           cInterfChantierNameManipulateur *          mICNM;
-	  std::string                mDir;
-	  cSetNameDescriptor         mSND;
-	  cInterfChantierSetNC::tSet mRes;
-	  std::list<cElRegex *>      mLA; // Accepteur
-	  std::list<cElRegex *>      mLR; // Refuteur
-          
+          std::string                mDir;
+          cSetNameDescriptor         mSND;
+          cInterfChantierSetNC::tSet mRes;
+          cLStrOrRegEx               mLA; // Accepteur
+          cLStrOrRegEx               mLR; // Refuteur
+
 };
 
 class cDicoSetNC : public cInterfChantierSetNC
 {
      public :
          void Add(const tKey &,cSetName *);
-	 bool SetHasKey(const tKey & aKey)  const;
-	 cDicoSetNC();
+         bool SetHasKey(const tKey & aKey)  const;
+         cDicoSetNC();
+         void assign( const tKey &,cSetName * );
      private :
          std::map<tKey,cSetName *> mDico;
          const tSet *  Get(const tKey &);
          cSetName *  GetSet(const tKey &);
 
-	 const bool  * SetIsIn(const tKey &,const std::string & aName);
+     const bool  * SetIsIn(const tKey &,const std::string & aName);
 };
 
-	// Non inversible
+    // Non inversible
 class cNI_AutomNC : public cInterfNameCalculator
 {
     public :
         tNuplet Direct(const tNuplet &);
-	cNI_AutomNC(cInterfChantierNameManipulateur *,const cBasicAssocNameToName &);  
+    cNI_AutomNC(cInterfChantierNameManipulateur *,const cBasicAssocNameToName &);
     private  :
              cInterfChantierNameManipulateur * mICNM;
              cElRegex       mAutomTransfo;
              cElRegex       mAutomSel;
-	     tNuplet        mNames2Replace;
-	     std::string    mSep;
+         tNuplet        mNames2Replace;
+         std::string    mSep;
              cTplValGesInit<cNameFilter> mFilter;
              cTplValGesInit<cDataBaseNameTransfo> mDBNT;
 };
@@ -938,16 +988,16 @@ class cNI_AutomNC : public cInterfNameCalculator
 class cInv_AutomNC : public cNI_AutomNC
 {
     public :
-	  cInv_AutomNC 
-	  (
+      cInv_AutomNC
+      (
               cInterfChantierNameManipulateur *,
-	      const cBasicAssocNameToName & aAutDir,
-	      const cBasicAssocNameToName & aAutInv,
-	      cInv_AutomNC * aInv = 0
+          const cBasicAssocNameToName & aAutDir,
+          const cBasicAssocNameToName & aAutInv,
+          cInv_AutomNC * aInv = 0
           );
      private  :
           tNuplet Inverse(const tNuplet &);
-          
+
           cInv_AutomNC * mInv;
 };
 
@@ -955,36 +1005,36 @@ class cInv_AutomNC : public cNI_AutomNC
 class cMultiNC :  public cInterfNameCalculator
 {
     public  :
-	cMultiNC
-	(
+    cMultiNC
+    (
              cInterfChantierNameManipulateur *,
              const cKeyedNamesAssociations & aKNA,
              const std::string& aDir,
              const std::string& aSubDir,
              bool               aSubDirRec,
              const std::vector<cInterfNameCalculator *> &  aVNC
-	) ;
+    ) ;
        cInterfChantierNameManipulateur *    ICNM();
        cKeyedNamesAssociations * KNA();
     private :
         tNuplet Direct(const tNuplet &);
         tNuplet Inverse(const tNuplet &);
-	void AutoMakeSubDir();
-	void AutoMakeSubDirRec(const tNuplet & aNuplet);
+    void AutoMakeSubDir();
+    void AutoMakeSubDirRec(const tNuplet & aNuplet);
 
         cInterfChantierNameManipulateur *     mICNM;
         cKeyedNamesAssociations               mKNA;
         std::vector<cInterfNameCalculator *>  mVNC;
-	std::string                           mDir;
-	std::string                           mSubDir;
-	bool                                  mSubDirRec;
+    std::string                           mDir;
+    std::string                           mSubDir;
+    bool                                  mSubDirRec;
 };
 
 
 class cDicoChantierNC : public cInterfChantierNC
 {
     public :
-       
+
        // Pour l'instant, conservatrice : erreur si plusieur fois la meme Key
         void Add(cInterfChantierNameManipulateur *,const cKeyedNamesAssociations &);
     private :
@@ -993,10 +1043,10 @@ class cDicoChantierNC : public cInterfChantierNC
         // Gere les @ : si la cle n'existe pas  et possede un@, essaye de la construire a
         // a partir de la cle sans @
         std::map<tKey,cInterfNameCalculator *>::iterator  StdFindKey(const tKey & aKey);
-	bool AssocHasKey(const tKey & aKey) const;
+    bool AssocHasKey(const tKey & aKey) const;
         tNuplet  Direct(const tKey &,const tNuplet&) ;
         tNuplet  Inverse(const tKey &,const tNuplet&);
-	std::map<tKey,cInterfNameCalculator *>  mINC_Dico;
+    std::map<tKey,cInterfNameCalculator *>  mINC_Dico;
 };
 
 
@@ -1025,12 +1075,20 @@ cNameSpaceEqF::eTypeSysResol ToNS_EqF(eModeSolveurEq);
 /*
 cParamIFDistRadiale * AllocDRadInc
                       (
-		           eConventionsOrientation            aKnownC,
-			   const cCalibrationInternConique &aCalInit,
-			   cSetEqFormelles &
-			   );
+                   eConventionsOrientation            aKnownC,
+               const cCalibrationInternConique &aCalInit,
+               cSetEqFormelles &
+               );
 
 */
+
+cTypeCodageMatr ExportMatr(const ElMatrix<double> & aMat);
+ElMatrix<double> ImportMat(const cTypeCodageMatr & aCM);
+
+cXml_Rotation El2Xml(const ElRotation3D & aRot);
+ElRotation3D Xml2El(const cXml_Rotation & aXml);
+
+
 
 
 ElMatrix<double>   Std_RAff_C2M
@@ -1059,13 +1117,14 @@ ElRotation3D  Std_RAff_C2M
 cOrientationExterneRigide From_Std_RAff_C2M
                           (
                                const ElRotation3D &,
-			       bool  ModeMatr
+                   bool  ModeMatr
                           );
 
 
 // Fonctionne avec une calib ou une camera orientee
-CamStenope * CamOrientGenFromFile(const std::string & aNameFile,cInterfChantierNameManipulateur * anICNM);
+CamStenope * CamOrientGenFromFile(const std::string & aNameFile,cInterfChantierNameManipulateur * anICNM, bool throwAssert = true);
 
+CamStenope * BasicCamOrientGenFromFile(const std::string & aNameFile);
 CamStenope * Std_Cal_From_File
              (
                  const std::string & aNameFile,
@@ -1081,27 +1140,27 @@ CamStenope * Std_Cal_From_CIC
 
 cCamStenopeDistRadPol * Std_Cal_DRad_C2M
              (
-	            const cCalibrationInternConique & aCIC,
-		    eConventionsOrientation            aKnownC
+                const cCalibrationInternConique & aCIC,
+            eConventionsOrientation            aKnownC
              );
 
 cCamStenopeModStdPhpgr * Std_Cal_PS_C2M
              (
-	            const cCalibrationInternConique & aCIC,
-		    eConventionsOrientation            aKnownC
+                const cCalibrationInternConique & aCIC,
+            eConventionsOrientation            aKnownC
              );
 
 cCam_Ebner * Std_Cal_Ebner_C2M
              (
-	            const cCalibrationInternConique & aCIC,
-		    eConventionsOrientation            aKnownC
-	     );
+                const cCalibrationInternConique & aCIC,
+            eConventionsOrientation            aKnownC
+         );
 
 cCam_DCBrown * Std_Cal_DCBrown_C2M
              (
-	            const cCalibrationInternConique & aCIC,
-		    eConventionsOrientation            aKnownC
-	     );
+                const cCalibrationInternConique & aCIC,
+            eConventionsOrientation            aKnownC
+         );
 
 cCamera_Param_Unif_Gen *  Std_Cal_Unif
              (
@@ -1109,6 +1168,14 @@ cCamera_Param_Unif_Gen *  Std_Cal_Unif
                     eConventionsOrientation            aKnownC
              );
 
+
+cCamStenopeBilin *  Std_Cal_Bilin
+             (
+                    const cCalibrationInternConique & aCIC,
+                    eConventionsOrientation            aKnownC
+             );
+
+// cCamStenopeBilin * GlobFromXmlGridStuct(REAL aFoc,Pt2dr aCentre,const cCalibrationInterneGridDef &  aCIG);
 
 
 bool ConvIsSensVideo(eConventionsOrientation aConv);
@@ -1119,8 +1186,8 @@ Appar23  Xml2EL(const cMesureAppuis &);
 cMesureAppuis  El2Xml(const Appar23 &,int aNum=0);
 
 std::list<Appar23>  Xml2EL(const cListeAppuis1Im &);
-cListeAppuis1Im  El2Xml(const std::list<Appar23> &,const std::string NameImage ="NoName");
-cListeAppuis1Im  El2Xml(const std::list<Appar23> &, const std::list<int> &     aLInd,const std::string NameImage ="NoName");
+cListeAppuis1Im  El2Xml(const std::list<Appar23> &,const std::string &NameImage ="NoName");
+cListeAppuis1Im  El2Xml(const std::list<Appar23> &, const std::list<int> &     aLInd,const std::string &NameImage ="NoName");
 
 
 
@@ -1215,8 +1282,8 @@ bool NameFilter(cInterfChantierNameManipulateur *,const cTplValGesInit<cNameFilt
 cXML_Date  XML_Date0();
 cXML_LinePt3d MM2Matis(const Pt3dr &);
 
-corientation MM2Matis(const cOrientationConique &);
-cElXMLTree * ToXmlTreeWithAttr(const corientation &);
+// corientation MM2Matis(const cOrientationConique &);
+// cElXMLTree * ToXmlTreeWithAttr(const corientation &);
 
 void DoSimplePastisSsResol(const std::string & aFullName,int aResol);
 
@@ -1259,11 +1326,15 @@ const cOneMesureAF1I *  PtsOfName(const cMesureAppuiFlottant1Im &,const std::str
 
 class cImSecOfMaster;
 const std::list<std::string > * GetBestImSec(const cImSecOfMaster&,int aNb=-1,int aNbMin=-1,int aNbMax=1000,bool OkAndOutWhenNone=false);
-};
+
+cImSecOfMaster StdGetISOM
+               (
+                    cInterfChantierNameManipulateur * anICNM,
+                    const std::string & aNameIm,
+                    const std::string & anOri
+               );
 
 
-namespace NS_SuperposeImage
-{
 
 
 
@@ -1279,25 +1350,25 @@ class cCompCNFC
 {
      public :
         cCompCNFC(const cCalcNomFromCouple&);
-	std::string NameCalc(const std::string&,const std::string&);
+    std::string NameCalc(const std::string&,const std::string&);
      private :
          cCalcNomFromCouple mCNFC;
-	 cElRegex           mAutom;
+     cElRegex           mAutom;
 };
 
 class cCompCNF1
 {
      public :
         cCompCNF1(const cCalcNomFromOne&);
-	std::string NameCalc(const std::string&);
-        
+    std::string NameCalc(const std::string&);
+
      private :
          cCalcNomFromOne   mCNF1;
-	 cElRegex           mAutom;
+     cElRegex           mAutom;
 
 };
 
-class cStdMapName2Name 
+class cStdMapName2Name
 {
      public :
           cStdMapName2Name
@@ -1308,14 +1379,14 @@ class cStdMapName2Name
 
           std::string map(const std::string & );
           std::string map_with_def(const std::string & ,const std::string & aDef);
-          
+
      private :
           cInterfChantierNameManipulateur  *                  mICNM;
           cMapName2Name                                       mMapN2N;
 };
 
-cStdMapName2Name * StdAllocMn2n 
-                   ( 
+cStdMapName2Name * StdAllocMn2n
+                   (
                        const cTplValGesInit<cMapName2Name> &  aMapN2N,
                        cInterfChantierNameManipulateur *
                    );
@@ -1325,7 +1396,6 @@ cStdMapName2Name * StdAllocMn2n
 std::vector<std::string> GetStrFromGenStr(cInterfChantierNameManipulateur*,const cParamGenereStr &);
 std::vector<std::string> GetStrFromGenStrRel(cInterfChantierNameManipulateur*,const cParamGenereStrVois &,const std::string &);
 
-};
 
 
 
@@ -1359,7 +1429,7 @@ std::string StdNameGeomCalib(const std::string & aFullName);
 void  DC_Add(const cMMCameraDataBase & aDB);
 
 
-bool RepereIsAnam(const std::string &,bool &IsOrthXCSte);
+bool RepereIsAnam(const std::string &,bool &IsOrthXCSte,bool & IsAnamXCsteOfCart); // OrthoCyl est un cas 
 
 cConvExplicite GlobMakeExplicite(eConventionsOrientation aConv);
 ElRotation3D  GlobStd_RAff_C2M
@@ -1371,7 +1441,113 @@ ElRotation3D  GlobStd_RAff_C2M
 cConvExplicite GlobMakeExplicite(const cConvOri & aConv);
 
 
-void AdaptDist2PPaEqPPs(NS_ParamChantierPhotogram::cCalibDistortion & aCD);
+void AdaptDist2PPaEqPPs(cCalibDistortion & aCD);
+
+void MakeMetaData_XML_GeoI(const std::string & aNameImMasq);
+void MakeMetaData_XML_GeoI(const std::string & aNameImMasq,double aResol);
+
+
+//estd::set<std::string> SetOfCorresp(const std::vector<cCpleString> & aRel,const std::string &);
+
+class cAppliListIm
+{
+    public :
+       cAppliListIm(const std::string & aFullName);
+    public :
+
+      std::string                       mFullName;
+      std::string                       mDir;
+      std::string                       mPat;
+      cInterfChantierNameManipulateur * mICNM;
+      const cInterfChantierNameManipulateur::tSet * mSetIm;
+};
+
+// inline functions
+
+bool isUsingSeparateDirectories(){ return MMUserEnv().UseSeparateDirectories().Val(); }
+
+
+// === Gestionnaire de nom pour les fusions ===============
+
+typedef enum
+{
+    eTMIN_Depth,
+    eTMIN_Min,
+    eTMIN_Max,
+    eTMIN_Merge
+} eTypeMMByImNM;
+
+
+
+void MakeListofName(const std::string & aFile,const cInterfChantierNameManipulateur::tSet  *);
+void AddistofName(const std::string & aFile,const cInterfChantierNameManipulateur::tSet  *);
+
+
+class cMMByImNM
+{
+    public :
+
+        static cMMByImNM * ForGlobMerge(const std::string & aDirGlob,double aDS, const std::string & aNameMatch);
+        static cMMByImNM * ForMTDMerge(const std::string & aDirGlob,const std::string & aNameIm,const std::string & aNameMatch);
+
+        static cMMByImNM * FromExistingDirOrMatch(const std::string & aNameDirOriOrMatch,bool Svp,double aDS=1,const std::string & aDir0="./");
+
+        void DoDownScale(const std::string & aNameIm);
+        void PatDoDownScale(const std::string & aPat);
+
+
+        std::string NameFileMasq(eTypeMMByImNM,const std::string aNameIm);
+        std::string NameFileProf(eTypeMMByImNM,const std::string aNameIm);
+        std::string NameFileXml(eTypeMMByImNM,const std::string aNameIm);
+        std::string NameFileEntete(eTypeMMByImNM,const std::string aNameIm);
+        std::string NameFileLabel(eTypeMMByImNM,const std::string aNameIm);
+
+        void ModifIp(eTypeMMByImNM,cImage_Profondeur &,const std::string & aNameIm);
+
+        const std::string & FullDir() const;
+        const std::string & DirGlob() const;
+        const std::string & DirLoc() const;
+        const std::string & NameType() const;
+
+        void AddistofName(const cInterfChantierNameManipulateur::tSet  *);
+        const std::string & KeyFileLON() const;
+        const cEtatPims & Etat() const;
+        void  SetOriOfEtat(const std::string &) ;
+        const std::string & GetOriOfEtat() const;
+          
+        static bool  StrIsPImsDIr(const std::string &);
+        static std::string StdDirPims(double aDS, const std::string & aNameMatch);
+
+    private  :
+        cMMByImNM (double aDS,const std::string & aDirGlob,const std::string & aDirLoc,const std::string & aPrefix,const std::string &  aNameType) ;
+
+        static std::string NameOfType(eTypeMMByImNM);
+        std::string NameFileGlob(eTypeMMByImNM,const std::string aNameIm,const std::string aExt);
+        std::string NameFileLoc(eTypeMMByImNM,const std::string aNameIm,const std::string aExt);
+
+
+
+
+        double         mDS;
+        std::string    mDirGlob;
+        std::string    mDirLoc;
+        std::string    mPrefix;
+        std::string    mFullDir;
+        std::string    mNameFileLON;
+        std::string    mKeyFileLON;
+        std::string    mNameEtat;
+        cEtatPims      mEtats;
+        std::string    mNameType;
+
+        static const std::string TheNamePimsFile;
+        static const std::string TheNamePimsEtat;
+};
+
+bool IsMacType(eTypeMMByP aType);
+
+
+
+
 
 void MakeMetaData_XML_GeoI(const std::string & aNameImMasq);
 void MakeMetaData_XML_GeoI(const std::string & aNameImMasq,double aResol);
@@ -1386,13 +1562,13 @@ void MakeMetaData_XML_GeoI(const std::string & aNameImMasq,double aResol);
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -1402,17 +1578,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -50,6 +50,43 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #pragma once
 
+class cElErrorHandlor
+{
+    public :
+
+       virtual void OnError();
+       static cElErrorHandlor  TheDefElErrorHandlor;
+};
+extern cElErrorHandlor * TheCurElErrorHandlor;
+
+REAL16 PartieFrac(const REAL16 &);
+// Class faite pour tester la repetitivite (determinise) de l'execution d'un programme
+class cMajickChek
+{
+    public :
+        cMajickChek();
+        void AddDouble(const REAL16&);
+
+        void Add(const Pt3dr &);
+        void Add(const ElRotation3D &);
+        void Add(cGenSysSurResol &);
+        void Add(cSetEqFormelles &);
+
+        void Add(const std::string &);
+
+        std::string ShortMajId();
+        std::string MajId();
+    private :
+        char sMajAscii[1+2*sizeof(REAL16)];
+
+        void Add1Double(REAL16 & Target,const REAL16 &);
+
+        REAL16 mCheck1;
+        REAL16 mCheckInv;
+        REAL16 mCheck2;
+        bool   mGotNan;
+        bool   mGotInf;
+};
 
 
 class ElEM   // Elise Erreur Message
@@ -120,7 +157,7 @@ class ElEM   // Elise Erreur Message
       private  :
 
          ElEM() {}; // for Elise_Pile_Mess_0::_stack
-          void  mes_el() const ;
+          std::string  mes_el() const ;
 
           typedef enum
           {
@@ -157,7 +194,15 @@ class ElEM   // Elise Erreur Message
 };
 
 extern bool TheExitOnBrkp;
+extern bool TheExitOnNan;
+extern bool TheMajickFile;
+extern int  TheNbIterProcess;
+
 extern int  GetCharOnBrkp();
+
+
+FILE * TheFileDebug(); // Ouvert globalement en A+
+void OpenFileDebug(const std::string &); // Erreur si ouverture multiple
 
 class Elise_Pile_Mess_N
 {
@@ -185,10 +230,10 @@ class Elise_Pile_Mess_0
                  return Elise_Pile_Mess_N::_the_one;
          }
 
-     private :
+private :
 
           static void display(const char *);
-          
+
           static INT _nb;
           static ElEM _stack[100];
 };
@@ -214,7 +259,7 @@ class Elise_Assertion
           {
                  if (_active && (! expr))
                     Elise_Pile_Mess_0::display(_kind_of);
-                   
+
           }
           inline void error(Elise_Pile_Mess_N)
           {
@@ -245,6 +290,8 @@ class cElWarning
             const std::string &  aFile
          );
 
+         static cElWarning  PlanarityInMasq3d;
+         static cElWarning  JacobiInCasa;
          static cElWarning  BehindCam;
          static cElWarning  FocInxifAndMM;
          static cElWarning  CamInxifAndMM;
@@ -252,6 +299,9 @@ class cElWarning
          static cElWarning  GeomPointTooManyMeasured;
          static cElWarning  OrhoLocOnlyXCste;
          static cElWarning  ToVerifNuage;
+         static cElWarning  TrueRot;
+         static cElWarning  ScaleInNuageFromP;
+         static cElWarning  AppuisMultipleDefined;
 
          static void ShowWarns(const std::string & aFile);
     private :
@@ -270,17 +320,28 @@ class cElWarning
          std::string   mFile;
 };
 
+extern void BasicErrorHandler();
+
+
+#define MPD_MM_BRK(aMes)\
+if (MPD_MM())\
+{\
+      std::cout << " At " << __LINE__ << " " << aMes <<  "  , file= " << __FILE__ << "\n"; \
+      getchar();\
+}
+
+
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -290,17 +351,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

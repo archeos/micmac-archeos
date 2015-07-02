@@ -37,7 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 /*
  @  Pour l'instant  ZMin-ZMax sont globaux au chantier;
 ==================================================== 
@@ -54,8 +54,6 @@ const cGenerePartiesCachees & aGPC, double aZMin, double aZMax)
 
 
 
-namespace NS_ParamMICMAC
-{
 
 // static bool DEBUGPC = true;
 
@@ -94,7 +92,7 @@ class cMicMacZbuf : public cZBuffer
                const Pt2di &         aTrGT,   // Translation entre la BOX GT et ImZ,ImMasq
                const cGeomDiscFPx&,
                cPriseDeVue & aPdv,
-               Im2D_INT2  aImZInit,
+               Im2D_REAL4   aImZInit,
                Im2D_Bits<1> aImMasq
          );
          void Inspect();
@@ -150,7 +148,7 @@ cMicMacZbuf::cMicMacZbuf
       const Pt2di &         aTrGT,
       const cGeomDiscFPx& aGeomTer,
       cPriseDeVue & aPdv,
-      Im2D_INT2  aImZInit,
+      Im2D_REAL4   aImZInit,
       Im2D_Bits<1> aImMasq
 ) :
   cZBuffer
@@ -178,7 +176,7 @@ cMicMacZbuf::cMicMacZbuf
   {
      ElImplemDequantifier aDeq(mImTer.sz());
      aDeq.SetTraitSpecialCuv(false);
-     aDeq.DoDequantif(mImTer.sz(), mImTer.in(),true);
+     aDeq.DoDequantif(mImTer.sz(), round_ni(mImTer.in()),true);
      ELISE_COPY
      (
           mImTer.all_pts(),
@@ -215,6 +213,7 @@ bool cMicMacZbuf::SelectP(const Pt2di & aP)   const
 
 bool cMicMacZbuf::SelectPBascul(const Pt2dr & aP)   const
 {
+   // return  mGeom.IsInMasqAnamSA(aP);
    return   true;
 }
 
@@ -295,16 +294,17 @@ std::string  cAppliMICMAC::NamePC
       std::string aRes;
       if (aGPC.AddChantierKPC().Val())
       {
-          aRes = WorkDir() + ICNM()->Assoc1To2(aGPC.KeyCalcPC().Val(),aPdv.Name(),NameChantier(),true);
+          aRes = mOutputDirectory + ICNM()->Assoc1To2(aGPC.KeyCalcPC().Val(),aPdv.Name(),NameChantier(),true);
       }
       else
       {
-          aRes = WorkDir() + ICNM()->Assoc1To1(aGPC.KeyCalcPC().Val(),aPdv.Name(),true);
+          aRes = mOutputDirectory + ICNM()->Assoc1To1(aGPC.KeyCalcPC().Val(),aPdv.Name(),true);
       }
       if (aGPC.SupresExtChantierKPC().Val())
          aRes= StdPrefix(aRes);
       return aRes;
    }
+   
    return    FullDirResult() 
           +  std::string("MasqPC_")
           +  (  ((!OrthoEgalePC(aGPC))&&(! ForPC)) ? "Ortho_":"")
@@ -332,14 +332,18 @@ Box2di  BoxTer2Disc
           );
 }
 
+
 void cAppliMICMAC::MakePartiesCachees
                    (
                        cPriseDeVue & aPdv,
                        const cGenerePartiesCachees & aGPC,
                        double aZMin,
-                       double aZMax
+                       double aZMax,
+                       int    aCpt
                    )
 {
+
+   std::cout << "PC-Name " << aPdv.Name() << " Z " << aZMin << " # " << aZMax<<  "\n";
 
 
    if (aGPC.FiltreName().IsInit() && (! aGPC.FiltreName().Val()->Match(aPdv.Name())))
@@ -366,9 +370,15 @@ void cAppliMICMAC::MakePartiesCachees
 
    bool DoOrtho =  aGPC.MakeOrthoParImage().IsInit();
 
+   double aResRelOrtho = 1.0;
+   if (DoOrtho)
+   {
+       cMakeOrthoParImage aMOPI = aGPC.MakeOrthoParImage().Val();
+       aResRelOrtho  =  aMOPI.ResolRelOrhto().ValWithDef(1.0);
+   }
 
    std::string   anEntete = NamePC(true,aGPC,mCurEtape,aPdv);
-   std::cout << "ENTETE =" << anEntete << "\n";
+
    if (aGPC.DoOnlyWhenNew().Val())
    {
        if (ELISE_fp::exist_file(anEntete+".tif"))
@@ -382,9 +392,10 @@ void cAppliMICMAC::MakePartiesCachees
 
 
 
-   cGeomDiscFPx   aGT = mCurEtape->GeomTer();
+   cGeomDiscFPx   aGT = mCurEtape->GeomTerFinal();
    aGT.SetClipInit();
    Box2dr aBoxGlob(aGT.P0(), aGT.P1());
+
 
    cMetaDataPartiesCachees aMetaData;
    aMetaData.Done() = false;
@@ -407,7 +418,7 @@ void cAppliMICMAC::MakePartiesCachees
       GetIntervZ(aB,aZMin,aZMax,aZMoy);
       aBoxTer =  aPdv.Geom().EmpriseTerrain(&aZMin,&aZMax,0.0);
    }
-  
+
 
     if (InterVide(aBoxGlob,aBoxTer))
     {
@@ -415,7 +426,7 @@ void cAppliMICMAC::MakePartiesCachees
        return;
     }
 
-   std::cout << "PC-Name " << aPdv.Name() << " Z " << aZMin << " # " << aZMax<<  "\n";
+
 
 
    const cFilePx & aFP = mCurEtape->KPx(0);
@@ -427,7 +438,8 @@ void cAppliMICMAC::MakePartiesCachees
    Pt2di aP0 = aB._p0;
    Pt2di aP1 = aB._p1;
 
-   Im2D_INT2 aImZ(1,1);
+
+   Im2D_REAL4 aImZ(1,1);
    Im2D_Bits<1>  aImMasq(1,1);
 
    if (FullIm)
@@ -439,7 +451,7 @@ void cAppliMICMAC::MakePartiesCachees
 
     // On va calculer le masque des points terrain qui sont dans le masque terrain
     // initial et dont la projection au Z calcule est dans l'image 
-    // Eventuellement on adpate la boite pour la reduire
+    // Eventuellement on adapte la boite pour la reduire
    
 
 
@@ -449,8 +461,8 @@ void cAppliMICMAC::MakePartiesCachees
       aGT.SetClip(aP0,aP1);
       Pt2di aSzIm = aP1- aP0;
 
-      aImZ = Im2D_INT2(aSzIm.x,aSzIm.y);
-      TIm2D<INT2,INT> aTImZ(aImZ);
+      aImZ = Im2D_REAL4(aSzIm.x,aSzIm.y);
+      TIm2D<REAL4,REAL8> aTImZ(aImZ);
       aImMasq = Im2D_Bits<1>(aSzIm.x,aSzIm.y,0);
       Tiff_Im aTFM = FileMasqOfResol(mCurEtape->DeZoomTer());
 
@@ -477,7 +489,6 @@ void cAppliMICMAC::MakePartiesCachees
       Im2D_Bits<1> aImMGI(aSzMGI.x,aSzMGI.y);
       ELISE_COPY(aImMGI.all_pts(),aFileMasqGeomIm.in_bool_proj(),aImMGI.out());
       TIm2DBits<1>  aTImMGI(aImMGI);
-///std::cout << "MADSSSsssssssssssssssskkkKKK  " << aMasqIm.name() << aMasqIm.sz() << aSzPdv << "\n";
 
       cGeomImage & aGeoI =  aPdv.Geom();
       // Calcul le masque en geometrie image
@@ -527,7 +538,11 @@ void cAppliMICMAC::MakePartiesCachees
                    for (aP.x=aX0 ; aP.x<aX1 ; aP.x++)
                    {
                       Pt2dr aPImCur =  aGT.DiscToR2(aP);
-                      if (aTImMasq.get(aP) && aGeoI.IsInMasqAnamSA(aPImCur))
+                      if (! aGeoI.IsInMasqAnamSA(aPImCur)) aTImMasq.oset(aP,0);
+
+
+                      // if (aTImMasq.get(aP) && aGeoI.IsInMasqAnamSA(aPImCur))
+                      if (aTImMasq.get(aP))
                       {
                          int aZ = aTImZ.get(aP);
                          Pt2dr aPIm2 =   aPImC
@@ -558,7 +573,6 @@ void cAppliMICMAC::MakePartiesCachees
       }
 
 
-
        
       if (0)
       {
@@ -573,7 +587,7 @@ void cAppliMICMAC::MakePartiesCachees
 
       if ((!FullIm) && (aNewSz.x>0) &&  (aNewSz.y>0))
       {
-          Im2D_INT2 aNewImZ(aNewSz.x,aNewSz.y);
+          Im2D_REAL4 aNewImZ(aNewSz.x,aNewSz.y);
           Im2D_Bits<1>  aNewImMasq(aNewSz.x,aNewSz.y);
 
           ELISE_COPY
@@ -609,11 +623,12 @@ void cAppliMICMAC::MakePartiesCachees
    
    int aSzBord = aGPC.SzBord().Val();
    int aMaxSz= aGPC.SzBloc().Val();
+   if (aResRelOrtho > 1.0)  
+      aMaxSz = round_ni(aMaxSz/aResRelOrtho);
 
 
    Pt2di aPBord(aSzBord,aSzBord);
    cDecoupageInterv2D  aDI2d(Box2di(aP0Glob,aP1Glob),Pt2di(aMaxSz,aMaxSz),Box2di(-aPBord,aPBord));
-
 
 
    std::string aStrEnt = anEntete+".tif";
@@ -643,9 +658,23 @@ void cAppliMICMAC::MakePartiesCachees
         Box2di  aBoxIn = aDI2d.KthIntervIn(aKBox);
 
         aGT.SetClip(aBoxIn._p0,aBoxIn._p1);
+        Pt2di aSzClip = aGT.SzClip();
 
 
-        cMicMacZbuf aMmZB
+       int aNbOk;
+// std::cout << "BOXXXX " << aBoxIn._p0 << " " << aBoxIn._p1 << " " << aImMasq.sz() << "\n";
+       ELISE_COPY(rectangle(aBoxIn._p0,aBoxIn._p1),trans(aImMasq.in(),-aP0Glob),sigma(aNbOk));
+
+       cMicMacZbuf * aMmZB = 0;
+
+
+       Im2D_REAL4 aIPC (aSzClip.x,aSzClip.y,1e5);
+       Im2D_Bits<1>  aMasqOrt(aSzClip.x,aSzClip.y,0);
+
+
+       if (aNbOk> 100) 
+       {
+          aMmZB = new cMicMacZbuf
                (
                        *this,
                        aGPC.Dequant().ValWithDef(type_im_integral(aTypePx)),
@@ -656,14 +685,13 @@ void cAppliMICMAC::MakePartiesCachees
                        aImZ,
                        aImMasq
                 );
-       // aMmZB.Inspect();
+           aMmZB->SetWithBufXYZ(aGPC.BufXYZ().Val());
 
-        aMmZB.SetWithBufXYZ(aGPC.BufXYZ().Val());
+           float aZDef = -1e15f;
 
-        float aZDef = -1e15f;
-
-        Im2D_REAL4 aIPC = aMmZB.ZCaches (Pt2di(0,0),aGT.SzClip(), aZDef);
-    
+           aIPC = aMmZB->ZCaches (Pt2di(0,0),aGT.SzClip(), aZDef);
+           aMasqOrt = aMmZB->ImOkTer();
+       }
 
         double aZoom = aGT.ResolZ1();
 
@@ -681,14 +709,12 @@ void cAppliMICMAC::MakePartiesCachees
            double aRXSurY = aRx/aRy;
 
            ELISE_ASSERT(ElAbs(ElAbs(aRXSurY)-1)<1e-5,"Incoherence in ResolAbsOrtho");
-           double aResRel =  aMOPI.ResolRelOrhto().ValWithDef(1.0);
            if (aMOPI.ResolAbsOrtho().IsInit())
            {
-               aResRel = aMOPI.ResolAbsOrtho().Val()/ElAbs(aRx);
+               aResRelOrtho = aMOPI.ResolAbsOrtho().Val()/ElAbs(aRx);
            }
 
-           anOriOrtho.ResolutionPlani() = Pt2dr(aRx,aRy)*aResRel;
-
+           anOriOrtho.ResolutionPlani() = Pt2dr(aRx,aRy)*aResRelOrtho;
 
            if (aMOPI.PixelTerrainPhase().IsInit())
            {
@@ -718,18 +744,18 @@ void cAppliMICMAC::MakePartiesCachees
            Box2di  aBoxOrthoIn  =  Inf(aBoxOrthoGlob,R2I(aBoxIn.BoxImage(aAfPM2PO)));
            Box2di  aBoxOrthoOut =  Inf(aBoxOrthoGlob,R2I(aBoxOut.BoxImage(aAfPM2PO)));
 
-           anOriOrtho.NombrePixels() = round_ni(Pt2dr(anOriMNT.NombrePixels())/aResRel);
+           anOriOrtho.NombrePixels() = round_ni(Pt2dr(anOriMNT.NombrePixels())/aResRelOrtho);
 
            ElAffin2D  aAfPML2POL =   AffPixTer2BoxLoc(aBoxOrthoIn) * aAfPM2PO   * AffPixTer2BoxLoc(aBoxIn).inv();
 
-           Im2D_Bits<1> aMasqOrt = aMmZB.ImOkTer();
            Im2D_U_INT1 aIPCOrt(1,1);
            if (! OrthoEgalePC(aGPC))
            {
+                // TIm2DBits<1>  aTMasqM(aMmZB.ImOkTer());
+                TIm2DBits<1>  aTMasqM(aMasqOrt);
                 Pt2di aSzO = aBoxOrthoIn.sz();
                 aMasqOrt = Im2D_Bits<1>(aSzO.x,aSzO.y);
                 TIm2DBits<1> aTMasqO(aMasqOrt);
-                TIm2DBits<1>  aTMasqM(aMmZB.ImOkTer());
 
                 aIPCOrt = Im2D_U_INT1(aSzO.x,aSzO.y);
                 TIm2D<U_INT1,INT> aTIPCOrt(aIPCOrt);
@@ -775,7 +801,6 @@ void cAppliMICMAC::MakePartiesCachees
                if (aKBox==0)
                {
                    std::string   anEnteteO = NamePC(false,aGPC,mCurEtape,aPdv);
-std::cout << "XXXXX " << anEnteteO << "\n";
 
                    cMetaDataPartiesCachees aMTDO = aMetaData;
                    aMTDO.Offset() = OP0G;
@@ -806,21 +831,38 @@ std::cout << "XXXXX " << anEnteteO << "\n";
            {
                 std::string aDir = mICNM->Dir()+aMOPI.DirOrtho().Val();
                 ELISE_fp::MkDir(aDir);
-                MakeFileXML(anOriOrtho, aDir+aMOPI.FileMTD().Val());
+                if (aCpt==0)
+                {
+// std::cout << " MMMMMM " << aDir+aMOPI.FileMTD().Val() << "\n";
+// getchar();
+                   MakeFileXML(anOriOrtho, aDir+aMOPI.FileMTD().Val());
+                   GenTFW(anOriOrtho,aDir+aMOPI.FileMTD().Val());
+                }
 
                 if (aMOPI.MakeMTDMaskOrtho().IsInit())
                 {
                     const cMakeMTDMaskOrtho & aMMMO = aMOPI.MakeMTDMaskOrtho().Val();
                     MakeFileXML(aMMMO.Mesures(),aDir+aMMMO.NameFileSauv().Val());
                 }
+   // aMetaData.Offset();
+   // aMetaData.Sz();
+                cFileOriMnt anOriIm = anOriOrtho ;
+                anOriIm.NombrePixels() = aMetaData.Sz();
+                Pt2dr anOffs = Pt2dr(aMetaData.Offset());
+                anOriIm.OriginePlani() = anOriOrtho.OriginePlani() + anOffs.mcbyc(anOriOrtho.ResolutionPlani());
+                std::string aNameMtdIm = aDir + "MTD-"+ aPdv.Name() + ".xml";
+                MakeFileXML(anOriIm,aNameMtdIm);
+                GenTFW(anOriIm,aNameMtdIm);
            }
        }
 
 
        if ( OrthoEgalePC(aGPC))
        {
-           Fonc_Num aFPC =   Min(254,(aIPC.in()/aZoom)/aGPC.PasDisc().Val()) * aMmZB.ImOkTer().in()
-                           + 255 * (1-aMmZB.ImOkTer().in());
+           // Fonc_Num aFPC =   Min(254,(aIPC.in()/aZoom)/aGPC.PasDisc().Val()) * aMmZB.ImOkTer().in()
+           //                 + 255 * (1-aMmZB.ImOkTer().in());
+           Fonc_Num aFPC =   Min(254,(aIPC.in()/aZoom)/aGPC.PasDisc().Val()) * aMasqOrt.in()
+                           + 255 * (1-aMasqOrt.in());
            ELISE_COPY
            (
                 rectangle(aBoxOut._p0- aP0Glob,aBoxOut._p1-aP0Glob),
@@ -829,6 +871,7 @@ std::cout << "XXXXX " << anEnteteO << "\n";
            );
        }
 
+      delete aMmZB;
    }
 
    MakeFileXML ( aMetaData, anEntete+".xml");
@@ -874,7 +917,7 @@ void cAppliMICMAC::MakeOrtho
           const  ElAffin2D  &        aAfPML2POL ,
           const cMakeOrthoParImage & aMOPI,
           cPriseDeVue & aPDV,
-          cMicMacZbuf & aZB,
+          cMicMacZbuf * aZB,
           cMetaDataPartiesCachees & aMDPC
      )
 {
@@ -896,6 +939,7 @@ void cAppliMICMAC::MakeOrtho
        return;
     }
     Tiff_Im aFIn = Tiff_Im::StdConvGen(aNameIn.c_str(),aMOPI.NbChan().Val(),false);
+
     int aDzTer = mCurEtape->DeZoomTer();
 
     int aNbC = aFIn.nb_chan();
@@ -957,75 +1001,84 @@ void cAppliMICMAC::MakeOrtho
     double aScIm =  aMOPI.ResolIm().Val() * aDzTer;
     Pt2dr aTrIm  =  Pt2dr(aMOPI.TranslateIm().Val());
 
-    Pt2dr  aP0Out = Pt2dr(aZB.P0_Out()) * aScIm;
 
-
-    Pt2di aPO;
-    TIm2DBits<1> aTMasqT(aMasqT);
-    int aRF = aMOPI.RepulsFront().Val();
-
-    for (aPO.x=0 ; aPO.x<aSzT.x ; aPO.x++)
+    if (aZB)
     {
-        double aValOut = -1.1e10;
-        double aValTest = -1e10;
-        for (aPO.y=0 ; aPO.y<aSzT.y ; aPO.y++)
+        Pt2dr  aP0Out = Pt2dr(aZB->P0_Out()) * aScIm;
+
+
+        Pt2di aPO;
+        TIm2DBits<1> aTMasqT(aMasqT);
+        int aRF = aMOPI.RepulsFront().Val();
+
+        for (aPO.x=0 ; aPO.x<aSzT.x ; aPO.x++)
         {
-            if (aTMasqT.get(aPO))
+            double aValOut = -1.1e10;
+            double aValTest = -1e10;
+            for (aPO.y=0 ; aPO.y<aSzT.y ; aPO.y++)
             {
-                Pt2dr aPM  = aAfPOL2PML(Pt2dr(aPO));
-                bool aOK;
-                Pt3dr aPTer = aZB.ProjReelle(aPM,aOK);
-
-                if (aOK)
+                if (aTMasqT.get(aPO))
                 {
-                    Pt2dr aPIm = ToIm(aPTer,aTrIm,aScIm,aP0Out);
+                    Pt2dr aPM  = aAfPOL2PML(Pt2dr(aPO));
+                    bool aOK;
+                    Pt3dr aPTer = aZB->ProjReelle(aPM,aOK);
 
-                    for (int aKC=0 ; aKC<aNbC ; aKC++)
+                    if (aOK)
                     {
-                        double aVal = mIntOrth[aKC]->GetDef(aPIm,aValOut);
-                        if (aVal < aValTest)
+                        Pt2dr aPIm = ToIm(aPTer,aTrIm,aScIm,aP0Out);
+
+                        for (int aKC=0 ; aKC<aNbC ; aKC++)
                         {
-                            aVal = 0;
-                            aTMasqT.oset(aPO,0);
+                            double aVal = mIntOrth[aKC]->GetDef(aPIm,aValOut);
+                            if (aVal < aValTest)
+                            {
+                                aVal = 0;
+                                aTMasqT.oset(aPO,0);
+                            }
+                            // mOrthos[aKC]->SetR(aP,aVal);
+                            mOrthos[aKC]->TronqueAndSet(aPO,aVal);
                         }
-                        // mOrthos[aKC]->SetR(aP,aVal);
-                        mOrthos[aKC]->TronqueAndSet(aPO,aVal);
-                    }
+                        if (doImIncH)
+                        {
+                           Pt2dr aPImInc = aPIm;
+                           if (doIncZMoy)
+                           {
+                              aPImInc = ToIm(aZB->ProjDisc(Pt3dr(aPM.x,aPM.y,aZMoyen)),aTrIm,aScIm,aP0Out);
+                           }
+                           if (doIncByFront)
+                           {
+                               double aD  = (aIntMax-aBoxIm.Interiorite(aPImInc)) * (1.0/aIntMax) ;
+                               aTImIncH.oset(aPO,aD);
+                           }
+                           else
+                           {
+                              ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc * aDzTer);
+                              double aTeta = acos(-aSeg.TgNormee().z);
+                              if (aRF > 0)
+                              {
+                                  aTeta += ElMax(0.0,(aRF-aBoxIm.Interiorite(aPImInc))*(10.0/aRF));
+                              }
+                              aTImIncH.oset(aPO,aTeta);
+                           }
+                         }
+                     } 
+                } 
+                else
+                {
+                    for (int aKC=0 ; aKC<aNbC ; aKC++)
+                        mOrthos[aKC]->TronqueAndSet(aPO,0);
                     if (doImIncH)
                     {
-                       Pt2dr aPImInc = aPIm;
-                       if (doIncZMoy)
-                       {
-                          aPImInc = ToIm(aZB.ProjDisc(Pt3dr(aPM.x,aPM.y,aZMoyen)),aTrIm,aScIm,aP0Out);
-                       }
-                       if (doIncByFront)
-                       {
-                           double aD  = (aIntMax-aBoxIm.Interiorite(aPImInc)) * (1.0/aIntMax) ;
-                           aTImIncH.oset(aPO,aD);
-                       }
-                       else
-                       {
-                          ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc * aDzTer);
-                          double aTeta = acos(-aSeg.TgNormee().z);
-                          if (aRF > 0)
-                          {
-                              aTeta += ElMax(0.0,(aRF-aBoxIm.Interiorite(aPImInc))*(10.0/aRF));
-                          }
-                          aTImIncH.oset(aPO,aTeta);
-                       }
-                     }
-                 } 
-            } 
-            else
-            {
-                for (int aKC=0 ; aKC<aNbC ; aKC++)
-                    mOrthos[aKC]->TronqueAndSet(aPO,0);
-                if (doImIncH)
-                {
-                   aImIncH.SetR(aPO,3.14);
+                       aImIncH.SetR(aPO,3.14);
+                    }
                 }
             }
         }
+    }
+    else
+    {
+          ELISE_COPY(aImIncH.all_pts(),3.14,aImIncH.out());
+          ELISE_COPY(mOrthos[0]->all_pts(),Virgule(128,128,128,128),StdOut(mOrthos));
     }
 
 
@@ -1110,6 +1163,7 @@ void cAppliMICMAC::GetIntervZ(const Box2di & aBox,double & aZMin,double & aZMax,
 
   Tiff_Im aTFM = FileMasqOfResol(mCurEtape->DeZoomTer());
 
+
   Symb_FNum  aFZ  (Rconv(aTFP.in()));
   Symb_FNum  aFM  (Rconv(aTFM.in_bool_proj()));
 
@@ -1141,7 +1195,7 @@ void cAppliMICMAC::GetIntervZ(const Box2di & aBox,double & aZMin,double & aZMax,
 
   aZMoy = aSomMZ / aSomM;
 
-  const cGeomDiscFPx &  aGT = mCurEtape->GeomTer();
+  cGeomDiscFPx  aGT = mCurEtape->GeomTerFinal();
   aGT.PxDisc2PxReel(&aZMin,&aZMin);
   aGT.PxDisc2PxReel(&aZMax,&aZMax);
   aGT.PxDisc2PxReel(&aZMoy,&aZMoy);
@@ -1232,25 +1286,21 @@ void cAppliMICMAC::MakePartiesCachees()
 // std::cout << "IDPIsni" << Paral_Pc_IdProcess().IsInit() i
 // << " DoIt:: " << DoIt << " " << (*itPdv)->Name()  << "\n";
              if (DoIt) 
-                MakePartiesCachees(**itPdv,aGPC,aZMin,aZMax);
+                MakePartiesCachees(**itPdv,aGPC,aZMin,aZMax,aCpt);
 
              aCpt++;
           }
      }
-     // getchar();
    }
-  
-
 }
 
 
 ///////////////////////////////////////////////////
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1266,17 +1316,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

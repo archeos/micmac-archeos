@@ -222,12 +222,12 @@ class AllocateurDInconnues
         void AssertUsable(const cStateAllocI &) const;
         void RestoreState(const cStateAllocI &);
         AllocateurDInconnues();
-        Fonc_Num        NewF(REAL *);
+        Fonc_Num        NewF(REAL *,bool HasAlwaysInitialValue=false);
         INT             NewInc(REAL *);
-        Pt3d<Fonc_Num>  NewPt3(REAL *,REAL*,REAL*);
-        Pt3d<Fonc_Num>            NewPt3(Pt3dr &);
-        Pt2d<Fonc_Num>            NewPt2(REAL*,REAL*);
-        Pt2d<Fonc_Num>            NewPt2(Pt2dr &);
+        Pt3d<Fonc_Num>  NewPt3(REAL *,REAL*,REAL*,bool HasAlwaysInitialValue=false);
+        Pt3d<Fonc_Num>            NewPt3(Pt3dr &,bool HasAlwaysInitialValue=false);
+        Pt2d<Fonc_Num>            NewPt2(REAL*,REAL*,bool HasAlwaysInitialValue=false);
+        Pt2d<Fonc_Num>            NewPt2(Pt2dr &,bool HasAlwaysInitialValue=false);
 
         std::vector<Fonc_Num>            NewVectInc(std::vector<double> &);
 
@@ -464,6 +464,8 @@ class cGenSysSurResol
 {
      public :
 
+           ElMatrix<tSysCho>  MatQuad() const;
+
           virtual double CoeffNorm() const;
 
 //  FONCTION LIEES AU DEBUG DES  VALEUR <0 DANS CHOLESKY SUR PIAZZABRA
@@ -567,6 +569,11 @@ class cGenSysSurResol
          virtual void  SetElemQuad(int i,int j,const tSysCho& );
          virtual tSysCho  GetElemLin(int i) const;
          virtual void  SetElemLin(int i,const tSysCho& ) ;
+         virtual tSysCho SomQuad() const;
+
+          
+         virtual void LVM_Mul(const tSysCho& aLambda) ;  // Levenberg Marquad modif
+         virtual void LVM_Mul(const tSysCho& aLambda,int aK) ;  // Levenberg Marquad modif sur une seule inconnue
 
 	 // Pour ces 4 Fon, Def, utilise GetElemQuad-GetElemLin
 
@@ -1266,6 +1273,7 @@ public:
     Type c;
     Type f;
 
+
     Type mA;
     Type mE;
     Type mI;
@@ -1274,9 +1282,12 @@ public:
     Type mF;
     Type mDet;
 
+    cMSymCoffact3x3();
     cMSymCoffact3x3(Type ** aMat);
     void CoffSetInv(Type **);
     Pt3d<Type>  CoffVecInv(const Type *) const;
+    Pt3d<Type>  CoffMul(const Type *) const;
+    void FinishCoFact();
 };
 
 class cAMD_Interf
@@ -1297,6 +1308,62 @@ class cAMD_Interf
 
 
 int amd_demo_1 (void);
+
+
+/*   
+    0 = (p0 x + p1 y + p2 z + p3) - I (p8 x + p9 y + p10 z + p11)
+    0 = (p4 x + p5 y + p6 z + p7) - J (p8 x + p9 y + p10 z + p11)
+*/
+
+
+class cEq12Parametre
+{
+    public :
+        cEq12Parametre();
+        void AddObs(const Pt3dr & aPGround,const Pt2dr & aPPhgr,const double&  aPds);
+
+        // Cam 2 Monde
+        std::pair<ElMatrix<double>,Pt3dr> ComputeNonOrtho();
+
+        // Intrinseques + extrinseques
+        std::pair<ElMatrix<double>,ElRotation3D > ComputeOrtho();
+
+    private :
+        L2SysSurResol mSys;
+        std::vector<Pt3dr>  mVPG;
+        std::vector<Pt2dr>  mVPPhgr;
+        std::vector<double> mVPds;
+
+        void ComputeOneObs(const Pt3dr & aPGround,const Pt2dr & aPPhgr,const double&  aPds);
+
+        // Indexe et valeur permettant de fixer l'arbitraire
+        int    mIndFixArb;
+        double mValueFixArb;
+};
+
+/*
+class cOldBundleIterLin
+{
+    public :
+
+       void AddObs(const Pt3dr & aQ1,const Pt3dr& aQ2,const double & aPds);
+       ElRotation3D CurSol();
+       double ErrMoy() const;
+
+       cOldBundleIterLin(const ElRotation3D & aRot,const double & anErrStd);
+       ElRotation3D  mRot;
+       L2SysSurResol mSysLin5;
+       ElMatrix<double> tR0;
+       Pt3dr mB0;
+       Pt3dr mC,mD;
+       std::vector<double> mVRes;
+       double              mSomErr;
+       double              mSomPds;
+       double              mErrStd;
+       double              mLastPdsCalc;
+
+};
+*/
 
 
 

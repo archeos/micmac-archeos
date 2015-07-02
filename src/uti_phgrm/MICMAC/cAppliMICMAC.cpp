@@ -37,7 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 #ifdef MAC
 // Modif Greg pour avoir le nom de la machine dans les log
 #include <sys/utsname.h>
@@ -45,15 +45,32 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 // Test commit
 
-namespace NS_ParamMICMAC
+
+
+
+const cCWWSImage * GetFromCAWSI(const cChantierAppliWithSetImage & aCAWSI,const std::string & aName)
 {
+   for (std::list<cCWWSImage>::const_iterator itW=aCAWSI.Images().begin() ; itW!=aCAWSI.Images().end() ; itW++)
+   {
+       if (itW->NameIm()==aName) 
+          return &(*itW);
+   }
+   return 0;
+}
+
+bool GlobDebugMM=false;
+Pt2di PBug(47,112);
+bool IsPBug(const Pt2di &aP)
+{
+   return (aP.x==PBug.x) && (aP.y==PBug.y) && (GlobDebugMM);
+}
+
 
 cDebugEscalier * theDE = 0;
 
 // ##
 
 Pt2di ThePtDebug;
-bool DeBugMM=false;
 
 std::string  StdNameFromCple
              (
@@ -282,6 +299,7 @@ cAppliMICMAC::cAppliMICMAC
    mAutomNomPyr    (0),
    mEtape00        (0),
    mCurEtape       (0),
+   mPrecEtape      (0),
    mEBI            (0),
    mCurMAI         (0),
    mGeomDFPx       (NULL),
@@ -302,6 +320,7 @@ cAppliMICMAC::cAppliMICMAC
    mTImOkTerDil (mImOkTerDil),
    mAll1ImOkTerDil (1,1),
    mAll1TImOkTerDil (mAll1ImOkTerDil),
+   mBufCensusIm2   (),
    mGeoX (1,1),
    mTGeoX (mGeoX),
    mGeoY (1,1),
@@ -323,10 +342,27 @@ cAppliMICMAC::cAppliMICMAC
    mDoTheMEC       (true),
    mAnaGeomMNT     (0),
    mMakeMaskImNadir  (0),
-   mMaxPrecision     (0)
+   mMaxPrecision     (0),
+   mGLOBMasq3D       (0),
+   mGLOBNuage        (0),
+   mCorrecAlti4ExportIsInit (false),
+   mValmCorrecAlti4Export   (0.0)
    // mInterpolTabule (10,8,0.0,eTabul_Bilin)
    // mInterpolTabule (10,8,0.0,eTabul_Bicub)
 {
+      mDeZoomMax =1;
+      mDeZoomMin =1<<20;
+      for (std::list<cEtapeMEC>::const_iterator itE=  EtapeMEC().begin() ;  itE!= EtapeMEC().end() ; itE++)
+      {
+            int aDz = itE->DeZoom();
+            if (aDz !=-1)
+            {
+                 ElSetMax(mDeZoomMax,aDz);
+                 ElSetMin(mDeZoomMin,aDz);
+            }
+       }
+
+       GlobDebugMM = DebugMM().Val();
 
         mDoTheMEC = DoMEC().Val();
         if (
@@ -356,6 +392,8 @@ cAppliMICMAC::cAppliMICMAC
 	mDefCorr		= DefCorrelation().Val();
 	mEpsCorr		= EpsilonCorrelation().Val();	
 	mMapEquiv		= StdAllocMn2n( ClassEquivalenceImage(), mICNM );
+	mOutputDirectory = ( isUsingSeparateDirectories()?MMOutputDirectory():WorkDir() );
+	setInputDirectory( WorkDir() );
 
   if (RepereCorrel().IsInit() && (RepereCorrel().Val() != "NO-REPERE"))
   {
@@ -407,18 +445,13 @@ cAppliMICMAC::cAppliMICMAC
    if (aNameExeEnv!=0)
       mNameExe = aNameExeEnv;
 
+   // Parfois besoin de chantier en amont pour Anam ....
+   if (!CalcNomChantier().IsInit() &&  NomChantier().IsInit())
+      mNameChantier = NomChantier().Val();
+
    InitDirectories();
    InitAnamSA();
    InitImages();
-/*
-   {
-        if (! CalledByProcess().Val())
-           mGPRed2 = new cEl_GPAO;
-std::cout << "BEGIN TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
-        TestReducIm(128);
-std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
-   }
-*/
    InitMemPart();
    ELISE_ASSERT(mNbPDV>=2,"Moins de 2 images selectionnees !!");
 
@@ -443,6 +476,7 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
 
    if ((aMode ==eAllocAM_Saisie) || (aMode==eAllocAM_Batch))
       return;
+
 
 
    VerifEtapes();
@@ -509,13 +543,6 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
            MakeFileFDC();
     }
 
-/*
-    {
-        if (! CalledByProcess().Val())
-           mGPRed2 = new cEl_GPAO;
-        TestReducIm(128);
-    }
-*/
 
     if (    (! CalledByProcess().Val())
          && (Use_MM_EtatAvancement().Val())
@@ -525,6 +552,12 @@ std::cout << "END TEST REDUCE " <<mGPRed2 <<  "\n"; getchar();
         return;
     }
 
+    if ( (! CalledByProcess().Val()))
+    {
+        mMemPart.DeZoomLast().SetVal(mEtapesMecComp.back()->DeZoomTer());
+        mMemPart.NumLastEtape().SetVal(mEtapesMecComp.back()->Num());
+        SauvMemPart();
+     }
 
     {
         SauvEtatAvancement(false);
@@ -552,6 +585,8 @@ cAppliMICMAC::~cAppliMICMAC()
 	if ( mGeomDFPx!=NULL ) delete mGeomDFPx;
 	if ( mGeomDFPxInit!=NULL ) delete mGeomDFPxInit;
 }
+
+
 
 
 cAppliMICMAC * cAppliMICMAC::Alloc(int argc,char ** argv,eModeAllocAM aMode)
@@ -656,8 +691,8 @@ cAppliMICMAC * cAppliMICMAC::Alloc(int argc,char ** argv,eModeAllocAM aMode)
 		itChar++;
 	}
 #endif
-
-    return new cAppliMICMAC(aMode,getCurrentProgramFullName(),argv[1],aP2,argv+2,argc-2,aName);
+	
+    return new cAppliMICMAC(aMode,current_program_fullname()+" "+current_program_subcommand(),argv[1],aP2,argv+2,argc-2,aName);
 }
 
 
@@ -668,17 +703,19 @@ void ViderDir(const std::string & aDir)
      ELISE_fp::PurgeDir(aDir);
 }
 
+// void MvDir2Dir(cInterfChantierNameManipulateur * aICN,std::string & aPat,
+
 void cAppliMICMAC::InitDirectories()
 {
     if (!TmpPyr().IsInit())
        TmpPyr().SetVal(TmpMEC());
 
-    mFullDirMEC =  WorkDir() + TmpMEC();
-    mFullDirPyr =  WorkDir() + TmpPyr().Val();
-    mFullDirGeom =  WorkDir() + TmpGeom().Val();
-    mFullDirResult =  WorkDir() + TmpResult().Val();
-
-
+    mFullDirMEC =  mOutputDirectory + TmpMEC();
+    mFullDirPyr = mOutputDirectory + TmpPyr().Val();
+    mFullDirGeom =  mOutputDirectory + TmpGeom().Val();
+    mFullDirResult =  mOutputDirectory + TmpResult().Val();
+    
+    std::string aTmp = mOutputDirectory+ "Tmp-MM-Dir/";
     ELISE_fp::MkDir(mFullDirMEC);
     ELISE_fp::MkDir(mFullDirPyr);
     ELISE_fp::MkDir(mFullDirResult);
@@ -688,7 +725,38 @@ void cAppliMICMAC::InitDirectories()
 
    if (PurgeMECResultBefore().Val() &&  (!CalledByProcess().Val()))
    {
+       const std::vector<std::string> * aSetPres = 0;
+       if (PreservedFile().IsInit())
+       {
+          cInterfChantierNameManipulateur * aICD =  cInterfChantierNameManipulateur::BasicAlloc(mFullDirMEC);
+          aSetPres = aICD->Get(PreservedFile().Val());
+          std::cout  << "aSETPRES " << aSetPres->size() << "\n";
+       }
+
+       std::vector<std::string> aVTMP;
+       std::string anUId =  GetUnikId();
+       if (aSetPres)
+       {
+           for (int aK=0 ; aK<int(aSetPres->size()) ; aK++)
+           {
+               std::string  aNameIm = (*aSetPres)[aK];
+               std::string aFileTmp = aTmp + anUId + aNameIm;
+               ELISE_fp::MvFile(mFullDirMEC+aNameIm,aFileTmp);
+               aVTMP.push_back(aFileTmp);
+           }
+       }
+
        ViderDir(mFullDirMEC);
+
+       if (aSetPres)
+       {
+           for (int aK=0 ; aK<int(aSetPres->size()) ; aK++)
+           {
+               ELISE_fp::MvFile(aVTMP[aK],mFullDirMEC+(*aSetPres)[aK]);
+
+           }
+       }
+
        if (mFullDirResult != mFullDirMEC)
           ViderDir(mFullDirResult);
    }
@@ -726,6 +794,8 @@ void cAppliMICMAC::VerifOneEtapes(const cEtapeMEC & anEt)
 void cAppliMICMAC::VerifEtapes() 
 {
 std::cout << "==============================cAppliMICMAC::VerifEtapes \n";
+/*
+   // DEPLACE PLUS HAUT
    mDeZoomMax =1;
    mDeZoomMin =1<<20;
    for (std::list<cEtapeMEC>::const_iterator itE=  EtapeMEC().begin() ;  itE!= EtapeMEC().end() ; itE++)
@@ -737,6 +807,7 @@ std::cout << "==============================cAppliMICMAC::VerifEtapes \n";
               ElSetMin(mDeZoomMin,aDz);
          }
     }
+*/
    std::list<cEtapeMEC>::const_iterator itE = EtapeMEC().begin();
    ELISE_ASSERT(itE->DeZoom()==-1,"Etape Init, Resol != -1");
 
@@ -793,6 +864,13 @@ void cAppliMICMAC::VerifImages() const
 /*****************************************/
 /*       "Compile" les etapes de MEC     */
 /*****************************************/
+
+bool  cAppliMICMAC::DoMTDNuage() const
+{
+   return    (!DoNothingBut().IsInit())
+          || (ButDoMTDNuage().Val())
+          || (!DoNotOriMNT());
+}
 
 bool  cAppliMICMAC::DoNotOriMNT() const
 {
@@ -873,7 +951,9 @@ void cAppliMICMAC::InitMemPart()
 
 void cAppliMICMAC::SauvMemPart()
 {
-   if (DoNotMemPart())
+   if (       (DoNotMemPart())
+         ||   ( CalledByProcess().Val())
+      )
        return;
 
     cElXMLTree * aTree = ToXMLTree(mMemPart);
@@ -904,6 +984,7 @@ std::string  cAppliMICMAC::NameFileSzW(int aDz)
 {
     return FullDirPyr() + "ImSzW_Dz" + ToString(aDz) + PDV1()->Name() + ".tif";
 }
+
 
 
 
@@ -1061,10 +1142,29 @@ void cAppliMICMAC::InitAnamSA()
                      "",
                      mXmlAnamSA
                );
+// std::cout << "AAAAAAAAaa\n";
+       if (mAnaGeomMNT && mAnaGeomMNT->UnUseAnamXCste().Val())
+       {
+              mAnamSA->SetUnusedAnamXCSte();
+       }
        ELISE_ASSERT(!mRepCorrel,"Anam and RepCorrel incompatibles");
+    }
+    else if (mRepCorrel!=0)
+    {
+
+/*
+for (int aK=0 ; aK<10 ; aK++)
+        std::cout << mRepCorrel->FromLoc(Pt3dr(0,0,0))
+                  << mRepCorrel->FromLoc(Pt3dr(1,0,0)) - mRepCorrel->FromLoc(Pt3dr(0,0,0))
+                  << mRepCorrel->FromLoc(Pt3dr(0,1,0)) - mRepCorrel->FromLoc(Pt3dr(0,0,0))
+                  << mRepCorrel->FromLoc(Pt3dr(0,0,1)) - mRepCorrel->FromLoc(Pt3dr(0,0,0))
+                  << "\n";
+*/
+        mAnamSA = cInterfSurfaceAnalytique::FromCCC(*mRepCorrel);
     }
     else
     {
+
       // Il y a un probleme avec l'utilisation des surfaces analytique identite car une surface doit etre telle que
       // la surface moyenne est L=0, donc elle doit etre centree sur le ZMoyen, qui est inconnu ici; repousser la
       // creation des surface semble aussi assez complique; bref ca se mord la queue de facon difficile a contourner,
@@ -1075,6 +1175,7 @@ void cAppliMICMAC::InitAnamSA()
 
          ELISE_ASSERT(mRepCorrel==0,"Ajouter gestion du repere correl sur Masque Image Nadir");
 
+
          double aZMoy = -1e30;
          if (IntervAltimetrie().IsInit())
          {
@@ -1083,7 +1184,28 @@ void cAppliMICMAC::InitAnamSA()
                 aZMoy = anIA->ZMoyen().Val();
          }
          ELISE_ASSERT(aZMoy>-1e29,"No ZMoyen in Nadir Masq");
+
+
+         double aResol = -1e30;
+         if (Planimetrie().IsInit())
+         {
+              cPlanimetrie * anIP  = Planimetrie().PtrVal();
+              if (anIP->ResolutionTerrain().IsInit())
+              {
+                   aResol = StdRound(anIP->ResolutionTerrain().Val()).RVal();
+                   double aRR = aResol * mDeZoomMin;
+                   aZMoy = round_ni((aZMoy/aRR)) * aRR;
+                   anIP->ResolutionTerrain().SetVal(aResol);
+              }
+         }
+         ELISE_ASSERT(aResol>-1e29,"No Resol in Nadir Masq");
+
+
+// std::cout << "GGGGGGGGGGGg  RR " << aResol  << " ZZZ " << aZMoy << " \n"; getchar();
+
          mAnamSA = cInterfSurfaceAnalytique::Identite(aZMoy);
+         mCorrecAlti4ExportIsInit = true;
+         mValmCorrecAlti4Export = aZMoy;
     }
 }
 
@@ -1164,7 +1286,25 @@ void cAppliMICMAC::InitImages()
     }
 
 
-   if (ImSecCalcApero().IsInit())
+   if (     ImageSecByCAWSI().IsInit()
+         && ELISE_fp::exist_file(WorkDir() + ImageSecByCAWSI().Val())
+      )
+   {
+      cChantierAppliWithSetImage aCAWSI = StdGetFromSI(WorkDir()+ ImageSecByCAWSI().Val(),ChantierAppliWithSetImage);
+      int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+      for (int aKV=0 ; aKV<aNbPDV ; aKV++)
+      {
+          const cCWWSImage * aWI = GetFromCAWSI(aCAWSI,mPrisesDeVue[aKV]->Name());
+          if (aWI)
+          {
+              for (std::list<cCWWSIVois>::const_iterator itW=aWI->CWWSIVois().begin() ; itW!=aWI->CWWSIVois().end() ; itW++)
+              {
+                   AddAnImage(itW->NameVois());
+              }
+          }
+      }
+   }
+   else if (ImSecCalcApero().IsInit())
    {
        const cImSecCalcApero & aISCA = ImSecCalcApero().Val();
        int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
@@ -1229,6 +1369,15 @@ void cAppliMICMAC::InitImages()
            }
        }
    }
+
+
+   
+   if (0)
+   {
+      for (int aK=0 ; aK<int(mPrisesDeVue.size()) ; aK++)
+          std::cout << "====IMAGES : " << mPrisesDeVue[aK]->Name() << "\n";
+      getchar();
+   }
 }
 
 
@@ -1271,6 +1420,7 @@ void cAppliMICMAC::PostInitGeom()
                for (tIterPDV itFI2=mPrisesDeVue.begin(); itFI2!=itFI1; itFI2++)
                {
                    cGeomImage * aGeom2 = & ((*itFI2)->Geom());
+
                    Pt2dr aPTer;
                    double aSurf;
                    if (aGeom1->IntersectEmprTer(*aGeom2,aPTer,&aSurf))
@@ -1331,6 +1481,10 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
      if (PDVFromName  (aName,0))
         return;
 
+     if (CreateGrayFileAtBegin().Val())
+     {
+         Tiff_Im::StdConvGen(WorkDir() + aName, 1,true,true);
+     }
 
      std::string  aNameGeom;
      cGeometrieImageComp * theGotGeom = 0;
@@ -1387,7 +1541,12 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
 
      cInterfModuleImageLoader * aIMIL = GetMIL(theGotGeom,aName);
 
-     mPrisesDeVue.push_back(new cPriseDeVue(*this,aName,aIMIL,mNbPDV,aNameGeom,theGotGeom->ModG()));
+     mPrisesDeVue.push_back( new cPriseDeVue( *this,
+                                              aName,
+                                              aIMIL,
+                                              mNbPDV,
+                                              ( isUsingSeparateDirectories()?MMOutputDirectory()+aNameGeom:aNameGeom ),
+                                              theGotGeom->ModG() ) );
 
 // InitAnam
      if (mAnamSA)
@@ -1505,7 +1664,10 @@ int   cAppliMICMAC::VSNI() const
 std::string cAppliMICMAC::NameClassEquiv(const std::string & aName) const
 {
    if (mMapEquiv==0) return "XXX";
-   return mMapEquiv->map(aName);
+
+   std::string aRes = mMapEquiv->map(aName);
+   // std::cout << "**************** MAP["<<aName << "]=" << aRes << " **************\n";
+   return aRes;
 }
 
 const double &  cAppliMICMAC::DefCost() const
@@ -1940,7 +2102,7 @@ void cAppliMICMAC::ExeProcessParallelisable
        )
        {
            std::string commande = ToAdd  + " "+ (*itStr);
-         mCout << " ---Lance Process="<<commande<< "\n";
+         mCout << " ---Lance Process="<<commande<< "\n";  
 	int aCodeRetour = system_call(commande.c_str());
          if (StopOnEchecFils().Val())
          {
@@ -1981,7 +2143,8 @@ void cAppliMICMAC::ExeProcessParallelisable
         uname(&buf);
 #endif
       // creation d'un Makefile
-      std::string nomMakefile = WorkDir()+TmpMEC()+std::string("MakefileParallelisation");
+      // Modif MPD, pour risque potentiel de crash sur MicMac concurent
+      std::string nomMakefile = ( isUsingSeparateDirectories()?MMTemporaryDirectory():WorkDir()+TmpMEC() )+std::string("MakefileParallelisation") + GetUnikId();
       std::ofstream fic(nomMakefile.c_str());
       int nbDalles = 0;
       //int numEtape = mCurEtape->Num();
@@ -2038,15 +2201,14 @@ void cAppliMICMAC::ExeProcessParallelisable
        } 
        fic.close();
        mCout << " ---Lance les Process avec le Makefile\n";
-#if (ELISE_unix || ELISE_MacOs)
-	   std::string aCom = g_externalToolHandler.get( "make" ).callName() + " -f \""+nomMakefile+std::string("\" -j ")+ToString(std::abs(ByProcess().Val()));
-#else
-	   std::string aCom = g_externalToolHandler.get( "make" ).callName()+" -f "+nomMakefile+std::string(" -j ")+ToString(std::abs(ByProcess().Val()));
-#endif
-	   int aCodeRetour = system_call(aCom.c_str());
+
+	   //std::string aCom = string("\"")+g_externalToolHandler.get( "make" ).callName() + "\" -f \""+nomMakefile+std::string("\" -j ")+ToString(std::abs(ByProcess().Val()));
+	   //int aCodeRetour = ::System(aCom.c_str());
+	   bool makeSucceeded = launchMake( nomMakefile, "", ByProcess().Val() );
+
        if (StopOnEchecFils().Val())
         {    
-            ELISE_ASSERT(aCodeRetour==0,"Erreur dans processus fils");
+            ELISE_ASSERT(makeSucceeded,"Erreur dans processus fils");
         }
 	    mCout << " ---End Process\n";
     }//else 
@@ -2125,7 +2287,8 @@ void cAppliMICMAC::TestReducIm(int aDZ)
 
     if (mGPRed2)
     {
-       mGPRed2->ExeParal(mFullDirMEC + "MkRed2MM",-1);
+       // GetUnikId : sinon pb avec le nouveau launchmake ...
+       mGPRed2->ExeParal(mFullDirMEC + "MkRed2MM" + GetUnikId() ,-1);
     }
 
 
@@ -2255,11 +2418,10 @@ void cAppliMICMAC::AnalyseOri(CamStenope * aCam ) const
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -2275,17 +2437,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

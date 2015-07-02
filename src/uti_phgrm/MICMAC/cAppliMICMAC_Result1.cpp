@@ -37,14 +37,12 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 #ifdef MAC
 // Modif Greg pour avoir le nom de la machine dans les log
 #include <sys/utsname.h>
 #endif
 
-namespace NS_ParamMICMAC
-{
 
 static Pt2di aSzTileMasq(1000000,1000000);
 
@@ -192,6 +190,8 @@ void cAppliMICMAC::MakeFileTA()
 
     int aNKB = TAUseMasqNadirKBest().ValWithDef(-1);
 
+
+
     for (tCsteIterPDV itFI=PdvBegin(); itFI!=PdvEnd(); itFI++)
     {
         if (aSelector->IsSetIn((*itFI)->Name()))
@@ -251,8 +251,20 @@ void cAppliMICMAC::MakeFileTA()
           Pt3dr aTNCentr;
           if (OrthoTA().Val())
           {
-              aSegCentral = aGeomIm.FaisceauPersp((aIm.sz()*aDeZoom)/2.0);
-              aTNCentr = aSegCentral.TgNormee();
+              CamStenope *  aCS = aGeomIm.GetOri();
+              if (aCS)
+              {
+                   Pt2dr aPP =  aCS->PP();
+                   aPP = aCS->DistDirecte(aPP);
+                   // std::cout << "CSS  " <<  aPP <<  aCS->PP() << aCS->F2toDirRayonR3(aPP) <<  " " <<  aCS->F2toDirRayonL3(aPP) << "\n";
+                   aTNCentr = aCS->F2toDirRayonR3(aPP);
+              }
+              else
+              {
+                 Pt2dr aPC = (aIm.sz()*aDeZoom)/2.0;
+                 aSegCentral = aGeomIm.FaisceauPersp(aPC);
+                 aTNCentr = aSegCentral.TgNormee();
+              }
           }
 
          double aPdsT1 = 0.7;
@@ -264,6 +276,7 @@ void cAppliMICMAC::MakeFileTA()
                // std::cout << "NNaddirr " << aMasqNadir.sz() << " " <<  aIm.sz() << "\n";
                ELISE_ASSERT(euclid(aMasqNadir.sz(),aIm.sz()) <2,"Taille incoherente dans masq nadir TA");
           }
+
 
           for (int aX = aP0.x; aX< aP1.x ; aX++)
           {
@@ -419,7 +432,7 @@ Tiff_Im cAppliMICMAC::FileMasqOfResol(int aDeZoom)
            // cGeomDiscFPx aGeomDFPx =  *mGeomDFPx;
            // aGeomDFPx.SetDeZoom(aDeZoom);
 
-           std::string aNameMasqR2 = NameImageMasqOfResol(aDeZoom/2);
+           //std::string aNameMasqR2 = NameImageMasqOfResol(aDeZoom/2);
            FileMasqOfResol(aDeZoom/2);
            // VerifSzFile(aGeomDFPx.SzDz());
            std::string aNameRed = NameImageMasqOfResol(aDeZoom/2);
@@ -596,6 +609,7 @@ void cAppliMICMAC::MakeDefImMasq(int aDeZoomCible)
           // aP1.SetInf(aSzClip);
 	  //
 
+
 	  //  On ne fait pas confiance aux calcul inverse
 	     Pt2di aP0 = Pt2di(0,0);
 	     Pt2di aP1 = aSzClip;
@@ -624,7 +638,6 @@ void cAppliMICMAC::MakeDefImMasq(int aDeZoomCible)
        }
     }
 
-    //Tiff_Im::Create8BFromFonc("ImCompteur.tif",aImCpt.sz(),aImCpt.in());
 /*
 */
     aGeomDFPx.SetDeZoom(aDeZoomCible);
@@ -888,10 +901,9 @@ void cAppliMICMAC::GenereOrientationMnt()
    }
 }
 
-void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
+std::string   cAppliMICMAC::NameOrientationMnt(cEtapeMecComp * itE)
 {
-        cFileOriMnt aFOM = OrientFromOneEtape(*itE);
-        std::string aName =   
+        return
 		        FullDirMEC()
 	              + std::string("Z_Num") 
                       + ToString((itE)->Num())
@@ -900,65 +912,80 @@ void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
 		      + std::string("_")
 		      + NameChantier()
                       + std::string(".xml");
-         cElXMLTree * aTree = ToXMLTree(aFOM);
-         FILE * aFP = ElFopen(aName.c_str(),"w");
+}
+
+void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
+{
+    cFileOriMnt aFOM = OrientFromOneEtape(*itE);
+    std::string aName =    NameOrientationMnt(itE);
+    cElXMLTree * aTree = ToXMLTree(aFOM);
+    FILE * aFP = ElFopen(aName.c_str(),"w");
 
          
-         ELISE_ASSERT(aFP!=0,"cAppliMICMAC::GenereOrientationMnt");
+    ELISE_ASSERT(aFP!=0,"cAppliMICMAC::GenereOrientationMnt");
 
-         aTree->Show("      ",aFP,0,0,true);
+    aTree->Show("      ",aFP,0,0,true);
 
-         delete aTree;
-         ElFclose(aFP);
+    delete aTree;
+    ElFclose(aFP);
 
-         (itE)->DoRemplitXML_MTD_Nuage();
+    (itE)->DoRemplitXML_MTD_Nuage();
 
-         // TFW
-         {
-             std::string aNameTFW = StdPrefix(aName) + ".tfw";
-             std::ofstream aFtfw(aNameTFW.c_str());
-             if (aFOM.mGXml.mPrec >=0)
-                aFtfw.precision(aFOM.mGXml.mPrec);
-              aFtfw << aFOM.ResolutionPlani().x << " " << 0 << "\n";
-              aFtfw << 0 << " " << aFOM.ResolutionPlani().y << "\n";
-              aFtfw << aFOM.OriginePlani().x << " " << aFOM.OriginePlani().y << "\n";
-              aFtfw.close();
-          }
+    GenTFW(aFOM,aName);
 }
 
-/*
-void cAppliMICMAC::GenereOrientationMnt()
+
+void GenTFW(const cFileOriMnt & aFOM,const std::string & aName)
 {
-   for
-   (
-        tContEMC::const_iterator itE = mEtapesMecComp.begin();
-        itE != mEtapesMecComp.end();
-        itE++
-   )
-   {
-        cFileOriMnt aFOM = OrientFromOneEtape(**itE);
-        std::string aName =   
-		        FullDirMEC()
-	              + std::string("Z_Num") 
-                      + ToString((*itE)->Num())
-		      + std::string("_DeZoom")
-		      + ToString((*itE)->DeZoomTer())
-		      + std::string("_")
-		      + NameChantier()
-                      + std::string(".xml");
-         cElXMLTree * aTree = ToXMLTree(aFOM);
-         FILE * aFP = ElFopen(aName.c_str(),"w");
-         ELISE_ASSERT(aFP!=0,"cAppliMICMAC::GenereOrientationMnt");
+     std::string aNameTFW = StdPrefix(aName) + ".tfw";
+     std::ofstream aFtfw(aNameTFW.c_str());
+     if (aFOM.mGXml.mPrec >=0)
+        aFtfw.precision(aFOM.mGXml.mPrec);
+     else
+        aFtfw.precision(12);// modification jean christophe michelin je met une precision standard
 
-         aTree->Show("      ",aFP,0,0,true);
+     aFtfw << aFOM.ResolutionPlani().x << "\n" << 0 << "\n";
+     aFtfw << 0 << "\n" << aFOM.ResolutionPlani().y << "\n";
+     aFtfw << aFOM.OriginePlani().x << "\n" << aFOM.OriginePlani().y << "\n";
+     aFtfw.close();
+}
 
-         delete aTree;
-         ElFclose(aFP);
+void GenTFW(const ElAffin2D & anAff,const std::string & aNameTFW)
+{
+    std::ofstream aFtfw(aNameTFW.c_str());
+    aFtfw.precision(10);
 
-         (*itE)->DoRemplitXML_MTD_Nuage();
-   }
+
+    // Attention 1 Chance / 2 sur les terme croises aAfC2M.I10().y  et  aAfC2M.I01().x
+    // GM: attention pour avoir un tfw valide il faut un champ par ligne
+    aFtfw << anAff.I10().x << "\n" << anAff.I10().y << "\n";
+    aFtfw << anAff.I01().x << "\n" << anAff.I01().y << "\n";
+    aFtfw << anAff.I00().x << "\n" << anAff.I00().y << "\n";
+
+    aFtfw.close();
 }
 */
+
+double ResolOfAff(const ElAffin2D & anAff)
+{
+   return (euclid(anAff.I10()) +euclid(anAff.I01())) / 2.0;
+}
+
+double ResolOfNu(const cXML_ParamNuage3DMaille & aNu)
+{
+     ElAffin2D aAfM2C = Xml2EL(aNu.Orientation().OrIntImaM2C());
+     return ResolOfAff(aAfM2C.inv());
+}
+
+Box2dr BoxTerOfNu(const cXML_ParamNuage3DMaille & aNu)
+{
+     Box2dr aRes(Pt2dr(0,0),Pt2dr(aNu.NbPixel()));
+
+     ElAffin2D aAfM2C = Xml2EL(aNu.Orientation().OrIntImaM2C());
+     return aRes.BoxImage(aAfM2C.inv());
+}
+
+
 
 void cAppliMICMAC::SauvParam()
 {
@@ -1028,7 +1055,10 @@ void cAppliMICMAC::MakeFileFDC()
            // const  cGeomImage * aGeo2Ref =  & aGeo2Init;
            const  cGeomImage * aGeo2Ref = aGeo2Init.GeoTerrainIntrinseque();
            Pt2dr aPTer;
+
+//std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n";
            bool HasInter = aGeo1Ref->IntersectEmprTer(*aGeo2Ref,aPTer);
+//std::cout << "BBBBBBBBBBBBbbbbbbbbbbbbbb\n";
 
            bool MakeCple = HasInter;
 
@@ -1156,11 +1186,10 @@ void cAppliMICMAC::TestPointsLiaisons
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1176,17 +1205,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

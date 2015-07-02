@@ -37,10 +37,8 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
-
-namespace NS_ParamMICMAC
-{
 
 
 Pt3dr cAppliMICMAC::ToRedr
@@ -63,7 +61,7 @@ void cAppliMICMAC::MakeRedrLocAnamSA()
    const cEtapeMEC &  anET = mCurEtape->EtapeMEC();
    if (! anET.RedrLocAnam().IsInit())
       return;
-    const cRedrLocAnam & aRLA =  anET.RedrLocAnam().Val();
+   const cRedrLocAnam & aRLA =  anET.RedrLocAnam().Val();
 
    if (! mAnamSA) return;
    if (! mAnamSA->HasOrthoLoc()) return;
@@ -183,6 +181,54 @@ void cAppliMICMAC::MakeRedrLocAnamSA()
     std::string aNameMaskOut = FullDirResult()+aRLA.NameMasq() + ".tif";
     MakeFileXML(aFOMFinale, StdPrefix(aNameOut)+".xml");
 
+
+    if (aRLA.NameNuage().IsInit())
+    {
+       std::string aNNRed = aRLA.NameNuage().Val();
+       std::string aNNInit =    mCurEtape->NameXMLNuage();
+       cXML_ParamNuage3DMaille aNuageInit = StdGetFromSI(aNNInit,XML_ParamNuage3DMaille);
+       cXML_ParamNuage3DMaille aNuageFinal = aNuageInit;
+       cXmlOrthoCyl * anOC = 0;
+       bool DoExp = false;
+
+       // On regarde si il y a des cas que l'on sait gerer 
+       {
+          cXmlOneSurfaceAnalytique * aSAN = aNuageInit.Anam().PtrVal();
+          if (aSAN)
+          {
+             anOC = aSAN->XmlDescriptionAnalytique().OrthoCyl().PtrVal();
+          }
+       }
+
+
+       // En fait le seul cas que l'on sache gerer est le cylindre
+       if (anOC)
+       {
+          DoExp = true;
+          aNuageFinal.Anam().SetNoInit();
+          aNuageFinal.RepereGlob().SetVal(anOC->Repere());
+       }
+       else if (mAnaGeomMNT)
+       {
+            cXmlModeleSurfaceComplexe aModele= StdGetFromSI(mNameAnamSA,XmlModeleSurfaceComplexe);
+            aNuageFinal.Anam() = SFromId(aModele,"TheSurfAux");
+            DoExp = true;
+       }
+
+       if (DoExp)
+       {
+          aNuageFinal.NbPixel() = aFOMFinale.NombrePixels() ;
+          aNuageFinal.Image_Profondeur().Val().Image() = aRLA.NameOut() + ".tif";
+          aNuageFinal.Image_Profondeur().Val().Masq() = aRLA.NameMasq() + ".tif";
+          ElAffin2D anAffC2M = ElAffin2D::TransfoImCropAndSousEch(aFOMFinale.OriginePlani(),aFOMFinale.ResolutionPlani());
+          aNuageFinal.Orientation().OrIntImaM2C().SetVal( El2Xml(anAffC2M));
+
+          MakeFileXML(aNuageFinal,FullDirResult() +aNNRed);
+       }
+    }
+
+// std::cout << "AAAAAAAAAbbGGgg " << aRLA.NameOriGlob() << "\n"; getchar();
+
     int  aZoom = mCurEtape->DeZoomTer();
     cFileOriMnt aFomR1 =  aFOMFinale;
     aFomR1.NombrePixels() = aFomR1.NombrePixels()  * aZoom  ;
@@ -259,7 +305,7 @@ void cAppliMICMAC::MakeRedrLocAnamSA()
          ELISE_COPY
          (
                aImZIn.all_pts(),
-               trans(aFilePx.in(),Pt2di(aX0_In,0)),
+               trans(aFilePx.in_proj(),Pt2di(aX0_In,0)),
                aImZIn.out()
          );
          ELISE_COPY
@@ -397,11 +443,10 @@ void cAppliMICMAC::MakeRedrLocAnamSA()
 }
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -417,17 +462,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

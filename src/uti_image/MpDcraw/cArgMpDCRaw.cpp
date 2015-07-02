@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -40,6 +40,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
+extern const std::string & DefXifOrientation();
 namespace NS_MpDcraw
 {
 
@@ -48,14 +49,14 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
     cAppliBatch
     (
         argc,argv,
-	2,   // Trois argument obligatoires
+    2,   // Trois arguments obligatoires
         1,   // 1 Argument est un fichier
         "MpDCraw"
      ),
      mCons16Bits (1),
      m8BitAdapt  (0),
      mDyn        (0),
-     mGamma      (1.0),
+     mGammaCorrec      (1.0),
      mEpsLog     (0.3),
      mGB         (0),
      mCB         (0),
@@ -92,35 +93,35 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
           anArg,
           LArgMain() << EAM(mCons16Bits,"16B",true)
                      << EAM(m8BitAdapt,"8BA",true)
-                     << EAM(mGamma,"Gamma",true)
+                     << EAM(mGammaCorrec,"Gamma",true)
                      << EAM(mEpsLog,"EpsLog",true)
                      << EAM(mDyn,"Dyn",true)
-	             << EAM(mSplit,"Split",true)
-	             << EAM(mGB,"GB",true)
-	             << EAM(mCB,"CB",true)
-	             << EAM(mGR,"GR",true)
-	             << EAM(mCR,"CR",true)
-	             << EAM(mDiag,"Diag",true)
-	             << EAM(mConsCol,"ConsCol",true)
-	             << EAM(mClB,"ClB",true)
-	             << EAM(mNameCLB,"NameClB",true)
-		     << EAM(mMastCh,"Master",true)
-		     << EAM(mScaleMast,"Scale",true)
-		     << EAM(mCal,"Cal",true)
-		     << EAM(aInterp,"Interp",true)
-		     << EAM(mBicubParam,"BiCubParam",true)
-		     << EAM(mSzSinCard,"SzSinCard",true)
-		     << EAM(mWB,"WB",true)
-		     << EAM(mPG,"PG",true)
-		     << EAM(mNameOriIsPrefix,"Prefix",true)
-		     << EAM(mAdd16_8B,"Add16B8B",true)
-		     << EAM(mCamDist,"Dist",true)
-		     << EAM(mHomolRedr,"HomRedr",true)
-		     << EAM(mExpTimeRef,"ExpTimeRef",true)
-		     << EAM(mDiaphRef,"DiaphRef",true)
-		     << EAM(mIsoSpeedRef,"IsoSpeedRef",true)
-		     << EAM(mExtension,"Extension",true)
-		     << EAM(mExtensionAbs,"ExtensionAbs",true)
+                 << EAM(mSplit,"Split",true)
+                 << EAM(mGB,"GB",true)
+                 << EAM(mCB,"CB",true)
+                 << EAM(mGR,"GR",true)
+                 << EAM(mCR,"CR",true)
+                 << EAM(mDiag,"Diag",true)
+                 << EAM(mConsCol,"ConsCol",true)
+                 << EAM(mClB,"ClB",true)
+                 << EAM(mNameCLB,"NameClB",true)
+             << EAM(mMastCh,"Master",true)
+             << EAM(mScaleMast,"Scale",true)
+             << EAM(mCal,"Cal",true)
+             << EAM(aInterp,"Interp",true)
+             << EAM(mBicubParam,"BiCubParam",true)
+             << EAM(mSzSinCard,"SzSinCard",true)
+             << EAM(mWB,"WB",true)
+             << EAM(mPG,"PG",true)
+             << EAM(mNameOriIsPrefix,"Prefix",true)
+             << EAM(mAdd16_8B,"Add16B8B",true)
+             << EAM(mCamDist,"Dist",true)
+             << EAM(mHomolRedr,"HomRedr",true)
+             << EAM(mExpTimeRef,"ExpTimeRef",true)
+             << EAM(mDiaphRef,"DiaphRef",true)
+             << EAM(mIsoSpeedRef,"IsoSpeedRef",true)
+             << EAM(mExtension,"Extension",true)
+             << EAM(mExtensionAbs,"ExtensionAbs",true)
                      << EAM(mImRef,"ImRef",true)
                      << EAM(mOfs,"Offset",true)
                      << EAM(mDoSplit,"SplitStereo",true)
@@ -130,6 +131,7 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
                      << EAM(mNameOutSpec,"NameOut",true)
                      << EAM(mUseFF,"UseFF",true)
      );
+
 
 
      if (mImRef!="")
@@ -150,7 +152,7 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
      {
          mWBSpec = false;
          for (int aK=0 ; aK<3; aK++)
-	    mWB.push_back(1.0);
+        mWB.push_back(1.0);
      }
      else if (mWB.size()==3)
      {
@@ -165,7 +167,7 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
      {
          mPGSpec = false;
          for (int aK=0 ; aK<3; aK++)
-	    mPG.push_back(1.0 + (aK==1));
+        mPG.push_back(1.0 + (aK==1));
      }
      else if (mPG.size()==3)
      {
@@ -184,13 +186,13 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
      ELISE_ASSERT
      (
            (mClB.size()==0) ||  (mClB.size()==3) || (mClB.size()==4),
-	   "Bad size for combin linear"
+       "Bad size for combin linear"
      );
      if (mClB.size()==3)
      {
         mClB.push_back(mClB.back());
-	double aV =    mClB[1]  /2.0;
-	mClB[1] = mClB[2] = aV;
+    double aV =    mClB[1]  /2.0;
+    mClB[1] = mClB[2] = aV;
      }
      SetNivPurge(eNoPurge);
 
@@ -207,7 +209,7 @@ cArgMpDCRaw::cArgMpDCRaw(int argc,char ** argv) :
      {
          mInterp = new cInterpolSinusCardinal<REAL4>(mSzSinCard);
      }
-     else 
+     else
      {
          ELISE_ASSERT(false,"Unknown Interpolateur");
      }
@@ -218,7 +220,7 @@ const std::vector<double> &  cArgMpDCRaw::ClB() const
    return mClB;
 }
 
-bool  cArgMpDCRaw::SwapRB(bool aDef) const 
+bool  cArgMpDCRaw::SwapRB(bool aDef) const
 {
   if (mSwapRB==-1) return aDef;
 
@@ -233,7 +235,7 @@ const std::string &  cArgMpDCRaw::NameCLB() const
 }
 
 bool cArgMpDCRaw::IsToSplit(const std::string & aName) const
-{ 
+{
    if (mSplit=="*")
       return true;
 
@@ -288,6 +290,30 @@ const double & cArgMpDCRaw::Offset() const
   return mOfs;
 }
 
+int ExtractAngleFromRot(const std::string & aSA,bool & Ok)
+{
+   Ok = false;
+   if (aSA==DefXifOrientation()) return 0;
+   static cElRegex anAutomH("Horizontal.*",15);
+   if (anAutomH.Match(aSA))
+   {
+       Ok = true;
+       return 0;
+   }
+   static cElRegex anAutom("Rotate[ ]+(90|180|270)[ ]+(CW|).*",15);
+
+   if (! anAutom.Match(aSA)) return 0;
+
+
+   Ok = true;
+   double aVal =  anAutom.VNumKIemeExprPar(1);
+
+   return round_ni(aVal);
+}
+
+Fonc_Num GamCor(const cArgMpDCRaw & anArg,Fonc_Num aF,const std::string & aNameFile);
+
+
 
 void  cArgMpDCRaw::DevJpg()
 {
@@ -303,13 +329,11 @@ void  cArgMpDCRaw::DevJpg()
      bool EnGray = GrayBasic() || GrayReech();
      bool En8B = ! Cons16B();
 
-	 // we use m_fullName instead of callName() because of Windows' exception for convert
-	 // callName() in this case is not equivalent to what we would have enter on a terminal
-	 // double quotes are added to protect spaces in the path
-	 std::string  aCom =     std::string("\"")+g_externalToolHandler.get( "convert" ).callName()+ "\" "
+     // double quotes are added to protect spaces in the path
+     std::string  aCom =     std::string("\"")+g_externalToolHandler.get( "convert" ).callName()+ "\" "
                          +   aFullNJPG +  std::string(" ")
                          +   std::string(" -compress None ")
-                         +   (mConsCol ? " " :   (std::string(" -colorspace ") + (EnGray ? "Gray " : "RGB ")))
+                         +   (mConsCol ? " " :   (std::string(" -colorspace ") + (EnGray ? "Gray " : "sRGB ")))
                          +   std::string(" -depth ") + (En8B ? "8 " : "16 ")
                          +   aTmp;
 
@@ -317,20 +341,90 @@ void  cArgMpDCRaw::DevJpg()
 
     VoidSystem(aCom.c_str());
 
+    // Permet de forcer la creation de RGB meme si image en Niv Gris;  inhibe car gere au niveau du ply;
+    // a remettre ei autre logiciel a probleme
+    if (0 && (! EnGray))
+    {
+        Tiff_Im aTF(aTmp.c_str());
+        int aNbC = aTF.nb_chan();
+        if (aNbC != 3)
+        {
+            std::string aTmp2 = StdPrefix(aTmp+"Gray.tif");
+            ELISE_fp::MvFile(aTmp,aTmp2);
+            aTF = Tiff_Im(aTmp2.c_str());
+            Tiff_Im aTFCol
+                    (
+                        aTmp.c_str(),
+                        aTF.sz(),
+                        aTF.type_el(),
+                        Tiff_Im::No_Compr,
+                        Tiff_Im::RGB
+                    );
+// �Tiff_Im::Tiff_Im(const char*, Pt2di, Tiff_Im::COMPR_TYPE, GenIm::type_el, Tiff_Im::PH_INTER_TYPE)�
+// Tiff_Im::Tiff_Im(const char*, Pt2di, GenIm::type_el, Tiff_Im::COMPR_TYPE, Tiff_Im::PH_INTER_TYPE, L_Arg_Opt_Tiff)
+
+             ELISE_COPY(aTFCol.all_pts(),Virgule(aTF.in(),aTF.in(),aTF.in()),aTFCol.out());
+             ELISE_fp::RmFile(aTmp2);
+        }
+    }
+
 
     Tiff_Im aFTmp(aTmp.c_str());
+    cMetaDataPhoto aMDP = cMetaDataPhoto::CreateExiv2(aFullNJPG);
 
+    if (0) // Apparemment ca cree plus de pb que ca n'en resoud ....
+    {
+         bool Ok,OkCam;
+         int anA = ExtractAngleFromRot( aMDP.Orientation(),Ok);
+         int anACam = ExtractAngleFromRot(aMDP.CameraOrientation(),OkCam);
+
+// std::cout << "GGGGG " << anA << " " << anACam << "\n"; getchar();
+
+         if (! OkCam)
+         {
+             Pt2di aSz = aFTmp.sz();
+             // On fait l'hypothese que image prise par un droitier en position standard ,
+             // la haut de l'image doit aller a droite
+             if (aSz.y > aSz.x)
+             {
+                 anACam = 270;
+                 OkCam = true;
+             }
+         }
+
+         if (Ok && OkCam)
+         {
+             if ((anA!=anACam) && (anA==0))
+             {
+                 int aDA = anACam - anA;
+                 if (aDA<0) aDA += 360;
+                 // Im2DGen aImIn = aFTmp.ReadIm();
+                 std::vector<Im2DGen *>  aV = aFTmp.ReadVecOfIm();
+                 Im2DGen * aImOut = aV[0]->ImRotate(4-aDA/90);
+// std::cout << "HHHHH " << aV[0]->sz() << aImOut->sz() << "\n";
+                 ELISE_fp::RmFile(aTmp);
+                 Tiff_Im::CreateFromIm(*aImOut,aTmp);
+                 aFTmp = Tiff_Im(aTmp.c_str());
+                 // Tiff_Im::CreateFromIm(*aImOut,"toto.tif");
+/*
+                 Pt2di aSz = aFTmp.sz();
+
+                 std::cout << "ANGLES " << anA << " " << anACam  <<  " " <<   aMDP.Orientation() << "\n";
+*/
+             }
+         }
+    }
 
     std::string aRes = NameRes(CurF1(),"","");
 /*
     std::string aRes = DirChantier() +StdPrefixGen( CurF1()) +  + ".tif";
 
-   if (mNameOutSpec!="") 
+   if (mNameOutSpec!="")
       aRes = mNameOutSpec;
 */
 
-    
-   
+
+
 
     Tiff_Im aFinal
             (
@@ -342,9 +436,9 @@ void  cArgMpDCRaw::DevJpg()
                 ArgMTD()
             );
 
-     cMetaDataPhoto aMDP = cMetaDataPhoto::CreateExiv2(aFullNJPG);
      Fonc_Num aFRes = aFTmp.in() / FlatField(aMDP,aFullNJPG);
 
+     aFRes = GamCor(*this,aFRes,aFullNJPG);
      if (En8B)
         aFRes = Min(255,aFRes);
 
@@ -442,15 +536,15 @@ void cArgMpDCRaw::Exec()
 
          delete mBayerCalibGeom;
          mBayerCalibGeom = new cBayerCalibGeom
-	                       (
-			          StdGetObjFromFile<cBayerCalibGeom>
-				  (
+                           (
+                      StdGetObjFromFile<cBayerCalibGeom>
+                  (
                                       aCal,
-				      StdGetFileXMLSpec("SuperposImage.xml"),
-				      "BayerCalibGeom",
-				      "BayerCalibGeom"
-				  )
-			       );
+                      StdGetFileXMLSpec("SuperposImage.xml"),
+                      "BayerCalibGeom",
+                      "BayerCalibGeom"
+                  )
+                   );
    }
    cNChannel aNC = cNChannel::Std(*this,DirChantier()+CurF1());
 
@@ -462,7 +556,23 @@ double cArgMpDCRaw::Dyn() const
    return mDyn;
 }
 
-double cArgMpDCRaw::Gamma() const { return mGamma; }
+double cArgMpDCRaw::Gamma( const std::string& aNameIm) const
+{
+   if (! EAMIsInit(const_cast<void *>((void *)&mGammaCorrec)))
+   {
+         if (!  mCons16Bits)
+         {
+              std::string aNameGama = ICNM()->Assoc1To1("NKS-Assoc-STD-Gama8Bits",aNameIm,true);
+              double aRes;
+              FromString(aRes,aNameGama);
+              return aRes;
+         }
+   }
+
+    return mGammaCorrec;
+}
+
+
 double cArgMpDCRaw::EpsLog() const { return mEpsLog; }
 
 bool cArgMpDCRaw::Cons16B() const
@@ -545,13 +655,13 @@ const Pt2di & cArgMpDCRaw::SpliMargeExt() const {return mSplitMargeExt;}
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -561,17 +671,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

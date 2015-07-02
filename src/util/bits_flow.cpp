@@ -304,6 +304,9 @@ tFileOffset BitsPacked_PFOB::_Write(const U_INT1 * data,tFileOffset nbo)
          INT index = index_values_out_of_range
                        (data,nb,(U_INT1)0,(U_INT1)_v_max);
 
+	if (index!=INDEX_NOT_FOUND)
+	{
+        
          El_User_Dyn.ElAssert
          (
              index == INDEX_NOT_FOUND,
@@ -311,7 +314,10 @@ tFileOffset BitsPacked_PFOB::_Write(const U_INT1 * data,tFileOffset nbo)
                    << "|   value = "   << (INT) data[index]     << "\n"
                    << "|   interval = [" << 0 << " ---  " << _v_max  << "["
          );
+        }
+         
     }
+    
     if (_i_buf && (!_pf_compr))
        _pfob->Rseek(-1);
 
@@ -426,6 +432,74 @@ void byte_inv_4(void * t)
      (
           ((char *) t)[1],
           ((char *) t)[2]
+     );
+}
+
+void byte_inv_8(void * t)
+{
+     ElSwap
+     (
+          ((char *) t)[0],
+          ((char *) t)[7]
+     );
+     ElSwap
+     (
+          ((char *) t)[1],
+          ((char *) t)[6]
+     );
+     ElSwap
+     (
+          ((char *) t)[2],
+          ((char *) t)[5]
+     );
+     ElSwap
+     (
+          ((char *) t)[3],
+          ((char *) t)[4]
+     );
+}
+
+void byte_inv_16(void * t)
+{
+     ElSwap
+     (
+          ((char *) t)[0],
+          ((char *) t)[15]
+     );
+     ElSwap
+     (
+          ((char *) t)[1],
+          ((char *) t)[14]
+     );
+     ElSwap
+     (
+          ((char *) t)[2],
+          ((char *) t)[13]
+     );
+     ElSwap
+     (
+          ((char *) t)[3],
+          ((char *) t)[12]
+     );
+     ElSwap
+     (
+          ((char *) t)[4],
+          ((char *) t)[11]
+     );
+     ElSwap
+     (
+          ((char *) t)[5],
+          ((char *) t)[10]
+     );
+     ElSwap
+     (
+          ((char *) t)[6],
+          ((char *) t)[9]
+     );
+     ElSwap
+     (
+          ((char *) t)[7],
+          ((char *) t)[8]
      );
 }
 

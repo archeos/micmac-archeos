@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 int PROF_UNDEF() { return -1; }
 
 
@@ -125,6 +123,7 @@ cPoseCam::cPoseCam
     mAltiSol     (ALTISOL_UNDEF()),
     mProfondeur  (PROF_UNDEF()),
     mTime        (TIME_UNDEF()),
+    mSomPM       (0),
     mPrioSetAlPr (-1),
     mRotIsInit   (false),
     mLastCP      (0),
@@ -141,6 +140,7 @@ cPoseCam::cPoseCam
     // mObsCentre   (0,0,0),
     mHasObsOnCentre (false),
     mHasObsOnVitesse (false),
+    mLastItereHasUsedObsOnCentre (false),
     mNumTmp       (-12345678),
     mNbPtsMulNN   (-1),
     mNumBande     (0),
@@ -151,13 +151,18 @@ cPoseCam::cPoseCam
     mOrIntM2C     (ElAffin2D::Id()),
     mOrIntC2M     (ElAffin2D::Id()),
     mNbPosOfInit  (-1),
-    mFidExist     (false)
+    mFidExist     (false),
+    mLastEstimProfIsInit (false),
+    mLasEstimtProf       (-1),
+    mCdtImSec            (0),
+    mCamNonOrtho         (0),
+    mEqOffsetGPS         (0)
 {
     mPrec = this;
     mNext = this;
 
 	mCalib = mAppli.CalibFromName(aNameCalib,this);
-	mCF	=  mCalib->PIF().NewCam(cNameSpaceEqF::eRotLibre,ElRotation3D::Id,mCamRF,aNamePose,true);
+	mCF	=  mCalib->PIF().NewCam(cNameSpaceEqF::eRotLibre,ElRotation3D::Id,mCamRF,aNamePose,true,false,mAppli.HasEqDr());
 	mRF = &mCF->RF();
 
    SetOrInt(mAppli.Param().GlobOrInterne());
@@ -167,9 +172,36 @@ cPoseCam::cPoseCam
    std::string aNamePtsCam = aPair.first;
    std::string aNamePtsIm  = aPair.second;
 
-   if (ELISE_fp::exist_file(mAppli.DC()+ aNamePtsIm))
+   if (ELISE_fp::exist_file(mAppli.OutputDirectory()+ aNamePtsIm))
    {
        cMesureAppuiFlottant1Im aMesCam = mAppli.StdGetOneMAF(aNamePtsCam);
+
+       // Correction du bug apparu lors du stage de Tibaut Sauter, lorsque les marques ont une origine tres
+       // loin de zero, la box images est tres differente de par ex [0,0] [23x23], du coup le distorsion n'est pas coupe
+       // au bon endroit
+       Pt2dr aPMin(1e9,1e9);
+       for 
+       (
+           std::list<cOneMesureAF1I>::iterator itAp = aMesCam.OneMesureAF1I().begin(); 
+           itAp != aMesCam.OneMesureAF1I().end();
+           itAp++
+       )
+       {
+           aPMin = Inf(aPMin,itAp->PtIm());
+       }
+
+       for 
+       (
+           std::list<cOneMesureAF1I>::iterator itAp = aMesCam.OneMesureAF1I().begin(); 
+           itAp != aMesCam.OneMesureAF1I().end();
+           itAp++
+       )
+       {
+           itAp->PtIm() = itAp->PtIm()-aPMin;
+       }
+
+
+
        cMesureAppuiFlottant1Im aMesIm  = mAppli.StdGetOneMAF(aNamePtsIm);
 
        ElPackHomologue  aPack = PackFromCplAPF(aMesIm,aMesCam);
@@ -181,6 +213,18 @@ cPoseCam::cPoseCam
 
    mOrIntC2M = mOrIntM2C.inv();
    InitAvantCompens();
+
+   if (aPCI.IdOffsetGPS().IsInit())
+   {
+       cAperoOffsetGPS * anOfs = mAppli.OffsetNNOfName(aPCI.IdOffsetGPS().Val());
+       mEqOffsetGPS =  mAppli.SetEq().NewEqOffsetGPS(*mCF,*(anOfs->BaseUnk()));
+   }
+
+}
+
+cEqOffsetGPS *   cPoseCam::EqOffsetGPS()
+{
+   return mEqOffsetGPS;
 }
 
 int cPoseCam::NumCreate() const
@@ -196,7 +240,7 @@ int & cPoseCam::NumTmp()
 
 bool cPoseCam::AcceptPoint(const Pt2dr & aP) const
 {
-    // std::cout << "SccaaaNN " << mCalib-> CamInit().IsScanned() << mCalib->SzIm() << "\n";
+
 
     if (mCalib-> CamInit().IsScanned())
     {
@@ -433,6 +477,13 @@ void cPoseCam::SetRattach(const std::string & aNameRat)
 
 void    cPoseCam::InitAvantCompens()
 {
+    mLastItereHasUsedObsOnCentre = false;
+    AssertHasNotCamNonOrtho();
+    if (PMoyIsInit())
+    {
+       mLasEstimtProf =   ProfMoyHarmonik();
+       mLastEstimProfIsInit = true;
+    }
     mPMoy = Pt3dr(0,0,0);
     mMoyInvProf =0;
     mSomPM = 0;
@@ -440,8 +491,24 @@ void    cPoseCam::InitAvantCompens()
 
 const CamStenope *  cPoseCam::CurCam() const
 {
+   if (mCamNonOrtho) return mCamNonOrtho;
    return  mCF->CameraCourante() ;
 }
+CamStenope *  cPoseCam::NC_CurCam() 
+{
+   if (mCamNonOrtho) return mCamNonOrtho;
+   return  mCF->NC_CameraCourante() ;
+}
+
+
+
+
+CamStenope *  cPoseCam::DupCurCam() const 
+{
+   if (mCamNonOrtho) return mCamNonOrtho;
+   return  mCF->DuplicataCameraCourante() ;
+}
+
 
 void    cPoseCam::AddPMoy(const Pt3dr & aP,double aBSurH)
 {
@@ -449,7 +516,7 @@ void    cPoseCam::AddPMoy(const Pt3dr & aP,double aBSurH)
    aPds /= (mAppli.Param().LimSupBSurHPMoy().Val() - mAppli.Param().LimInfBSurHPMoy().Val());
    if (aPds<0) return;
 
-    const CamStenope * aCS = mCF->CameraCourante() ;
+    const CamStenope * aCS = CurCam() ;
     if (mTMasqH)
     {
       Pt2di aPIm =  round_ni(aCS->R3toF2(aP));
@@ -459,17 +526,37 @@ void    cPoseCam::AddPMoy(const Pt3dr & aP,double aBSurH)
     }
     double aProf = aCS->ProfondeurDeChamps(aP);
 
-/*
-if (aProf<0)
-{
-    std::cout << " PROF " << aProf << " " << aBSurH << "\n";
-}
-*/
     
     mPMoy = mPMoy + aP * aPds;
     mMoyInvProf  += (1/aProf) * aPds;
     mSomPM  += aPds ;
  
+}
+
+double cPoseCam::GetProfDyn(int & Ok) const
+{
+    Ok = true;
+
+    if (PMoyIsInit())
+    {
+        Ok =1 ;
+        return ProfMoyHarmonik();
+    }
+    if (mLastEstimProfIsInit)
+    {
+       Ok =2 ;
+       return mLasEstimtProf;
+    }
+
+    if (mProfondeur != PROF_UNDEF())
+    {
+       Ok = 3 ;
+       return mProfondeur;
+    }
+
+
+    Ok = 0;
+    return 0;
 }
 
 bool     cPoseCam::PMoyIsInit() const
@@ -594,14 +681,14 @@ void  cPoseCam::TenteInitAltiProf
 	   double aProf
       )
 {
-   if ((aProf != PROF_UNDEF()) && (aPrio>mPrioSetAlPr))
+   if ((aProf != PROF_UNDEF()) && (aPrio > mPrioSetAlPr))
    {
          mProfondeur = aProf;
          mAltiSol = anAlti;
 	 mPrioSetAlPr = aPrio;
    }
 }
-
+extern bool AllowUnsortedVarIn_SetMappingCur;
 
 cPoseCam * cPoseCam::Alloc
            (
@@ -617,6 +704,8 @@ cPoseCam * cPoseCam::Alloc
 
     if (aPCI.PosesDeRattachement().IsInit())
     {
+        // En fait le tri sur les variables n'avait pas d'effet puisque la fonction est symetrique !!
+        AllowUnsortedVarIn_SetMappingCur = true;
         aPRat = anAppli.PoseFromNameGen
                 (
                     aPCI.PosesDeRattachement().Val(),
@@ -665,6 +754,7 @@ void  cPoseCam::AddLink(cPoseCam * aPC)
 
 void cPoseCam::SetCurRot(const ElRotation3D & aRot)
 {
+    AssertHasNotCamNonOrtho();
     mCF->SetCurRot(aRot);
 }
 
@@ -681,6 +771,7 @@ void  cPoseCam::SetBascRig(const cSolBasculeRig & aSBR)
     else
     {
         const CamStenope *  aCS = CurCam() ;
+        ELISE_ASSERT( (mProfondeur != PROF_UNDEF()),"No Profondeur in cPoseCam::SetBascRig");
 
         aP =  aCS->ImEtProf2Terrain(aCS->Sz()/2.0,mProfondeur);
         aP =  aSBR(aP);
@@ -692,6 +783,7 @@ void  cPoseCam::SetBascRig(const cSolBasculeRig & aSBR)
     const CamStenope *  aCS = CurCam() ;
     mAltiSol = aP.z;
     mProfondeur = aCS->ProfondeurDeChamps(aP);
+    mLasEstimtProf = mProfondeur;
 }
 
 
@@ -713,6 +805,11 @@ void cPoseCam::InitCpt()
 bool cPoseCam::HasObsOnCentre() const
 {
    return mHasObsOnCentre;
+}
+
+bool  cPoseCam::LastItereHasUsedObsOnCentre() const
+{
+    return mLastItereHasUsedObsOnCentre;
 }
 
 void cPoseCam::AssertHasObsCentre() const
@@ -768,6 +865,7 @@ bool cPoseCam::IsId(const ElAffin2D & anAff) const
     Pt2dr aCoins[4];
     aBox.Corners(aCoins);
     double aDiag = euclid(aSz);
+    // double aDiag2 = 0;
 
     double aDMax = 0.0;
 
@@ -785,11 +883,24 @@ bool cPoseCam::IsId(const ElAffin2D & anAff) const
 */
 
 
+class cTransfo3DIdent : public cTransfo3D
+{
+     public :
+          std::vector<Pt3dr> Src2Cibl(const std::vector<Pt3dr> & aSrc) const {return aSrc;}
+
+};
+
+
+extern bool DebugOFPA;
+extern int aCPTOkOFA ;
+extern int aCPTNotOkOFA ;
+
 void   cPoseCam::InitRot()
 {
    const cLiaisonsInit * theLiasInit = 0;
    mNumInit =  mAppli.NbRotInit();
-   std::cout << "NUM " << mNumInit << " FOR " << mName<< "\n";
+   if (mAppli.ShowMes())
+      std::cout << "NUM " << mNumInit << " FOR " << mName<< "\n";
 /*
 {
 
@@ -817,6 +928,7 @@ else
           mHasObsOnCentre = (mObsCentre.mIncOnC.x>0) && (mObsCentre.mIncOnC.y>0) && (mObsCentre.mIncOnC.z>0);
           mHasObsOnVitesse = mHasObsOnCentre && mObsCentre.mVitFiable && mObsCentre.mVitesse.IsInit();
 
+//   std::cout << "NameBDDCCC " << mName << " HasC " << mHasObsOnCentre << "\n";
       }
    }
   
@@ -850,12 +962,17 @@ else
        );
    }
 
+    bool isAPC =  mAppli.Param().IsAperiCloud().Val();
+    bool isForISec =  mAppli.Param().IsChoixImSec().Val();
+    bool initFromBD = false;
+
     if (mPCI->PosId().IsInit())
     {
          aRot =  ElRotation3D(Pt3dr(0,0,0),0,0,-PI);
     }
     else if(mPCI->PosFromBDOrient().IsInit())
     {
+        initFromBD = true;
 	const std::string & anId = mPCI->PosFromBDOrient().Val();
         aRot =mAppli.Orient(anId,mName);
 	cObserv1Im<cTypeEnglob_Orient>  &  anObs = mAppli.ObsOrient(anId,mName);
@@ -985,7 +1102,9 @@ else
     }
     else if(mPCI->PosFromBDAppuis().IsInit())
     {
-         std::cout << "Do Init-by-appuis for " << mName << "\n";
+         // DebugOFPA = (mName=="Im00523.png");
+         if (mAppli.ShowMes() || DebugOFPA)
+            std::cout << "InitByAppuis " << mName  << "\n\n";
          const cPosFromBDAppuis & aPFA = mPCI->PosFromBDAppuis().Val();
 	 const std::string & anId = aPFA.Id();
 
@@ -1006,10 +1125,12 @@ else
 	 // aRot = aCamId.CombinatoireOFPA(anAppli.Param().NbMaxAppuisInit().Val(),aL,&aDMin);
 	 aRot = aCamId.RansacOFPA(true,aPFA.NbTestRansac(),aL,&aDMin,aPtrDirApprox);
 
-         // std::cout << "DIST-MIN  = " << aDMin << "\n";
 /*
 */
 	 aRot = aRot.inv();
+
+         if (mAppli.ShowMes() || DebugOFPA)
+            std::cout << mName << " DIST-MIN  = " << aDMin << aRot.ImAff(Pt3dr(0,0,0)) << " "  <<  aRot.ImVect(Pt3dr(0,0,1))  << " OK " << aCPTOkOFA << " NotOk " << aCPTNotOkOFA << "\n\n";
 	 // cObserv1Im<cTypeEnglob_Appuis>  &  anObs = mAppli.ObsAppuis(anId,mName);
 	 // Pt3dr aCdg =  anObs.mBarryTer;
          Pt3dr aCdg = BarryImTer(aL).pter;
@@ -1017,6 +1138,8 @@ else
 	 Pt3dr aDirVisee = aRot.ImVect(Pt3dr(0,0,1));
 
 	 aProfPose = scal(aDirVisee,aCdg-aRot.ImAff(Pt3dr(0,0,0)));
+         if (DebugOFPA) getchar();
+         DebugOFPA = false;
     }
     else if (mPCI->PoseFromLiaisons().IsInit())
     {
@@ -1180,7 +1303,10 @@ else
                    }
 	           bool L2 = aPack.size() > mAppli.Param().SeuilL1EstimMatrEss().Val();
                    double aDGen;
-// std::cout << "TEST MEPS STD " << mName << "\n";
+/*
+std::cout << "TEST MEPS STD " << mName  << " L2 " << L2  
+          << " " <<  mAppli.Param().SeuilL1EstimMatrEss().Val()<< "\n";
+*/
 	           aOrRel0 = aLI.TestSolPlane().Val()               ? 
                               aPack.MepRelGenSsOpt(aLBase,L2,aDGen) :
                              aPack.MepRelPhysStd(aLBase,L2)         ;
@@ -1268,15 +1394,52 @@ else
        ELISE_ASSERT(false,"cPoseCam::Alloc");
     }
 
+
 //GUIMBAL
 
-    if (GuimbalAnalyse(aRot,false)<mAppli.Param().LimModeGL().Val())
+    if (isForISec && (! aRot.IsTrueRot()))
+    {
+        CamStenope* aCS =    (mCalib->PIF().DupCurPIF());
+        aCS->UnNormalize();
+
+        aCS->SetProfondeur(aProfPose);
+        aCS->SetAltiSol(anAltiSol);
+        aCS->SetOrientation(aRot.inv());
+        aCS->SetIdCam(mName);
+        std::vector<ElCamera *> aVCam;
+        aVCam.push_back(aCS);
+        cTransfo3DIdent aTransfo;
+        ElCamera::ChangeSys(aVCam,aTransfo,true,true);
+
+        ElRotation3D aRMod = aCS->Orient();
+        // mCF->SetCurRot(aRMod.inv());
+        aRot = aRMod.inv();
+
+// ShowMatr("Entree",aRot.Mat());
+// ShowMatr("Sortie",aRMod.inv().Mat());
+// getchar();
+    }
+
+
+    double aLMG = mAppli.Param().LimModeGL().Val();
+    if ((aLMG>0) && (GuimbalAnalyse(aRot,false)<aLMG))
     {
        std::cout << "GUIMBAL-INIT " << mName << "\n";
        mCF->SetGL(true);
     }
 
     mCF->SetCurRot(aRot);
+
+
+
+
+    if (isAPC)
+    {
+       CamStenope* aCS =    (mCalib->PIF().DupCurPIF());
+       aCS->SetOrientation(aRot.inv());
+       SetCamNonOrtho(aCS);
+       ELISE_ASSERT(initFromBD,"IsAperiCloud requires init from BD");
+    }
 
 
     if (aNZPl!="")
@@ -1290,6 +1453,7 @@ else
     }
     TenteInitAltiProf(2,anAltiSol,aProfPose);
     mRotIsInit = true;
+
 
 /*
     {
@@ -1398,6 +1562,16 @@ void cPoseCam::SetContrainte(const cContraintesPoses & aCP)
 	   mRF->SetModeRot(cNameSpaceEqF::eRotCOptFige);
       break;
 
+      case eAnglesFiges :
+           ELISE_ASSERT
+	   (
+	       (aCP.TolCoord().Val()<=0),
+	       "Tolerance angulaire avec eCentreFige"
+	   );
+           mRF->SetTolAng(aCP.TolAng().Val());
+	   mRF->SetModeRot(cNameSpaceEqF::eRotAngleFige);
+      break;
+
 
 
 
@@ -1444,7 +1618,7 @@ void cPoseCam::InitIm()
 
 bool cPoseCam::PtForIm(const Pt3dr & aPTer,const Pt2di & aRab,bool Add)
 {
-    const CamStenope * aCS = mCF->CameraCourante() ;
+    const CamStenope * aCS = CurCam() ;
     Pt2dr aPIm =  aCS->R3toF2(aPTer);
     
     Box2di aCurBIm(round_down(aPIm)-aRab,round_up(aPIm)+aRab);
@@ -1527,7 +1701,7 @@ void cPoseCam::CloseAndLoadIm(const Pt2di & aRab)
 
     {
        Pt2di aP0 = Sup(mBoxIm._p0-aRab,Pt2di(0,0));
-       Pt2di aP1 = Inf(mBoxIm._p1+aRab,mCF->CameraCourante()->Sz());
+       Pt2di aP1 = Inf(mBoxIm._p1+aRab,CurCam()->Sz());
        mBoxIm = Box2di(aP0,aP1);
     }
      
@@ -1551,7 +1725,7 @@ void cPoseCam::CloseAndLoadIm(const Pt2di & aRab)
     //   ACCESSEURS 
 
 cCalibCam * cPoseCam::Calib() { return mCalib;}
-cCameraFormelle * cPoseCam::CF() {return mCF;}
+cCameraFormelle * cPoseCam::CamF() {return mCF;}
 const  std::string & cPoseCam::Name() const {return mName;}
 double cPoseCam::AltiSol() const {return mAltiSol;}
 double cPoseCam::Profondeur() const {return mProfondeur;}
@@ -1559,19 +1733,19 @@ double cPoseCam::Profondeur() const {return mProfondeur;}
 bool cPoseCam::HasMasqHom() const { return mMasqH !=0; }
 int  cPoseCam::NumInit() const {return mNumInit;}
 
+cPoseCdtImSec *  & cPoseCam::CdtImSec() {return mCdtImSec;}
 
+/*
 bool &   cPoseCam::MMSelected() { return mMMSelected;}
 double & cPoseCam::MMGain()     { return  mMMGain;}
 double & cPoseCam::MMAngle()    { return mMMAngle;}
 Pt3dr  & cPoseCam::MMDir()      { return mMMDir;}
 Pt2dr  & cPoseCam::MMDir2D()      { return mMMDir2D;}
 
-
 std::vector<double> &cPoseCam::MMGainTeta() {return mMMGainTeta;}
-
-
 double & cPoseCam::MMNbPts()    { return  mMMNbPts;}
 double & cPoseCam::MMGainAng()  { return  mMMGainAng;}
+*/
 
 
 /*********************************************************/
@@ -1696,7 +1870,21 @@ Pt3dr  cPoseCam::AddObsCentre
            cStatObs & aSO
       )
 {
+
+   mLastItereHasUsedObsOnCentre = true;
    ELISE_ASSERT(DoAddObsCentre(anObs),"cPoseCam::AddObsCentre");
+
+   if (mEqOffsetGPS)
+   {
+       Pt3dr aResidu = mEqOffsetGPS->Residu(mObsCentre.mCentre);
+       std::cout << "Lever Arm, Cam: " << mName << " Residual " << aResidu  << " LA: " <<  mEqOffsetGPS->Base()->ValueBase() << "\n";
+       double aPdsP  = aPondPlani.PdsOfError(euclid(Pt2dr(aResidu.x,aResidu.y))/sqrt(2.));
+       double aPdsZ  = aPondAlti.PdsOfError(ElAbs(aResidu.z));
+       return mEqOffsetGPS->AddObs(mObsCentre.mCentre,Pt3dr(aPdsP,aPdsP,aPdsZ));
+   }
+
+
+
    Pt3dr aC0 = CurRot().ImAff(Pt3dr(0,0,0));
    Pt3dr aDif = aC0 - mObsCentre.mCentre;
    Pt2dr aDifPlani(aDif.x,aDif.y);
@@ -1831,10 +2019,16 @@ const std::string & cClassEquivPose::Id() const
 
              // =======   cRelEquivPose  ====
 
+/*
 cRelEquivPose::cRelEquivPose(int aNum) :
    mNum (aNum)
 {
 }
+*/
+cRelEquivPose::cRelEquivPose() 
+{
+}
+
 
 cClassEquivPose * cRelEquivPose::AddAPose(cPoseCam * aPC,const std::string & aName)
 {
@@ -1872,7 +2066,7 @@ const std::map<std::string,cClassEquivPose *> &  cRelEquivPose::Map() const
 
 void cRelEquivPose::Show()
 {
-    std::cout << "========== REL NUM " << mNum << "==================\n";
+    std::cout << "========== REL NUM ==================\n";
 
    for 
    (
@@ -1975,8 +2169,178 @@ void cAppliApero::AddObservationsRigidGrp(const cObsRigidGrpImage & anORGI,bool 
    }
 }
 
+/***********************************************************/
+/*                                                         */
+/*                                                         */
+/*                                                         */
+/***********************************************************/
 
+/*
+
+class cIBC_ImsOneTime
+{
+    public :
+        cIBC_ImsOneTime(int aNbCam,int aNum,const std::string& aNameTime) ;
+        void  AddPose(cPoseCam *, int aNum);
+
+    private :
+
+        std::vector<cPoseCam *> mCams;
+        int                     mNum;
+        std::string             mNameTime;
 };
+
+
+class cIBC_OneCam
+{
+      public :
+          cIBC_OneCam(const std::string & ,int aNum);
+          const int & Num() const;
+      private :
+          std::string mNameCam;
+          int         mNum;
+};
+
+
+
+class cImplemBlockCam
+{
+    public :
+         static cImplemBlockCam * AllocNew(cAppliApero &,const cStructBlockCam);
+    private :
+         cImplemBlockCam(cAppliApero & anAppli,const cStructBlockCam );
+
+         cAppliApero &               mAppli;
+         const cStructBlockCam &     mSBC;
+         cRelEquivPose               mRelGrp;
+         cRelEquivPose               mRelId;
+
+         std::map<std::string,cIBC_OneCam *>   mName2Cam;
+         std::vector<cIBC_OneCam *>            mNum2Cam;
+         int                                   mNbCam;
+
+         std::map<std::string,cIBC_ImsOneTime *> mName2ITime;
+         std::vector<cIBC_ImsOneTime *>          mNum2ITime;
+};
+
+    // =================================
+    //              cIBC_ImsOneTime
+    // =================================
+
+cIBC_ImsOneTime::cIBC_ImsOneTime(int aNb,int aNum,const std::string & aNameTime) :
+       mCams     (aNb),
+       mNum      (aNum),
+       mNameTime (aNameTime)
+{
+}
+
+void  cIBC_ImsOneTime::AddPose(cPoseCam * aPC, int aNum) 
+{
+    cPoseCam * aPC0 =  mCams.at(aNum);
+    if (aPC0 != 0)
+    {
+         std::cout <<  "For cameras " << aPC->Name() <<  "  and  " << aPC0->Name() << "\n";
+         ELISE_ASSERT(false,"Conflicting name from KeyIm2TimeCam ");
+    }
+    
+    mCams[aNum] = aPC;
+}
+
+    // =================================
+    //              cIBC_OneCam 
+    // =================================
+
+cIBC_OneCam::cIBC_OneCam(const std::string & aNameCam ,int aNum) :
+    mNameCam (aNameCam ),
+    mNum     (aNum)
+{
+}
+
+const int & cIBC_OneCam::Num() const {return mNum;}
+
+    // =================================
+    //       cImplemBlockCam
+    // =================================
+
+cImplemBlockCam::cImplemBlockCam(cAppliApero & anAppli,const cStructBlockCam aSBC) :
+      mAppli (anAppli),
+      mSBC   (aSBC)
+{
+    const std::vector<cPoseCam*> & aVP = mAppli.VecAllPose();
+   
+
+    // On initialise les camera
+    for (int aKP=0 ; aKP<int(aVP.size()) ; aKP++)
+    {
+          cPoseCam * aPC = aVP[aKP];
+          std::string aNamePose = aPC->Name();
+          std::pair<std::string,std::string> aPair =   mAppli.ICNM()->Assoc2To1(mSBC.KeyIm2TimeCam(),aNamePose,true);
+          std::string aNameCam = aPair.second;
+          if (! DicBoolFind(mName2Cam,aNameCam))
+          {
+               cIBC_OneCam *  aCam = new cIBC_OneCam(aNameCam,mNum2Cam.size());
+               mName2Cam[aNameCam] = aCam;
+               mNum2Cam.push_back(aCam); 
+          }
+    }
+    mNbCam  = mNum2Cam.size();
+
+    
+    // On regroupe les images prises au meme temps
+    for (int aKP=0 ; aKP<int(aVP.size()) ; aKP++)
+    {
+          cPoseCam * aPC = aVP[aKP];
+          std::string aNamePose = aPC->Name();
+          std::pair<std::string,std::string> aPair =   mAppli.ICNM()->Assoc2To1(mSBC.KeyIm2TimeCam(),aNamePose,true);
+          std::string aNameTime = aPair.first;
+          std::string aNameCam = aPair.second;
+          
+          cIBC_ImsOneTime * aIms =  mName2ITime[aNameTime];
+          if (aIms==0)
+          {
+               aIms = new cIBC_ImsOneTime(mNbCam,mNum2ITime.size(),aNameTime);
+               mName2ITime[aNameTime] = aIms;
+               mNum2ITime.push_back(aIms);
+          }
+          cIBC_OneCam * aCam = mName2Cam[aNameCam];
+          aIms->AddPose(aPC,aCam->Num());
+    }
+}
+
+*/
+
+void cPoseCam::AddMajick(cMajickChek & aMC) const
+{
+    aMC.Add(CurRot());
+}
+
+   //   CamNonOrtho 
+
+void  cPoseCam::SetCamNonOrtho(CamStenope * aCS)
+{
+    AssertHasNotCamNonOrtho();
+    mCamNonOrtho = aCS;
+}
+CamStenope *  cPoseCam::GetCamNonOrtho() const
+{
+   AssertHasCamNonOrtho();
+   return mCamNonOrtho;
+}
+bool cPoseCam::HasCamNonOrtho() const
+{
+   return mCamNonOrtho != 0;
+}
+void  cPoseCam::AssertHasCamNonOrtho() const
+{
+    ELISE_ASSERT(HasCamNonOrtho(),"Camera Non Ortho expected");
+}
+void  cPoseCam::AssertHasNotCamNonOrtho() const
+{
+    ELISE_ASSERT(! HasCamNonOrtho(),"Unexpected Camera Non Ortho");
+}
+
+
+
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

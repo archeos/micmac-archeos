@@ -37,12 +37,11 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 
-using namespace NS_ParamChantierPhotogram;
 
 extern bool ResidualStepByStep ;
 
-namespace NS_ParamApero
-{
+
+void AjustNormalSortante(bool Sortante,Pt3dr & aNorm, const ElCamera * aCS1,const Pt2dr &aPIm);
 
 
 double  GuimbalAnalyse(const ElRotation3D & aR,bool show);
@@ -93,6 +92,8 @@ class cOneImageOfLayer;
 class cClassEquivPose;
 class cRelEquivPose;
 
+class cImplemBlockCam;
+
 /************************************************************/
 /*                                                          */
 /*              EQUIVALENCE                                 */
@@ -127,7 +128,8 @@ class cClassEquivPose
 class cRelEquivPose
 {
       public :
-          cRelEquivPose(int aNum);
+          //cRelEquivPose(int aNum);
+          cRelEquivPose();
           cClassEquivPose * AddAPose(cPoseCam *,const std::string & aName);
 
           const std::map<std::string,cClassEquivPose *> & Map() const;
@@ -138,7 +140,7 @@ class cRelEquivPose
       private :
           cRelEquivPose(const cRelEquivPose &); // N.I. 
 
-          int                                     mNum;
+          // int                                     mNum;
           std::map<std::string,cClassEquivPose *> mMap; // Map   NomDeClasse -> Classe
           std::map<std::string,cClassEquivPose *> mPos2C; // Map   Nom de pose -> Classe
 };
@@ -152,6 +154,18 @@ class cRelEquivPose
 
 void CompleteSurfParam();
 
+
+class cAperoOffsetGPS
+{
+     public :
+          cAperoOffsetGPS(const cGpsOffset &,cAppliApero &);
+          const cGpsOffset & ParamCreate() const;
+          cBaseGPS *         BaseUnk();
+     private :
+          cAppliApero & mAppli;
+          cGpsOffset    mParam;
+          cBaseGPS *    mBaseUnk;
+};
 
 class cCalibCam
 {
@@ -187,6 +201,7 @@ class cCalibCam
 
         bool HasRayonMax() const;
         double RayonMax() const;
+        void AddViscosite(const std::vector<double> & aTol);
      protected :
         virtual ~cCalibCam();
 
@@ -308,24 +323,42 @@ class cCompileAOI
      std::vector<eTypeContraintePoseCamera> mCstr;
 };
 
+class cPoseCdtImSec;
 
 class cPoseCam
 {
      public :
+
+       // Fonction relative a une camera eventuellement non ortho,
+       // si active alors toute evolution est bloquee
+         void  SetCamNonOrtho(CamStenope *);
+         CamStenope *  GetCamNonOrtho() const;  // Erreur si != 0
+         bool HasCamNonOrtho() const;
+         void AssertHasCamNonOrtho() const;
+         void AssertHasNotCamNonOrtho() const;
+
+
+
+         void AddMajick(cMajickChek &) const;
+
          bool IsId(const ElAffin2D & anAff) const;
          const ElAffin2D &  OrIntM2C() const;
          const ElAffin2D &  OrIntC2M() const;
          bool FidExist() const;
          bool AcceptPoint(const Pt2dr &) const;
+
+         cPoseCdtImSec *  & CdtImSec();
+/*
          double & MMNbPts();
          double & MMGainAng();
          Pt3dr  & MMDir();
-		 Pt2dr  & MMDir2D();
-		 std::vector<double> & MMGainTeta();
+	 Pt2dr  & MMDir2D();
+	 std::vector<double> & MMGainTeta();
 
          bool &  MMSelected();
          double & MMGain();
          double & MMAngle();
+*/
 
 
          void C2MCompenseMesureOrInt(Pt2dr &);
@@ -351,17 +384,21 @@ class cPoseCam
                            );
 
          const CamStenope * CurCam() const;
+         CamStenope * NC_CurCam();
+         CamStenope * DupCurCam() const;
          void DoInitIfNow();
 
           cCalibCam * Calib();
 	  void SetContrainte(const cContraintesPoses &);
           void SetFigee();
           void SetDeFigee();
-	  cCameraFormelle * CF();
+	  cCameraFormelle * CamF();
 	  void ActiveContrainte(bool Stricte);
 	  const std::string & Name() const;
 	  double  AltiSol() const;
 	  double  Profondeur() const;
+          double  GetProfDyn(int & Ok) const;
+
 
 	  void    InitAvantCompens();
 	  void    AddPMoy(const Pt3dr & aP,double aBSurH);
@@ -404,6 +441,8 @@ class cPoseCam
           bool     PreInit() const;
 
           bool HasObsOnCentre() const;
+          bool LastItereHasUsedObsOnCentre() const;
+          
           bool HasObsOnVitesse() const;
           const Pt3dr  & ObsCentre() const;
           Pt3dr   Vitesse() const;
@@ -447,6 +486,7 @@ class cPoseCam
           void ResetPtsVu();
           void AddPtsVu(const Pt3dr &);
           const std::vector<Pt3dr> & PtsVu() const;
+          cEqOffsetGPS *   EqOffsetGPS();
      private  :
 
           void AssertHasObsCentre() const;
@@ -510,6 +550,7 @@ class cPoseCam
           cObsCentre                   mObsCentre;
           bool                         mHasObsOnCentre;
           bool                         mHasObsOnVitesse;
+          bool                         mLastItereHasUsedObsOnCentre;
 
           int                          mNumTmp; // Entre autre dans bloc bascule
           // Pour qualifier les Pack Pts Mul
@@ -535,6 +576,8 @@ class cPoseCam
           int                          mNbPosOfInit;
    // Parametres lies aux export pour MicMac (en fait de maniere + generale
    // a la gestion du canevas)
+
+/*
           bool                         mMMSelected;
           double                       mMMGain;
           double                       mMMAngle;
@@ -543,9 +586,17 @@ class cPoseCam
           double                       mMMNbPts;
           double                       mMMGainAng;
           std::vector<double>          mMMGainTeta;
+*/
+
+
           bool                         mFidExist;
 
           std::vector<Pt3dr>           mPtsVu;
+          bool                         mLastEstimProfIsInit;
+          double                       mLasEstimtProf;
+          cPoseCdtImSec *              mCdtImSec;
+          CamStenope *                 mCamNonOrtho;
+          cEqOffsetGPS *               mEqOffsetGPS;
 };
 
 
@@ -890,19 +941,26 @@ class cOnePtsMult
         cPoseCam *  Pose0() const;
         cPoseCam *  PoseK(int aK) const;
 
-         double & MemPds();
+         double & MemPds() ;
+         Pt3dr  & MemPt() ;
+         bool    MemPtOk() const;
+         void    SetMemPtOk(bool) ;
+
+
          bool OnPRaz() const;
          void SetOnPRaz(bool);
 
     private :
         double              mMemPds;
+        Pt3dr               mMemPt;
         // std::vector<Pt2dr>  mPts;
         cNupletPtsHomologues mNPts;
         tFixedSetInt         mFlagI;
         cOneCombinMult *     mOCM;
   // Rajouter a posteriori, donc valeur def par compatibilite, c.a.d si pas specifiee,
   // tous les points appartiennent au plan de rappel
-        bool                mOnPlaneRapOnz;
+        U_INT1                 mOnPlaneRapOnz;
+        U_INT1                 mMemPtOk;
 };
 
 
@@ -939,9 +997,19 @@ class cStatObs
          void AddSEP(double aSEP);
          double SomErPond() const;
          bool   AddEq() const;
+
+         void AddEvol(const double & aPds,const double & anEvol,const double & aMaxEvol);
+         double PdsEvol() const;
+         double MaxEvol() const;
+         double MoyEvol() const;
     private :
+         void AssertPdsEvolNN() const;
+
          double mSomErPond;
          double mAddEq;
+         double mMaxEvol;
+         double mPdsEvol;
+         double mSomEvol;
 };
 
 /*
@@ -997,7 +1065,7 @@ class cObsLiaisonMultiple
           void ClearAggregImage();
 
 
-           Pt3dr CentreNuage() const;
+           Pt3dr CentreNuage(const cMasqBin3D * ,int * aNb) const;
 
 
 
@@ -1037,9 +1105,10 @@ class cObsLiaisonMultiple
                    const std::string & aNamePack,
                    const std::string & aName1,
                    const std::string & aName2,
-                   bool isFirstSet
+                   bool isFirstSet,
+                   bool packMustBeSwap=false // file aNamePack contains the couples in inverse order (the first point belongs to aName2 and the second to aName1)
           );
-          void AddLiaison(const std::string & aNamePack,const std::string & aName2,bool isFirstSet);
+          void AddLiaison(const std::string & aNamePack,const std::string & aName2,bool isFirstSet, bool packMustBeSwapped=false);
 
 	  bool InitPack(ElPackHomologue & aPack, const std::string& aN2);
           void Compile(cSurfParam *);
@@ -1091,7 +1160,8 @@ class cObsLiaisonMultiple
                       const std::string & aNamePack,
                       const std::string & aName1,
                       const std::string & aName2,
-                      bool isFirstSet
+                      bool isFirstSet,
+                      bool packMustBeSwapped=false // file aNamePack contains the couples in inverse order (the first point belongs to aName2 and the second to aName1)
                 );
 
            void AddCple(int anI1,int anI2,const ElCplePtsHomologues&,bool IsFirstSet);
@@ -1259,71 +1329,79 @@ class cArgVerifAero
 
 class cPackObsLiaison
 {
-      public :
-             cPackObsLiaison
-	     (
-                  cAppliApero &,
-		  const cBDD_PtsLiaisons & aBDL,
-                  int   aCpt
-	     );
+	public :
+		cPackObsLiaison
+		(
+			cAppliApero &,
+			const cBDD_PtsLiaisons & aBDL,
+			int   aCpt
+		);
 
-             std::list<cPoseCam *> ListCamInitAvecPtCom(cPoseCam *);
+		std::list<cPoseCam *> ListCamInitAvecPtCom(cPoseCam *);
 
-             // Resultat indique si swaped 
-	     bool InitPack
-                  (
-                      ElPackHomologue &, 
-	              const std::string& aNameIm1, 
-                      const std::string& aNameIm2
-                  );
+		// Resultat indique si swaped 
+		bool InitPack
+		(
+			ElPackHomologue &, 
+			const std::string& aNameIm1, 
+			const std::string& aNameIm2
+		);
 
-            void  GetPtsTerrain
-                  (
-                      const cParamEstimPlan & aPEP,
-                      cSetName &                    aSelectorEstim,
-                      cArgGetPtsTerrain &,
-                      const char * Attr // Nom en + pour calculer le masque
-                  );
+		void  GetPtsTerrain
+		(
+			const cParamEstimPlan & aPEP,
+			cSetName &                    aSelectorEstim,
+			cArgGetPtsTerrain &,
+			const char * Attr // Nom en + pour calculer le masque
+		);
 
 
-            void Compile();
-            void AddLink();
-	    double AddObs
-	           (
-		        const cPonderationPackMesure & aPondIm,
-		        const cPonderationPackMesure * aPondSurf,
-                        cStatObs & aSO,
-                        const cRapOnZ *
+		void Compile();
+		void AddLink();
+		double AddObs
+		(
+			const cPonderationPackMesure & aPondIm,
+			const cPonderationPackMesure * aPondSurf,
+			cStatObs & aSO,
+			const cRapOnZ *
+		);
 
-                   );
+		void OneExportRL(const cExportImResiduLiaison & anEIL) const;
 
-	    void OneExportRL(const cExportImResiduLiaison & anEIL) const;
+		void AddContrainteSurfParam
+		(
+			cSurfParam *,
+			cElRegex *  aPatI1,
+			cElRegex *  aPatI2
+		);
 
-	    void AddContrainteSurfParam
-	         (
-                      cSurfParam *,
-		      cElRegex *  aPatI1,
-		      cElRegex *  aPatI2
-		 );
+		cObsLiaisonMultiple * ObsMulOfName(const std::string &);
 
-          cObsLiaisonMultiple * ObsMulOfName(const std::string &);
+		std::map<std::string,cObsLiaisonMultiple *> & DicoMul();
+	  
+		private :
+			void addFileToObservation( 
+										const std::string &i_poseName1, const std::string &i_poseName2,
+										const std::string &i_packFilename,
+										const cBDD_PtsLiaisons &i_bd_liaison,
+										int i_iPackObs, // index of the current pack in cAppliApero->mDicoLiaisons
+										bool i_isFirstKeySet,
+										bool i_isReverseFile // couples inside i_packFilename are to be reversed before use
+									 );
 
-	  std::map<std::string,cObsLiaisonMultiple *> & DicoMul();
-      private :
-          cAppliApero &                    mAppli;      
-	  cBDD_PtsLiaisons                 mBDL;
-	  std::string                      mId;
-          bool                             mIsMult;
+			cAppliApero &                    mAppli;      
+			cBDD_PtsLiaisons                 mBDL;
+			std::string                      mId;
+			bool                             mIsMult;
 
-          std::vector<cObservLiaison_1Cple *>  mLObs;
-	  std::map<std::string,std::map<std::string,cObservLiaison_1Cple *> > mDicObs;
+			std::vector<cObservLiaison_1Cple *>  mLObs;
+			std::map<std::string,std::map<std::string,cObservLiaison_1Cple *> > mDicObs;
 
-	  std::map<std::string,cObsLiaisonMultiple *> mDicoMul;
-	  std::vector<cSurfParam *>           mVSurfCstr;
-	  std::vector<cElRegex *>             mPatI1EqPl;
-	  std::vector<cElRegex *>             mPatI2EqPl;
-          int                                 mFlagArc;
-
+			std::map<std::string,cObsLiaisonMultiple *> mDicoMul;
+			std::vector<cSurfParam *>           mVSurfCstr;
+			std::vector<cElRegex *>             mPatI1EqPl;
+			std::vector<cElRegex *>             mPatI2EqPl;
+			int                                 mFlagArc;
 };
 
 
@@ -1346,9 +1424,9 @@ class cOneAppuisFlottant
           cBdAppuisFlottant &
        );
 
-       void AddLiaison(const std::string & aNameIm,const cOneMesureAF1I &,const Pt2dr & anOffset);
+       void AddLiaison(const std::string & aNameIm,const cOneMesureAF1I &,const Pt2dr & anOffset,bool aModeDr);
        void Compile();
-       void AddObs(const cObsAppuisFlottant &,cStatObs & aSO);
+       double AddObs(const cObsAppuisFlottant &,cStatObs & aSO,std::string & aCamMaxErr);
 
        const Pt3dr &  PtRes() const;
        const Pt3dr &  PtInit() const;
@@ -1372,6 +1450,7 @@ class cOneAppuisFlottant
        std::vector<Pt2dr>      mPts;
        std::vector<double>     mPdsIm;
        std::vector<cPoseCam *> mCams;
+       std::vector<bool>       mIsDroite;
        bool mHasGround;
        Pt3dr mPt;
        Pt3dr mInc;
@@ -1387,7 +1466,7 @@ class cBdAppuisFlottant
     public :
        void ShowError();
        cBdAppuisFlottant(cAppliApero &);
-       void AddAFLiaison(const std::string & aNameIm,const cOneMesureAF1I &,const Pt2dr & anOffset,bool OkNoGr);
+       void AddAFLiaison(const std::string & aNameIm,const cOneMesureAF1I &,const Pt2dr & anOffset,bool OkNoGr,bool ModeDr);
        void AddAFDico(const cDicoAppuisFlottant &);
 
        void Compile();
@@ -1608,6 +1687,7 @@ class cPonderateur
     |                     ->  systeme formel global, depend de 1.2 pour initialisation
     |
     |      |  InitCalibCam()
+    |      |  InitOffsGps()
     |      |  InitPoses()
     |      |  InitPlans()
     |
@@ -1618,6 +1698,7 @@ class cPonderateur
     |      |  CompileOsbOr()
     |      |  CompileObsCentre()
     |      |  InitAndCompileBDDObsFlottant();
+    |      |  InitAndCompileBDDObsDr();
 
 
 -----------------------------------------------
@@ -1766,12 +1847,39 @@ class cParamBascBloc
 };
 
 
+class cCompiledObsRelGPS
+{
+    public :
+        cCompiledObsRelGPS(
+               cAppliApero &,
+               cDeclareObsRelGPS
+        );
+        const cDeclareObsRelGPS & XML() const;
+        const std::vector<cPoseCam *> &       VOrderedPose() const;
+        const std::vector<cEqRelativeGPS *> & VObs() const;
+
+    private :
+        std::vector<cPoseCam *>        mVOrderedPose;
+        std::vector<cEqRelativeGPS *>  mVObs;
+        cDeclareObsRelGPS mXML;
+        cAppliApero *     mAppli;
+};
+
 
 class cAppliApero : public NROptF1vND
 {
     public :
 
+       void DebugPbConvAppui();
+        cXmlSauvExportAperoOneIter & CurXmlE();
 
+        int  NumSauvAuto() const {return  mNumSauvAuto;}
+        bool NumIterDebug() const;
+        int   CptIterCompens() const {return mCptIterCompens;}
+        FILE * FileDebug();
+        std::string MagickStr();
+        void   MessageDebug(const std::string &);
+        void AddMajick(double aVal);
   
         FILE *  FpRT();  // File Rapport Txt
         cMesureAppuiFlottant1Im StdGetOneMAF(const std::string & aName);
@@ -1853,6 +1961,8 @@ class cAppliApero : public NROptF1vND
 
 	bool NamePoseIsKnown(const std::string &) const;
         const std::string &  DC() const;
+        const std::string &  OutputDirectory() const;
+        bool  HasEqDr() const;
 
         const std::string & NameCalOfPose(const std::string &);
 	cInterfChantierNameManipulateur * ICNM();
@@ -1890,6 +2000,7 @@ class cAppliApero : public NROptF1vND
 
         
         const std::vector<cPoseCam*> & VecLoadedPose();
+        const std::vector<cPoseCam*> & VecAllPose();
 
         // Si vecteur non vide, donne garantie que 
         //  1- Chaque pose contient la projection de aPM avec le rab qui va bien
@@ -1942,8 +2053,16 @@ class cAppliApero : public NROptF1vND
 
 
        void CheckInit(const cLiaisonsInit * ,cPoseCam *);
+       bool SqueezeDOCOAC() const;  
+       cAperoOffsetGPS *  OffsetNNOfName(const std::string &);
     private :
 
+       // Active uniquement si  mFileDebug != 0
+       void AddAllMajick(int aLine,const std::string & aFile,const std::string & aMes);
+       void PosesAddMajick();
+       void MajAddCoeffMatrix();  
+
+       void SetSqueezeDOCOAC();  
        void ClearAllCamPtsVu();
 
 
@@ -2027,6 +2146,8 @@ class cAppliApero : public NROptF1vND
 
 	void InitInconnues();
 	void InitCalibCam();
+	void InitOffsGps();
+	void InitObsRelGPS ();
 	void InitPoses();
 	void InitSurf();
 
@@ -2036,11 +2157,17 @@ class cAppliApero : public NROptF1vND
          void CompileOsbOr();
          void CompileObsCentre();
 	 void InitAndCompileBDDObsFlottant();
+	 void InitHasEqDr();
 
-          void DoAMD();
+         void DoAMD();
+         void AMD_AddBlockCam();
 
           void VerifAero(const cVerifAero & aVA);
           void VerifAero(const cVerifAero & aVA,cPoseCam *,cObsLiaisonMultiple  &);
+
+          void InitBlockCameras();
+          void EstimateOIBC(const cEstimateOrientationInitBlockCamera &);
+          cImplemBlockCam * GetBlockCam(const std::string & anId);
 
           void InitFilters();
 
@@ -2058,6 +2185,8 @@ class cAppliApero : public NROptF1vND
 	         );
 
          void InitOneSetObsFlot(cBdAppuisFlottant * ,const cSetOfMesureAppuisFlottants &,const Pt2dr &,cSetName *,bool OkNoGr);
+         void InitOneSetOnsDr(cBdAppuisFlottant *,const cSetOfMesureSegDr &,const Pt2dr &,cSetName *,bool       OkNoGr);
+
 
 	                    
 
@@ -2087,7 +2216,7 @@ class cAppliApero : public NROptF1vND
 	  void MAJContrainteCamera(const cContraintesCamerasInc &);
 	  void MAJContraintePose(const cContraintesPoses &);
 
-        void  OneIterationCompensation(const cEtapeCompensation &,bool IsLast);
+        void  OneIterationCompensation(const cIterationsCompensation & ,const cEtapeCompensation &,bool IsLast);
         double ScoreLambda(double aLambda);  
         double NRF1v(REAL); // = ScoreLambda
         bool   NROptF1vContinue() const;
@@ -2107,6 +2236,7 @@ class cAppliApero : public NROptF1vND
         void AddLevenbergMarkard(cStatObs & aSO);
         void AddRappelOnAngle(const cRappelOnAngles & aRAO,double aMult,cStatObs & aSO);
         void AddRappelOnCentre(const cRappelOnCentres & aRAC,double aMult,cStatObs & aSO);
+        void AddRappelOnIntrinseque(const cRappelOnIntrinseque & aROI,double aMult,cStatObs & aSO);
 
 
         void AddObservationsAppuis(const std::list<cObsAppuis> &,bool IsLastIter,cStatObs & aSO);
@@ -2120,8 +2250,14 @@ class cAppliApero : public NROptF1vND
         void AddObservationsAppuisFlottants(const std::list<cObsAppuisFlottant> &,bool IsLastIter,cStatObs & aSO);
         void AddObservationsCentres(const std::list<cObsCentrePDV> &,bool IsLastIter,cStatObs & aSO);
 
+        void AddOneObservationsRelGPS(const cObsRelGPS &);
+        void AddObservationsRelGPS(const std::list<cObsRelGPS> & aLO);
+
         void AddObservationsRigidGrp(const std::list<cObsRigidGrpImage> &,bool IsLastIter,cStatObs & aSO);
         void AddObservationsRigidGrp(const cObsRigidGrpImage &,bool IsLastIter,cStatObs & aSO);
+
+        void AddObservationsRigidBlockCam(const cObsBlockCamRig &,bool IsLastIter,cStatObs & aSO);
+        void AddObservationsRigidBlockCam(const std::list<cObsBlockCamRig> &,bool IsLastIter,cStatObs & aSO);
 
         double AddAppuisOnePose
               (
@@ -2141,7 +2277,7 @@ class cAppliApero : public NROptF1vND
         void  ExportVisuConfigPose(const cExportVisuConfigGrpPose & anEVCGP);
 
         void ExportImMM(const cChoixImMM &);
-        void ExportImSecMM(const cChoixImMM &,cPoseCam *);
+        bool ExportImSecMM(const cChoixImMM &,cPoseCam *,const cMasqBin3D * aMasq3D);
 
          void ExportMesuresFromCarteProf(const cExportMesuresFromCarteProf&);
          void ExportMesuresFromCarteProf
@@ -2152,6 +2288,14 @@ class cAppliApero : public NROptF1vND
 
         cAperoPointeMono CreatePointeMono(const cSetOfMesureAppuisFlottants &,const std::string & aNamePt,const cAperoPointeMono * aDef=0);
         cAperoPointeStereo CreatePointeStereo(const cSetOfMesureAppuisFlottants &,const std::string & aNamePt);
+
+        Pt3dr CreatePtFromPointeMonoOrStereo
+              (
+                    const cSetOfMesureAppuisFlottants & aMAF,
+                    const std::string & aNamePt,
+                    const cElPlan3D  * aPlan,
+                    const std::string & aNameSec=""
+              );
 
         ElSeg3D   PointeMono2Seg(const cAperoPointeMono &) ;
         Pt3dr     PointeMonoAndPlan2Pt(const cAperoPointeMono &,const cElPlan3D &);
@@ -2173,6 +2317,7 @@ class cAppliApero : public NROptF1vND
 
        
        void ExportNuage(const cExportNuage &);
+       void ExportBlockCam(const cExportBlockCamera &);
 
 
 
@@ -2215,9 +2360,12 @@ class cAppliApero : public NROptF1vND
 
         void Bascule(const cBasculeOrientation &,bool CalleAfter);
 
+         void UpdateMul(double & aMult,double aNew,bool aModeMin);
+
 
         cParamApero     mParam;
         std::string     mDC;
+        std::string     mOutputDirectory;
 	cInterfChantierNameManipulateur * mICNM;
 
 
@@ -2228,6 +2376,8 @@ class cAppliApero : public NROptF1vND
                                                                      // une initialisation differeee
         std::vector<cPoseCam*> mVecPose;
         std::vector<cPoseCam*> mTimeVP; // Triee selon le temps
+
+        std::map<std::string,cCompiledObsRelGPS *> mMCORelGps;
 
     // Utilise pour connaitre les poses pour lesquels des images te chargees
     // (lorsque l'on recherche  a affiner les pts mul par re-correl)
@@ -2293,6 +2443,7 @@ class cAppliApero : public NROptF1vND
        
         cShowPbLiaison *                    mCurPbLiaison;
         int                                 mNbEtape;
+        int                                 mNbIterDone;
 
         std::vector<Pt3dr>                  mResiduCentre;
         std::vector<double>                 mRetardGpsC;
@@ -2305,17 +2456,27 @@ class cAppliApero : public NROptF1vND
         const cSectionLevenbergMarkard *    mCurSLMIter;
         double                              mMulSLMIter;
 
-        std::map<std::string,cRelEquivPose *> mRels;
-        int                                   mNumSauvAuto;
+        std::map<std::string,cRelEquivPose *>   mRels;
+        std::map<std::string,cImplemBlockCam *> mBlockCams;
+        std::map<std::string,cAperoOffsetGPS *> mDicoOffGPS;
+        int                                     mNumSauvAuto;
 
          
         FILE *                                 mFpRT;  // File Rapport Txt
+        FILE *                                 mFileDebug;  // File Rapport Txt
+        cMajickChek                            mMajChck;
+        int                                    mCptIterCompens;
+        bool                                   mHasEqDr;
+        cStatObs                               mStatLastIter;
+             // flag utilise lorque l'on a utilise ori non ortho
+        int                                    mSqueezeDOCOAC;  
+        cXmlSauvExportAperoGlob                mXMLExport;
 };
 
 
 
-};
 
+#define ADDALLMAJ(aMes) AddAllMajick(__LINE__,__FILE__,aMes)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

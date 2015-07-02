@@ -37,9 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
-namespace NS_ParamMICMAC
-{
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 static double Cor2Cost(eModeDynamiqueCorrel aDyn,double aCorrel,double aCorrelMin,double aGamaCorr) 
 { 
@@ -426,6 +424,28 @@ REAL cStatOneClassEquiv::CoeffCorrelIm1Maitre() const
    return aRes / (mKCurDist-1);
 }
 
+REAL cStatOneClassEquiv::CoeffCorrelMedIm1Maitre() const
+{
+   if (mKCurDist<2)
+      return mDefCorr;
+   if (mKCurDist<=3) return CoeffCorrelIm1Maitre();
+
+
+   double aRes=0.0;
+   double aCMax= -10;
+   double aCMin= 10;
+   for (int aK=1 ;aK<mKCurDist ; aK++)
+   {
+       double aC = mVDistr[0]->CoeffCorrel2Dist(*mVDistr[aK],mEpsCorr);
+       aRes+= aC;
+       ElSetMax(aCMax,aC);
+       ElSetMin(aCMin,aC);
+   }
+   return (aRes - aCMin - aCMax) / (mKCurDist-3);
+}
+
+
+
 
 
 REAL cStatOneClassEquiv::CoeffCorrelMaxIm1Maitre() const
@@ -516,8 +536,7 @@ REAL cStatOneClassEquiv::CoeffCorrelation() const
       break;
 
       case eAggregMoyMedIm1Maitre :
-           ELISE_ASSERT(false,"No Moy-Md in cStatOneClassEquiv::CoeffCorrelation");
-           return 0.0;
+           return CoeffCorrelMedIm1Maitre();
       break;
 
 
@@ -670,11 +689,10 @@ void cStatGlob::SetSomsMade(bool aSSM)
         mStatClass[aK]->SomsMade() = aSSM;
 }
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -690,17 +708,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

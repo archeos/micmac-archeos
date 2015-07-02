@@ -66,13 +66,13 @@ char * std_ch_dup(const char * ch)
 
 INT   IndPostfixed  (const ElSTDNS string & str,char  c)
 {
-	size_t ind = str.rfind(c);
+    size_t ind = str.rfind(c);
     if ( ind ==  string::npos)
-		Tjs_El_User.ElAssert
-    	(
-			false,
-        	EEM0 << "Unpostfixed string " << str.c_str()
-    	);
+        Tjs_El_User.ElAssert
+        (
+            false,
+            EEM0 << "Unpostfixed string " << str.c_str()
+        );
     return (int) ind;
 }
 
@@ -81,21 +81,32 @@ bool IsPostfixed(const ElSTDNS string & str,char  c)
      return   str.rfind(c) !=  ElSTDNS string::npos;
 }
 
+bool    IsPostfixedBy  (const ElSTDNS string & aName,const std::string & aPost)
+{
+    return IsPostfixed(aName) && (StdPostfix(aName)==aPost);
+}
+
+bool IsFileDmp(const std::string & aName)
+{
+    return IsPostfixedBy(aName,"dmp");
+}
+
 
 ElSTDNS string StdPrefix(const ElSTDNS string & str,char c)
 {
-	return str.substr(0,IndPostfixed(str,c));
+    return str.substr(0,IndPostfixed(str,c));
 }
 
 ElSTDNS string StdPostfix(const ElSTDNS string & str,char c)
 {
-	return str.substr(IndPostfixed(str,c)+1,str.length());
+    return str.substr(IndPostfixed(str,c)+1,str.length());
 }
 
+//remove extension
 ElSTDNS string StdPrefixGen(const ElSTDNS string & aStr,char c)
 {
         if (IsPostfixed(aStr,c))
-	    return aStr.substr(0,IndPostfixed(aStr,c));
+        return aStr.substr(0,IndPostfixed(aStr,c));
         return aStr;
 }
 
@@ -108,7 +119,6 @@ bool IsPrefix(const char * aPref,const char *aStr)
    }
    return (*aPref==0);
 }
-
 
 template <>  std::string ToString(const bool & aBool)
 {
@@ -128,7 +138,32 @@ template <>  std::string ToString(const double & aD)
     return aBuf;
 }
 
+template <> std::string ToString(const Pt2di & aP)
+{
+   return "[" + ToString<int>(aP.x) + "," + ToString<int>(aP.y) + "]";
+}
 
+template <> std::string ToString(const Pt2dr & aP)
+{
+   return "[" + ToString<double>(aP.x) + "," + ToString<double>(aP.y) + "]";
+}
+
+
+template <class Type> std::string  Vec2String(const std::vector<Type> & aV)
+{
+   std::string aRes= "[";
+   for (int aK=0 ; aK<int(aV.size()) ; aK++)
+   {
+      if (aK!=0) aRes = aRes + ",";
+      aRes = aRes + ToString(aV[aK]);
+   }
+   aRes =  aRes + "]";
+   return aRes;
+}
+template <> std::string ToString(const std::vector<double> & aV)
+{
+    return Vec2String(aV);
+}
 
 
 
@@ -157,7 +192,7 @@ bool N2IsEndN1(const char * aName1,const char * aName2)
 // d'effet collateral. A priori c'est bon car :
 //
 //   - peu utilisee ; uniquement sur de la generation de cpp
-//    (specif Linux) et des fichiers genere par MicMac (on a 
+//    (specif Linux) et des fichiers genere par MicMac (on a
 //    utilise en dur le /, d'ou le bug en recherchant ELISE_CAR_DIR)
 //
 //   - il faut chercher les ennuis pour mettre des \ dans les noms
@@ -170,6 +205,17 @@ std::string PostFixWithout(const std::string & aStr,char aSep)
  if (aPos == std::string::npos)
     return aStr;
  return aStr.substr(aPos+1,std::string::npos);
+}
+
+
+std::string StrToLower(const std::string & aStr)
+{
+   std::string aRes;
+   for (const char * aC=aStr.c_str(); *aC; aC++)
+   {
+      aRes += (isupper(*aC) ?  tolower(*aC) : *aC);
+   }
+   return aRes;
 }
 
 std::string NameWithoutDir(const std::string & aStr)
@@ -185,7 +231,13 @@ void MakeNameDir(std::string & aStr)
 }
 */
 
-std::string StdWokdDir(const std::string & aValWD,const std::string & aNameFile)
+std::string AddDirIfRequired(const std::string & aDir,const std::string & aFile)
+{
+    if (ELISE_fp::exist_file(aDir+ aFile)) return aDir + aFile;
+    return aFile;
+}
+
+std::string StdWorkdDir(const std::string & aValWD,const std::string & aNameFile)
 {
   // std::cout << "XXXXXXXXXX\n";
 
@@ -198,7 +250,7 @@ std::string StdWokdDir(const std::string & aValWD,const std::string & aNameFile)
    return aDir;
 */
    return DirOfFile(aNameFile);
-   
+
 }
 void MakeFileDirCompl(std::string & aD)
 {
@@ -238,24 +290,42 @@ void SplitDirAndFile
            const std::string & aStr
      )
 {
-	string strCpy = aStr;
 
-	#if (ELISE_windows)
-		replace( strCpy.begin(), strCpy.end(), '\\', '/' );
-	#endif
 
-	std::string::size_type aPos  = strCpy.rfind('/');
+    // ======
+    string strCpy = aStr;
 
-	if (aPos == std::string::npos)
-	{
-		aNameDir = ELISE_Current_DIR ;
-		aNameFile = strCpy;
-	}
-	else
-	{
-	   aNameDir = strCpy.substr(0,aPos+1);
-	   aNameFile = strCpy.substr(aPos+1,std::string::npos);
-	}
+    #if (ELISE_windows)
+        replace( strCpy.begin(), strCpy.end(), '\\', '/' );
+    #endif
+
+
+
+    // ====== Regle speciale, si on veut passer des argument de Type  NKS-Set-OfFile, on doit
+    // pouvoir specifier un split special, on le fait avec un %
+    {
+         std::string::size_type aPos  = strCpy.rfind('%');
+         if (aPos != std::string::npos)
+         {
+             aNameDir = strCpy.substr(0,aPos);
+             aNameFile = strCpy.substr(aPos+1,std::string::npos);
+             return;
+         }
+    }
+
+
+    std::string::size_type aPos  = strCpy.rfind('/');
+
+    if (aPos == std::string::npos)
+    {
+        aNameDir = ELISE_Current_DIR ;
+        aNameFile = strCpy;
+    }
+    else
+    {
+       aNameDir = strCpy.substr(0,aPos+1);
+       aNameFile = strCpy.substr(aPos+1,std::string::npos);
+    }
 }
 
 
@@ -263,7 +333,7 @@ std::string AddPrePost(const std::string & aFull,const std::string & aPref,const
 {
     std::string aDir,aName;
     SplitDirAndFile(aDir,aName,aFull);
-   
+
    return aDir + aPref +StdPrefix(aName) + aPost + "." +StdPostfix(aName);
 
 }
@@ -404,7 +474,7 @@ void GlobStdAdapt2Crochet(std::string & aStr)
     if (aStr=="") return;
 
     if (
-           (aStr.find('@')!=(std::string::npos)) 
+           (aStr.find('@')!=(std::string::npos))
          && (aStr[0]!='[')
        )
     {
@@ -423,7 +493,7 @@ std::string QUOTE(const std::string & aStr)
 
 
    return    ((aC[0]=='"'   ) ? "" : "\"" )
-           + aStr 
+           + aStr
            + ((aC[aL-1]=='"') ? "" : "\"" );
 }
 
@@ -441,29 +511,56 @@ std::vector<std::string> VecStrFromFile(const std::string & aFilePtsIn)
     return aRes;
 }
 
+std::string getBanniereMM3D()
+{
+    std::string banniere = "\n";
+    banniere += "************************************************************************ \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**    MicMac: a  free open source project  for photogrammetry         ** \n";
+    banniere += "**     hosted at Ecole Nationale des Sciences Geographiques           ** \n";
+    banniere += "**               in Marne-la-Vallee, for IGN-France                   ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**  The project is funded by :                                        ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**  - Institut National de l'Information Geographique et Forestiere   ** \n";
+    banniere += "**    (IGN main funder since 2003)                                    ** \n";
+    banniere += "**  - the french FUI Project \"Culture 3D Cloud\"                       ** \n";
+    banniere += "**  - the french ANR Project \"MONUMENTUM\"                             ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**  Research also currently supported by :                            ** \n";
+    banniere += "**  - CNES (French Space Agency) - via TOSCA Committee                ** \n";
+    banniere += "**  - Compagnie Nationale du Rhone                                    ** \n";
+    banniere += "**  - Vinci-Construction-Terrassement                                 ** \n";
+    banniere += "**  - ERC Advanced Grant A.Kaeaeb \"ICEMASS\" (University of Oslo)      ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**  Current Team: MP Deseilligny, M Deveau, J Belvaux, G Choqueux,    ** \n";
+    banniere += "**                G Maillet, L Girod                                  ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**    Contact for participating : Marc.Pierrot-Deseilligny@ensg.eu    ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**    Hope you enjoy, todo list in case of any problem using MicMac : ** \n";
+    banniere += "**      (0) Take a Pastis                                             ** \n";
+    banniere += "**      (1) Switch your computer off and on                           ** \n";
+    banniere += "**      (2) Install it on Gnu-Linux (work better on)                  ** \n";
+    banniere += "**      (3) Contact the forum http://forum-micmac.forumprod.com/      ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "**                                                                    ** \n";
+    banniere += "************************************************************************ \n";
+
+    return banniere;
+}
 
 void BanniereMM3D()
 {
-    std::cout << "\n";
-    std::cout << "  ************************************************************************\n";
-    std::cout << "  **                                                                    **\n";
-    std::cout << "  **    MicMac: a  free open source project  for photogrammetry         **\n";
-    std::cout << "  **     hosted at Ecole Nationale des Sciences Geographiques           **\n";
-    std::cout << "  **               in Marne-la-Vallee, for IGN-France                   **\n";
-    std::cout << "  **                                                                    **\n";
-    std::cout << "  **  Current Team: MP Deseilligny, M Deveau, J Belvaux, G Choqueux,    **\n";
-    std::cout << "  **     L. Girod                                                       **\n";
-    std::cout << "  **                                                                    **\n";
-    std::cout << "  **               Contact: Marc.Pierrot-Deseilligny@ensg.eu            **\n";
-    std::cout << "  **                                                                    **\n";
-    std::cout << "  ************************************************************************\n";
- 
+    std::cout << getBanniereMM3D();
 }
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -479,17 +576,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement,
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

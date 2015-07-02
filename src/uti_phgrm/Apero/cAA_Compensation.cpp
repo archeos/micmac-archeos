@@ -38,10 +38,14 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
 //  AJOUT DES OBSERVATIONS
+
+cXmlSauvExportAperoOneIter & cAppliApero::CurXmlE()
+{
+    ELISE_ASSERT(!mXMLExport.Iters().empty(),"cAppliApero::CurXmlE");
+    return mXMLExport.Iters().back();
+}
 
 void cAppliApero::AddObservations
      (
@@ -50,6 +54,12 @@ void cAppliApero::AddObservations
           cStatObs & aSO
      )
 {
+   cXmlSauvExportAperoOneIter aXmlE;
+   aXmlE.NumIter() = mNbIterDone;
+   aXmlE.NumEtape() = mNbEtape;
+   mXMLExport.Iters().push_back(aXmlE);
+
+
    if (IsLastIter && anSO.TxtRapDetaille().IsInit())
    {
       InitRapportDetaille(anSO.TxtRapDetaille().Val());
@@ -60,16 +70,66 @@ void cAppliApero::AddObservations
    }
 
 
+   // On les mets avant pour que AddLevenbergMarkard sache de manier precise si le centre a
+   // ete fixe sur CETTE iteration
+   {
+       //  MajAddCoeffMatrix();
+       //  if (NumIterDebug())  MessageDebug("Avant Centre");
+       AddObservationsCentres(anSO.ObsCentrePDV(),IsLastIter,aSO);
+   }
 
 
-   AddLevenbergMarkard(aSO);
-   AddObservationsAppuisFlottants(anSO.ObsAppuisFlottant(),IsLastIter,aSO);
-   AddObservationsCentres(anSO.ObsCentrePDV(),IsLastIter,aSO);
-   AddObservationsAppuis(anSO.ObsAppuis(),IsLastIter,aSO);
-   AddObservationsLiaisons(anSO.ObsLiaisons(),IsLastIter,aSO);
+   {
+        AddObservationsRelGPS(anSO.ObsRelGPS());
+   }
 
-   AddObservationsRigidGrp(anSO.ObsRigidGrpImage(),IsLastIter,aSO);
+   {
+      // MajAddCoeffMatrix();
+      // if (NumIterDebug())  MessageDebug("Avant LVM");
 
+      AddLevenbergMarkard(aSO);
+
+      // if (NumIterDebug())  MessageDebug("Apres LVM");
+   }
+
+
+
+   {
+       //  MajAddCoeffMatrix();
+       //  if (NumIterDebug())  MessageDebug("Avant ApF");
+
+       AddObservationsAppuisFlottants(anSO.ObsAppuisFlottant(),IsLastIter,aSO);
+   }
+
+    // ANCIEN AddObservationsCentres
+
+   {
+       //  MajAddCoeffMatrix();
+       //  if (NumIterDebug())  MessageDebug("Avant Appuis");
+
+       AddObservationsAppuis(anSO.ObsAppuis(),IsLastIter,aSO);
+   }
+
+   {
+       //  MajAddCoeffMatrix();
+       //  if (NumIterDebug())  MessageDebug("Avant Tie-P");
+
+       AddObservationsLiaisons(anSO.ObsLiaisons(),IsLastIter,aSO);
+   }
+
+   {
+          AddObservationsRigidBlockCam(anSO.ObsBlockCamRig(),IsLastIter,aSO);
+   }
+
+   {
+       //  MajAddCoeffMatrix();
+       //  if (NumIterDebug())  MessageDebug("Avant RigGrp");
+
+       AddObservationsRigidGrp(anSO.ObsRigidGrpImage(),IsLastIter,aSO);
+   }
+
+   MajAddCoeffMatrix();
+   if (NumIterDebug())  MessageDebug("Fin iter Obs");
 
    if (mFpRT)
    {
@@ -77,6 +137,26 @@ void cAppliApero::AddObservations
        mFpRT = 0;
    }
 }
+
+void cAppliApero::AddObservationsRigidBlockCam
+     (
+         const std::list<cObsBlockCamRig> & anOBCR,
+         bool IsLastIter,
+         cStatObs & aSO
+     )
+{
+    for 
+    (
+       std::list<cObsBlockCamRig>::const_iterator itO=anOBCR.begin();
+       itO !=anOBCR.end();
+       itO++
+    )
+    {
+         AddObservationsRigidBlockCam(*itO,IsLastIter,aSO);
+    }
+
+}
+
 
 void cAppliApero::AddObservationsRigidGrp
      (
@@ -160,10 +240,9 @@ void cAppliApero::AddObservationsCentres(const std::list<cObsCentrePDV> & aL,boo
         for (int aKPose=0 ; aKPose<int(mVecPose.size()) ; aKPose++)
         {
             cPoseCam * aPC = mVecPose[aKPose];
-// std::cout << "BBBBB " << aPC->RotIsInit()  << " " <<  aPC->DoAddObsCentre(anObs) << "\n";
+
             if (aPC->RotIsInit() && aPC->DoAddObsCentre(anObs))
             {
-// std::cout << "CCCCCCC\n";
                  aPC->AddObsCentre(anObs,aPdsPlani,aPdsAlti,aSO);
             }
         }
@@ -279,8 +358,24 @@ class cCmpNbNNPose
       }
 };
 
-void cAppliApero::OneIterationCompensation(const cEtapeCompensation & anEC,bool IsLast)
+void cAppliApero::OneIterationCompensation(const cIterationsCompensation & anIter,const cEtapeCompensation & anEC,bool IsLast)
 {
+    if (mSqueezeDOCOAC)
+    {
+        ELISE_ASSERT(mSqueezeDOCOAC==1,"Multiple mSqueezeDOCOAC");
+        cStatObs  aSO(false);
+        mSqueezeDOCOAC++;
+        AddObservationsAppuisFlottants(anEC.SectionObservations().ObsAppuisFlottant(),IsLast,aSO);
+/*
+std::cout << "AOAF : NonO =================================================\n";
+        // cSectionObservation
+std::cout << "DONNNNE AOAF : NonO =================================================\n";
+*/
+
+        // cwanEC.AddObservations().anSO.ObsAppuisFlottant(),IsLast,aSO);
+        return;
+    }
+
     mCurEC = & anEC;
     mIsLastIter = IsLast;
     for (tDiPo::iterator itD=mDicoPose.begin() ; itD!=mDicoPose.end(); itD++)
@@ -293,14 +388,15 @@ void cAppliApero::OneIterationCompensation(const cEtapeCompensation & anEC,bool 
     mSetEq.SetPhaseEquation();
     ActiveContraintes(false);
 
-    cStatObs  aSO(true);
 
     for (int aKP=0 ; aKP<int(mVecPose.size()) ; aKP++)
     {
        mVecPose[aKP]->SetNbPtsMulNN(0);
     }
 
+    cStatObs  aSO(true);
     AddObservations(anEC.SectionObservations(),IsLast,aSO);
+    mStatLastIter = aSO;
 
     // Eventuel affichage des points des images a peu de liaison
     if (mCurPbLiaison && mCurPbLiaison->Actif().Val())
@@ -359,6 +455,18 @@ void cAppliApero::OneIterationCompensation(const cEtapeCompensation & anEC,bool 
     {
         itD->second->Trace();
     }
+
+    for 
+    (
+        std::list<cEstimateOrientationInitBlockCamera>::const_iterator itE= anIter.EstimateOrientationInitBlockCamera().begin();
+        itE != anIter.EstimateOrientationInitBlockCamera().end();
+        itE++
+    )
+    {
+       EstimateOIBC(*itE);
+    }
+
+    mCptIterCompens ++;
 }
 
 
@@ -606,7 +714,7 @@ void cAppliApero::DoOneContraintesAndCompens
     {
                MAJContraintes(anIter.SectionContraintes().Val());
     }
-    OneIterationCompensation(anEC,IsLastIter);
+    OneIterationCompensation(anIter,anEC,IsLastIter);
 
     ShowResiduCentre();
     ShowRetard();
@@ -621,6 +729,16 @@ bool cAppliApero::PIsActif(const Pt2dr & aP) const
   return (!mMTAct) || (mMTAct->SelectVal(aP));
 }
 
+void cAppliApero::SetSqueezeDOCOAC()
+{
+   ELISE_ASSERT(mSqueezeDOCOAC<=1,"cAppliApero::SetSqueezeDOCOAC");
+   mSqueezeDOCOAC = 1;
+}
+
+bool cAppliApero::SqueezeDOCOAC() const
+{
+   return mSqueezeDOCOAC != 0;
+}
 
 void cAppliApero::DoContraintesAndCompens
      (
@@ -629,6 +747,16 @@ void cAppliApero::DoContraintesAndCompens
             bool  IsLastIter
      )
 {
+
+/*
+   if (mSqueezeDOCOAC)
+   {
+      ELISE_ASSERT(mSqueezeDOCOAC==1,"Multiple mSqueezeDOCOAC");
+      mSqueezeDOCOAC++;
+      // AddObservationsAppuisFlottants(anSO.ObsAppuisFlottant(),IsLastIter,aSO);
+      return;
+   }
+*/
 
    mMTAct = 0;
    if (!anIter.MesureErreurTournante().IsInit())
@@ -732,183 +860,226 @@ void  cAppliApero::DoOneEtapeCompensation(const cEtapeCompensation & anEC)
     InitLVM(mCurSLMGlob,anEC.SLMGlob(),mMulSLMGlob,anEC.MultSLMGlob());
     InitLVM(mCurSLMEtape,anEC.SLMEtape(),mMulSLMEtape,anEC.MultSLMEtape());
 
+    mNbIterDone =0;
     for (int aK=0 ; aK<int(anEC.IterationsCompensation().size()) ; aK++)
     {
         bool kIterLast = (aK==((int)anEC.IterationsCompensation().size()-1));
 	const cIterationsCompensation &  anIter  = anEC.IterationsCompensation()[aK];
 
-        TestInteractif(anIter.TestInteractif(),true);
-
-        InitLVM(mCurSLMGlob,anIter.SLMGlob(),mMulSLMGlob,anIter.MultSLMGlob());
-        InitLVM(mCurSLMEtape,anIter.SLMEtape(),mMulSLMEtape,anIter.MultSLMEtape());
-        InitLVM(mCurSLMIter,anIter.SLMIter(),mMulSLMIter,anIter.MultSLMIter());
-
-
-
-        if (anIter.BasculeOrientation().IsInit())
+        if (anIter.DoIt().Val())
         {
-            Bascule(anIter.BasculeOrientation().Val(),false);
-        }
+            bool GoOnIter= true;
+            int aCptInIter = 0;
+            while (GoOnIter)
+            {
 
-        DoShowPtsMult(anIter.VisuPtsMult());
+                TestInteractif(anIter.TestInteractif(),true);
 
-	for 
-	(
-	   std::list<cVerifAero>::const_iterator itV = anIter.VerifAero().begin();
-	   itV != anIter.VerifAero().end();
-	   itV++
-	)
-        {
-           VerifAero(*itV);
-        }
+                InitLVM(mCurSLMGlob,anIter.SLMGlob(),mMulSLMGlob,anIter.MultSLMGlob());
+                InitLVM(mCurSLMEtape,anIter.SLMEtape(),mMulSLMEtape,anIter.MultSLMEtape());
+                InitLVM(mCurSLMIter,anIter.SLMIter(),mMulSLMIter,anIter.MultSLMIter());
+
+
+
+                if (anIter.BasculeOrientation().IsInit())
+                {
+                    Bascule(anIter.BasculeOrientation().Val(),false);
+                }
+
+                DoShowPtsMult(anIter.VisuPtsMult());
+
+	        for 
+	        (
+	           std::list<cVerifAero>::const_iterator itV = anIter.VerifAero().begin();
+	           itV != anIter.VerifAero().end();
+	           itV++
+	        )
+                {
+                   VerifAero(*itV);
+                }
    
 
-        if (anEC.SectionTracage().IsInit())
-        {
-            const cSectionTracage & aST = anEC.SectionTracage().Val();
+                if (anEC.SectionTracage().IsInit())
+                {
+                    const cSectionTracage & aST = anEC.SectionTracage().Val();
 
-	    for 
-	    (
-	       std::list<cTraceCpleCam>::const_iterator itT = aST.TraceCpleCam().begin();
-	       itT != aST.TraceCpleCam().end();
-	       itT++
-	    )
-	    {
-	         PoseFromName(itT->Cam1())->ShowRel(*itT,*PoseFromName(itT->Cam2()));
-	    }
+	            for 
+	            (
+	               std::list<cTraceCpleCam>::const_iterator itT = aST.TraceCpleCam().begin();
+	               itT != aST.TraceCpleCam().end();
+	               itT++
+	            )
+	            {
+	                 PoseFromName(itT->Cam1())->ShowRel(*itT,*PoseFromName(itT->Cam2()));
+	            }
 
-	    if (aST.GetChar().Val())
-	    {
-	       std::cout << "Stop in trace \n";
-	       getchar();
-	    }
-        }
+	            if (aST.GetChar().Val())
+	            {
+	               std::cout << "Stop in trace \n";
+	               getchar();
+	            }
+                }
 
-        for
-        (
-	    std::list<cExportSimulation>::const_iterator itES=anIter.ExportSimulation().begin();
-            itES!=anIter.ExportSimulation().end();
-	    itES++
-        )
-	{
-	    ExportOneSimule(*itES);
-	}
+                for
+                (
+	            std::list<cExportSimulation>::const_iterator itES=anIter.ExportSimulation().begin();
+                    itES!=anIter.ExportSimulation().end();
+	            itES++
+                )
+	        {
+	            ExportOneSimule(*itES);
+	        }
 
 
-        if (anIter.Pose2Init().IsInit())
-        {
-           const cPose2Init & aP2I = anIter.Pose2Init().Val();
-           bool aShow = aP2I.Show().Val();
-           std::vector<int> mVProfs = aP2I.ProfMin();
+                if (anIter.Pose2Init().IsInit())
+                {
+                   const cPose2Init & aP2I = anIter.Pose2Init().Val();
+                   bool aShow = aP2I.Show().Val();
+                   std::vector<int> mVProfs = aP2I.ProfMin();
 
-           int aStepC = aP2I.StepComplemAuto().Val();
-           if (aStepC>=0)
-           {
-               if (mVProfs.empty())
-               {
-                   mVProfs.push_back(2);
-               }
-               if (mVProfs.size()==1)
-               {
-                   mVProfs.push_back(mVProfs[0]+1);
-               }
-
-               if (aStepC==0)
-               {
-                   int aNb = mVProfs.size();
-                   aStepC = ElMax(1,mVProfs[aNb-1] - mVProfs[aNb-2]);
-               }
-               while (mVProfs.back() <= mProfMax)
-                     mVProfs.push_back(mVProfs.back()+aStepC);
-               while ((mVProfs.size()>=2) && (mVProfs[mVProfs.size()-2] > mProfMax))
-                      mVProfs.pop_back();
-
-               std::cout << "---- PROFS=" ;
-               for (int aK=0 ; aK<int(mVProfs.size()) ; aK++)
-                   std::cout << " " << mVProfs[aK];
-               std::cout << "\n" ;
-           }
- 
-           for (int aKProf=0 ; aKProf != int(mVProfs.size()) ; aKProf++)
-           {
-               int aProf = mVProfs[aKProf];
-               ELISE_ASSERT(mProfInit<=aProf,"Prof 2 Init non croissante !");
-
-               for (; mProfInit<aProf; mProfInit++)
-               {
-                   if (aShow)
+                   int aStepC = aP2I.StepComplemAuto().Val();
+                   if (aStepC>=0)
                    {
-                      std::cout  << "xProf = " << mProfInit << "\n\n";
+                       if (mVProfs.empty())
+                       {
+                           mVProfs.push_back(2);
+                       }
+                       if (mVProfs.size()==1)
+                       {
+                           mVProfs.push_back(mVProfs[0]+1);
+                       }
+
+                       if (aStepC==0)
+                       {
+                           int aNb = mVProfs.size();
+                           aStepC = ElMax(1,mVProfs[aNb-1] - mVProfs[aNb-2]);
+                       }
+                       while (mVProfs.back() <= mProfMax)
+                             mVProfs.push_back(mVProfs.back()+aStepC);
+                       while ((mVProfs.size()>=2) && (mVProfs[mVProfs.size()-2] > mProfMax))
+                              mVProfs.pop_back();
+
+                       std::cout << "---- PROFS=" ;
+                       for (int aK=0 ; aK<int(mVProfs.size()) ; aK++)
+                           std::cout << " " << mVProfs[aK];
+                       std::cout << "\n" ;
                    }
-                   for (int aKPose=0 ; aKPose<int(mVecPose.size()) ; aKPose++)
+ 
+                   for (int aKProf=0 ; aKProf != int(mVProfs.size()) ; aKProf++)
                    {
+                       int aProf = mVProfs[aKProf];
+                       ELISE_ASSERT(mProfInit<=aProf,"Prof 2 Init non croissante !");
 
-                      if (
-                              ( mVecPose[aKPose]->Prof2Init() == mProfInit)
-                           && (!mVecPose[aKPose]->RotIsInit())
-                         )
-                      {
-                           mVecPose[aKPose]->InitRot();
-                           mVecPose[aKPose]->SetDeFigee();
+                       for (; mProfInit<aProf; mProfInit++)
+                       {
                            if (aShow)
                            {
-                              std::cout << "  Add Pose = " << mVecPose[aKPose]->Name() << "\n";
+                              std::cout  << "xProf = " << mProfInit << "\n\n";
                            }
+                           for (int aKPose=0 ; aKPose<int(mVecPose.size()) ; aKPose++)
+                           {
+
+                              if (
+                                      ( mVecPose[aKPose]->Prof2Init() == mProfInit)
+                                   && (!mVecPose[aKPose]->RotIsInit())
+                                 )
+                              {
+                                   mVecPose[aKPose]->InitRot();
+                                   mVecPose[aKPose]->SetDeFigee();
+                                   if (aShow)
+                                   {
+                                      std::cout << "  Add Pose = " << mVecPose[aKPose]->Name() << "\n";
+                                   }
+                              }
+                           }
+                       }
+                       bool aKProfLast = (aKProf==((int)mVProfs.size()-1));
+                       DoContraintesAndCompens(anEC,anIter,kIterLast&&aKProfLast);
+                   }
+                }
+                else
+                {
+                   DoContraintesAndCompens(anEC,anIter,kIterLast);
+                }
+
+                if (anIter.BasculeOrientation().IsInit())
+                {
+                    Bascule(anIter.BasculeOrientation().Val(),true);
+                }
+                if (anIter.FixeEchelle().IsInit())
+                {
+                    FixeEchelle(anIter.FixeEchelle().Val());
+                }
+
+                if (anIter.FixeOrientPlane().IsInit())
+                {
+                   FixeOrientPlane(anIter.FixeOrientPlane().Val());
+                }
+                if (anIter.BasicOrPl().IsInit())
+                {
+                   BasicFixeOrientPlane(anIter.BasicOrPl().Val());
+                }
+
+                if (anIter.BlocBascule().IsInit())
+                {
+                     BasculeBloc(anIter.BlocBascule().Val());
+                }
+
+
+
+
+	        const std::list<std::string> & aLM = anIter.Messages();
+	        for 
+	        (
+	             std::list<std::string>::const_iterator itM=aLM.begin();
+                     itM != aLM.end();
+	             itM++
+	        )
+	        {
+	             COUT()  << *itM << "\n";
+	        }
+
+                if (ShowMes())
+                {
+	            COUT()  << "--- End Iter " << mNbIterDone << " ETAPE " << mNbEtape << "\n\n";
+                }
+
+                TestInteractif(anIter.TestInteractif(),false);
+
+                GoOnIter = false;
+
+                const cCtrlTimeCompens * aCtrl = anIter.CtrlTimeCompens().PtrVal();
+                if (aCtrl)
+                {
+                   if (mStatLastIter.PdsEvol())
+                   {
+                      double aSeuilMoy = aCtrl->SeuilEvolMoy();
+                      double aSeuilMax = aCtrl->SeuilEvolMax().ValWithDef(aSeuilMoy*2.0);
+                      GoOnIter = (mStatLastIter.MoyEvol()>=aSeuilMoy) ||  ( mStatLastIter.MaxEvol()>=aSeuilMax);
+                      const cAutoAdaptLVM * aAAL = aCtrl->AutoAdaptLVM().PtrVal();
+                      if (aAAL)
+                      {
+                           double aNewV = aSeuilMoy * aAAL->Mult();
+                           bool aModeM =  aAAL->ModeMin().Val();
+                           UpdateMul(mMulSLMGlob,aNewV,aModeM);
+                           UpdateMul(mMulSLMEtape,aNewV,aModeM);
+                           UpdateMul(mMulSLMIter,aNewV,aModeM);
                       }
                    }
-               }
-               bool aKProfLast = (aKProf==((int)mVProfs.size()-1));
-               DoContraintesAndCompens(anEC,anIter,kIterLast&&aKProfLast);
-           }
+
+                   if (aCptInIter <aCtrl->NbMin().Val() )
+                   {
+                       GoOnIter = true;
+                   }
+                   else if (aCptInIter >= aCtrl->NbMax())
+                   {
+                        GoOnIter = false;
+                   }
+                }
+                aCptInIter++;
+                mNbIterDone++;
+            }
         }
-        else
-        {
-           DoContraintesAndCompens(anEC,anIter,kIterLast);
-        }
-
-        if (anIter.BasculeOrientation().IsInit())
-        {
-            Bascule(anIter.BasculeOrientation().Val(),true);
-        }
-        if (anIter.FixeEchelle().IsInit())
-        {
-            FixeEchelle(anIter.FixeEchelle().Val());
-        }
-
-        if (anIter.FixeOrientPlane().IsInit())
-        {
-           FixeOrientPlane(anIter.FixeOrientPlane().Val());
-        }
-        if (anIter.BasicOrPl().IsInit())
-        {
-           BasicFixeOrientPlane(anIter.BasicOrPl().Val());
-        }
-
-        if (anIter.BlocBascule().IsInit())
-        {
-             BasculeBloc(anIter.BlocBascule().Val());
-        }
-
-
-
-
-	const std::list<std::string> & aLM = anIter.Messages();
-	for 
-	(
-	     std::list<std::string>::const_iterator itM=aLM.begin();
-             itM != aLM.end();
-	     itM++
-	)
-	{
-	     COUT()  << *itM << "\n";
-	}
-
-        if (ShowMes())
-        {
-	    COUT()  << "--- End Iter " << aK << " ETAPE " << mNbEtape << "\n\n";
-        }
-
-        TestInteractif(anIter.TestInteractif(),false);
     }
 
     if (anEC.SectionExport().IsInit())
@@ -922,9 +1093,13 @@ void cAppliApero::DoCompensation()
    const tLEC & aLEC =mParam.EtapeCompensation();
    for ( tLEC::const_iterator itEC=aLEC.begin(); itEC != aLEC.end() ;itEC++)
       DoOneEtapeCompensation(*itEC);
+
+   
+   MajAddCoeffMatrix();
+   PosesAddMajick();
+   MessageDebug("Global End");
 }
 
-};
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

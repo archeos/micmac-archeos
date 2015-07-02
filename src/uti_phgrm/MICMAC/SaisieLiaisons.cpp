@@ -49,9 +49,8 @@ Header-MicMac-eLiSe-25/06/2007*/
 */
 
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 #if (ELISE_X11)
-using namespace NS_ParamMICMAC;
 
 
 Pt2di SzImIncr(300,300);
@@ -561,7 +560,6 @@ Pt2di aSzWP(600,200);
 
 void  TestScroller::Profil(Im2D_REAL4 aIm,Pt2dr aP0,Pt2dr aP1,INT aCoul)
 {
-cout << aP0 << aP1 << aIm.sz() << "\n";
    REAL aD = euclid(aP1-aP0);
    REAL aStep = ElMax(0.05,ElMax(1.0,aD)/600.0);
    INT aNb = round_ni(aD/aStep);
@@ -609,9 +607,11 @@ void  TestScroller::Profil()
     W.draw_circle_abs(aPW,2.0,W.pdisc()(P8COL::green));
     Pt2dr p1 = mScrol.Scr1().to_user(aPW);
     Pt2dr p2 = mScrol.Scr2().to_user(aPW);
+
       
     aCl = clik_press();
     Pt2dr aQW = aCl._pt;
+    if (mIsEpip) aQW.y = aPW.y;
     W.draw_circle_abs(aQW,2.0,W.pdisc()(P8COL::green));
     W.draw_seg(aPW,aQW,W.pdisc()(P8COL::yellow));
     Pt2dr q1 = mScrol.Scr1().to_user(aQW);
@@ -690,8 +690,11 @@ cout << mFlagIm << " => " << aFlag << "\n";
 void TestScroller::FlipImage()
 {
     INT aCurFlag = mFlagIm;
-    for (INT k=0 ; k<20 ; k++)
+    for (INT k=0 ; k<100 ; k++)
+    {
+       // sleep(0.02); // sleep prend un entier en param�tre, 0.02=0
        SetFlagIm(1+(k%2));
+    }
 
     SetFlagIm(aCurFlag);
 }
@@ -1143,7 +1146,8 @@ cElHomographie  ToImRedr
                     cAppliMICMAC   & anAppli,
                     ElPackHomologue  aPack,
                     std::string & aNameImBase,
-		    bool          ForceWhenExist
+		    bool          ForceWhenExist,
+                    bool          aL2
                 )
 {
 
@@ -1153,7 +1157,8 @@ cElHomographie  ToImRedr
 
 
 
-    cElHomographie  aHom(aPack,true);
+    cElHomographie  aHom(aPack,aL2);
+    // cElHomographie  aHom(aPack,false);
     // aHom = aHom.Inverse();
     Pt2di aSzOut = aSz;
     // ======
@@ -1205,6 +1210,7 @@ int  MICMACSaisieLiaisons_main(int argc,char** argv)
     bool aRedrCur = anAppli.SL_RedrOnCur().Val();
     bool aNewRC =  anAppli.SL_NewRedrCur().Val();
  
+    bool aL2 = anAppli.SL_L2Estim().Val();
 
     std::string aNameCompSauvXML =    anAppli.PDV1()->NamePackHom(anAppli.PDV2());
 
@@ -1255,7 +1261,7 @@ int  MICMACSaisieLiaisons_main(int argc,char** argv)
          ElPackHomologue aPackExtIm2 = ElPackHomologue::FromFile(anAppli.FullDirGeom()+aNameH);
 
 
-        Hom2 =  ToImRedr(aModifName2,Nameim2,anAppli,aPackExtIm2,NameImOri1,aNewRC);
+        Hom2 =  ToImRedr(aModifName2,Nameim2,anAppli,aPackExtIm2,NameImOri1,aNewRC,aL2);
     }
 cout << aNameIm2GeomInit << "     " << Nameim2 << "\n";
 
@@ -1328,7 +1334,7 @@ int MICMACSaisieLiaisons_main(int argc,char** argv)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1344,17 +1350,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

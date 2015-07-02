@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -53,7 +53,7 @@ template <class Type> void  calc_cdn
                                 Type ** out,
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg
-                           ) 
+                           )
 {
      Tjs_El_User.ElAssert
      (
@@ -99,7 +99,7 @@ template <class Type> void  calc_Laplacien
                                 Type ** out,
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg
-                           ) 
+                           )
 {
      Tjs_El_User.ElAssert
      (
@@ -115,7 +115,7 @@ template <class Type> void  calc_Laplacien
 
    for (INT x=arg.x0() ;  x<arg.x1() ; x++)
    {
-         l[x] =            -  1*lP[x] 
+         l[x] =            -  1*lP[x]
                -1* l0[x-1] +  4*l0[x] - 1*l0[x+1]
                          -  1*l1[x] ;
    }
@@ -145,7 +145,7 @@ template <class Type> void  calc_bobs_grad
                                 Type ** out,
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg
-                           ) 
+                           )
 {
      Tjs_El_User.ElAssert
      (
@@ -236,7 +236,7 @@ template <class Type> void calc_grad_crois
                                 Type ** out,
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg
-                           ) 
+                           )
 {
      Tjs_El_User.ElAssert
      (
@@ -276,7 +276,7 @@ Fonc_Num grad_crois(Fonc_Num f)
 /*                                                                   */
 /*********************************************************************/
 
-void  calc_courb_tgt ( REAL ** out, REAL *** in, const Simple_OPBuf_Gen & arg) 
+void  calc_courb_tgt ( REAL ** out, REAL *** in, const Simple_OPBuf_Gen & arg)
 {
     Tjs_El_User.ElAssert
     (
@@ -329,10 +329,10 @@ Fonc_Num courb_tgt(Fonc_Num f)
 template <class Type>  class cFilRedBin_OPBuf1  : public Simple_OPBuf1<Type,Type>
 {
      public :
-         cFilRedBin_OPBuf1 
+         cFilRedBin_OPBuf1
          (
                 bool aRedX,
-                bool aRedY, 
+                bool aRedY,
                 int aDiv,
                 bool  aConsValSpec,
                 const Type & aValSpec
@@ -340,7 +340,7 @@ template <class Type>  class cFilRedBin_OPBuf1  : public Simple_OPBuf1<Type,Type
               Simple_OPBuf1<Type,Type> (),
               mRedX        (aRedX),
               mRedY        (aRedY),
-	      mDiv         (aDiv),
+          mDiv         (aDiv),
               mConsValSpec (aConsValSpec),
               mValSpec     (aValSpec)
          {
@@ -370,7 +370,7 @@ template <class Type>  void cFilRedBin_OPBuf1<Type>::calc_buf
            Type * lP = i[-1];
            Type * lC = i[0];
            Type * lN = i[1];
-          
+
           if (mRedX && mRedY)
           {
              if ((this->ycur()%2)==0)
@@ -406,7 +406,7 @@ template <class Type>  void cFilRedBin_OPBuf1<Type>::calc_buf
                    }
                    else
                    {
-                      o[x] = 0; 
+                      o[x] = 0;
                    }
                 }
              }
@@ -414,7 +414,7 @@ template <class Type>  void cFilRedBin_OPBuf1<Type>::calc_buf
              {
                 for (int x=this->x0(); x< this->x1(); x++)
                 {
-                   o[x] = 0; 
+                   o[x] = 0;
                 }
              }
           }
@@ -439,7 +439,7 @@ template <class Type>  void cFilRedBin_OPBuf1<Type>::calc_buf
                    }
                    else
                    {
-                      o[x] = 0; 
+                      o[x] = 0;
                    }
                 }
           }
@@ -467,14 +467,14 @@ template <class Type>  void cFilRedBin_OPBuf1<Type>::calc_buf
              {
                 for (int x=this->x0(); x< this->x1(); x++)
                 {
-                   o[x] = 0; 
+                   o[x] = 0;
                 }
              }
           }
      }
 }
 
-Fonc_Num reduc_binaire_gen 
+Fonc_Num reduc_binaire_gen
          (
               Fonc_Num f,
               bool aRedX,
@@ -520,21 +520,21 @@ void MakeTiffRed2Gen
           int                   aNbReduc,
           const std::string &   aNameFul,
           const std::string &   aNameRed,
-	  bool                  UseType,
-	  GenIm::type_el        aTypeDem,
-	  int                   aDiv,
+      bool                  UseType,
+      GenIm::type_el        aTypeDem,
+      int                   aDiv,
           bool                  HasVS,
-          REAL                  aVSpec 
+          REAL                  aVSpec
      )
 {
-  // Reductions mulptiples, pas au point
+  // Reductions multiples, pas au point
    ELISE_ASSERT(aNbReduc==1,"MakeTiffRed2Gen::aNbReduc");
 
 
     Tiff_Im aTifIn = Tiff_Im::StdConvGen(aNameFul.c_str(),-1,true,true);
     Pt2di aSz = aTifIn.sz();
     Pt2di aSzRed = (aSz+Pt2di(1,1))/2;
-                                                                                        
+
     GenIm::type_el aTypeOut = UseType ? aTypeDem : aTifIn.type_el();
     Tiff_Im aTifRed
             (
@@ -544,7 +544,7 @@ void MakeTiffRed2Gen
                  Tiff_Im::No_Compr,
                  aTifIn.phot_interp()
             );
-                                                                                        
+
     Fonc_Num aFonc = aTifIn.in_proj();
 
     if (! type_im_integral(aTypeOut))
@@ -612,7 +612,7 @@ void MakeTiffRed2Binaire
     Pt2di aSz = aTifIn.sz();
     if (aSzRed==Pt2di(-1,-1))
        aSzRed = (aSz+Pt2di(1,1))/2;
-                                                                                        
+
     Tiff_Im aTifRed
             (
                  aNameRed.c_str(),
@@ -620,14 +620,14 @@ void MakeTiffRed2Binaire
                  aType,
                  // GenIm::bits1_msbf,
                  aModeCompr,
-                 // Tiff_Im::No_Compr, 
+                 // Tiff_Im::No_Compr,
                  //Tiff_Im::Group_4FAX_Compr,
                  aTifIn.phot_interp(),
                    Tiff_Im::Empty_ARG
-		+ Arg_Tiff(Tiff_Im::ANoStrip())
+        + Arg_Tiff(Tiff_Im::ANoStrip())
                 //+  Arg_Tiff(Tiff_Im::AFileTiling(aSzTileFile))
             );
-                                                                                        
+
     Im2D_Bits<1> aIm (aSz.x,aSz.y);
     ELISE_COPY(aTifIn.all_pts(),aTifIn.in_bool(),aIm.out());
     Fonc_Num aFonc = aIm.in_proj();
@@ -663,10 +663,10 @@ void MakeTiffRed2
      (
           1,
           aNameFul,
-	  aNameRed,
-	  false,
-	  GenIm::u_int1, // Inutile
-	  16,
+      aNameRed,
+      false,
+      GenIm::u_int1, // Inutile
+      16,
           false,
           0       // Inutile
      );
@@ -685,8 +685,8 @@ void MakeTiffRed2
      (
           const std::string & aNameFul,
           const std::string & aNameRed,
-	  GenIm::type_el        aType,
-	  int                   aDiv,
+      GenIm::type_el        aType,
+      int                   aDiv,
           bool                  HasVS,
           REAL                  aVSpec
      )
@@ -695,10 +695,10 @@ void MakeTiffRed2
      (
           1,
           aNameFul,
-	  aNameRed,
-	  true,
-	  aType,
-	  aDiv,
+      aNameRed,
+      true,
+      aType,
+      aDiv,
           HasVS,
           aVSpec
      );
@@ -714,7 +714,7 @@ void MakeTiffRed2
 const Pt2di som_masq_Centered(0x7FFFFFFF,-0x7FFFFFFF);
 
 void  compute_def_dec_som_masq(Pt2di & dec,INT tx,INT ty)
-{ 
+{
     if (dec==som_masq_Centered)
     {
           Tjs_El_User.ElAssert
@@ -784,7 +784,7 @@ Fonc_Num som_masq (Fonc_Num f,Im2D_REAL8 rfiltr,Pt2di dec)
     compute_def_dec_som_masq(dec,rfiltr.tx(),rfiltr.ty());
 
     Im2D_INT4 ifiltr(rfiltr.tx(),rfiltr.ty());
-    
+
     for (INT x = 0; x < rfiltr.tx(); x++)
        for (INT y = 0; y < rfiltr.ty(); y++)
            ifiltr.data()[y][x] = round_ni(rfiltr.data()[y][x]);
@@ -828,7 +828,7 @@ template <class Type>  class RLE_SMB_OPBuf1  : public Simple_OPBuf1<Type,Type>
       Type              _val_out;
 };
 
-template <class Type> 
+template <class Type>
          RLE_SMB_OPBuf1<Type>::RLE_SMB_OPBuf1
          (
               Im2D_U_INT1  b,
@@ -898,7 +898,7 @@ template <class Type> void RLE_SMB_OPBuf1<Type>::calc_buf
             Type res = 0;
             for (INT k=0; k < _nb_rle ; k++)
             {
-		Pt3di seg = _rle[k];
+        Pt3di seg = _rle[k];
                 res +=  i[seg.y][seg.z+x]-i[seg.y][seg.x+x];
             }
              o[x] = res;
@@ -908,7 +908,7 @@ template <class Type> void RLE_SMB_OPBuf1<Type>::calc_buf
      }
 }
 
-Fonc_Num rle_som_masq_binaire  
+Fonc_Num rle_som_masq_binaire
          (Fonc_Num f,Im2D_U_INT1  filtr,REAL val_out,Pt2di dec)
 {
     compute_def_dec_som_masq(dec,filtr.tx(),filtr.ty());
@@ -950,7 +950,7 @@ template <class Type,class Oper> void  oper_red_flag
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg,
                                 Oper *
-                           ) 
+                           )
 {
    Type * Flags = in[arg.dim_in()-1][0];
 
@@ -1010,14 +1010,14 @@ template <class Type> void calc_pente_crete_gen
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg,
                                 bool  ModeFonc
-                           ) 
+                           )
 {
 
    for (INT x=arg.x0() ;  x<arg.x1() ; x++)
    {
        Type  CritMax = -1;
        INT   FlagRes = 0;
-     
+
        for (INT k=0 ; k<4 ; k++)
        {
            Type CritCrete = 0;
@@ -1066,10 +1066,10 @@ template <class Type> void calc_pente_crete_gen
        }
        if (ModeFonc)
        {
-		   {
+           {
            for (INT d=0; d<arg.dim_in() ; d++)
                 out[d][x] = 0;
-		   }
+           }
            INT NbF = 0;
            for (INT k=0 ; k<9; k++)
            {
@@ -1080,10 +1080,10 @@ template <class Type> void calc_pente_crete_gen
                         out[d][x] +=   FreemanVals(in[d],x,k);
                }
            }
-		   {
+           {
            for (INT d=0; d<arg.dim_in() ; d++)
                 out[d][x] /= NbF;
-		   }
+           }
        }
        else
        {
@@ -1156,7 +1156,7 @@ template <class Type> void CalcMedianBySort
                                 Type ** out,
                                 Type *** in,
                                 const Simple_OPBuf_Gen & arg
-                           ) 
+                           )
 {
 
    for (INT d=0 ; d< arg.dim_in() ; d++)
@@ -1165,26 +1165,27 @@ template <class Type> void CalcMedianBySort
        Type ** Im = in[d];
        std::vector<Type> Vals;
 
-       INT aK = ((arg.dx1()- arg.dx0() +1) * (arg.dy1()- arg.dy0() +1)) / 2;
+       // INT aK = ((arg.dx1()- arg.dx0() +1) * (arg.dy1()- arg.dy0() +1)) / 2;
 
 
-   
+
        for (INT x=arg.x0() ;  x<arg.x1() ; x++)
        {
-	  Vals.clear();
+          Vals.clear();
 
-	  for (INT dx =  arg.dx0() ; dx <= arg.dx1() ; dx++)
-	      for (INT dy =  arg.dy0() ; dy <= arg.dy1() ; dy++)
-		      Vals.push_back(Im[dy][x+dx]);
-	  std::sort(Vals.begin(),Vals.end());
-          res[x] = Vals[aK];
+          for (INT dx =  arg.dx0() ; dx <= arg.dx1() ; dx++)
+              for (INT dy =  arg.dy0() ; dy <= arg.dy1() ; dy++)
+                  Vals.push_back(Im[dy][x+dx]);
+          Type aMed = MedianeSup(Vals);
+          res[x] = aMed;
+
        }
    }
 }
 
 Fonc_Num MedianBySort(Fonc_Num f,INT NbMed)
 {
-     return 
+     return
             create_op_buf_simple_tpl
             (
                     CalcMedianBySort,  // Nouvelle syntaxe
@@ -1196,17 +1197,193 @@ Fonc_Num MedianBySort(Fonc_Num f,INT NbMed)
 
 }
 
+/*********************************************************************/
+/*                                                                   */
+/*         Ombrage K Lips                                            */
+/*                                                                   */
+/*********************************************************************/
 
+// Normalement valent false, mais pour tester le mecanisme ~ et dup ...
+#define DupcOmbrageKL  0
+#define TestDupAndKill 0
+
+class cOmbrageKL  : public Simple_OPBuf1<double,double>
+{
+   public :
+
+        cOmbrageKL(double aPente,int aNbV) ;
+   private :
+        void  calc_buf(double ** output,double *** input);
+
+#if DupcOmbrageKL		
+		Simple_OPBuf1<double,double> * dup_comp() {return new cOmbrageKL(mPente,mNbV);}
+#endif
+
+#if TestDupAndKill 
+        ~cOmbrageKL() 
+        {
+              std::cout << "KILL==cOmbrageKL\n"; getchar();
+        }
+#endif
+
+        double mPente;
+        int    mNbV;
+        std::vector<double> mVPds;
+};
+
+
+cOmbrageKL::cOmbrageKL(double aPente,int aNbV) :
+    mPente (aPente),
+    mNbV   (aNbV)
+{
+    for (int anY=-aNbV  ; anY<=aNbV ; anY++)
+    {
+        for (int anX=-aNbV  ; anX<=aNbV ; anX++)
+        {
+             mVPds.push_back(aPente * euclid(Pt2di(anX,anY)));
+        }
+    }
+}
+
+
+void  cOmbrageKL::calc_buf(double ** output,double *** input)
+{
+// static int aCpt=0; aCpt++;
+    ELISE_ASSERT(this->dim_in()==2,"Incoherence in cOmbrageKL::calc_buf");
+
+    double  ** aProf = input[0];
+    double  ** aMasq = input[1];
+    double * anO = output[0];
+
+    for (INT anX=x0() ;  anX<x1() ; anX++)
+    {
+// bool Bug = ((aCpt==19) && (anX==241));
+
+         double aDifMax  = 0.0;
+         if (aMasq[0][anX])
+         {
+             double aP0 = aProf[0][anX];
+             int aCpt=0;
+             for (int aDy=-mNbV  ; aDy<=mNbV ; aDy++)
+             {
+                 double * aM = aMasq[aDy]+anX;
+                 double * aP = aProf[aDy]+anX;
+
+                 for (int aDx=-mNbV  ; aDx<=mNbV ; aDx++)
+                 {
+                     if (aM[aDx])
+                     {
+                         ElSetMax(aDifMax,aP[aDx] -(aP0+mVPds[aCpt]));
+                     }
+                     aCpt++;
+                 }
+             }
+         }
+         anO[anX] = aDifMax;
+    }
+}
+Fonc_Num OmbrageKL(Fonc_Num Prof,Fonc_Num Masq,double aPente,int aSzV)
+{
+     return create_op_buf_simple_tpl
+            (
+                    0,
+                    new  cOmbrageKL(aPente,aSzV),
+                    Virgule(Prof,Masq),
+                    1,
+                    Box2di(Pt2di(-aSzV,-aSzV),Pt2di(aSzV,aSzV))
+            );
+
+}
+
+/*********************************************************************/
+/*                                                                   */
+/*         Dilate cond : limite ici a une dilatation une fois,       */
+/*           Les dilate N sont geres par N Iter                      */
+/*                                                                   */
+/*********************************************************************/
+
+
+class cDilateCondOPB  : public Simple_OPBuf1<int,int>
+{
+   public :
+
+        cDilateCondOPB(bool aV4) :
+           mV4     (aV4),
+           mNbVois (mV4 ? 4 : 8),
+           mVois   (mV4 ? TAB_4_NEIGH :TAB_8_NEIGH)
+        {
+        }
+   private :
+        void  calc_buf(int ** output,int *** input);
+
+        bool           mV4;
+        int            mNbVois;
+        const Pt2di *  mVois;
+};
+
+
+
+void  cDilateCondOPB::calc_buf(int ** output,int *** input)
+{
+// static int aCpt=0; aCpt++;
+    ELISE_ASSERT(this->dim_in()==2,"Incoherence in cOmbrageKL::calc_buf");
+
+    int  ** aFoncToDil = input[0];
+    int  ** aFoncCond = input[1];
+    int * anO = output[0];
+
+    for (INT anX=x0() ;  anX<x1() ; anX++)
+    {
+         bool Ok = false;
+         if (aFoncToDil[0][anX])
+         {
+              Ok=true;
+         }
+         else if (aFoncCond[0][anX])
+         {
+              for (int aK=0 ; (!Ok) && (aK<mNbVois) ; aK++)
+              {
+                   const Pt2di * aV = mVois+ aK;
+                   Ok = aFoncToDil[aV->y][anX+aV->x];
+              }
+         }
+         anO[anX] = Ok;
+    }
+}
+
+Fonc_Num FoncDilatCond(Fonc_Num f2Dil,Fonc_Num fCond,bool aV4)
+{
+     int aSzV=1;
+     return create_op_buf_simple_tpl
+            (
+                    new  cDilateCondOPB(aV4),
+                    0,
+                    Virgule(f2Dil,fCond),
+                    1,
+                    Box2di(Pt2di(-aSzV,-aSzV),Pt2di(aSzV,aSzV))
+            );
+
+}
+
+Fonc_Num NFoncDilatCond(Fonc_Num f2Dil,Fonc_Num fCond,bool aV4,int aNb)
+{
+   Fonc_Num aRes = f2Dil;
+   for (int aK=0 ; aK<aNb ; aK++)
+   {
+       aRes = FoncDilatCond(aRes,fCond,aV4);
+   }
+   return aRes;
+}
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -1216,17 +1393,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

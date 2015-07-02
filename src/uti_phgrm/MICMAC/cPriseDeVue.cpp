@@ -37,9 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
-namespace NS_ParamMICMAC
-{
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 static Pt2di aSzTileMasq(1000000,1000000);
 
@@ -313,7 +311,7 @@ bool cPriseDeVue::LoadImageMM
     bool isEmpty = mGeom->ClipIsEmpty();
     if (isEmpty)
     {
-       ELISE_ASSERT(!mIsMaitre,"PriseDeVue::Maitre&&Empty !! ");
+       //ELISE_ASSERT(!mIsMaitre,"PriseDeVue::Maitre&&Empty !! ");
        return false;
     }
     else
@@ -363,6 +361,14 @@ bool cPriseDeVue::LoadImageMM
                                          "XML_ParamNuage3DMaille",
                                          "XML_ParamNuage3DMaille"
                                      );
+
+            if (aZoomN != 1.0)
+            {
+                // Apparemment le cParamModifGeomMTDNuage ne prenait pas en compte le scale, cela a ete modifie , mais
+                // pas sur que cela soit compatible avec cNuagePredicteur;  comme cNuagePredicteur n'est plus utilise pour l'instant
+                // on se contente d'un warning .....
+                ELISE_ASSERT(false,"VERIFIER FONCTIONNEMENT DE cNuagePredicteur apres modif Scale");
+            }
 
             cParamModifGeomMTDNuage aParamModif(aZoomN,I2R(mGeom->BoxClip()));
             // cElNuage3DMaille * anEN  = cElNuage3DMaille::FromParam
@@ -485,8 +491,10 @@ ElPackHomologue cPriseDeVue::ReadPackHom(const cPriseDeVue * aPDV2) const
 
 CamStenope * cPriseDeVue::GetOri() const
 {
-
    std::string aNG = mAppli.FullDirGeom()+NameGeom();
+
+	if ( isUsingSeparateDirectories() ) aNG = NameGeom();
+
    CamStenope * aRes = CamStenope::StdCamFromFile(true,aNG.c_str(),mAppli.ICNM());
    mAppli.AnalyseOri(aRes);
    return aRes;
@@ -769,6 +777,7 @@ Fonc_Num  cPriseDeVue::FoncMasq(std::string  & aName) const
 
    const std::list<cMasqImageIn> aLM = mAppli.MasqImageIn();
 
+
    for 
    ( 
       std::list<cMasqImageIn>::const_iterator itM = aLM.begin();
@@ -806,10 +815,12 @@ std::string  cPriseDeVue::NameMasqOfResol(int aDz) const
     FoncMasq(aName);
 // Fonc_Num  cPriseDeVue::FoncMasq(std::string  & aName) const
 
-   return   mAppli.FullDirPyr() 
+   std::string aRes =   mAppli.FullDirPyr() 
           + mAppli.PrefixMasqImRes().Val()
           + std::string("_Dz") + ToString(aDz) + std::string("_")
           + aName +".tif";
+
+   return   aRes;
 // #endif
 }
 
@@ -818,6 +829,7 @@ std::string  cPriseDeVue::NameMasqOfResol(int aDz) const
 Tiff_Im     cPriseDeVue::FileImMasqOfResol(int aDz) const
 {
    std::string aName = NameMasqOfResol(aDz);
+
 
    Pt2di aSz = Std2Elise(mIMIL->Sz(aDz));
    if (! ELISE_fp::exist_file(aName))
@@ -888,11 +900,10 @@ Tiff_Im     cPriseDeVue::FileImMasqOfResol(int aDz) const
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -908,17 +919,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

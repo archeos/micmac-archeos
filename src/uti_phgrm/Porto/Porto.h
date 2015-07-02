@@ -37,9 +37,6 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
-
 class cOneImOrhto;
 class cLoadedIm;
 class cAppli_Ortho;
@@ -233,6 +230,8 @@ class cAppli_Ortho
 
          Im1D_U_INT1   InitRanLutLabel();
          void VisuLabel();
+
+         const std::vector<std::string> * GetImNotTiled(const std::vector<std::string> *);
 
 
 

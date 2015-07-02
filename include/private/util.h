@@ -97,6 +97,8 @@ INT inv_bits_order(INT val,INT nbb);
 
 void byte_inv_2(void *);  // inverse the byte of a two byte  data
 void byte_inv_4(void *);  // inverse the byte of a four byte data
+void byte_inv_8(void *);  // inverse the byte of a eight byte data
+void byte_inv_16(void *);
 
 void byte_inv_tab(void *,INT byte_by_el,INT nb_el);  
     // inverse the byte of a four byte data
@@ -123,7 +125,7 @@ void filename_normalize( std::string &io_filename );
 std::string filename_normalize( const std::string &i_str);
 
 // return true if i_str starts with i_start (case sensitive)
-bool startWith( const std::string i_str, const std::string i_start );
+bool startWith( const std::string &i_str, const std::string &i_start );
 
 #endif // _ELISE_PRIVATE_UTI_H
 

@@ -40,6 +40,10 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef __TABULATION__
 #define __TABULATION__
 
+
+extern int  PdsGaussl9NEIGH[9];
+
+
 extern Pt2dr TAB_CornerPix[4];     // pts[i] = pts[i+8]
 
 extern Pt2di TAB_8_NEIGH[16];     // pts[i] = pts[i+8]
@@ -130,6 +134,12 @@ class Config_Freeman_Or
       INT             * _sym ;
       MAT_CODE_FREEM  * _mat_code;
 };
+
+
+const std::vector<Pt3di> &  Dir6Cube();
+const std::vector<Pt3di> &  Dir8Cube();
+const std::vector<Pt3di> &  Dir14Cube();
+const std::vector<Pt3di> &  Dir26Cube();
 
 
 #endif

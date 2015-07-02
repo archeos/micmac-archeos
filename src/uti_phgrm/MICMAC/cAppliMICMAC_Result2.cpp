@@ -37,15 +37,14 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
-namespace NS_ParamMICMAC
-{
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 /*********************************************************/
 /*                                                       */
 /*                 InitNadirRank                         */
 /*                                                       */
 /*********************************************************/
+
 
 static bool IsPBUG(const Pt2di & aP)
 {
@@ -224,6 +223,8 @@ void  cGeomTerWithMNT2Image::Diff(ElMatrix<REAL> &,Pt2dr) const
 /*                                                       */
 /*********************************************************/
 
+//'class cPurgeAct' does not have a copy constructor 
+//which is recommended since the class contains a pointer to allocated memory.
 class cPurgeAct
 {
     public :
@@ -282,11 +283,69 @@ class cParseDir_PurgeFile : public ElActionParseDir
 /*                                                       */
 /*********************************************************/
 
+// replace all occurences of i_strToReplace by i_strReplacing in i_src
+string replace( const std::string &i_src, const std::string &i_strToReplace, const std::string &i_strReplacing )
+{
+    string res = i_src;
+    size_t pos = 0;
+    while ( true )
+    {
+        if ( (pos=res.find(i_strToReplace,pos))==string::npos ) return res;
+        res.replace( pos, i_strToReplace.length(), i_strReplacing);
+    }
+}
+
+// replace strings in the i_stringsToProtect list by their protected version (s -> protect_spaces(s))
+//
+// assez laid mais je ne vois pas d'autre solution sans specialiser/typer les parties sensibles des commandes (noms de fichiers ici, peut-�tre plus)
+// ca a le merite d'etre compatible avec les XML deja existants
+void protect_spaces_in_strings( cCmdExePar &io_cmdExePar, const list<string> &i_stringsToProtect )
+{
+   list<string>::const_iterator itString = i_stringsToProtect.begin();
+   std::list<cOneCmdPar> &cmdPar = io_cmdExePar.OneCmdPar();
+   list<cOneCmdPar>::iterator itCmdPar;
+   list<string>::iterator itCmdSer;
+   while ( itString!=i_stringsToProtect.end() )
+   {
+      string protectedString = protect_spaces( *itString );
+      if ( protectedString!=*itString )
+      {
+	 for ( itCmdPar=cmdPar.begin(); itCmdPar!=cmdPar.end(); itCmdPar++ )
+	 {
+	    list<string> &cmdSer = itCmdPar->OneCmdSer();
+	    for ( itCmdSer=cmdSer.begin(); itCmdSer != cmdSer.end(); itCmdSer++ )
+	       *itCmdSer = replace( *itCmdSer, *itString, protectedString );
+	 }
+      }
+      itString++;
+   }
+}
+
+void print_cmdPar( const cCmdExePar &i_cmdExePar )
+{
+   const std::list<cOneCmdPar> &cmdPar = i_cmdExePar.OneCmdPar();
+   list<cOneCmdPar>::const_iterator itCmdPar;
+   list<string>::const_iterator itCmdSer;
+   
+   for ( itCmdPar=cmdPar.begin(); itCmdPar!=cmdPar.end(); itCmdPar++ )
+   {
+      const list<string> &cmdSer = itCmdPar->OneCmdSer();
+      for ( itCmdSer=cmdSer.begin(); itCmdSer != cmdSer.end(); itCmdSer++ )
+	 cout << "[" << *itCmdSer << "]" << endl;
+   }
+}
+
 void cAppliMICMAC::DoPostProcess()
 {
    if (! PostProcess().IsInit()  || (CalledByProcess().Val()))
       return;
 // std::cout << "xxx cAppliMICMAC::DoPostProcess  \n"; getchar();
+
+   list<string> strings_to_protect;
+   strings_to_protect.push_back( MMDir() );
+   strings_to_protect.push_back( NameChantier() );
+   protect_spaces_in_strings( PostProcess().Val(), strings_to_protect );
+   
    DoCmdExePar(PostProcess().Val(),ByProcess().Val());
 }
 
@@ -392,8 +451,8 @@ cDblePx cAppliMICMAC::LoadPx(cEtapeMecComp & anEtape,double aResol)
     const  cFilePx & aFPx1 = anEtape.KPx(0);
     const  cFilePx & aFPx2 = anEtape.KPx(1);
 
-    double aPas1 = aFPx1.Pas() * aDZ;
-    double aPas2 = aFPx2.Pas() * aDZ;
+    double aPas1 = aFPx1.ComputedPas() * aDZ;
+    double aPas2 = aFPx2.ComputedPas() * aDZ;
 
     Tiff_Im anIm1 = aFPx1.FileIm();
     Tiff_Im anIm2 = aFPx2.FileIm();
@@ -471,13 +530,62 @@ void cAppliMICMAC::MakeGenCorPxTransv(cEtapeMecComp & anEtape)
     MakeFileXML(aCTP,FullDirResult()+aNameXML);
 }
 
+const cMMUseMasq3D * cAppliMICMAC::Masq3DOfEtape(cEtapeMecComp & anEtape)
+{
+   if (! MMUseMasq3D().IsInit()) return 0;
+   const cMMUseMasq3D & aMasq =  MMUseMasq3D().Val();
+
+   if (anEtape.EtapeMEC().DeZoom() > aMasq.ZoomBegin().Val()) return 0;
+
+   return & aMasq;
+}
+
+void cAppliMICMAC::DoMasq3D(cEtapeMecComp & anEtape,const cMMUseMasq3D & aMasq)
+{
+   // const cEtapeMEC &   anEM = anEtape.EtapeMEC();
+   Tiff_Im  aFM = anEtape.FileMask3D2D();
+   std::string aNameNuage =     aMasq.PrefixNuage().IsInit() ?
+                                (mFullDirMEC+ aMasq.PrefixNuage().Val() + "_Etape_" + ToString(anEtape.Num()) + ".xml") :
+                                anEtape.NameXMLNuage()  ;
+   std::string aCom = MM3dBinFile("TestLib") 
+                     + " Masq3Dto2D " 
+                     + aMasq.NameMasq() + std::string(" ")
+                     + aNameNuage  + std::string(" ")
+                     + aFM.name() ;
+
+/*
+std::cout << "aFM.name"  << aFM.name() << "##" << anEtape.NameXMLNuage()  << "\n";
+*/
+//  std::cout << aCom << "\n";
+//  getchar();
+
+   System(aCom);
+// getchar();
+
+
+
+
+   // mNameXMLNuage
+   // std::string aCom = 
+
+}
+
 void cAppliMICMAC::MakeResultOfEtape(cEtapeMecComp & anEtape)
 {
+
  
    MakeGenCorPxTransv(anEtape);
    std::list<string> mVProcess;
    const cEtapeMEC &   anEM = anEtape.EtapeMEC();
    
+   const cMMUseMasq3D * aMasq3D = Masq3DOfEtape(anEtape);
+   if (aMasq3D)
+   {
+       DoMasq3D(anEtape,*aMasq3D);
+   }
+
+
+
    MakeImagePx8Bits
    (
        mVProcess,anEtape,0,
@@ -506,7 +614,91 @@ void cAppliMICMAC::MakeResultOfEtape(cEtapeMecComp & anEtape)
       MakeExportAsModeleDist(*itM,anEtape);
    }
 
-    anEtape.DoRemplitXMLNuage();
+    if (DoMTDNuage())
+    {
+       anEtape.DoRemplitXMLNuage();
+    }
+    MakeDequantSpecial();
+}
+
+
+void cAppliMICMAC::MakeDequantSpecial()
+{
+   // MPD Modif , le dequant tel que implemante dans MicMac a pas mal d'effet de bord,
+   // pour les reduire efficacement, il faudraoit augmenter taille des recouvrt et 
+   // taille image mais ensite MicMac est couteux en memoire. Donc :
+   //    * on relance un Dequant "basique"
+   //    * on laisse ce qui est fait actuellement car il y a pas mal d'autre chose pour preparer
+   //      ortho etc .... donc on prend pas de risques ...
+
+   if (!mCurEtape->IsOptDequant())
+       return;
+
+    if (DoNothingBut().IsInit())
+    {
+        return;
+    }
+
+   if (! mDoTheMEC)
+       return;
+
+   if (mPrecEtape==0) return;
+   if (mPrecEtape->IsOptDequant()) return;
+     
+   for (int aKPx=0 ; aKPx<DimPx() ; aKPx++)
+   {
+       std::string aTifQuant  =    mPrecEtape->KPx(aKPx).NameFile();
+       std::string aTifDeqQuant  = mCurEtape->KPx(aKPx).NameFile();
+
+       double aR=0;
+       double aOfs = 0;
+
+
+       // std::cout << "AAAAAAAAAAAAAa IsOptDequant " << mPrecEtape << " " << mCurEtape << "\n";
+       if (DimPx()==1)
+       {
+           // cFileOriMnt aFOMQ   =  StdGetFromPCP(StdPrefix(aTifQuant)+".xml"   ,FileOriMnt);
+           // cFileOriMnt aFOMDeQ =  StdGetFromPCP(StdPrefix(aTifDeqQuant)+".xml",FileOriMnt);
+
+           cFileOriMnt aFOMQ   =  StdGetFromPCP(NameOrientationMnt(mPrecEtape)  ,FileOriMnt);
+           cFileOriMnt aFOMDeQ =  StdGetFromPCP(NameOrientationMnt(mCurEtape),FileOriMnt);
+       // Z = a0 + R0 z0
+       // Z = a1 + R1 z1
+       //  z1 = (Z-a1) / R1 = (a0 +R0 z0 -a1) /R1 = (a0-a1) /R1  + z1 (R0/R1)
+
+
+//    Z_Num7_DeZoom2_STD-MALT.xml
+//      <ResolutionAlti>0.0135</ResolutionAlti>
+//    Z_Num8_DeZoom2_STD-MALT.xml
+//       <ResolutionAlti>0.003</ResolutionAlti>
+
+
+           aR = aFOMQ.ResolutionAlti() / aFOMDeQ.ResolutionAlti();
+           aOfs = (aFOMQ.OrigineAlti()-aFOMDeQ.OrigineAlti()) /aFOMDeQ.ResolutionAlti();
+           // std::cout << " BB  " << aTifQuant  << " " << aFOMQ.ResolutionAlti() << "\n";
+           // std::cout << " CCC " << aTifDeqQuant << " " << aFOMDeQ.ResolutionAlti() << "\n";
+           // std::cout << " DDDD,  R=" << aR << " Of=" << aOfs << "\n";
+       }
+       else
+       {
+              double aPasQ =  mPrecEtape->KPx(aKPx).ComputedPas();
+              double aPasDeQ =   mCurEtape->KPx(aKPx).ComputedPas();
+              aR=  aPasQ/aPasDeQ;
+              aOfs=0;
+
+             // std::cout << " EEEEE,  R=" << aR << " Of=" << aOfs << "\n";
+       }
+
+       std::string aCom =   MM3dBinFile("Dequant")
+                          + " "  +  aTifQuant
+                          + " Out=" + aTifDeqQuant
+                          + " Dyn=" + ToString(aR)
+                          + " Offs=" + ToString(aOfs)
+                          + " SzRecDalles=1500"
+                          + " SzMaxDalles=15000" ;
+       // std::cout << "COM= " << aCom << "\n";
+       System(aCom);
+   }
 }
 
 
@@ -526,8 +718,8 @@ void cAppliMICMAC::MakeExportAsModeleDist
    aMod.Dir() = FullDirMEC();
    aMod.Im1() = anEtape.KPx(0).NameFileSsDir();
    aMod.Im2() = anEtape.KPx(1).NameFileSsDir();
-   aMod.Pas().x = anEtape.KPx(0).Pas();
-   aMod.Pas().y = anEtape.KPx(1).Pas();
+   aMod.Pas().x = anEtape.KPx(0).ComputedPas();
+   aMod.Pas().y = anEtape.KPx(1).ComputedPas();
 
 // std::cout << aMod.Pas().x << " " << aMod.Pas().y << "\n";
 // std::cout << "VERIF INVERSION DANS SauvegardeMR2A !! \n";
@@ -550,7 +742,7 @@ void cAppliMICMAC::MakeExportAsModeleDist
    MakeFileXML(aMod,aNameTmp);
    RequireBin(mNameExe,aNameBin);
 
-   aNameBin = aNameBin + " "  +  aNameTmp;
+   aNameBin = string("\"")+aNameBin + "\" "  +  aNameTmp;
    aNameBin = aNameBin + " Ch1="+ ChMpDCraw(PDV1())+" Ch2="+ ChMpDCraw(PDV2());
    ::System( aNameBin);
    
@@ -560,11 +752,10 @@ void cAppliMICMAC::MakeExportAsModeleDist
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -580,17 +771,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

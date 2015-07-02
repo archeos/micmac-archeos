@@ -248,6 +248,119 @@ cElPlan3D::cElPlan3D(Pt3dr aP0,Pt3dr aP1,Pt3dr aP2) :
 }
 
 
+extern void RansacTriplet(int & aK1,int & aK2,int & aK3,int  aNb);
+void  GetNRandParmiQ(std::vector<int> &aRes,int aN,int aQ)
+{
+    aRes.clear();
+    cRandNParmiQ aSelect(aN,aQ);
+    for (int aK=0 ; aK<aQ ; aK++)
+        if (aSelect.GetNext())
+           aRes.push_back(aK);
+}
+
+
+
+cElPlan3D RobustePlan3D
+          (
+             const std::vector<Pt3dr> & aVPts,
+             const std::vector<double> * aVPondInit,
+             double anEffort,
+             double aRatioTirage ,
+             int    aNbStepLin
+          )
+{
+    if (aVPts.size() < 3)
+    {
+        std::cout << "NB POINT GOT : " << aVPts.size() << "\n";
+        ELISE_ASSERT(false,"Not enough  points in RobustePlan3D");
+    }
+
+
+    int aNbTirage = sqrt(anEffort*aRatioTirage);
+    int aNbPTest = ElMin(int(aVPts.size()),round_up(anEffort/aNbTirage));
+    std::vector<int> aIndPts; GetNRandParmiQ(aIndPts,aNbPTest,aVPts.size());
+
+
+    cElPlan3D  aRes(Pt3dr(0,0,0),Pt3dr(1,0,0),Pt3dr(0,1,0));
+    double aBestDist = 1e60;
+
+    double aProp = ElMin(0.9,(aNbPTest-3.1)/aNbPTest); // On enleve au - 3 pts
+
+    for (int aK=0 ; aK<aNbTirage ; aK++)
+    {
+         int aK1,aK2,aK3;
+         RansacTriplet(aK1,aK2,aK3,int(aVPts.size()));
+         Pt3dr aP0 = aVPts[aK1];
+         Pt3dr aP1 = aVPts[aK2];
+         Pt3dr aP2 = aVPts[aK3];
+         Pt3dr aNorm = (aP1-aP0)^(aP2-aP0);
+         double aLongN = euclid(aNorm);
+         if (aLongN >0)
+         {
+            aNorm = aNorm / aLongN;
+            std::vector<double> aVDist;
+            for (int aKInd=0 ; aKInd<int(aIndPts.size()) ; aKInd++)
+            {
+                aVDist.push_back(ElAbs(scal(aNorm,aVPts[aIndPts[aKInd]]-aP0)));
+            }
+            double aScore = KthValProp(aVDist,aProp);
+            if (aScore < aBestDist)
+            {
+                    aBestDist = aScore;
+                    aRes = cElPlan3D(aP0,aP1,aP2);
+            }
+         // cElPlan3D aPTest(aVPts[aK1],aVPts[aK2],aVPts[aK3]);
+         }
+    }
+    
+    double aDistMin=1e-10; // Juste anti plantage au cas ou seulement 3 pt
+    double aDistMoy = ElMax(aDistMin,aBestDist);
+    for (int aTime=0  ; aTime < aNbStepLin ; aTime++)
+    {
+        // std::cout << "RRRpplDMoy " << aDistMoy << "\n";
+        std::vector<double> aPds;
+        Pt3dr aP0 = aRes.P0();
+        Pt3dr aNorm  = aRes.Norm();
+
+        std::vector<double> aVPds;
+        double aSomDist = 0;
+        int    aNbDist = 0;
+
+        double aSeuilDist = 5 * aDistMoy;
+        while (aNbDist<3)
+        {
+            aVPds.clear();
+            aSomDist = 0;
+            aNbDist = 0;
+            for (int aKP=0 ; aKP<int(aVPts.size()) ; aKP++)
+            {
+                 double aDist = ElAbs(scal(aNorm,aVPts[aKP]-aP0));
+                 double aPds = 0;
+                 if (aDist < aSeuilDist)
+                 {
+                     aPds = sqrt(1/(1+ElSquare(aDist/(2*aDistMoy))));
+                     aSomDist += aDist;
+                     aNbDist++;
+                 }
+                 if (aVPondInit)
+                 {
+                      aPds *= (*aVPondInit)[aKP];
+                 }
+                 aVPds.push_back(aPds);
+            }
+            aSeuilDist *= 2;
+        }
+        aRes = cElPlan3D(aVPts,&aVPds);
+
+        
+        aDistMoy = ElMax(aDistMin,aSomDist/aNbDist);
+
+    }
+
+    return aRes;
+}
+
+
 cElPlan3D::cElPlan3D
 (
     const std::vector<Pt3dr> & aVP,

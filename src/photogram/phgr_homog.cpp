@@ -43,8 +43,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 
 
-
-
 /****************************************************************/
 /*                                                              */
 /*                 cElComposHomographie                         */
@@ -56,6 +54,28 @@ cElComposHomographie::cElComposHomographie(REAL aX,REAL aY,REAL a1) :
    mY (aY),
    m1 (a1)
 {
+}
+
+cElComposHomographie::cElComposHomographie(const cXmlAffinR2ToR & anAff) :
+    mX (anAff.CoeffX()),
+    mY (anAff.CoeffY()),
+    m1 (anAff.Coeff1())
+{
+}
+
+cXmlAffinR2ToR cElComposHomographie::ToXml() const
+{
+   cXmlAffinR2ToR aRes;
+   aRes.CoeffX() = mX;
+   aRes.CoeffY() = mY;
+   aRes.Coeff1() = m1;
+
+   return aRes;
+}
+
+bool  cElComposHomographie::HasNan() const
+{
+    return std_isnan(mX) || std_isnan(mY) || std_isnan(m1);
 }
 
 void cElComposHomographie::Show(const std::string & aMes)
@@ -115,6 +135,8 @@ void cElComposHomographie::SetCoHom(REAL * aData) const
    aData[1] = mY;
    aData[2] = m1;
 }
+
+
 
 
 /****************************************************************/
@@ -259,6 +281,11 @@ void cElHomographie::Show()
     mHZ.Show("Z");
 }
 
+bool  cElHomographie::HasNan() const
+{
+   return mHX.HasNan() || mHY.HasNan() ||   mHZ.HasNan();
+}
+
 cElHomographie::cElHomographie
 (
     const cElComposHomographie & aHX,
@@ -270,6 +297,26 @@ cElHomographie::cElHomographie
    mHZ (aHZ)
 {
    Normalize();
+}
+
+
+cElHomographie::cElHomographie(const cXmlHomogr & aXmlHom ) :
+   mHX (aXmlHom.X()),
+   mHY (aXmlHom.Y()),
+   mHZ (aXmlHom.Z())
+{
+   Normalize();
+}
+
+
+cXmlHomogr cElHomographie::ToXml() const
+{
+   cXmlHomogr aRes;
+   aRes.X() = mHX.ToXml();
+   aRes.Y() = mHY.ToXml();
+   aRes.Z() = mHZ.ToXml();
+
+   return aRes;
 }
 
 cElHomographie::cElHomographie(const ElPackHomologue & aPack,bool aL2)
@@ -492,12 +539,56 @@ double  QuickDist(const Pt2dr & aPt)
    return   (aDx+aDy + ElMax(aDx,aDy))/ 2.0;
 }
 
-void AddPair(ElPackHomologue & aPack,const std::pair<Pt2dr,Pt2dr> aPair)
+void AddPair(ElPackHomologue & aPack,const std::pair<Pt2dr,Pt2dr> &aPair)
 {
    aPack.Cple_Add(ElCplePtsHomologues(aPair.first,aPair.second));
 }
 
-cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomologue & aPack,bool & Ok ,int aNbTestEstim, double aPerc,int aNbMaxPts)
+
+/*
+   "Robust" init of homography :
+
+       1-  Split the homologous point in 4 sector arround cdg (return if one is empty)
+
+       2-  fot aNbTestEstim try :
+              - generate a  homography with 4 points, one in each sector
+              - memorize the "best" solution as the one minimizing the average of distance (exclufing the
+               queue over aPerc)
+           Let HR be the result of this Ransac homography
+
+       3- Estimate the homography with an iterative weighted least square estimate,
+
+           - weight  =  1/ (1+4*(E/D)^2)   E=error, D = Dist estimate from 2
+
+      4- Estimate the quality by repetability
+
+*/
+
+
+/*
+template <class TVal> void SplitArrounKthValue(std::vector<TVal> & aV,int aKth)
+{
+   SplitArrounKthValue(VData(aV),aV.size(),aKth);
+}
+
+template <class TVal> TVal MoyKPPVal(std::vector<TVal> & aV,int aKth)
+{
+   SplitArrounKthValue(aV,aKth);
+   return Moy(VData(aV),aKth);
+}
+
+template <class TVal> TVal KthVal(std::vector<TVal> & aV,int aKth)
+{
+    return KthVal(VData(aV),aV.size(),aKth);
+}
+
+template <class TVal> TVal MedianeSup(std::vector<TVal> & aV)
+{
+    return KthVal(aV,aV.size()/2);
+}
+*/
+
+cElHomographie  cElHomographie::RobustInit(double & aDMIn,double * aQuality,const ElPackHomologue & aPack,bool & Ok ,int aNbTestEstim, double aPerc,int aNbMaxPts)
 {
    cElHomographie aRes = cElHomographie::Id();
    Ok = false;
@@ -548,7 +639,7 @@ cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomolog
       return aRes;
 
 
-   double aDMIn = 1e30;
+   aDMIn = 1e30;
    int aNbPts = aVAll.size();
    int aNbKth = ElMax(1,ElMin(aNbPts-1,round_ni((aPerc/100.0) * aNbPts)));
    std::vector<double> aVDist;
@@ -557,7 +648,7 @@ cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomolog
       aNbTestEstim = (aNbTestEstim*aNbPtsTot) / aNbMaxPts;
 
    // int aKMIN = -1;
-   std::vector<double> aVD;
+   std::vector<double> aVD; // For tuning and show in if(0) ...
    while (aNbTestEstim)
    {
        int aK00 = NRrandom3(aV00.size());
@@ -589,14 +680,7 @@ cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomolog
           aVDist.push_back(aDist);
        }
        
-	   #if __cplusplus <= 199711L
-			ELISE_ASSERT(aVDist.size()>0 ,"Empty vector: aVDist");	
-			SplitArrounKthValue(&aVDist.front(),aNbPts,aNbKth);	
-			double aSom = Moy(&aVDist.front(),aNbKth);
-	   #else
-			SplitArrounKthValue(aVDist.data(),aNbPts,aNbKth);
-			double aSom = Moy(aVDist.data(),aNbKth);
-	   #endif
+       double aSom = MoyKPPVal(aVDist,aNbKth);
        
        aVD.push_back(aSom);
 
@@ -611,7 +695,7 @@ cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomolog
    }
 
 
-   double aDMinInit = aDMIn;
+   // double aDMinInit = aDMIn;
    ElPackHomologue aPckPds;
    for (int anIterL2 = 0 ; anIterL2 < 4 ; anIterL2++)
    {
@@ -632,88 +716,58 @@ cElHomographie  cElHomographie::RobustInit(double * aQuality,const ElPackHomolog
        ELISE_ASSERT(aNbPtsTot==aPack.size() ,"KKKKK ????");
        int aKTh = round_ni(aNbPtsTot * (aPerc/100.0));
 
-	   #if __cplusplus <= 199711L
-			ELISE_ASSERT(aVDist.size()>0 ,"Empty vector: aVDist");
-			SplitArrounKthValue(&aVDist.front(),aNbPtsTot,aKTh);
-			aDMIn = Moy(&aVDist.front(),aKTh);
-	   #else
-			SplitArrounKthValue(aVDist.data(),aNbPtsTot,aKTh);
-			aDMIn = Moy(aVDist.data(),aKTh);
-	   #endif
+       ELISE_ASSERT(int(aVDist.size())==aNbPtsTot,"Compat MoyKPPVal/SplitArrounKthValue");
+       aDMIn = MoyKPPVal(aVDist,aKTh);
 
        aRes = cElHomographie(aPckPds,true);
    }
 
-   std::vector<double> aVEstim;
-   int aNbTestValid = 21;
-   for (int aKTest = 0 ; aKTest <aNbTestValid ; aKTest++)
+   if (aQuality)
    {
-       ElPackHomologue aPckPdsA;
-       ElPackHomologue aPckPdsB;
-       for (ElPackHomologue::tCstIter itH=aPack.begin() ; itH!=aPack.end() ; itH++)
-       {
-           Pt2dr aP1 = itH->P1();
-           Pt2dr aP2 = itH->P2();
-           double aDist = QuickDist(aP2 -aRes.Direct(aP1));
-           aVDist.push_back(aDist);
+      std::vector<double> aVEstim;
+      int aNbTestValid = 71;
+      for (int aKTest = 0 ; aKTest <aNbTestValid ; aKTest++)
+      {
+          ElPackHomologue aPckPdsA;
+          ElPackHomologue aPckPdsB;
+          cRandNParmiQ  aSelec(aNbPtsTot/2,aNbPtsTot);
 
-           double aPds = 1/ sqrt(1+ ElSquare(aDist/aDMIn));
-           if (NRrandom3() > 0.5) 
-               aPckPdsA.Cple_Add(ElCplePtsHomologues(aP1,aP2,aPds));
-           else
-               aPckPdsB.Cple_Add(ElCplePtsHomologues(aP1,aP2,aPds));
+          for (ElPackHomologue::tCstIter itH=aPack.begin() ; itH!=aPack.end() ; itH++)
+          {
+              Pt2dr aP1 = itH->P1();
+              Pt2dr aP2 = itH->P2();
+              double aDist = QuickDist(aP2 -aRes.Direct(aP1));
+              aVDist.push_back(aDist);
+
+              double aPds = 1/ sqrt(1+ ElSquare(aDist/aDMIn));
+              // if (NRrandom3() > 0.5) 
+              if (aSelec.GetNext())
+                  aPckPdsA.Cple_Add(ElCplePtsHomologues(aP1,aP2,aPds));
+              else
+                  aPckPdsB.Cple_Add(ElCplePtsHomologues(aP1,aP2,aPds));
 
            
-       }
-       cElHomographie aResA = cElHomographie(aPckPdsA,true);
-       cElHomographie aResB = cElHomographie(aPckPdsB,true);
+          }
+          cElHomographie aResA = cElHomographie(aPckPdsA,true);
+          cElHomographie aResB = cElHomographie(aPckPdsB,true);
 
-       double aSomDist = 0; 
-       for (ElPackHomologue::tCstIter itH=aPack.begin() ; itH!=aPack.end() ; itH++)
-       {
-           Pt2dr aP1 = itH->P1();
+          double aSomDist = 0; 
+          for (ElPackHomologue::tCstIter itH=aPack.begin() ; itH!=aPack.end() ; itH++)
+          {
+              Pt2dr aP1 = itH->P1();
 
-           Pt2dr  aQ   = aRes.Direct(aP1);
-           Pt2dr  aQA  = aResA.Direct(aP1);
-           Pt2dr  aQB  = aResB.Direct(aP1);
-           double aDist = (QuickDist(aQ-aQA) + QuickDist(aQ-aQB) + QuickDist(aQB-aQA)) / 3.0;
-           aSomDist += aDist;
-       }
-       aSomDist /= aNbPtsTot;
-       aVEstim.push_back(aSomDist);
+              Pt2dr  aQ   = aRes.Direct(aP1);
+              Pt2dr  aQA  = aResA.Direct(aP1);
+              Pt2dr  aQB  = aResB.Direct(aP1);
+              double aDist = (QuickDist(aQ-aQA) + QuickDist(aQ-aQB) + QuickDist(aQB-aQA)) / 3.0;
+              aSomDist += aDist;
+          }
+          aSomDist /= aNbPtsTot;
+          aVEstim.push_back(aSomDist);
+      }
+      *aQuality  = MedianeSup(aVEstim);
    }
 
-   #if __cplusplus <= 199711L
-		ELISE_ASSERT(aVEstim.size()>0 ,"Empty vector: aVEstim");	
-		SplitArrounKthValue(&aVEstim.front(),aNbTestValid,aNbTestValid/2);		 
-   #else
-		SplitArrounKthValue(aVEstim.data(),aNbTestValid,aNbTestValid/2);
-   #endif
-
-   *aQuality = aVEstim[aNbTestValid/2];
-
-
-   if (0)
-   {
-      std::sort(aVD.begin(),aVD.end());
-      std::cout << "Quality " << *aQuality << " DIST-HOM " << aDMinInit << " L2 " <<  aDMIn << " V10 " << aVD[ElMin(int(aVD.size()-1),10)] << " NB "<< aNbPtsTot << "\n";
-   }
-
-/*
-
-   std::sort(aVD.begin(),aVD.end());
-   for (int aK=0 ; aK<10 ; aK++)
-       std::cout << "DDD " << aVD[aK] << "\n";
-   std::cout << " KMIN " << aKMIN <<  "\n";
-*/
-//    getchar();
-/*
-*/
-
-   // std::cout << "WAIIT::Robust:Hom:SOM \n";
-   // getchar();
-
-    
 
    Ok= true;
    return aRes;
@@ -886,7 +940,7 @@ bool cDistHomographieRadiale::OwnInverse(Pt2dr & aP) const
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -902,17 +956,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

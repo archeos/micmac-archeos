@@ -159,8 +159,8 @@ Pt2di second_freeman_approx(Pt2di u, bool conx_8,Pt2di u1)
 
      if(u1^u)
      {
-        u2 = best_4_approx(u - u1 * scal(u,u1));  // first suppose not 4 conexity
-        if (conx_8)  // eventually correct if 8 connexity
+        u2 = best_4_approx(u - u1 * scal(u,u1));  // first suppose not 4 cone xity
+        if (conx_8)  // eventually correct if 8 conne xity
            u2 = u1+u2;
       }
       // if u is horizontal or vertical (wich is equivalent to u colinear to u1)
@@ -882,12 +882,14 @@ cDecoupageInterv1D::cDecoupageInterv1D
 (
      const cInterv1D<int>  & aIntervGlob,
      int aSzMax,
-     const cInterv1D<int>  & aSzBord
+     const cInterv1D<int>  & aSzBord,
+     int                     anArrondi
 )  :
    mIntervGlob (aIntervGlob),
    mSzBord     (aSzBord),
    mSzMax      (aSzMax),
-   mNbInterv   (round_up(mIntervGlob.Larg()/double(mSzMax)))
+   mNbInterv   (round_up(mIntervGlob.Larg()/double(mSzMax))),
+   mArrondi    (anArrondi)
 {
 }
 
@@ -898,9 +900,15 @@ int cDecoupageInterv1D::NbInterv() const
 
 int cDecoupageInterv1D::KThBorneOut(int aK) const
 {
-    return 
-	        mIntervGlob.V0()
+    int aV = mIntervGlob.V0() +  round_ni((mIntervGlob.Larg() * aK )/mNbInterv);
+    if ((mArrondi!=1) && (aK!=0)  && (aK!=mNbInterv))
+       aV = arrondi_ni(aV,mArrondi);
+
+   return aV;
+/*
+    return mIntervGlob.V0() 
            +    round_ni((mIntervGlob.Larg() * aK )/mNbInterv);
+*/
 }
 
 cInterv1D<int> cDecoupageInterv1D::KthIntervOut(int aK) const
@@ -993,22 +1001,24 @@ cDecoupageInterv2D::cDecoupageInterv2D
 (
          const Box2di & aBGlob,
          Pt2di aSzMax,
-         const Box2di   & aSzBord
+         const Box2di   & aSzBord,
+         int  anArrondi
 ) :
-  mDecX  ( IntX(aBGlob),aSzMax.x,IntX(aSzBord)),
-  mDecY  ( IntY(aBGlob),aSzMax.y,IntY(aSzBord)),
+  mDecX  ( IntX(aBGlob),aSzMax.x,IntX(aSzBord),anArrondi),
+  mDecY  ( IntY(aBGlob),aSzMax.y,IntY(aSzBord),anArrondi),
   mNbX   ( mDecX.NbInterv()),
   mSzBrd (aSzBord)
 {
 }
 
-cDecoupageInterv2D cDecoupageInterv2D::SimpleDec(Pt2di aSz,int aSzMax,int aSzBrd)
+cDecoupageInterv2D cDecoupageInterv2D::SimpleDec(Pt2di aSz,int aSzMax,int aSzBrd,int anArrondi)
 {
     return cDecoupageInterv2D
            (
                   Box2di(Pt2di(0,0),aSz),
                   Pt2di(aSzMax,aSzMax),
-                  Box2di(Pt2di(-aSzBrd,-aSzBrd),Pt2di(aSzBrd,aSzBrd))
+                  Box2di(Pt2di(-aSzBrd,-aSzBrd),Pt2di(aSzBrd,aSzBrd)),
+                  anArrondi
            );
 }
 
@@ -1085,6 +1095,8 @@ Pt2di   cDecoupageInterv2D::SzMaxIn() const
     return SzMaxIn(mSzBrd);
 }
 
+int cDecoupageInterv2D::NbX() const { return mNbX; }
+
 /*
 template <> Pt2d<double>::Pt2d(const Pt2d<INT>& p) : x (p.x), y (p.y) {};
 template <> Pt2d<float>::Pt2d(const Pt2d<INT>& p) : x (p.x), y (p.y) {};
@@ -1135,7 +1147,7 @@ std::vector<Pt2di> PointInCouronne(int aD8Min,int aD8Max)
    return aRes;
 }
 
-std::vector<std::vector<Pt2di> > PointOfCouronnes(const std::vector<int> Dist,bool AddD4First)
+std::vector<std::vector<Pt2di> > PointOfCouronnes(const std::vector<int> &Dist,bool AddD4First)
 {
    std::vector<std::vector<Pt2di> > aRes;
 
@@ -1183,8 +1195,81 @@ std::vector<std::vector<Pt2di> > StdPointOfCouronnes(int aDMax,bool AddD4First)
 }
 
 
+class cCmpPtOnX
+{
+    public : bool operator()(const Pt2dr & aP1,const Pt2dr & aP2) {return aP1.x < aP2.x;}
+};
+class cCmpPtOnY
+{
+    public : bool operator()(const Pt2dr & aP1,const Pt2dr & aP2) {return aP1.y < aP2.y;}
+};
+
+
+Pt3dr PMoyFromEchant(const std::vector<Pt3dr> & anEch)
+{
+    Pt2dr aSomPt(0,0);
+    double aSomPds = 0;
+    for (int aK=0;aK<int(anEch.size()) ; aK++)
+    {
+         const Pt3dr & aP = anEch[aK];
+         aSomPt.x += aP.x * aP.z;
+         aSomPt.y += aP.y * aP.z;
+         aSomPds += aP.z;
+    }
+
+    return Pt3dr(aSomPt.x/aSomPds,aSomPt.y/aSomPds,aSomPds);
+}
+
+
+std::vector<Pt3dr>  GetDistribRepreBySort(std::vector<Pt2dr> & aVP,const Pt2di & aNbOut,Pt3dr & aPRep)
+{
+    Pt2dr * aAdr0 = VData(aVP);
+    int aNbIn0 = aVP.size();
+    std::vector<Pt3dr> aRes;
+
+    cCmpPtOnX aCmpX;
+    cCmpPtOnY aCmpY;
+    std::sort(aAdr0,aAdr0+aNbIn0,aCmpX);
+
+    for (int aNx=0 ; aNx<aNbOut.x ; aNx++)
+    {
+         int aX0 = (aNbIn0 * aNx) / aNbOut.x ;
+         int aX1 = (aNbIn0 * (aNx+1)) / aNbOut.x ;
+
+         Pt2dr * aAdrX = aAdr0 + aX0;
+         int aNbInX = (aX1-aX0);
+
+         std::sort(aAdrX,aAdrX+aNbInX,aCmpY);
+         for (int aNy=0 ; aNy<aNbOut.y ; aNy++)
+         {
+              int aY0 = (aNbInX * aNy) / aNbOut.y ;
+              int aY1 = (aNbInX * (aNy+1)) / aNbOut.y ;
+
+              int aNbInY =  aY1 -aY0;
+              if (aNbInY)
+              {
+                   Pt2dr * aAdrY = aAdrX + aY0;
+                   Pt2dr aSomP(0,0);
+                   for (int aK=0 ; aK<aNbInY ; aK++)
+                   {
+                       aSomP = aSomP + aAdrY[aK];
+                   }
+                   aSomP = aSomP / double(aNbInY);
+                   aRes.push_back(Pt3dr(aSomP.x,aSomP.y,aNbInY));
+              }
+         }
+    }
+
+    aPRep = PMoyFromEchant(aRes);
+   
+
+    return aRes;
+}
+
+
 template <class TypeCont,class TypeRes>  TypeRes  TplGetDistribRepre
                                      (
+                                                 Pt3dr & aCdg,
                                                  const TypeCont & aCont,
                                                  const Pt2di & aNb,
                                                  const TypeRes*
@@ -1233,26 +1318,40 @@ template <class TypeCont,class TypeRes>  TypeRes  TplGetDistribRepre
            aTp.add(anInd,1);
      }
 
+     Pt2dr aPtSom(0,0);
+     double aSom = 0;
      Pt2di anInd;
      for(anInd.x=0 ; anInd.x<aNb.x; anInd.x++)
      {
          for(anInd.y=0 ; anInd.y<aNb.y; anInd.y++)
          {
-              double aP = aTp.get(anInd);
-              if (aP>0)
+              double aPds = aTp.get(anInd);
+              if (aPds>0)
               {
-                 aRes.push_back(Pt3dr(aTx.get(anInd)/aP,aTy.get(anInd)/aP,aP));
+                 Pt2dr aPt (aTx.get(anInd),aTy.get(anInd));
+
+                 aRes.push_back(Pt3dr(aPt.x/aPds,aPt.y/aPds,aPds));
+                 aPtSom = aPtSom + aPt;
+                 aSom += aPds;
+                 // aRes.push_back(Pt3dr(aTx.get(anInd)/aP,aTy.get(anInd)/aP,aP));
               }
          }
      }
+
+     if (aSom>0)
+        aCdg = Pt3dr(aPtSom.x/aSom,aPtSom.y/aSom,aSom);
+     else
+        aCdg = Pt3dr(0,0,0);
+
 
      return aRes;
 }
 
 
-std::vector<Pt3dr> GetDistribRepresentative(const std::vector<Pt2dr> & aV,const Pt2di & aNb)
+std::vector<Pt3dr> GetDistribRepresentative(Pt3dr & aCdg,const std::vector<Pt2dr> & aV,const Pt2di & aNb)
 {
-    return TplGetDistribRepre(aV,aNb,(std::vector<Pt3dr> *)0);
+
+    return TplGetDistribRepre(aCdg,aV,aNb,(std::vector<Pt3dr> *)0);
 }
 
 
@@ -1274,6 +1373,10 @@ bool operator < (const Pt3di & aP1,const Pt3di & aP2)
 
    return false;
 }
+
+
+
+
 };
 
 
@@ -1281,7 +1384,7 @@ bool operator < (const Pt3di & aP1,const Pt3di & aP2)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1297,17 +1400,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

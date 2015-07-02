@@ -39,22 +39,27 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-#if (ELISE_windows)&&(!ELISE_MinGW)
+#if (ELISE_windows)&(!ELISE_MinGW)
 	inline int isblank( int c ){ return ( c==int(' ') || c==int('\t') ); }
 #endif
 
 Im1D_U_INT1 ImMajic()
 {
-   const char * majic = "krznp re9pjsuquk8peyk9mcnbwlmqopa6teyioptrenslohteapoiutegnm";
-   Im1D_U_INT1 res(strlen(majic));
+	static Im1D_U_INT1 res(1);
+	static bool First = true;
+	if (First)
+	{
+		First = false;
+		const char * majic = "krznp re9pjsuquk8peyk9mcnbwlmqopa6teyioptrenslohteapoiutegnm";
+		res = Im1D_U_INT1( strlen(majic) );
 
-
-   for (INT x = 0; x < res.tx(); x++)
-      res.data()[x] = majic[x];
-  return res;
+		for ( INT x=0; x<res.tx(); x++ )
+			res.data()[x] = majic[x];
+	}
+	return res;
 }
 
-Im1D_U_INT1 Majic = ImMajic();
+// Im1D_U_INT1 Majic = ImMajic();
 string PostCode("dcd");
 
 bool code_file(const char * name,bool coder,std::string * ResNewName=0)
@@ -93,10 +98,11 @@ bool code_file(const char * name,bool coder,std::string * ResNewName=0)
 
     INT NbOctet = sizeofile(name);
     Elise_File_Im  F(name, Pt2di(NbOctet,1),GenIm::u_int1);
+	Im1D_U_INT1 majic = ImMajic();
     ELISE_COPY
     (
            F.all_pts(),
-           F.in()^Majic.in()[FX%Majic.tx()],
+           F.in()^majic.in()[FX%majic.tx()],
            F.out()
     );
 
@@ -268,6 +274,7 @@ bool FoncIsMailSep(int aC)
 */
            || (!isascii(aC))
            || (aC==10)
+           || (aC==92)
           ;
 }
 
@@ -332,7 +339,10 @@ class cGenerateMail
         cGenerateMail(int argc,char ** argv);
      private :
 
-        void ParseFile(const std::string aName,bool aTest);
+        void ParseFile(const std::string &aName,bool aTest);
+        bool OkAdr(const std::string &) const;
+        bool OkDestAdr(const std::string &) const;
+        
 
         std::string mDir;
         cInterfChantierNameManipulateur * mICNM;
@@ -340,12 +350,30 @@ class cGenerateMail
 
         std::map <std::string,cOneEntryMail *> mDicE;
         std::vector<cOneEntryMail *>           mVE;
+        std::vector<std::string>               mDests;
         int mNbByF;
         std::string                            mOnlyFile;
 };
 
+bool cGenerateMail::OkAdr(const std::string & anAdr) const
+{
+   return OkDestAdr(anAdr);
+}
 
-void cGenerateMail::ParseFile(const std::string aName,bool aTest)
+bool cGenerateMail::OkDestAdr(const std::string & anAdr) const
+{
+   if (mDests.empty()) 
+      return true;
+  
+   if (! IsPostfixed(anAdr)) return false;
+
+// std::cout << "ppppppppp " << StdPostfix(anAdr) << "\n";
+
+  return BoolFind(mDests,StdPostfix(anAdr));
+}
+
+
+void cGenerateMail::ParseFile(const std::string &aName,bool aTest)
 {
     cOneEntryMail::mLastEntry=0;
 
@@ -394,7 +422,10 @@ void cGenerateMail::ParseFile(const std::string aName,bool aTest)
                   if (! mDicE[anEntr.mId])  
                   {
                       mDicE[anEntr.mId] = new cOneEntryMail(anEntr);
-                      if (anEntr.mOk)
+                      if (
+                            (anEntr.mOk)
+                            && (aBlackL ||OkAdr(anEntr.mId) )
+                         )
                       {
                          mVE.push_back(mDicE[anEntr.mId]);
                       }
@@ -448,6 +479,7 @@ cGenerateMail::cGenerateMail(int argc,char ** argv) :
         LArgMain() ,
         LArgMain() << EAM(mNbByF,"NbByF",true)
                    << EAM(mOnlyFile,"SingleFile",true,"If specified, all but this one will considered as black-list files")
+                   << EAM(mDests,"Dests",true,"Selected dest (for ex [fr] if only french)")
     );	
 
 
@@ -468,12 +500,14 @@ cGenerateMail::cGenerateMail(int argc,char ** argv) :
 
 
 
+    std::string aSep=";";
+
     for (int aK=0 ; aK<int(mVE.size()) ; aK++)
     {
          if (aFP==0)
          {
               aFP = FopenNN(mDir+"MailList_"+ToString(aCptF)+".txt","w","MailList::open");
-              fprintf(aFP,"marc.pierrot-deseilligny@ensg.eu\n");
+              fprintf(aFP,"marc.pierrot-deseilligny@ensg.eu%s\n",aSep.c_str());
 
          }
          if (! mVE[aK]->mBlackList)
@@ -491,7 +525,7 @@ cGenerateMail::cGenerateMail(int argc,char ** argv) :
              else
              {
                   aCptInF++;
-                  fprintf(aFP,",\n");
+                  fprintf(aFP,"%s\n",aSep.c_str());
              }
          }
     }

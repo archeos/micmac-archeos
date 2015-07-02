@@ -47,20 +47,26 @@ void  * Mcheck::operator new(size_t sz)
 {
     Elise_tabulation::init();
     void * ptr = Elise_Calloc(1,sz);
-    MC_OKS.add(ptr);
+	#if (DEBUG_INTERNAL)
+		MC_OKS.add(ptr);
+	#endif
     return   ptr;
 }
 
 
 void   Mcheck::operator delete (void * ptr) 
 {
-    MC_OKS.sub(ptr);
+	#if (DEBUG_INTERNAL)
+		MC_OKS.sub(ptr);
+	#endif
     Elise_Free(ptr);
 }
 
 void   Mcheck::operator delete [] (void * ptr) 
 {
-    MC_OKS.sub(ptr);
+	#if (DEBUG_INTERNAL)
+		MC_OKS.sub(ptr);
+	#endif
     Elise_Free(ptr);
 }
 
@@ -93,7 +99,7 @@ PRC0::~PRC0(void)
     RC_Object::decr_ref(_ptr);
 }
 
-void PRC0::operator=(PRC0 p2)
+void PRC0::operator=(const PRC0 &p2)
 {
    RC_Object::incr_ref(p2._ptr);
    RC_Object::decr_ref(_ptr);

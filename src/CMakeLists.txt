@@ -6,6 +6,8 @@ set(HASSA_DIR "HassanArrangt")
 set(XINTER_DIR "xinterf")
 set(VECTO_DIR "vectorize")
 set(UTIL_DIR "util")
+set(DocEx "doc_ex")
+set(TDPPMD_DIR "TpMMPD")
 set(TIFF_DIR "tiff")
 set(SIMULPH_DIR "SimulPhgr")
 set(PSC_DIR "post_script")
@@ -36,12 +38,14 @@ set(MULLGES_DIR "mullgesuhlig")
 set(NEIGH_DIR "neighboor")
 set(OP_BUF_DIR "op_buf")
 set(OPTIM_DIR "optim")
+set(SAMPLESLIBELISE_DIR "SamplesLibElise")
+set(SATELIB_DIR "SateLib")
 set(UTI_FILES_DIR "uti_files")
 set(SAMPLESLIBELISE_DIR "SamplesLibElise")
 set(UTI_IMAGE_DIR "uti_image")
 set(UTI_PHGRM_DIR "uti_phgrm")
 set(UTI_ETAPOLY_DIR "EtalonnagePolygone")
-set(POISSON_DIR "poisson")
+set(POISSON_DIR ${PROJECT_SOURCE_DIR}/CodeExterne/Poisson/)
 
 INCLUDE (${AMD_DIR}/Sources.cmake)
 INCLUDE (${HASSA_DIR}/Sources.cmake)
@@ -68,6 +72,7 @@ INCLUDE (${OPERATOR_DIR}/Sources.cmake)
 INCLUDE (${OPTIM_DIR}/Sources.cmake)
 INCLUDE (${UTI_FILES_DIR}/Sources.cmake)
 INCLUDE (${SAMPLESLIBELISE_DIR}/Sources.cmake)
+INCLUDE (${SATELIB_DIR}/Sources.cmake)
 INCLUDE (${UTI_IMAGE_DIR}/Sources.cmake)
 INCLUDE (${UTI_PHGRM_DIR}/Sources.cmake)
 INCLUDE (${ORIPHO_DIR}/Sources.cmake)
@@ -81,6 +86,8 @@ INCLUDE (${RECIPES_DIR}/Sources.cmake)
 INCLUDE (${TIFF_DIR}/Sources.cmake)
 INCLUDE (${TOP_DIR}/Sources.cmake)
 INCLUDE (${UTIL_DIR}/Sources.cmake)
+INCLUDE (${TDPPMD_DIR}/Sources.cmake)
+INCLUDE (${DocEx}/Sources.cmake)
 INCLUDE (${VECTO_DIR}/Sources.cmake)
 INCLUDE (${XINTER_DIR}/Sources.cmake)
 INCLUDE (${POISSON_DIR}/Sources.cmake)
@@ -93,8 +100,11 @@ endif()
 # ORGANISATION des en-tetes ELISE et fichiers Xml
 file(GLOB_RECURSE IncFiles ${PROJECT_SOURCE_DIR}/include/*.h  )
 file(GLOB_RECURSE XmlFiles ${PROJECT_SOURCE_DIR}/include/*.xml  )
+file(GLOB_RECURSE QssFiles ${PROJECT_SOURCE_DIR}/src/uti_qt/*.qss  )
 
 list(APPEND IncFiles ${XmlFiles})
+
+list(APPEND IncFiles ${QssFiles})
 
 # Construction de l'arborescence des fichiers INCLUDE
 foreach(source_file ${IncFiles})
@@ -107,12 +117,7 @@ foreach(source_file ${IncFiles})
 	source_group("${includeTree}" FILES ${source_file})
 endforeach(source_file)
 
-if(${CUDA_ENABLED})
-	 file(GLOB_RECURSE IncFilesGpGpu ${PROJECT_SOURCE_DIR}/include/GpGpu/*.h  )
-	 list(REMOVE_ITEM IncFiles ${IncFilesGpGpu})
-endif()
-
-# OPTION BUILD : En tetes precompilées visual studio
+# OPTION BUILD : En tetes precompiles visual studio
 
 enable_precompiled_headers_msvc(StdAfx.h Elise_Src_Files)
 
@@ -130,63 +135,54 @@ set(Elise_Src_Files
 	${ORIPHO_DIR}/cOriMntCarto.cpp
 )
 
+if(CMAKE_COMPILER_IS_GNUCC)
+
+    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
+
+    if(GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8)
+      set_source_files_properties(${TIFF_DIR}/el_dcraw.c PROPERTIES COMPILE_FLAGS -Wno-aggressive-loop-optimizations)
+    endif()
+
+endif()
+
 set(libElise elise)
+
+set(SAISIE_DIR ${PROJECT_SOURCE_DIR}/src/saisieQT)
+
+include(${SAISIE_DIR}/Elise_QT.cmake)
+
+# CONSTRUCTION : Lib ELISE
 
 # CONSTRUCTION : Lib ELISE
 if(${CUDA_ENABLED})
+    INCLUDE (GpGpu.cmake)
 
-	 file(GLOB_RECURSE IncuhCudaFiles ${PROJECT_SOURCE_DIR}/include/*.cuh  )
-	 file(GLOB_RECURSE IncCudaFiles ${PROJECT_SOURCE_DIR}/include/*.h  )
-	 list(APPEND IncCudaFiles ${IncuhCudaFiles})
+    cuda_add_library( ${libElise} ${Elise_Src_Files} ${IncFiles} ${QT_ALLFILES} OPTIONS ${GENCODE_SM})
 
-	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20 -lineinfo)
-	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20 -use_fast_math)
-	 #set(GENCODE_SM21 -gencode=arch=compute_21,code=sm_21 -gencode=arch=compute_21,code=compute_21)
-
-	 #set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_20,code=compute_20)
-
-	 set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20)
-	 set(libStatGpGpuTools GpGpuTools)
-	 set(libStatGpGpuInterfMicMac GpGpuInterfMicMac)
-	 set(libStatGpGpuOpt GpGpuOpt)
-	 set(TestExeGpGpuOpt TestGpGpuOpt)
-
-	 cuda_add_library(${libStatGpGpuTools}  ${GpGpuTools_Src_Files} STATIC OPTIONS ${GENCODE_SM20})
-
-	 cuda_add_library(${libStatGpGpuInterfMicMac}  ${uti_phgrm_GpGpu_Src_Files} STATIC OPTIONS ${GENCODE_SM20})
-
-	 cuda_add_library(${libStatGpGpuOpt}  ${uti_phgrm_Opt_GpGpu_Src_Files} ${IncCudaFiles} STATIC OPTIONS ${GENCODE_SM20})
-
-	 if (Boost_FOUND)
-		  target_link_libraries(${libStatGpGpuInterfMicMac}  ${Boost_LIBRARIES} ${Boost_THREADAPI})
-		  if (NOT WIN32)
-			target_link_libraries(${libStatGpGpuInterfMicMac}  rt pthread )
-		  endif()
-	 endif()
-
-	 cuda_add_executable(${TestExeGpGpuOpt} ${uti_Test_Opt_GpGpu_Src_Files})
-
-	 target_link_libraries(${TestExeGpGpuOpt}  ${Boost_LIBRARIES} ${Boost_THREADAPI} ${libStatGpGpuOpt} rt pthread ${libStatGpGpuTools})
-
-	 link_directories(${PROJECT_SOURCE_DIR}/lib/)
-
-	 cuda_add_library( ${libElise} ${Elise_Src_Files} ${IncFiles} OPTIONS ${GENCODE_SM20})
-
-	 target_link_libraries(${libElise}  ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt})
-
-	 INSTALL(TARGETS ${TestExeGpGpuOpt} RUNTIME DESTINATION ${Install_Dir})
-
-	 INSTALL(TARGETS ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt}
-		    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/lib
-		    ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib)
+	if(${CUDA_NVTOOLS})
+		target_link_libraries(${libElise} ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt} ${CUDA_nvToolsExt_LIBRARY} ${OPENCL_LIBRARY})
+	else()
+		target_link_libraries(${libElise} ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt} ${OPENCL_LIBRARY})
+	endif()
 
 else()
-	 add_library( elise ${Elise_Src_Files} ${IncFiles} )
-	 INSTALL(TARGETS elise ARCHIVE DESTINATION ${Install_Dir_lib} )
+
+    add_library( ${libElise}  ${Elise_Src_Files} ${IncFiles} ${QT_ALLFILES})
+
 endif()
 
+target_link_libraries(${libElise} ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
+
+#if( ${qt_version} EQUAL 5 )
+#    qt5_use_modules(${libElise} Widgets Core Gui Xml Concurrent OpenGL)
+#endif()
+
+INSTALL(TARGETS ${libElise} ARCHIVE DESTINATION ${BUILD_PATH_LIB} )
+
+
 # OPTION BUILD : En tetes precompilees pour gcc
-enable_precompiled_headers_GCC(StdAfx.h ${libElise})
+enable_precompiled_headers_GCC(StdAfx.h ${libElise} "${CMAKE_CXX_FLAGS}")
+
 
 # DEFINITION
 add_definitions(-DNO_JPEG -DNO_LCMS)
@@ -198,4 +194,8 @@ ADD_SUBDIRECTORY(CBinaires)
 
 if (WITH_INTERFACE)
     ADD_SUBDIRECTORY(interface)
+endif()
+
+if ( NOT ${qt_version} EQUAL 0)
+    ADD_SUBDIRECTORY(saisieQT)
 endif()

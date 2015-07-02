@@ -74,6 +74,55 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "../../CodeGenere/photogram/cEqAppui_AFocal_PProjInc_M2CDRad5.cpp"
 
 
+//=======================  cEqObsBaseGPS ========================
+
+#include "../../CodeGenere/photogram/cEqObsBaseGPS.cpp"
+#include "../../CodeGenere/photogram/cEqObsBaseGPS_GL.cpp"
+#include "../../CodeGenere/photogram/cImplEqRelativeGPS.cpp"
+#include "../../CodeGenere/photogram/cCodeBlockCam.cpp"
+#include "../../CodeGenere/photogram/cEqLinariseAngle.cpp"
+#include "../../CodeGenere/photogram/cEqLinariseAngle_AccelCsteCoord.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamFirst.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamSecond.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamThird.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamFirst_AccelCsteCoord.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamSecond_AccelCsteCoord.cpp"
+#include "../../CodeGenere/photogram/cEqBBCamThird_AccelCsteCoord.cpp"
+
+//=======================  Droite ========================
+
+
+
+
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PTInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PProjInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PTInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PProjInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PTInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PProjInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PTInc_M2CNoVar.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PProjInc_M2CNoVar.cpp"
+
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PTInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PProjInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PTInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PProjInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PTInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PProjInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PTInc_M2CDRad5.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PProjInc_M2CDRad5.cpp"
+
+
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PTInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_GL__PProjInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PTInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__GL__PProjInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PTInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_PProjInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PTInc_M2CDRad_PPaEqPPs.cpp"
+#include "../../CodeGenere/photogram/cEqAppui_Droite_NoDist__PProjInc_M2CDRad_PPaEqPPs.cpp"
+
+
 #endif // ELISE_INSERT_CODE_GEN
 
 

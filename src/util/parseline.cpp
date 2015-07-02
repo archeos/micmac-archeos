@@ -76,25 +76,38 @@ std::string cReadObject::GetNextStr(tCharPtr & aStr)
 
    return aRes;
 }
+
+bool LineIsBlank(const char * aLine)
+{
+    while (*aLine)
+    {
+        if (!ElIsBlank(*aLine)) return false;
+        aLine ++;
+    }
+    return true;
+}
+
 bool cReadObject::Decode(const char * aLine)
 {
    mNumLine++;
    if (aLine[0] == mComC)
       return false;
+    if (LineIsBlank(aLine))
+      return false;
     const char * aL = aLine;
     const char * aF = mFormat.c_str();
     while (true)
     {
-        const char * aL0 = aL;
-        const char * aF0 = aF;
+        // const char * aL0 = aL;
+        // const char * aF0 = aF;
         std::string aSymb = GetNextStr(aF);
         std::string aVal = GetNextStr(aL);
 
         if ((aSymb=="") != (aVal==""))
         {
             std::cout << "\n\nAT LINE " << mNumLine << "\n";
-            std::cout << "Format =[" << aF0 << "]\n";
-            std::cout << "Line =[" <<  aL0 << "]\n";
+            std::cout << "Format =[" << mFormat << "]\n";
+            std::cout << "Line =[" <<  aLine << "]\n";
             ELISE_ASSERT(false,"Incoherence between format and line");
         }
 
@@ -191,7 +204,7 @@ void cReadObject::AddString(const std::string & aS,std::string * aName,bool Requ
      *aName = TheStrUnDef;
 }
 
-bool cReadObject::ReadFormat(char  & aCom,std::string & aFormat,const std::string aFileOrLine,bool IsFile)
+bool cReadObject::ReadFormat(char  & aCom,std::string & aFormat,const std::string &aFileOrLine,bool IsFile)
 {
     const char * aLine =  aFileOrLine.c_str();
     if (IsFile)

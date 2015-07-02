@@ -7,9 +7,7 @@
          <Symb> Im2=XXXX  </Symb>
          <Symb> Masq=XXXX  </Symb>
 
-
-
-         <Symb> Dir=MEC/</Symb>
+         <Symb> DirMEC=MEC/</Symb>
          <Symb> Pyr=Pyram/</Symb>
          <Symb> Inc=2.0  </Symb>
          <Symb> Pas=0.2 </Symb>
@@ -17,13 +15,13 @@
          <Symb> UseMasq=false </Symb>
          <Symb> UseTeta=false </Symb>
          <Symb> RegulBase=0.3 </Symb>
+         <Symb> UseDequant=false </Symb>
 
-
+         <Symb> SzW=4 </Symb>
          <Symb> CorrelMin=0.5 </Symb>
          <Symb> GammaCorrel=2 </Symb>
 
          <Symb> PdsF=0.1 </Symb>
-
 
          <Symb> NbDir=7 </Symb>
          <eSymb> P0= / ${PdsF} +   ${PdsF} / 0 ${NbDir} </eSymb>
@@ -40,6 +38,12 @@
 
 
          <eSymb> Regul=* ${RegulBase}  ? ${UseTeta} 3 1 </eSymb>
+
+
+         <Symb>  SsResolOpt=4 </Symb>
+         <eSymb> SsResolOptInterm1=* 4 ${SsResolOpt} </eSymb>
+         <eSymb> SsResolOptInterm2=* 2 ${SsResolOpt} </eSymb>
+
     </DicoLoc>
 <!-- *************************************************************
 Parametres lies au terrain "physique", independamment de la prise de vue
@@ -116,7 +120,7 @@ L'ordre des resolutions : les plus basses aux plus grandes.
 
         <EtapeMEC><!-- Etape de Mise En Correspondance -->
             <DeZoom > -1 </DeZoom> <!-- le seul fils obligatoire a toutes les etapes-->
-            <SzW> 4   </SzW> <!-- la taille de la fenetre de correlation [-4,4]x[-4,4]-->
+            <SzW> ${SzW}   </SzW> <!-- la taille de la fenetre de correlation [-4,4]x[-4,4]-->
 
 
             <CorrelMin>  ${CorrelMin} </CorrelMin>
@@ -161,18 +165,18 @@ L'ordre des resolutions : les plus basses aux plus grandes.
 
             <Px1Pas>        ${Pas}  </Px1Pas>
             <Px2Pas>        ${Pas}  </Px2Pas>
-            <SsResolOptim> 4 </SsResolOptim>
+            <SsResolOptim> ${SsResolOpt} </SsResolOptim>
 
         </EtapeMEC>
 
-         
+
         <EtapeMEC>
            <DeZoom > 1 </DeZoom>
            <Px1Pas>   0.8  </Px1Pas>
            <Px2Pas>   0.8  </Px2Pas>
            <Px1Regul> 2.0    </Px1Regul>
            <Px2Regul> 2.0   </Px2Regul>
-           <SsResolOptim> 16 </SsResolOptim>
+           <SsResolOptim> ${SsResolOptInterm1} </SsResolOptim>
         </EtapeMEC>
 
         <EtapeMEC>
@@ -181,7 +185,7 @@ L'ordre des resolutions : les plus basses aux plus grandes.
            <Px2Pas>   0.4  </Px2Pas>
            <Px1Regul> 2.0    </Px1Regul>
            <Px2Regul> 2.0   </Px2Regul>
-           <SsResolOptim> 8 </SsResolOptim>
+           <SsResolOptim> ${SsResolOptInterm2} </SsResolOptim>
         </EtapeMEC>
         <EtapeMEC>
            <DeZoom > 1 </DeZoom>
@@ -189,7 +193,7 @@ L'ordre des resolutions : les plus basses aux plus grandes.
            <Px2Pas>   0.2  </Px2Pas>
            <Px1Regul> 1.0    </Px1Regul>
            <Px2Regul> 1.0   </Px2Regul>
-           <SsResolOptim> 8 </SsResolOptim>
+           <SsResolOptim> ${SsResolOptInterm2} </SsResolOptim>
         </EtapeMEC>
         <EtapeMEC>
            <DeZoom > 1 </DeZoom>
@@ -197,7 +201,6 @@ L'ordre des resolutions : les plus basses aux plus grandes.
            <Px2Pas>   0.1  </Px2Pas>
            <Px1Regul> 1.0    </Px1Regul>
            <Px2Regul> 1.0   </Px2Regul>
-           <SsResolOptim> 8 </SsResolOptim>
         </EtapeMEC>
 
         <EtapeMEC>
@@ -205,7 +208,17 @@ L'ordre des resolutions : les plus basses aux plus grandes.
            <Px1Pas>        0.05  </Px1Pas>
            <Px2Pas>        0.05  </Px2Pas>
         </EtapeMEC>
+
+        <#WHEN VTEST=${UseDequant}>
+          <EtapeMEC>
+            <DeZoom >  1  </DeZoom>
+            <Px1Pas>   1.0     </Px1Pas>
+            <Px2Pas>   1.0     </Px2Pas>
+            <AlgoRegul> eAlgoDequant </AlgoRegul>
+          </EtapeMEC>
+        </#WHEN>
     </Section_MEC>
+
 
     <Section_Results >
         <GeomMNT> eGeomPxBiDim </GeomMNT>
@@ -213,8 +226,8 @@ L'ordre des resolutions : les plus basses aux plus grandes.
 
    <Section_WorkSpace >
       <WorkDir >  ThisDir </WorkDir>
-      <TmpMEC>    ${Dir} </TmpMEC>
-      <TmpResult> ${Dir} </TmpResult>
+      <TmpMEC>    ${DirMEC} </TmpMEC>
+      <TmpResult> ${DirMEC} </TmpResult>
       <TmpPyr>  ${Pyr}  </TmpPyr>
       <ByProcess>  ${MMNbProc} </ByProcess>
 

@@ -83,15 +83,13 @@ FAIT :
     // ================
 
 #include "GpGpu/GpGpu.h"
-#include "StdAfx.h"
+//#include "StdAfx.h"
 
 // #include  "cParamMICMAC.h"
 
 #include "uti_MICMAC.h"
 template <class T> class cMatrOfSMV;
 
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
 
 void MicMacRequiresBinaireAux();
 
@@ -103,8 +101,6 @@ inline int AdaptCostPonct(int aVal)
 }
 
 
-namespace NS_ParamMICMAC
-{
 
 
 extern cDebugEscalier *  theDE;
@@ -120,7 +116,7 @@ typedef enum
 
 
 
-GenIm::type_el TypeIMIL2El(eTypeNumerique);
+GenIm::type_el TypeIMIL2El(eIFImL_TypeNumerique);
 
 template <class TypeEl,class TypeBase> 
 void LoadAllImCorrel
@@ -431,6 +427,7 @@ class cSurfaceOptimiseur
       std::vector<Im2D_INT2>  mImRes;
       std::vector<INT2 **>    mDataImRes;
       std::vector<Im2D_INT2>  mImResInit;
+      bool                    mCubeCorrel;
       cMatrOfSMV<U_INT1> *    mMemoCorrel;
       bool                    mCanFillCorrel;
       bool                    mDoFileCorrel;
@@ -511,6 +508,7 @@ class cStatOneClassEquiv
 
             REAL CoeffCorrelSymetrique() const;
             REAL CoeffCorrelIm1Maitre() const;
+            REAL CoeffCorrelMedIm1Maitre() const;
             REAL CoeffCorrelMaxIm1Maitre() const;
             REAL CoeffCorrelMinIm1Maitre() const;
             REAL CoeffInfoMut() const ;
@@ -682,6 +680,8 @@ class cPriseDeVue
 			int  Num() const;
 
 			double  DzOverPredic(const Pt3dr &) const;
+                        CamStenope *  GetOri() const;
+                        std::string NameMasqOfResol(int aMasq) const;
 
         private :
 
@@ -690,12 +690,10 @@ class cPriseDeVue
 
 
            cGeomImage * StdGeomTerrain();
-           CamStenope *  GetOri() const;
 
            std::string OneNameMasq(const std::list<cOneMasqueImage> & aList) const;
            Fonc_Num    FoncMasq(std::string  & aName) const;
   
-           std::string NameMasqOfResol(int aMasq) const;
 
 
 
@@ -867,6 +865,8 @@ class cGeomDiscFPx : public  cGeomDiscR2
      public :
        // defini dans GeomXXX.cpp
 
+         void SetZIsAbs();
+
          double  CorrectDerivee() const;
 
          cGeomDiscFPx(cAppliMICMAC &);
@@ -898,7 +898,14 @@ class cGeomDiscFPx : public  cGeomDiscR2
          void RemplitOri(cFileOriMnt & aFOM,bool DoZAbs) const;
 
          Pt2di NbPixel() const;
-         double OrigineAlti() const ;
+
+// Devrait etre identiques , mais a cause de surface analytique semi triviale, pour elle : en calcul vaut 0 car le Z Moyen
+// est pris dans la surface , mais a l'export il faut le remettre
+         double OrigineAlti4Compute() const ;
+         double OrigineAlti4Export() const ;
+
+
+
          double ResolutionAlti() const ;
 
          void SetOriResolPlani(Pt2dr & aOriP,Pt2dr & aResolP) const;
@@ -913,6 +920,7 @@ class cGeomDiscFPx : public  cGeomDiscR2
          Box2dr RoundCoord(const Box2dr  & aP) ;
 
          bool   TronkExport() const;
+         double RatioPasCompUser(int aD) const;
 
 
 
@@ -946,6 +954,7 @@ class cGeomDiscFPx : public  cGeomDiscR2
          REAL   mEcPxZone[theDimPxMax];
          REAL   mStepRel[theDimPxMax];
          REAL   mStepAbs[theDimPxMax];
+         REAL   mRatioPasCompUser[theDimPxMax];
          REAL   mRatioResAltPlani[theDimPxMax];
          double  mCorrectDerivee;
          cDecimal mRDec;
@@ -1025,13 +1034,17 @@ class cGeomBasculement3D
     private :
 };
 
+
+#define PUBLIC_FOR_DEBUG public
+
+
 class cGeomImage : public cGeomBasculement3D, // Pour pouvoir basculer les MNT en geometrie image
-                   private cGeomImageData,
+                   PUBLIC_FOR_DEBUG cGeomImageData,
                    public  ElDistortion22_Gen
 {
     public :
 
-        virtual ElCamera * GetCamera(const Pt2di & aSz,bool & ToDel) const;
+        virtual ElCamera * GetCamera(const Pt2di & aSz,bool & ToDel,bool & aZUP) const;
 
     // Pour l'instant seul la geometrie conique accepte les anamorphose,
     // car cela necessite des adaptation pas encore faite pour les autres
@@ -1307,7 +1320,7 @@ class cGeomImage : public cGeomBasculement3D, // Pour pouvoir basculer les MNT e
          // Par defaut ne fair rien
           virtual void RemplitOri(cFileOriMnt & aFOM) const;
          // Par defaut erreur fatale si pas mode Image_Nuage
-         virtual void RemplitOriXMLNuage(const cMTD_Nuage_Maille &,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &,eModeExportNuage) const;
+         virtual void RemplitOriXMLNuage(bool CallFromMere,const cMTD_Nuage_Maille &,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &,eModeExportNuage) const;
 
          //  Par defaut return 0
            virtual CamStenope *  GetOri() const ;
@@ -1455,6 +1468,7 @@ class cGeomImage : public cGeomBasculement3D, // Pour pouvoir basculer les MNT e
 
          // Fonction "fondamentale", a definir dans les derivees
          //  ne tient compte  ni du DeZoom ni du ClipImage
+// public :
          virtual Pt2dr Objet2ImageInit_NonEuclid(Pt2dr aP,const REAL * aPx) const=0;
 
          // Indique si la geometrie connait sa Px moyenne (cas altisol
@@ -1527,7 +1541,7 @@ class cLoadedImage
       Im2D_Bits<1>       MasqImTer();
       const cAppliMICMAC & Appli();
  
-      eTypeNumerique TypeOfElem() const;
+      eIFImL_TypeNumerique TypeOfElem() const;
       Pt2di   QuickTer2Cor(const Pt2di & aP)  const
       {
              return aP+mDecalTer2Cor;
@@ -1559,6 +1573,9 @@ class cLoadedImage
          U_INT1** DataImPC() const;
          int      SeuilPC() const;
          U_INT1** DataMasqIm() const;
+         U_INT1** DataMasqImErod() const;
+         void DoMasqErod(const Box2di & aBox);
+
          virtual float *** DataFloatIm()  = 0;
          virtual float ** DataFloatLinIm()  = 0;
        
@@ -1566,6 +1583,7 @@ class cLoadedImage
 
          virtual  Im2D_REAL4 * FirstFloatIm()  = 0;
          const std::vector<cMSLoadedIm>&  MSLI();
+         std::vector<Im2D_REAL4>   VNpIm();  // Non pointeur
 
     protected :
       cLoadedImage
@@ -1579,7 +1597,7 @@ class cLoadedImage
           int                        aDZ,
           Fonc_Num                   aFMasq,
 	  bool                       IsFirstLoaded,
-	  const eTypeNumerique       aType
+	  const eIFImL_TypeNumerique       aType
       );
 
          void PostInit();
@@ -1596,6 +1614,10 @@ class cLoadedImage
          Im2D_Bits<1>   mMasqIm;
          TIm2DBits<1>   mTMasqIm;
 
+         bool           mDoneMasqErod;
+         Im2D_Bits<1>   mMasqImErod;
+         TIm2DBits<1>   mTMasqImErod;
+
          // Geometrie de l'image superposable au bloc terrain,
          // a une translation pres, pour une paralaxe donnee
          Pt2di          mSzPtWFixe;
@@ -1609,7 +1631,8 @@ class cLoadedImage
          TIm2DBits<1>       mTMasqImTer;
          Pt2di              mDecalTer2Cor;
 
-         eTypeNumerique     mTypeEl;
+         eIFImL_TypeNumerique     mTypeEl;
+         // eTypeNumerique     mTypeEl;
 
          bool               mUsePC;
          Im2D_U_INT1        mImPC;
@@ -1618,6 +1641,7 @@ class cLoadedImage
 
          std::vector<cMSLoadedIm>  mMSLI;
          std::vector<Im2D_REAL4 *> mVIm;
+         std::vector<Im2D_REAL4>   mVNpIm;  // Non pointeur
          std::vector<float **>     mVDataIm;
          std::vector<float *>      mVDataLin;
 
@@ -1826,7 +1850,8 @@ struct cArgOneEtapePx
 
           REAL  mRegul;
           REAL  mRegul_Quad;
-          REAL  mPas;
+          REAL  mUserPas;  // Nom Change pour verifier usage
+          REAL  mComputedPas;  // Nom Change pour verifier usage
 
           int   mDilatAltiPlus;
           int   mDilatAltiMoins;
@@ -1847,7 +1872,6 @@ class cFilePx : public cArgOneEtapePx
 {
 	public :
                 void RemplitOri(cFileOriMnt &) const;
-                // void RemplitProfXMLNuage(cImage_Profondeur &,eModeExportNuage) const;
 		cFilePx
                 (
 		     const cArgOneEtapePx & anArg,
@@ -1857,7 +1881,6 @@ class cFilePx : public cArgOneEtapePx
                      bool                   isPseudoFirst,
                      const std::string &    aPost,
                      int                    aKPx
-
                 );
                 // Separe du constructeur  car necessite que le discretiseur de Geometrie de l'etape
                 // soit initialise
@@ -1873,7 +1896,9 @@ class cFilePx : public cArgOneEtapePx
                 void Show(const std::string  & aMes) const;  // Debug/ MaP
 
                 // ACCESSEURS
-                double Pas() const;
+                double UserPas() const;
+                double ComputedPas() const;
+
                 double Regul() const;
                 double Regul_Quad() const;
 
@@ -1905,6 +1930,8 @@ class cFilePx : public cArgOneEtapePx
                Tiff_Im      FileIm() const;
                Tiff_Im      FileImRel() const;
 	       std::string  NameFileSsDir() const;
+
+                void InitComputedPas(double aRatio);
 
 
                Tiff_Im      FileIm(bool & IsCreated) const;
@@ -2007,7 +2034,7 @@ class cEtapeMecComp
           void RemplitOri(cFileOriMnt &) const;
           cXML_ParamNuage3DMaille DoRemplitXML_MTD_Nuage() const;
           void DoRemplitXMLNuage() const;
-          cXML_ParamNuage3DMaille DoRemplitXMLNuage(const cExportNuage &) const;
+          cXML_ParamNuage3DMaille DoRemplitXMLNuage(const cMMExportNuage &) const;
           void RemplitXMLNuage(const cTplValGesInit<cMTD_Nuage_Maille> &,cXML_ParamNuage3DMaille &,eModeExportNuage) const;
 
           const std::string &  NameXMLNuage() const;
@@ -2029,6 +2056,8 @@ class cEtapeMecComp
           int   DeZoomTer() const;
           int   DeZoomIm() const;
           const cGeomDiscFPx &  GeomTer() const;
+  // GeomTerFina tient compte de l'eventuel ExportZAbs qui a ete rajoute a posteriori
+          cGeomDiscFPx   GeomTerFinal() const;
           cGeomDiscFPx &  GeomTer() ;
 
           void Show() const;  // Debug/ MaP
@@ -2072,6 +2101,7 @@ class cEtapeMecComp
           const cEtiqBestImage *           EBI() const;
 
           Tiff_Im  FileMaskAuto() const;
+          Tiff_Im  FileMask3D2D() const;
           Tiff_Im  FileCorrel() const;
           Tiff_Im  FileRes( GenIm::type_el,const std::string &  aPref,bool NoTile=false) const;
           Tiff_Im  LastFileCorrelOK() const;
@@ -2208,7 +2238,7 @@ class cLineariseProj
           bool  Continuer() const;
           void  NexStep();
 
-     private :
+      private :
           bool   mUseDer;
           int    mDimPx;
           Pt2dr  mDerX;
@@ -2549,6 +2579,10 @@ class   cGPU_LoadedImGeom
              bool Top
         );
 
+        // En cas de geometrie image renvoie l'offset entre le 00 du terrain local et la geom image
+        // chargee
+        Pt2di OffsetIm();
+
 //  Est-ce que un point terrain est visible (si l'option des parties cachees
 //  a ete activee)
        bool  IsVisible(int anX,int anY) const
@@ -2564,8 +2598,6 @@ class   cGPU_LoadedImGeom
            int anIX = round_ni(aRX);
            int anIY = round_ni(aRY);
 
-
-
            return     (anIX>=0)
                    && (anIY>=0)
                    && (anIX<mSzX)
@@ -2574,14 +2606,26 @@ class   cGPU_LoadedImGeom
 
       }
 
-	  Pt2di getSizeImage()
-	  {
+      bool IsOkErod(int anIX,int anIY)
+      {
+           return     (anIX>=0)
+                   && (anIY>=0)
+                   && (anIX<mSzX)
+                   && (anIY<mSzY)
+                   && (GET_Val_BIT(mImMasqErod[anIY],anIX));
+      }
+
+
+
+
+      Pt2di getSizeImage()
+      {
 	  
 		  Pt2di size(mSzX,mSzY);
 		  
 		  return size;  
 	  
-	  }
+      }
 
       cGeomImage * Geom() {return mGeom;}
       void AssertOneImage()
@@ -2602,6 +2646,9 @@ class   cGPU_LoadedImGeom
            AssertOneImage();
            return mLinDIm[0];
       }
+      U_INT1 ** ImPC()      {return mImPC;}
+      U_INT1**  ImMasq()    {return mImMasq;}
+      U_INT1**  ImMasqErod()    {return mImMasqErod;}
       float *** VDataIm()   {return mDataIm;}
       float **  VLinDIm()   {return mLinDIm;}
       double  PdsMS() const;
@@ -2683,6 +2730,8 @@ class   cGPU_LoadedImGeom
 
        int  NbScale() const;
        Im2D_REAL4 * FloatIm(int aKScale);
+       std::vector<Im2D_REAL4> VIm();
+
        Pt2di  SzV0() const;
 
 
@@ -2770,6 +2819,7 @@ class   cGPU_LoadedImGeom
         int              mSzX;
         int              mSzY;
         U_INT1**         mImMasq;
+        U_INT1**         mImMasqErod;
 
    // Parties cachee :  masque image (en geom terrain), Seuil  et usage 
        U_INT1 **          mImPC;
@@ -2795,6 +2845,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
                       private  cStateSimul
 {
      public :
+        const cMMUseMasq3D *   Masq3DOfEtape(cEtapeMecComp & anEtape);
 
          //int    MaxPrecision() const;
          void AddPrecisionOfArrondi(const cDecimal &, double aVal);
@@ -2869,8 +2920,11 @@ class cAppliMICMAC  : public   cParamMICMAC,
 	// Accesseur 
 
         // Box2dr          BoxTer();
-        // Box2di          BoxIn();
-        // Box2di          BoxOut();
+        const Box2di &  BoxIn()  const ;
+        const Box2di &  BoxOut() const ;
+        std::string  DirCube() const;
+        std::string  NameFileCurCube(const std::string &) const;
+
         bool  IsOptDiffer() const;
         bool  IsOptimCont() const;
         bool  IsOptimReel() const;
@@ -2941,7 +2995,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
         void   CalcCorrelByRect(Box2di,int * aPx);
 
         void DoCorrelLeastQuare(const Box2di & aBoxOut,const Box2di & aBoxIn,const cCorrel2DLeastSquare &);
-		void DoGPU_Correl (const Box2di & aBoxInterne,const cMultiCorrelPonctuel *);  
+	void DoGPU_Correl (const Box2di & aBoxInterne,const cMultiCorrelPonctuel *);  
+        void DoCensusCorrel(const Box2di & aBox,const cCensusCost &);
         void DoOneCorrelSym(int anX,int anY,int aNbScale);
         void DoOneCorrelIm1Maitre(int anX,int anY,const cMultiCorrelPonctuel *,int aNbIm,bool VireExtr);
         void DoOneCorrelMaxMinIm1Maitre(int anX,int anY,bool aModeMax,int aNbIm);
@@ -2949,8 +3004,16 @@ class cAppliMICMAC  : public   cParamMICMAC,
 		void DoGPU_Correl_Basik (const Box2di & aBoxInterne); 
 
 #ifdef  CUDA_ENABLED
-		void Tabul_Projection( float2* TabProj, int Z, Rect zone, uint sample, uint interZ = 1);
-		void setVolumeCost(Rect Ter,  uint interZ0, uint interZ1, double defaultCost, float* tabCost = NULL, Rect zone = Rect(0,0,0,0), float valdefault = 0.0f);
+        ///
+        /// \brief Tabul_Projection
+        /// \param Z
+        /// \param interZ
+        /// \param idBuf
+        ///
+        void Tabul_Projection(short Z,  ushort& interZ, ushort idBuf);
+        void setVolumeCost(short interZ0, short interZ1, ushort idBuf);
+        void Tabul_Images(int Z, uint &interZ, ushort idBuf);
+
 #endif
 		void Correl_MNE_ZPredic (const Box2di & aBoxInterne,const cCorrel_Correl_MNE_ZPredic &);  
 		void DoCorrelPonctuelle2ImGeomI(const Box2di&aBoxInterne,const cCorrel_Ponctuel2ImGeomI&);  
@@ -3085,7 +3148,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
               
           Pt2dr DequantPlani(int anX,int anY) const {return Pt2dr( mOriPlani.x + mStepPlani.x*anX,mOriPlani.y + mStepPlani.y*anY);}
           double DequantZ(int aZ) const {return  mOrigineZ+ aZ*mStepZ;}
-     private :
+
+          private :
         static const int theNbImageMaxAlgoRapide = 3; 
 	cAppliMICMAC (const cAppliMICMAC  &);     // N.I.
 
@@ -3139,6 +3203,10 @@ class cAppliMICMAC  : public   cParamMICMAC,
 
 
         void MakeResultOfEtape(cEtapeMecComp &);
+        void MakeDequantSpecial();
+        void DoMasq3D(cEtapeMecComp & anEtape,const cMMUseMasq3D &);
+
+
         void MakeGenCorPxTransv(cEtapeMecComp &);
 	void MakeExportAsModeleDist 
              (  const cGenereModeleRaster2Analytique,
@@ -3175,7 +3243,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
                  cPriseDeVue &,
                  const cGenerePartiesCachees &,
                  double aZMin,
-                 double aZMax
+                 double aZMax,
+                 int aCpt
              );
        
         void MakeRedrLocAnamSA();
@@ -3184,6 +3253,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
         ///========================================
 
         void GenereOrientationMnt();
+        std::string   NameOrientationMnt(cEtapeMecComp * itE);
+
         void GenereOrientationMnt(cEtapeMecComp *);
         void SauvParam();
         void MakeFileFDC();
@@ -3236,7 +3307,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
                         const ElAffin2D & aSPM2PO,
                         const cMakeOrthoParImage &,
                         cPriseDeVue &,
-                        cMicMacZbuf &,
+                        cMicMacZbuf *,
                         cMetaDataPartiesCachees & aMDPC
                        );
 
@@ -3244,7 +3315,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
        /*   Partie Data                  */
        /**********************************/
 
-       std::string  mNameChantier;
+       std::string mNameChantier;
+       string mOutputDirectory;
        cInterfChantierNameManipulateur * mICNM;
        bool         mWM;
        bool         mFullIm1;
@@ -3303,6 +3375,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
 				// predictif)
 
         cEtapeMecComp *         mCurEtape; // Pour eviter de la passer
+        cEtapeMecComp *         mPrecEtape; // Pour eviter de la passer
                                 // tout le temps en parametre
          const cEtiqBestImage *  mEBI;
 
@@ -3445,6 +3518,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
   // Permet entre autre d'optimiser pour geom image maitresse
            bool mFirstZIsInit;
 
+           Pt2di mSzGlobTer;
            int  mX0Ter;
            int  mX1Ter;
            int  mY0Ter;
@@ -3505,6 +3579,10 @@ class cAppliMICMAC  : public   cParamMICMAC,
            std::vector<U_INT1 *>  mAll1VDOkTerDil;
            U_INT1 **              mAll1DOkTerDil;
 
+           std::vector<Im2D_REAL4>  mBufCensusIm2;
+           std::vector<float **> mVBufC;
+           float ***             mDataBufC;
+
 
 
            double mAhDefCost;
@@ -3563,6 +3641,7 @@ class cAppliMICMAC  : public   cParamMICMAC,
        bool DoNotMasqChantier() const;
        bool DoNotFDC() const;
        bool DoNotOriMNT() const;
+       bool DoMTDNuage() const;
        bool DoNotExtendParam() const;
        bool DoSimul() const;
        cExportApero2MM   mExpA2Mm;
@@ -3606,8 +3685,8 @@ class cAppliMICMAC  : public   cParamMICMAC,
 
 	// GPGPU
 #ifdef CUDA_ENABLED
-		bool					mLoadTextures;
-		InterfaceMicMacGpGpu	IMmGg;        
+        GpGpuInterfaceCorrel	IMmGg;
+        GpGpu_Interface_Cor_MS    interface_Census_GPU;
 #endif	
 
          cMMTP *  mMMTP;
@@ -3617,6 +3696,14 @@ class cAppliMICMAC  : public   cParamMICMAC,
          cMakeMaskImNadir         * mMakeMaskImNadir;
 
          int     mMaxPrecision;
+ 
+     public :
+       // Pour debug MM TieP
+         cMasqBin3D *      mGLOBMasq3D;
+         cElNuage3DMaille* mGLOBNuage;
+
+         bool mCorrecAlti4ExportIsInit;
+         double mValmCorrecAlti4Export;
 };
 
 std::string  StdNameFromCple
@@ -3673,7 +3760,8 @@ bool Apply(ePxApply aPA,int aK);
 
 
 extern Pt2di PBug;
-extern bool DeBugMM;
+bool IsPBug(const Pt2di &aP);
+extern bool GlobDebugMM;  // Init par DebugMM()
 /*
 extern Pt2di BoxP0Bug;
 extern bool  InBoxBug;
@@ -3702,9 +3790,21 @@ bool ModeGeomIsIm1InvarPx(const cParamMICMAC & aParam);
 
 template <class TypeEl,class tBase> cInterpolateurIm2D<TypeEl>  * InterpoleOfEtape(const cEtapeMEC & anEt,TypeEl *,tBase *);
 
+void GenTFW(const cFileOriMnt & aFOM,const std::string & aName);
 
 
-};
+void TestGeomTer(const cFileOriMnt & aFOM,const std::string & aMessage);
+
+// Fonction extern pour appel depuis CPU ou GPU
+void CombleTrouPrgDyn (
+         const cModulationProgDyn & aPrgD,
+         Im2D_Bits<1>  aMaskCalc,
+         Im2D_Bits<1>  aMaskTer,
+         Im2D_INT2     aImZ
+     );
+
+
+
 
 #endif //  _ELISE_MICMAC_ALL_H_
 

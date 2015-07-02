@@ -43,7 +43,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-using  namespace NS_ParamChantierPhotogram;
 
 
 cCiblePointeScore::cCiblePointeScore
@@ -450,6 +449,8 @@ cEtalonnage::cEtalonnage
    pCamDRad          (0),
    mModeDist         (aModeDist)
 {
+   AllowUnsortedVarIn_SetMappingCur=true;
+   
    std::vector<double> NoParAdd;
    cTplValGesInit<std::string> aUseless;
    mICNM  =cInterfChantierNameManipulateur::StdAlloc(0,0,mDir,aUseless);
@@ -817,7 +818,9 @@ void cEtalonnage::CalculModeleRadiale
                       }
 
 	              if (aK >= 15)
-                          PIFDR()->SetCDistPPLie();
+                  {
+                          PIFDR()->SetCDistPPLie(1e-1);
+                  }
 
 	              if (aK >= 20)
 		      {
@@ -1069,7 +1072,10 @@ void cEtalonnage::RechercheCibles
 	   iTN++
           )
           {
-               std::string aCom =    ToCommande(argc,argv)
+
+               std::string aCom =    
+                        MMBinFile(MM3DStr) + " "
+                      + ToCommande(argc,argv)
                       +  " CalledByItsef=1"
                       +  " Im=" +*iTN;
                std::cout << aCom << "\n";
@@ -1375,10 +1381,13 @@ std::cout << "LOEMI " << mParam.CalibSpecifLoemi() << "\n"; getchar();
    // bool isCDL =  mParam.CDistLibre(true) || (! OptionFigeC);
    // std::string aLibCD = isCDL ? "eLib_PP_CD_11" : "eLib_PP_CD_Lies" ;
 
-   std::string aCom =   MMDir() +  std::string("bin/Apero ")
-                        + std::string(" ") + MMDir() + aParamComp
+   //std::string aCom =   MMDir() +  std::string("bin/Apero ")
+   //                     + std::string(" ") + MMDir() + aParamComp
+   std::string aCom =   MM3dBinFile_quotes("Apero")
+                        + " " + ToStrBlkCorr( MMDir()+aParamComp )
                         + std::string(" DirectoryChantier=") + mDir
-                        + std::string(" \"+PatternIm=") + mParam.PatternGlob() +std::string("\"")
+                        //+ std::string(" \"+PatternIm=") + mParam.PatternGlob() +std::string("\"")
+                        + " " + ToStrBlkCorr( string("+PatternIm=")+mParam.PatternGlob() )
                         + std::string(" +NameCam=")     +  aNameCam
                         + std::string(" +PrefCal=") +  aPrefix
                         + std::string(" +KeySetOri=") +   mParam.KeySetOri()
@@ -1396,7 +1405,7 @@ std::cout << "LOEMI " << mParam.CalibSpecifLoemi() << "\n"; getchar();
                       ;
    
    std::cout << "RUN COM=" << aCom << "\n";
-   int aK = system(aCom.c_str());
+   int aK = System(aCom.c_str());
    if (aK!=0)
    {
       std::cout << "COM=" << aCom << "\n";

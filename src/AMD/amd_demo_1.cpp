@@ -20,7 +20,7 @@ cAMD_Interf::cAMD_Interf(int aN) :
    mNb (aN),
    mV  (aN)
 {
-    std::cout << "AMD::NB= " << mV.size() << "\n";
+    // std::cout << "AMD::NB= " << mV.size() << "\n";
 }
 
 
@@ -245,7 +245,7 @@ int amd_demo_1 (void)
     if (result != AMD_OK)
     {
 	printf ("AMD failed\n") ;
-	exit (1) ;
+	ElEXIT (1,"AMD DEMO") ;
     }
 
     /* print the permutation vector, P, and compute the inverse permutation */

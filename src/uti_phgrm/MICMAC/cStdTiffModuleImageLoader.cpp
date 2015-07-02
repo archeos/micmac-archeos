@@ -40,11 +40,13 @@ Header-MicMac-eLiSe-25/06/2007*/
 #if __USE_JP2__
 #include "Jp2ImageLoader.h"
 #endif
+#if __USE_IMAGEIGN__
+#include <boost/algorithm/string/predicate.hpp>
+#include "IgnSocleImageLoader.h"
+#endif
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
-namespace NS_ParamMICMAC
-{
-
-GenIm::type_el TypeIMIL2El(NS_ParamMICMAC::eTypeNumerique aType)
+GenIm::type_el TypeIMIL2El(eIFImL_TypeNumerique aType)
 {
     switch (aType)
     {
@@ -187,7 +189,7 @@ class cStdTiffModuleImageLoader : public cInterfModuleImageLoader
       StdDefinitMembreLoadCorrel(float,double);
 
       // 1
-      eTypeNumerique PreferedTypeOfResol(int aDeZoom )  const
+      eIFImL_TypeNumerique PreferedTypeOfResol(int aDeZoom )  const
       {
           switch(FileOfResol(aDeZoom).type_el())
           {
@@ -444,9 +446,9 @@ std::string     cStdTiffModuleImageLoader::CreateFileOfResol(int aDeZoom,bool Fo
    if (aGPAO && ForPrepare)
    {
        CreateFileOfResol(aDeZoom/2,ForPrepare);
-       std::string aCom =    MMBin() + "Reduc2MM "
-                           + aNameIn + " "
-                           + aName + " " 
+       std::string aCom =    MM3dBinFile_quotes( "Reduc2MM" )
+                           + protect_spaces(aNameIn) + " "
+                           + protect_spaces(aName) + " " 
                            + ToString(int(aType)) + " "
                            + ToString(int(aDivIm)) + " "
                            + ToString(mAppli.HasVSNI()) + " "
@@ -642,37 +644,50 @@ cInterfModuleImageLoader * cAppliMICMAC::GetMIL
 
 
  const cTplValGesInit< cModuleImageLoader > &  aMIL = aGIC->ModuleImageLoader();
- cInterfModuleImageLoader * aRes = 0;
+	cInterfModuleImageLoader * aRes = 0;
  if ( ! aMIL.IsInit())
  {
-#ifdef __USE_JP2__
+	 //on recupere l'extension
+	 int placePoint = -1;
+	 for(int l=aName.size()-1;(l>=0)&&(placePoint==-1);--l)
+	 {
+		 if (aName[l]=='.')
+		 {
+			 placePoint = l;
+		 }
+	 }
+	 std::string ext = std::string("");
+	 if (placePoint!=-1)
+	 {
+		 ext.assign(aName.begin()+placePoint+1,aName.end());
+	 }
+	 //std::cout << "Extension : "<<ext<<std::endl;
+	 
+#if defined (__USE_JP2__)
 	// on teste l'extension
-	int placePoint = -1;
-	for(int l=aName.size()-1;(l>=0)&&(placePoint==-1);--l)
-	{
-		if (aName[l]=='.')
-		{
-			placePoint = l;
-		}
-	}
-	std::string ext = std::string("");
-	if (placePoint!=-1)
-	{
-		ext.assign(aName.begin()+placePoint+1,aName.end());
-	}
-	//std::cout << "Extension : "<<ext<<std::endl;
-	if ((ext==std::string("jp2"))||(ext==std::string("JP2")))
+	if ((ext==std::string("jp2")) || 
+		(ext==std::string("JP2")) || 
+		(ext==std::string("Jp2")))
 	{
 		aRes = new JP2ImageLoader(DirImagesInit()+aName);
 	}
-	else aRes = new cStdTiffModuleImageLoader(*this,aName);
-#else
-    aRes = new cStdTiffModuleImageLoader(*this,aName);
 #endif
+#if defined (__USE_IMAGEIGN__)
+	 // on teste l'extension
+	 if ((aRes==NULL) && (boost::algorithm::iequals(ext,std::string("jp2"))|| 
+						 boost::algorithm::iequals(ext,std::string("ecw")) || 
+						 boost::algorithm::iequals(ext,std::string("jpg")) || 
+						 boost::algorithm::iequals(ext,std::string("dmr")) || 
+						 boost::algorithm::iequals(ext,std::string("bil"))))
+	 {
+		 aRes = new IgnSocleImageLoader(DirImagesInit()+aName);
+	 }
+#endif
+    if (aRes==NULL)
+		aRes = new cStdTiffModuleImageLoader(*this,aName);
  }
  else
  {
-
      cLibDynAllocator<cInterfModuleImageLoader> 
           mAlloc
           (
@@ -701,11 +716,10 @@ cInterfModuleImageLoader * cAppliMICMAC::GetMIL
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -721,17 +735,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

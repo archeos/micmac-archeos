@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
 /**************************************************/
 /*                                                */
@@ -260,8 +258,8 @@ void  cObservLiaison_1Cple::Compile
     // mCpleR2 = anAppli.SetEq().NewCpleCam(*(mPose1->CF()),*(mPose2->CF()),cNameSpaceEqF::eResiduIm2);
 
     std::vector<cCameraFormelle *>  aVCF;
-    aVCF.push_back(mPose1->CF());
-    aVCF.push_back(mPose2->CF());
+    aVCF.push_back(mPose1->CamF());
+    aVCF.push_back(mPose2->CamF());
 
     mPLiaisTer = new cManipPt3TerInc(aVCF[0]->Set(),mEqS,aVCF);
 
@@ -431,6 +429,87 @@ void cObservLiaison_1Cple::ImageResidu(cAgglomRRL & anAgl)
 /*                                                */
 /**************************************************/
 
+void cPackObsLiaison::addFileToObservation( 
+											const string &i_poseName1, const string &i_poseName2,
+											const string &i_packFilename,
+											const cBDD_PtsLiaisons &i_bd_liaison,
+											int i_iPackObs, // index of the current cPackObsLiaison in cAppliApero->mDicoLiaisons
+											bool i_isFirstKeySet,
+											bool i_isReverseFile // couples inside i_packFilename are to be reversed before use
+										  )
+{
+	std::string packFullFilename =  mAppli.OutputDirectory()+i_packFilename;
+	if (
+			( mAppli.NamePoseIsKnown(i_poseName1) && mAppli.NamePoseIsKnown(i_poseName2) ) &&
+			( ( i_poseName1!=i_poseName2 ) || ( !i_bd_liaison.AutoSuprReflexif().Val() ) )
+	   )
+	{
+		cPoseCam * aC1 =  mAppli.PoseFromName(i_poseName1);
+		cPoseCam * aC2 =  mAppli.PoseFromName(i_poseName2);
+		bool OkGrp = true;
+		if (i_bd_liaison.IdFilterSameGrp().IsInit())
+			OkGrp = mAppli.SameClass(i_bd_liaison.IdFilterSameGrp().Val(),*aC1,*aC2);
+			
+		if (OkGrp)
+		{
+			if (i_poseName1==i_poseName2)
+			{
+				std::cout << "FOR NAME POSE = " << i_poseName1 << "\n";
+				ELISE_ASSERT(false,"Point homologue image avec elle meme !! ");
+			}
+			double aPds=0;
+			int    aNbHom=0;
+			if (mIsMult)
+			{
+				if (DicBoolFind(mDicoMul,i_poseName1))
+					mDicoMul[i_poseName1]->AddLiaison(packFullFilename,i_poseName2,i_isFirstKeySet, i_isReverseFile );
+				else
+					mDicoMul[i_poseName1]  = new  cObsLiaisonMultiple(mAppli,packFullFilename,i_poseName1,i_poseName2,i_isFirstKeySet, i_isReverseFile);
+				cObsLiaisonMultiple * anObs = mDicoMul[i_poseName1];
+				ElPackHomologue aPack;
+				anObs->InitPack(aPack,i_poseName2);
+				aPds = mAppli.PdsOfPackForInit(aPack,aNbHom);
+			}
+			else
+			{
+				ELISE_ASSERT(i_isFirstKeySet,"Multiple Sets in Pts non multiple");
+				cObservLiaison_1Cple * anObs= new cObservLiaison_1Cple(i_bd_liaison,packFullFilename,i_poseName1,i_poseName2);
+				if (anObs->NbH() !=0)
+				{
+					mLObs.push_back(anObs);
+					{
+						cObservLiaison_1Cple * aO2 = mDicObs[i_poseName1][i_poseName2];
+						if (aO2 !=0)
+						{
+							std::cout << " For : " << mId << " " << i_poseName1 <<  " " << i_poseName2 <<"\n"; 
+							ELISE_ASSERT(false,"Entree multiple\n");
+						}
+					}
+					mDicObs[i_poseName1][i_poseName2] = anObs;
+					aPds = mAppli.PdsOfPackForInit(anObs->Pack(),aNbHom);
+				}
+			}
+			if (i_bd_liaison.SplitLayer().IsInit())
+				mAppli.SplitHomFromImageLayer(i_packFilename,i_bd_liaison.SplitLayer().Val(),i_poseName1,i_poseName2);
+			mAppli.AddLinkCam(aC1,aC2);
+			if (i_iPackObs==0)
+			{
+				tGrApero::TSom * aS1 =  mAppli.PoseFromName(i_poseName1)->Som();
+				tGrApero::TSom * aS2 =  mAppli.PoseFromName(i_poseName2)->Som();
+				tGrApero::TArc * anArc = mAppli.Gr().arc_s1s2(*aS1,*aS2);
+				if (!anArc) 
+				{
+					cAttrArcPose anAttr;
+					anArc = & mAppli.Gr().add_arc(*aS1,*aS2,anAttr);
+				}
+				anArc->attr().Pds() = aPds;
+				anArc->attr().Nb() = aNbHom;
+			}
+		}
+	}
+}
+
+
 cPackObsLiaison::cPackObsLiaison
 (
         cAppliApero & anAppli,
@@ -442,153 +521,93 @@ cPackObsLiaison::cPackObsLiaison
    mId        (aBDL.Id()),
    mFlagArc   (mAppli.Gr().alloc_flag_arc())
 {
-
-    ELISE_ASSERT
-    (
-        aBDL.KeySet().size() == aBDL.KeyAssoc().size(),
-        "KeySet / KeyAssoc sizes in BDD_PtsLiaisons"
-    );
-    int aNbTot = 0 ;
-    for (int aKS=0 ; aKS<int(aBDL.KeySet().size()) ; aKS++)
-    {
-        // std::string aDir = mAppli.DC() + aBDL.Directory().Val();
-        // std::list<std::string> aLName = RegexListFileMatch(aDir,aBDL.PatternSel(),1,false);
-
+	ELISE_ASSERT
+	(
+		aBDL.KeySet().size() == aBDL.KeyAssoc().size(),
+		"KeySet / KeyAssoc sizes in BDD_PtsLiaisons"
+	);
+		
+	int aNbTot = 0 ;
+	for (int aKS=0 ; aKS<int(aBDL.KeySet().size()) ; aKS++)
+	{
 		std::string keyset =  aBDL.KeySet()[aKS];
 		cInterfChantierNameManipulateur * iChantierNM = mAppli.ICNM();
-        const std::vector<std::string> * aVName =  iChantierNM->Get(keyset);
 
-        aNbTot += aVName->size();
+		if ( isUsingSeparateDirectories() ) iChantierNM->setDir( MMOutputDirectory() );
+		const std::vector<std::string> * aVName = iChantierNM->Get(keyset);
+		if ( isUsingSeparateDirectories() ) iChantierNM->setDir( MMInputDirectory() );
 
+		aNbTot += aVName->size();
 
-// std::cout << "=========BDL " << aVName->size() << "\n"; getchar();
+		if (1)
+		{
+			// if none of inverse files exist, filenames are processed in inverse order
+			bool addReverseFile = true;
+			for 
+			(
+				std::vector<std::string>::const_iterator itN = aVName->begin();
+				itN!=aVName->end();
+				itN++
+			)
+			{
+				pair<string,string> filenames = mAppli.ICNM()->Assoc2To1( aBDL.KeyAssoc()[aKS], *itN, false );
+				string reversePackname = mAppli.OutputDirectory()+mAppli.ICNM()->Assoc1To2( aBDL.KeyAssoc()[aKS], filenames.second, filenames.first, true );
+				if ( ELISE_fp::exist_file( reversePackname ) )
+				{
+					addReverseFile = false;
+					break;
+				}
+			}
+						
+			bool aFirst = true;
+			for 
+			(
+				std::vector<std::string>::const_iterator itN = aVName->begin();
+				itN!=aVName->end();
+				itN++
+			)
+			{
+				bool aMultiple =  aBDL.UseAsPtMultiple().ValWithDef(true);
+				if (aFirst)
+					mIsMult = aMultiple;
+				else
+					ELISE_ASSERT(mIsMult==aMultiple,"Incoherence Multiple/No-Multiple");
 
-        if (1)
-        {
-            // cElRegex anAutom(aBDL.PatternSel(),20);
-            bool aFirst = true;
-            for 
-            (
-                  std::vector<std::string>::const_iterator itN = aVName->begin();
-	          itN!=aVName->end();
-	          itN++
-            )
-            {
-	        bool aMultiple =  aBDL.UseAsPtMultiple().ValWithDef(true);
-	        std::string aFulName =  mAppli.DC() +*itN;
-	        if (aFirst)
-	        {
-	            mIsMult  = aMultiple;
-                }
-                else
-	        {
-	            ELISE_ASSERT(mIsMult==aMultiple,"Incoherence Multiple/No-Multiple");
-	        }
+				std::pair<std::string,std::string> aPair = mAppli.ICNM()->Assoc2To1(aBDL.KeyAssoc()[aKS],*itN,false);
+				
+				std::string aN1 = aPair.first;
+				std::string aN2 = aPair.second;
+				
+				addFileToObservation( aN1, aN2, *itN, aBDL, aCpt, aKS==0, false );
+				aFirst = false;
+			}
+						
+			if ( addReverseFile && mIsMult )
+			{
+				for 
+				(
+					std::vector<std::string>::const_iterator itN = aVName->begin();
+					itN!=aVName->end();
+					itN++
+				)
+				{
+					std::pair<std::string,std::string> aPair = mAppli.ICNM()->Assoc2To1(aBDL.KeyAssoc()[aKS],*itN,false);
+					addFileToObservation( aPair.second, aPair.first, *itN, aBDL, aCpt, aKS==0, true );
+				}
+			}
+		}
+		else
+		{ // On rajoutera ici le cas ou fichier contient N Pack
+		}
+	}
 
-	        // std::string aN1 = MatchAndReplace(anAutom,*itN,aBDL.NameIm1());
-	        // std::string aN2 = MatchAndReplace(anAutom,*itN,aBDL.NameIm2());
-	        std::pair<std::string,std::string> aPair = mAppli.ICNM()->Assoc2To1(aBDL.KeyAssoc()[aKS],*itN,false);
-	        std::string aN1 = aPair.first;
-	        std::string aN2 = aPair.second;
-
-// std::cout << aN1 << " " << aN2 << "\n";
-// getchar();
-	        if (
-                           (mAppli.NamePoseIsKnown(aN1) && mAppli.NamePoseIsKnown(aN2))
-                       && ((aN1!=aN2) || (! aBDL.AutoSuprReflexif().Val()))
-                   )
-	        {
-                    cPoseCam * aC1 =  mAppli.PoseFromName(aN1);
-                    cPoseCam * aC2 =  mAppli.PoseFromName(aN2);
-                    bool OkGrp = true;
-                    if (aBDL.IdFilterSameGrp().IsInit())
-                    {
-                         OkGrp = mAppli.SameClass(aBDL.IdFilterSameGrp().Val(),*aC1,*aC2);
-                    }
-                    // std::cout << "GRP " << aC1->Name() << " " << aC2->Name() << " " << OkGrp << "\n";
-                    if (OkGrp)
-                    {
-                        if (aN1==aN2)
-                        {
-                            std::cout << "FOR NAME POSE = " << aN1 << "\n";
-                            ELISE_ASSERT(false,"Point homologue image avec elle meme !! ");
-                        }
-                        double aPds=0;
-                        int    aNbHom=0;
-	                if (mIsMult)
-		        {
-		            // cObsLiaisonMultiple * & anOLM = mDicoMul[aN1];
-
-		            if (DicBoolFind(mDicoMul,aN1))
-		            {
-		                mDicoMul[aN1]->AddLiaison(aFulName,aN2,aKS==0);
-		            }
-		            else
-		            {
-                               mDicoMul[aN1]  = new  cObsLiaisonMultiple(anAppli,aFulName,aN1,aN2,aKS==0);
-		            }
-                            cObsLiaisonMultiple * anObs = mDicoMul[aN1];
-                            ElPackHomologue aPack;
-                            anObs->InitPack(aPack,aN2);
-                            aPds = mAppli.PdsOfPackForInit(aPack,aNbHom);
-		        }
-		        else
-		        {
-                            ELISE_ASSERT(aKS==0,"Multiple Sets in Pts non multiple");
-	                    cObservLiaison_1Cple * anObs= new cObservLiaison_1Cple(aBDL,aFulName,aN1,aN2);
-		            if (anObs->NbH() !=0)
-		            {
-	                      mLObs.push_back(anObs);
-	                      {
-                                 cObservLiaison_1Cple * aO2 = mDicObs[aN1][aN2];
-                                 if (aO2 !=0)
-                                 {
-                                    std::cout << " For : " << mId << " " << aN1 <<  " " << aN2 <<"\n"; 
-		                    ELISE_ASSERT(false,"Entree multiple\n");
-                                 }
-	                      }
-	                      mDicObs[aN1][aN2] = anObs;
-                              aPds = mAppli.PdsOfPackForInit(anObs->Pack(),aNbHom);
-		            }
-		        }
-                        if (aBDL.SplitLayer().IsInit())
-                        {
-                            mAppli.SplitHomFromImageLayer(*itN,aBDL.SplitLayer().Val(),aN1,aN2);
-                        }
-                        mAppli.AddLinkCam(aC1,aC2);
-                        if (aCpt==0)
-                        {
-                           tGrApero::TSom * aS1 =  mAppli.PoseFromName(aN1)->Som();
-                           tGrApero::TSom * aS2 =  mAppli.PoseFromName(aN2)->Som();
-                           tGrApero::TArc * anArc = mAppli.Gr().arc_s1s2(*aS1,*aS2);
-                           if (!anArc) 
-                           {
-                              cAttrArcPose anAttr;
-                              anArc = & mAppli.Gr().add_arc(*aS1,*aS2,anAttr);
-                           }
-                           anArc->attr().Pds() = aPds;
-                           anArc->attr().Nb() = aNbHom;
-                           // anArc->arc_rec().attr() = anArc->attr();
-                        }
-	            }
-	        }
-	        aFirst = false;
-            }
-        }
-        else
-        {
-            // On rajoutera ici le cas ou fichier contient N Pack
-        }
-    }
-
-    // for (std::list<std::string>::cons_iterator itP
-
-    std::cout << "NB PACK PTS " << aNbTot << "\n";
-    if (aNbTot == 0)
-    {
-        std::cout << "FOR LIAISONS " <<  aBDL.Id() << "\n";
-        ELISE_ASSERT(false,"Cannot find any pack\n");
-    }
+        if (mAppli.ShowMes())
+	   std::cout << "NB PACK PTS " << aNbTot << "\n";
+	if (aNbTot == 0)
+	{
+		std::cout << "FOR LIAISONS " <<  aBDL.Id() << "\n";
+		ELISE_ASSERT(false,"Cannot find any pack\n");
+	}
 }
 
 
@@ -834,6 +853,7 @@ void  cPackObsLiaison::GetPtsTerrain
                         mAppli.ICNM()->Assoc1To2(aPEP.KeyCalculMasq().Val(),aNameP,anAttr,true):
                         mAppli.ICNM()->StdCorrect(aPEP.KeyCalculMasq().Val(),aNameP,true);
                   aNameM = mAppli.DC() + aNameM;
+
                   Tiff_Im aTF = Tiff_Im::UnivConvStd(aNameM);
                   Pt2di aSz = aTF.sz();
                   aM = Im2D_Bits<1>(aSz.x,aSz.y);
@@ -860,7 +880,7 @@ double cPackObsLiaison::AddObs
    double aSEr=0;
 
 // SPECIAL DEBUG CHOLESKY
-   cElRegex aRegDebug("062",10);
+   cElRegex aRegDebug("XXhjkjYtiuoiu062",10);
 
    if (mIsMult)
    {
@@ -890,6 +910,7 @@ double cPackObsLiaison::AddObs
                     aSEr +=  anOLM->BasicAddObsLM (aPond,aSO,aRAZ);
                  }
              }
+
          }
       }
    }
@@ -911,14 +932,36 @@ double cPackObsLiaison::AddObs
            }
        }
    }
+
    aSEr /= aS1;
 
    if (aS1 && (int(aPond.Show().Val()) >= int(eNSM_Iter)))
    {
+       double aSqrtEr = sqrt(aSEr);
+       mAppli.CurXmlE().AverageResidual() = aSqrtEr;
        mAppli.COUT() << "| | " << " RESIDU LIAISON MOYENS = "  
-                 << sqrt(aSEr) << " pour " << mId << "\n";
+                 <<  aSqrtEr << " pour " << mId ;
+       if (aSO.PdsEvol())
+       {
+           mAppli.CurXmlE().EvolMax().SetVal(aSO.MaxEvol());
+           mAppli.CurXmlE().EvolMoy().SetVal(aSO.MoyEvol());
+           mAppli.COUT() << " Evol, Moy=" <<  aSO.MoyEvol() << " ,Max=" << aSO.MaxEvol() ;
+       }
+       mAppli.COUT() <<  "\n";
 
+
+
+
+       if (TheExitOnNan)
+       {
+           if (std_isnan(aSqrtEr))
+           {
+              ElEXIT(1,"Nan value in residual");
+           }
+       }
    }
+
+
 
    return aSEr;
 }
@@ -1035,7 +1078,6 @@ bool  cAppliApero::InitPackPhgrm
           const std::string& aN2,CamStenope * aCam2
      )
 {
-// std::cout << aN1 << " " << aN2 << "\n";
    bool aRes = InitPack(anId,aPack,aN1,aN2);
    aPack = aCam1->F2toPtDirRayonL3(aPack,aCam2);
    return aRes;
@@ -1059,7 +1101,6 @@ void  cAppliApero::CompileLiaisons()
 
 
 
-};
 
 
 
@@ -1068,7 +1109,7 @@ void  cAppliApero::CompileLiaisons()
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1084,17 +1125,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

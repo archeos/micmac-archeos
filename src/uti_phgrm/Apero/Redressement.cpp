@@ -47,8 +47,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 /*******************************************/
 
 
-namespace NS_ParamApero
-{
 
 Fonc_Num GamCor(Fonc_Num aF,double aGamma)
 {
@@ -70,7 +68,7 @@ void cAppliApero::ExportRedressement(const cExportRedressement & anER,cPoseCam &
           return;
     }
     std::string aName = aPC.Name();
-    std::string aNameImOut= mDC+mICNM->Assoc1To1(anER.KeyAssocOut(),aName,true);
+    std::string aNameImOut= mOutputDirectory+mICNM->Assoc1To1(anER.KeyAssocOut(),aName,true);
     if (anER.DoOnlyIfNew().Val() && ELISE_fp::exist_file(aNameImOut))
        return;
 
@@ -205,7 +203,6 @@ void cAppliApero::ExportRedressement(const cExportRedressement & anER)
 }
 
 
-};
 
 
 

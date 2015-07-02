@@ -41,8 +41,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-using namespace NS_ParamChantierPhotogram;
-
 
 
 /*************************************************/
@@ -332,12 +330,21 @@ std::vector<Pt3dr> cProj4::Chang(const std::vector<Pt3dr> & aPtsIn, bool Sens2Ge
 
    std::string aTmpOut = "Proj4Output.txt";
 
-   std::string aCom =    std::string( std::string(SYS_CAT) + " " + aTmpIn + " | ")
-                       + g_externalToolHandler.get( std::string(Sens2GeoC ? "invproj" : "proj") ).callName() + ' '
-                       + std::string(" -f %.7f ")
-                       + mStr
-                       + " > " 
-                       + aTmpOut;
+	#if ELISE_windows
+	   std::string aCom =  g_externalToolHandler.get("proj").callName() + (Sens2GeoC?" -I ":" ")
+						   + std::string(" -f %.7f ")
+						   + mStr
+						   + " " + aTmpIn
+						   + " > " 
+						   + aTmpOut;
+	#else
+	   std::string aCom =    std::string( std::string(SYS_CAT) + " " + aTmpIn + " | ")
+						   + g_externalToolHandler.get("proj").callName() + (Sens2GeoC?" -I ":" ")
+						   + std::string(" -f %.7f ")
+						   + mStr
+						   + " > " 
+						   + aTmpOut;
+	#endif
 
    VoidSystem(aCom.c_str());
 
@@ -821,6 +828,7 @@ void cSysCoordPolyn::InitByApr
 
 cSysCoord * cSysCoord::GeoC() { return cGeoc_SC::TheOne(); }
 cSysCoord * cSysCoord::WGS84() { return cGeoc_WGS4::TheOne(); }
+cSysCoord * cSysCoord::WGS84Degre() { return cGeoc_WGS4::TheOneDeg(); }
 
 cSysCoordPolyn * cSysCoord::TypedModelePolyNomial 
             (
@@ -1458,7 +1466,11 @@ std::vector<Pt3dr>  cChSysCo::Cibl2Src(const std::vector<Pt3dr> & aP) const
 
 void cChSysCo::ChangCoordCamera(const std::vector<ElCamera *> & aVCam,bool ForceRot)
 {
-    ElCamera::ChangeSys(aVCam,*mSrc,*mCibl,ForceRot);
+    ElCamera::ChangeSys(aVCam,*this,ForceRot,true);
+}
+
+cChSysCo::~cChSysCo()
+{
 }
 
 /*

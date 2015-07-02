@@ -40,6 +40,8 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef  _PHGR_DIST_UNIF_H_
 #define  _PHGR_DIST_UNIF_H_
 
+//#define __DEBUG_EL_CAMERA
+
 /*
    Ce fichier contient une (tentative de ?) implantation unifiee 
    des calibration internes qui fasse le lien entre : la distortion
@@ -119,7 +121,7 @@ template <class TDistR,class TDistF,const int NbVar,const int NbState>
 {
     public :
 
-        NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const ElCamera *) const;
+        cCalibDistortion ToXmlStruct(const ElCamera *) const;
         bool  AcceptScaling() const;
         bool  AcceptTranslate() const;
         void V_SetScalingTranslate(const double & F,const Pt2dr & aPP);
@@ -188,7 +190,6 @@ template <class TDistR,class TDistF,const int NbVar,const int NbState>
 
 
            bool IsFE()  const;
-
            cCamera_Param_Unif
 	   (
 	            bool isDistC2M,
@@ -220,6 +221,12 @@ template <class TDistR,class TDistF,const int NbVar,const int NbState>
             ElDistortion22_Gen   *  DistPreCond() const ;
      private  :
             tDist   *mDist;
+
+#ifdef __DEBUG_EL_CAMERA
+	public:
+		cCamera_Param_Unif( const cCamera_Param_Unif<TDistR,TDistF,NbVar,NbState> &i_b );
+		cCamera_Param_Unif<TDistR,TDistF,NbVar,NbState> & operator =( const cCamera_Param_Unif<TDistR,TDistF,NbVar,NbState> &i_b );
+#endif
 };
 
 
@@ -259,6 +266,7 @@ template <class TDistR,class TDistF,const int NbVar,const int NbState>
 	  virtual CamStenope * CurPIF(); ;
 	  virtual CamStenope * DupCurPIF(); ;
 	  tCam   CurPIFUnif();
+	  tCam * newCurPIFUnif();
 	  void    UpdateCurPIF();
 	  void    NV_UpdateCurPIF();
 
@@ -309,7 +317,7 @@ template <class TDistR,class TDistF,const int NbVar,const int NbState>
 class cGeneratorElemStd
 {
      public :
-        static NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
+        static cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
 };
 
 class cGeneratorElem
@@ -335,6 +343,11 @@ class cGeneratorDRadFraser : public cGeneratorElem
         static int  DegreOfPolyn(const int * aDegGlob,int aK,eModeControleVarDGen); // Par defaut utilise le mDegrePolyn
 };
 
+template <const int TheNbRad> class cGeneratorFour : public cGeneratorElem
+{
+     public :
+        static int  DegreOfPolyn(const int * aDegGlob,int aK,eModeControleVarDGen); // Par defaut utilise le mDegrePolyn
+};
 
 class cGeneratorNoScaleTr
 {
@@ -378,8 +391,8 @@ class cGeneratorState_FPP_ScaleTr
 class cGeneratorState_DRadScaleTr
 {
     public :
-       // static NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,ElCamera *) ;
-        static NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
+       // static cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,ElCamera *) ;
+        static cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
        static bool AcceptScalingTranslate();
        static void SetScalingTranslate(const double & F,const Pt2dr & aPP,double * State,double *Vars);
 };
@@ -387,7 +400,7 @@ class cGeneratorState_DRadScaleTr
 class cGeneratorState_FraserScaleTr 
 {
     public :
-       static NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
+       static cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
        static bool AcceptScalingTranslate();
        static void SetScalingTranslate(const double & F,const Pt2dr & aPP,double * State,double *Vars);
 };
@@ -413,6 +426,57 @@ template <class Type> class cFraserModel_Generator : public cGeneratorDRadFraser
 };
 	                
 
+template <class Type> class cDistRadFour7x2_Generator : public cGeneratorFour<3>,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+template <class Type> class cDistRadFour11x2_Generator : public cGeneratorFour<5>,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+template <class Type> class cDistRadFour15x2_Generator : public cGeneratorFour<7>,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+
+template <class Type> class cDistRadFour19x2_Generator : public cGeneratorFour<9>,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+
+template <class Type> class cDistRadFour19x4_Generator : public cGeneratorFour<9>,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+template <class Type> class cDistRadFour19x6_Generator : public cGeneratorElem,
+                                                      public cGeneratorElemStd,
+                                                      public cGeneratorState_FPP_ScaleTr
+{
+     public :
+
+         static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
+};
+
 
 
 
@@ -425,6 +489,8 @@ template <class Type> class cDistGen_Deg2_Generator : public cGeneratorElem,
 
          static Pt2d<Type>   DistElem(bool UsePC,const Pt2d<Type> &,const Type * Vars,const Type * States,const Type & aFoc,const Pt2d<Type> & aPP);
 };
+
+
 
 template <class Type> class cDistGen_Deg3_Generator : public cGeneratorElem,
                                                       public cGeneratorElemStd,
@@ -507,7 +573,7 @@ template <class TPreC,const int NbRad,const int NbDec,const int NbPolyn,const in
      class cDistGen_FishEye_Generator  : public cGeneratorNoScaleTr
 {
      public :
-       static NS_ParamChantierPhotogram::cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
+       static cCalibDistortion ToXmlStruct(const cDist_Param_Unif_Gen & aCam,const ElCamera *) ;
         static bool IsFE() ;
          static bool UseSz();
          static Fonc_Num  NormGradC2M(Pt2d<Fonc_Num> ,Fonc_Num *);
@@ -621,6 +687,25 @@ typedef  cDist_Param_Unif<cDistGen_Deg7_Generator<double>,cDistGen_Deg7_Generato
 typedef  cCamera_Param_Unif<cDistGen_Deg7_Generator<double>,cDistGen_Deg7_Generator<Fonc_Num>,66,3> cCam_Polyn7;
 typedef  cPIF_Unif<cDistGen_Deg7_Generator<double>,cDistGen_Deg7_Generator<Fonc_Num>,66,3> cPIF_Polyn7;
 
+
+
+// 2 CDid 3 DRad + 6 Deg2
+typedef  cDist_Param_Unif<cDistRadFour7x2_Generator<double>,cDistRadFour7x2_Generator<Fonc_Num>,11,3>   cDist_RadFour7x2;
+typedef  cCamera_Param_Unif<cDistRadFour7x2_Generator<double>,cDistRadFour7x2_Generator<Fonc_Num>,11,3> cCam_RadFour7x2;
+typedef  cPIF_Unif<cDistRadFour7x2_Generator<double>,cDistRadFour7x2_Generator<Fonc_Num>,11,3>          cPIF_RadFour7x2;
+
+
+typedef  cDist_Param_Unif<cDistRadFour11x2_Generator<double>,cDistRadFour11x2_Generator<Fonc_Num>,13,3>   cDist_RadFour11x2;
+typedef  cCamera_Param_Unif<cDistRadFour11x2_Generator<double>,cDistRadFour11x2_Generator<Fonc_Num>,13,3> cCam_RadFour11x2;
+typedef  cPIF_Unif<cDistRadFour11x2_Generator<double>,cDistRadFour11x2_Generator<Fonc_Num>,13,3>          cPIF_RadFour11x2;
+
+typedef  cDist_Param_Unif<cDistRadFour15x2_Generator<double>,cDistRadFour15x2_Generator<Fonc_Num>,15,3>   cDist_RadFour15x2;
+typedef  cCamera_Param_Unif<cDistRadFour15x2_Generator<double>,cDistRadFour15x2_Generator<Fonc_Num>,15,3> cCam_RadFour15x2;
+typedef  cPIF_Unif<cDistRadFour15x2_Generator<double>,cDistRadFour15x2_Generator<Fonc_Num>,15,3>          cPIF_RadFour15x2;
+
+typedef  cDist_Param_Unif<cDistRadFour19x2_Generator<double>,cDistRadFour19x2_Generator<Fonc_Num>,17,3>   cDist_RadFour19x2;
+typedef  cCamera_Param_Unif<cDistRadFour19x2_Generator<double>,cDistRadFour19x2_Generator<Fonc_Num>,17,3> cCam_RadFour19x2;
+typedef  cPIF_Unif<cDistRadFour19x2_Generator<double>,cDistRadFour19x2_Generator<Fonc_Num>,17,3>          cPIF_RadFour19x2;
 
 
 // Methodes deplacees dans le header suite a des erreurs de compilation sous MacOS entre gcc4.0 et gcc4.2 (LLVM)

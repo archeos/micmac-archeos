@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -43,8 +43,10 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-using namespace NS_ParamChantierPhotogram;
 
+bool DebugOFPA = false;
+int aCPTOkOFA = 0;
+int aCPTNotOkOFA = 0;
 bool BugFE = false;
 bool BugAZL = false;
 
@@ -52,13 +54,13 @@ static void ToSepList
             (
                     ElSTDNS list<Pt3dr> & PR3 ,
                     ElSTDNS list<Pt2dr> & PF2 ,
-                    const ElSTDNS list<Appar23> & P23 
+                    const ElSTDNS list<Appar23> & P23
             )
 {
     PR3.clear();
     PF2.clear();
 
-    for 
+    for
     (
           ElSTDNS list<Appar23>::const_iterator It23 = P23.begin();
           It23 != P23.end();
@@ -94,7 +96,7 @@ Appar23  BarryImTer(const std::list<Appar23> & aLAp)
    Pt3dr aPTer(0,0,0);
    Pt2dr aPIm(0,0);
    double aS=0;
-   for 
+   for
    (
        std::list<Appar23>::const_iterator itAp=aLAp.begin();
        itAp!=aLAp.end();
@@ -111,7 +113,7 @@ Appar23  BarryImTer(const std::list<Appar23> & aLAp)
 
 void InvY(std::list<Appar23> & aLAp,Pt2dr aSzIm,bool InvX)
 {
-   for 
+   for
    (
        std::list<Appar23>::iterator itAp=aLAp.begin();
        itAp!=aLAp.end();
@@ -132,8 +134,30 @@ void InvY(std::list<Appar23> & aLAp,Pt2dr aSzIm,bool InvX)
 
 cNupletPtsHomologues::cNupletPtsHomologues(int aNb,double aPds) :
     mPts (aNb),   // De taille aNb avec N element par defaut
-    mPds (aPds)
+    mPds (aPds),
+    mFlagDr (0)
 {
+}
+
+bool cNupletPtsHomologues::IsDr(int aK) const
+{
+   return IsValideFlagDr(aK) && ( (mFlagDr& (1<<aK)) !=0);
+}
+
+void   cNupletPtsHomologues::SetDr(int aK)
+{
+   AssertIsValideFlagDr(aK);
+   mFlagDr |= (1<<aK);
+}
+
+bool cNupletPtsHomologues::IsValideFlagDr(int aK) const
+{
+   return (aK>=0) && (aK<31) && (aK<int(mPts.size()));
+}
+
+void cNupletPtsHomologues::AssertIsValideFlagDr(int aK) const
+{
+   ELISE_ASSERT(IsValideFlagDr(aK),"cNupletPtsHomologues::AssertIsValideFlagDr");
 }
 
 void cNupletPtsHomologues::AddPts(const Pt2dr & aPt)
@@ -151,12 +175,12 @@ int cNupletPtsHomologues::NbPts() const
    return mPts.size();
 }
 
-const Pt2dr & cNupletPtsHomologues::PK(int aK) const 
+const Pt2dr & cNupletPtsHomologues::PK(int aK) const
 {
    ELISE_ASSERT((aK>=0) && (aK<int(mPts.size())),"cNupletPtsHomologues::PK");
    return mPts[aK];
 }
-Pt2dr & cNupletPtsHomologues::PK(int aK) 
+Pt2dr & cNupletPtsHomologues::PK(int aK)
 {
    ELISE_ASSERT((aK>=0) && (aK<int(mPts.size())),"cNupletPtsHomologues::PK");
    return mPts[aK];
@@ -182,7 +206,7 @@ cNupletPtsHomologues cNupletPtsHomologues::read(ELISE_fp & aFile)
 
     for (int aK=0 ; aK< aNb ; aK++)
         aRes.mPts[aK] = aFile.read((Pt2dr *) 0);
-    
+
    return aRes;
 }
 
@@ -202,24 +226,24 @@ const ElCplePtsHomologues & cNupletPtsHomologues::ToCple() const
    return static_cast<const ElCplePtsHomologues &> (*this);
 }
 
-const Pt2dr & cNupletPtsHomologues::P1() const 
+const Pt2dr & cNupletPtsHomologues::P1() const
 {
    AssertD2();
    return mPts[0];
 }
-Pt2dr & cNupletPtsHomologues::P1() 
+Pt2dr & cNupletPtsHomologues::P1()
 {
    AssertD2();
    return mPts[0];
 }
 
 
-const Pt2dr & cNupletPtsHomologues::P2() const 
+const Pt2dr & cNupletPtsHomologues::P2() const
 {
    AssertD2();
    return mPts[1];
 }
-Pt2dr & cNupletPtsHomologues::P2() 
+Pt2dr & cNupletPtsHomologues::P2()
 {
    AssertD2();
    return mPts[1];
@@ -269,7 +293,7 @@ INT cPackNupletsHom::size() const
   return (INT) mCont.size();
 }
 
-void cPackNupletsHom::clear() 
+void cPackNupletsHom::clear()
 {
     mCont.clear();
 }
@@ -280,7 +304,7 @@ cPackNupletsHom::iterator       cPackNupletsHom::end() {return mCont.end();}
 cPackNupletsHom::const_iterator cPackNupletsHom::end() const {return mCont.end();}
 
 
-cNupletPtsHomologues & cPackNupletsHom::back() 
+cNupletPtsHomologues & cPackNupletsHom::back()
 {
    ELISE_ASSERT(!mCont.empty(),"Empty in ElPackHomologue::back");
    return mCont.back();
@@ -297,7 +321,7 @@ void cPackNupletsHom::AddNuplet(const cNupletPtsHomologues & aNuple)
    mCont.push_back(aNuple);
 }
 
-cPackNupletsHom::tIter  cPackNupletsHom::NearestIter(Pt2dr aP,int aK) 
+cPackNupletsHom::tIter  cPackNupletsHom::NearestIter(Pt2dr aP,int aK)
 {
      REAL dMin = -1;
      ElPackHomologue::tIter aRes = mCont.end();
@@ -349,9 +373,9 @@ std::vector<Pt3dr> * StdNuage3DFromFile(const std::string & aName)
         std::cout << "For Name " << aName << "\n";
         ELISE_ASSERT(false,"StdNuage3DFromFile name un post-fixed");
    }
-   
+
    std::string aPost = StdPostfix(aName);
-   
+
    if (aPost=="dat")
    {
        std::vector<Pt3dr> *  aRes = new std::vector<Pt3dr> ;
@@ -363,7 +387,7 @@ std::vector<Pt3dr> * StdNuage3DFromFile(const std::string & aName)
            aRes->push_back(aFile.read((Pt3dr *)0));
 
        return aRes;
-   }   
+   }
    std::cout << "For Name " << aName << "\n";
    ELISE_ASSERT(false,"unsuported post-fix");
    return NULL;
@@ -423,7 +447,7 @@ void ElPackHomologue::ApplyHomographies
 
 Polynome2dReal  ElPackHomologue::FitPolynome
                 (
-		     bool aL2,
+             bool aL2,
                      INT aDegre,
                      REAL anAmpl,
                      bool aFitX
@@ -440,6 +464,8 @@ Polynome2dReal  ElPackHomologue::FitPolynome
     else
         aSys = new SystLinSurResolu(aNbMon,(INT)size());
 
+     aSys->SetPhaseEquation(0);
+
     Im1D_REAL8  aIMCoeff(aNbMon);
     double * aDC = aIMCoeff.data();
 
@@ -453,11 +479,11 @@ Polynome2dReal  ElPackHomologue::FitPolynome
          for (INT kMon =0 ; kMon<aNbMon ; kMon++)
          {
                // Flin(kMon,kCpl) = aPol.KthMonome(kMon)(aP1) * aPds;
-	       aDC[kMon] = aPol.KthMonome(kMon)(aP1);
+           aDC[kMon] = aPol.KthMonome(kMon)(aP1);
          }
-           
+
          // Flin(aNbMon,kCpl) =  - (aFitX ?  aP2.x : aP2.y) * aPds;
-	 aSys->GSSR_AddNewEquation(aPds,aDC,(aFitX?aP2.x:aP2.y),0);
+     aSys->GSSR_AddNewEquation(aPds,aDC,(aFitX?aP2.x:aP2.y),0);
          kCpl++;
     }
 
@@ -534,7 +560,7 @@ void ElPackHomologue::PrivDirEpipolaire(Pt2dr & aRes1,Pt2dr & aRes2,INT aSz) con
               delete aCple;
         }
     }
-	{
+    {
     for (INT aK1=0 ; aK1<aSz ; aK1++)
         for (INT aK2=0 ; aK2<aSz ; aK2++)
         {
@@ -547,18 +573,18 @@ void ElPackHomologue::PrivDirEpipolaire(Pt2dr & aRes1,Pt2dr & aRes2,INT aSz) con
              );
               aScoreMoy.data()[aK2][aK1] = ecart;
         }
-	}
-    
+    }
+
 
 
 
     Pt2di aPK;
     ELISE_COPY(aScoreMoy.all_pts(),aScoreMoy.in(),aPK.WhichMin());
-  
+
 
     aRes1 = Pt2dr::FromPolar(1,(aPK.x + 0.5)* 3.14 /aSz);
     aRes2 = Pt2dr::FromPolar(1,(aPK.y + 0.5)* 3.14 /aSz);
- 
+
 
 }
 
@@ -624,7 +650,7 @@ const ElCplePtsHomologues * ElPackHomologue::Cple_Nearest(Pt2dr aP,bool P1) cons
 }
 
 
-void   ElPackHomologue::Cple_RemoveNearest(Pt2dr aP,bool P1) 
+void   ElPackHomologue::Cple_RemoveNearest(Pt2dr aP,bool P1)
 {
        Nuple_RemoveNearest(aP,P1?0:1);
 }
@@ -643,8 +669,8 @@ StatElPackH::StatElPackH
     mSomD1 (0),
     mSomD2 (0)
 {
-    for 
-    (   
+    for
+    (
         ElPackHomologue::const_iterator itC = aPackH.begin();
         itC != aPackH.end();
         itC++
@@ -660,8 +686,8 @@ StatElPackH::StatElPackH
     mCdg2 = mCdg2 / mSPds;
 
     {
-      for 
-      (   
+      for
+      (
           ElPackHomologue::const_iterator itC = aPackH.begin();
           itC != aPackH.end();
           itC++
@@ -690,7 +716,7 @@ REAL  StatElPackH::SomD2 () const { return mSomD2;}
 
 void Verif(const double & aV,const std::string & aName)
 {
-    if (isnan(aV))
+    if (std_isnan(aV))
     {
         std::cout << "in File " << aName << "\n";
         ELISE_ASSERT(false,"Pb in Pt reading");
@@ -729,7 +755,7 @@ ElPackHomologue ElPackHomologue::FromFile(const std::string & aName)
           Verif(aPck,aName);
           return aPck;
        }
-     
+
        if (StdPostfix(aName)=="dat")
        {
             ELISE_fp aFP(aName.c_str(),ELISE_fp::READ);
@@ -753,7 +779,7 @@ ElPackHomologue ElPackHomologue::FromFile(const std::string & aName)
                 {
                    Pt2dr aP1,aP2;
                    sscanf(aBuf.c_str(),"%lf %lf %lf %lf",&aP1.x,&aP1.y,&aP2.x,&aP2.y); //sscanf(aBuf.c_str(),"%lf %lf %lf %lf",&aP1.x,&aP1.y,&aP2.x,&aP2.y); TEST_OVERFLOW
-                   
+
                     aPck.Cple_Add(ElCplePtsHomologues(aP1,aP2,1.0));
                 }
             }
@@ -802,7 +828,7 @@ void ElPackHomologue::StdAddInFile(const std::string & aName) const
    aPack.StdPutInFile(aName);
 }
 
-void  ElPackHomologue::Add(const  ElPackHomologue & aPack) 
+void  ElPackHomologue::Add(const  ElPackHomologue & aPack)
 {
      for (const_iterator itP=aPack.begin();itP!=aPack.end();itP++)
        Cple_Add(itP->ToCple());
@@ -826,7 +852,7 @@ void ElPackHomologue::StdPutInFile(const std::string & aName) const
   else if (aPost=="txt")
   {
        FILE * aFP = FopenNN(aName,"w","ElPackHomologue::StdPutInFile");
-       for 
+       for
        (
            ElPackHomologue::const_iterator itP=begin();
            itP!=end();
@@ -875,7 +901,7 @@ cElImPackHom::cElImPackHom
    mImXn.push_back(Im2D_REAL4(aSzR.x,aSzR.y));
    mImYn.push_back(Im2D_REAL4(aSzR.x,aSzR.y));
    mImPdsN.push_back(Im2D_REAL4(aSzR.x,aSzR.y,0.0));
-   
+
    TIm2D<REAL4,REAL8> aTX1(mImX1);
    TIm2D<REAL4,REAL8> aTY1(mImY1);
    TIm2D<REAL4,REAL8> aTX2(mImXn[0]);
@@ -887,26 +913,26 @@ cElImPackHom::cElImPackHom
    {
         Pt2dr aP1 = itP->P1();
         Pt2dr aP2 = itP->P2();
-	// Pt2dr aFrac = aP1-round_ni(aP1);
-	Pt2di aPInd (round_down(aP1.x/mSsResol),round_down(aP1.y/mSsResol));
-	//ELISE_ASSERT(euclid(aFrac)<1e-4,"Non Int in cElImPackHom::cElImPackHom");
-	if (aTPds.get(aPInd)!=0.0)
-	{
-	    std::cout << "PDS  " << aPInd << "=" << aTPds.get(aPInd) << " NEW PDS " << itP->Pds() << "\n";
-	    std::cout << aP1 << aP2 << "\n";
-	    std::cout <<  "OLD P1 " << aTX1.get(aPInd) << " " << aTY1.get(aPInd) << "\n";
-	    std::cout <<  "RESOL  " <<  mSsResol << "\n";
+    // Pt2dr aFrac = aP1-round_ni(aP1);
+    Pt2di aPInd (round_down(aP1.x/mSsResol),round_down(aP1.y/mSsResol));
+    //ELISE_ASSERT(euclid(aFrac)<1e-4,"Non Int in cElImPackHom::cElImPackHom");
+    if (aTPds.get(aPInd)!=0.0)
+    {
+        std::cout << "PDS  " << aPInd << "=" << aTPds.get(aPInd) << " NEW PDS " << itP->Pds() << "\n";
+        std::cout << aP1 << aP2 << "\n";
+        std::cout <<  "OLD P1 " << aTX1.get(aPInd) << " " << aTY1.get(aPInd) << "\n";
+        std::cout <<  "RESOL  " <<  mSsResol << "\n";
 
-	    ELISE_ASSERT(false,"Multiple indexe in cElImPackHom::cElImPackHom");
+        ELISE_ASSERT(false,"Multiple indexe in cElImPackHom::cElImPackHom");
         }
 
-	aTX1.oset(aPInd,aP1.x);
-	aTY1.oset(aPInd,aP1.y);
-	aTX2.oset(aPInd,aP2.x);
-	aTY2.oset(aPInd,aP2.y);
-	aTPds.oset(aPInd,itP->Pds());
+    aTX1.oset(aPInd,aP1.x);
+    aTY1.oset(aPInd,aP1.y);
+    aTX2.oset(aPInd,aP2.x);
+    aTY2.oset(aPInd,aP2.y);
+    aTPds.oset(aPInd,itP->Pds());
    }
-   
+
 }
 
 cElImPackHom::cElImPackHom(const std::string & aNF) :
@@ -917,7 +943,7 @@ cElImPackHom::cElImPackHom(const std::string & aNF) :
    mImXn.push_back(Im2D_REAL4(mSz.x,mSz.y));
    mImYn.push_back(Im2D_REAL4(mSz.x,mSz.y));
    mImPdsN.push_back(Im2D_REAL4(mSz.x,mSz.y));
-   
+
    Tiff_Im aTF = Tiff_Im::BasicConvStd(aNF);
    ELISE_ASSERT
    (
@@ -943,19 +969,19 @@ void cElImPackHom::AddFile(const std::string & aName)
     ELISE_COPY
     (
         select
-	(
-	    mImX1.all_pts(),
-	    (mImPdsN[0].in()>1e-5) && (aPack2.mImPdsN[0].in()>1e-5)
+    (
+        mImX1.all_pts(),
+        (mImPdsN[0].in()>1e-5) && (aPack2.mImPdsN[0].in()>1e-5)
         ),
-	Abs(mImX1.in()-aPack2.mImX1.in())+ Abs(mImY1.in()-aPack2.mImY1.in()),
+    Abs(mImX1.in()-aPack2.mImX1.in())+ Abs(mImY1.in()-aPack2.mImY1.in()),
         VMax(aMaxDif)
     );
 
     ELISE_COPY
     (
         select (mImX1.all_pts(), (aPack2.mImPdsN[0].in()>1e-5)),
-	Virgule(aPack2.mImX1.in(),aPack2.mImY1.in()),
-	Virgule(mImX1.out(),mImY1.out())
+    Virgule(aPack2.mImX1.in(),aPack2.mImY1.in()),
+    Virgule(mImX1.out(),mImY1.out())
     );
 
     ELISE_ASSERT(aMaxDif<1e-5,"P1 dif in cElImPackHom::AddFile");
@@ -986,16 +1012,16 @@ ElPackHomologue  cElImPackHom::ToPackH(int aK)
        for (aP.y=0 ; aP.y<mSz.y ; aP.y++)
        {
           if (aTPds.get(aP))
-	  {
-	     aRes.Cple_Add
-	     (
-	          ElCplePtsHomologues
-		  (
-		       Pt2dr(aTX1.get(aP),aTY1.get(aP)),
-		       Pt2dr(aTX2.get(aP),aTY2.get(aP)),
-		       aTPds.get(aP)
-		  )
-	     );
+      {
+         aRes.Cple_Add
+         (
+              ElCplePtsHomologues
+          (
+               Pt2dr(aTX1.get(aP),aTY1.get(aP)),
+               Pt2dr(aTX2.get(aP),aTY2.get(aP)),
+               aTPds.get(aP)
+          )
+         );
           }
        }
    }
@@ -1012,11 +1038,11 @@ void  cElImPackHom::SauvFile(const std::string & aName)
     Tiff_Im  aTF
              (
                 aName.c_str(),
-		mImX1.sz(),
+        mImX1.sz(),
                 GenIm::real4,
-		Tiff_Im::No_Compr,
-		Tiff_Im::PtDeLiaison
-	     );
+        Tiff_Im::No_Compr,
+        Tiff_Im::PtDeLiaison
+         );
 
     ELISE_COPY
     (
@@ -1118,18 +1144,18 @@ template <class Type> const std::vector<Type>  & ElProjStenopeGen<Type>::ParamAF
    return mParamAF;
 }
 
-template <class Type> Type ElProjStenopeGen<Type>::focale() const 
+template <class Type> Type ElProjStenopeGen<Type>::focale() const
 {return _focale;}
 
 
-template <class Type> Type & ElProjStenopeGen<Type>::focale() 
+template <class Type> Type & ElProjStenopeGen<Type>::focale()
 {return _focale;}
 
 template <class Type> Pt2d<Type>  ElProjStenopeGen<Type>::PP()  const
 {return Pt2d<Type>(_cx,_cy);}
 
 
-template <class Type> void ElProjStenopeGen<Type>::SetPP(const  Pt2d<Type> & aPP) 
+template <class Type> void ElProjStenopeGen<Type>::SetPP(const  Pt2d<Type> & aPP)
 {
   _cx = aPP.x;
   _cy = aPP.y;
@@ -1139,7 +1165,7 @@ template <class Type> Type ElProjStenopeGen<Type>::DeltaCProjDirTer
                            (
                              Type x3,
                              Type y3,
-                             Type z3 
+                             Type z3
                            ) const
 {
       if (! mUseAFocal) return 0;
@@ -1148,7 +1174,7 @@ template <class Type> Type ElProjStenopeGen<Type>::DeltaCProjDirTer
 
       Type  F1 =  (1-z3/sqrt(R2)) ; // 1 - cos Teta
       Type  F2 =  Square(F1);
-      
+
       return    mParamAF[0]*F1 + mParamAF[1]*F2;
 }
 
@@ -1157,7 +1183,7 @@ template <class Type> Type ElProjStenopeGen<Type>::DeltaCProjTer
                            (
                              Type x3,
                              Type y3,
-                             Type z3 
+                             Type z3
                            ) const
 {
      if (! mUseAFocal) return 0;
@@ -1167,7 +1193,7 @@ template <class Type> Type ElProjStenopeGen<Type>::DeltaCProjTer
 }
 
 
-template <class Type> void ElProjStenopeGen<Type>::Proj  
+template <class Type> void ElProjStenopeGen<Type>::Proj
                        (Type & x2,Type & y2,Type   x3,Type y3,Type z3) const
 {
     Type  aZCor = z3;
@@ -1260,12 +1286,12 @@ void ElProjStenope::Rayon(Pt2dr aP,Pt3dr &p0,Pt3dr & p1) const
     p1 = p0+ DirRayon(aP);
 }
 
-Pt2dr ElProjStenope::centre() const 
+Pt2dr ElProjStenope::centre() const
 {
     return Pt2dr(_cx,_cy);
 }
 
-void  ElProjStenope::set_centre(Pt2dr c) 
+void  ElProjStenope::set_centre(Pt2dr c)
 {
     _cx = c.x;
     _cy = c.y;
@@ -1313,17 +1339,17 @@ cElDistFromCam::cElDistFromCam(const ElCamera & aCam,bool UseRay) :
    mMil     (mSzC/2.0),
    mRayU    (mUseRay ? mCam.RayonUtile() : -1)
 {
-    if (mUseRay) 
+    if (mUseRay)
        mEpsInvDiff = 1e-3;
 }
 
 Pt2dr cElDistFromCam::Direct(Pt2dr aP) const
 {
-   if (! mUseRay) 
+   if (! mUseRay)
        return mCam.DistDirecte(aP);
 
     double aD = euclid(aP,mMil);
-    if (aD<mRayU) 
+    if (aD<mRayU)
        return mCam.DistDirecte(aP);
 
     double aEps = 1e-3;
@@ -1338,9 +1364,9 @@ Pt2dr cElDistFromCam::Direct(Pt2dr aP) const
 
 }
 
-bool cElDistFromCam::OwnInverse(Pt2dr & aP) const 
+bool cElDistFromCam::OwnInverse(Pt2dr & aP) const
 {
-   if (mUseRay) 
+   if (mUseRay)
       return false;
    aP = mCam.DistInverse(aP);
    return true;
@@ -1375,7 +1401,7 @@ const cCorrectionRefractionAPosteriori & cCorrRefracAPost::ToXML() const
 }
 
 
-// 
+//
 Pt3dr cCorrRefracAPost::CorrectRefrac(const Pt3dr & aP,double aCoef) const
 {
     double aXY2 =  square_euclid(Pt2dr(aP.x,aP.y));
@@ -1432,6 +1458,7 @@ ElCamera::ElCamera(bool isDistC2M,eTypeProj aTP) :
     mCRAP      (0),
     _orient (Pt3dr(0,0,0),0,0,0),
     mSz        (-1,-1),
+    mSzPixel   (-1,-1),
     mDIsDirect (! isDistC2M),
     mTypeProj  (aTP),
     // mAltisSolIsDef (false),
@@ -1439,7 +1466,7 @@ ElCamera::ElCamera(bool isDistC2M,eTypeProj aTP) :
     mProfondeurIsDef (false),
     mProfondeur       (0),
     mIdCam               ("NoName"),
-    //mPrecisionEmpriseSol (1e30), 
+    //mPrecisionEmpriseSol (1e30),
     mRayonUtile (-1),
     mHasDomaineSpecial  (false),
     mDoneScanContU      (false),
@@ -1453,6 +1480,13 @@ ElCamera::ElCamera(bool isDistC2M,eTypeProj aTP) :
 {
     UndefAltisSol();
 }
+
+
+bool  ElCamera::GetZoneUtilInPixel() const
+{
+    return ! mScanned;
+}
+
 
 
 Pt3dr ElCamera::Vitesse() const
@@ -1488,20 +1522,55 @@ bool    ElCamera::PIsVisibleInImage   (const Pt3dr & aPTer) const
 {
    Pt3dr aPCam = R3toL3(aPTer);
 
-   if (aPCam.z < 0) return false;
+
+   if (
+         HasOrigineProf() 
+         && (aPCam.z <=   1e-5 * (ElAbs(aPCam.x)+ElAbs(aPCam.y)))
+      ) 
+      return false;
+
 
    Pt2dr aPI0 = Proj().Proj(aPCam);
-   Pt2dr aPF = DistDirecte(aPI0);
 
-   if ( ! IsInZoneUtile(aPF)) return false;
 
-   Pt2dr aI0Again = DistInverse(aPF);
+   if (GetZoneUtilInPixel() )
+   {
+       Pt2dr aSz = SzPixel();
+       Pt2dr aPQ = NormM2C(aPI0) ;
+       double aRab = 0.8;
+       Pt2dr aMil = Pt2dr(aSz)/2.0;
+   
+       aPQ =  aMil+ (aPQ-aMil) * aRab;
+       if ((aPQ.x <0)  || (aPQ.y<0) || (aPQ.x>aSz.x) || (aPQ.y>aSz.y)) return false;
+    }
 
-    return euclid(aPI0-aI0Again) < 1.0;
+
+   Pt2dr aPF0 = DistDirecteSsComplem(aPI0);
+
+
+
+   // Si "vraie" camera et scannee il est necessaire de faire le test maintenant
+   // car IsZoneUtil est en mm
+
+  // std::cout << "AAAAAA " << aPF0 << " " << mZoneUtilInPixel << "\n";
+   if ( (!GetZoneUtilInPixel()) && ( ! IsInZoneUtile(aPF0))) return false;
+
+
+   Pt2dr aPF1 = DComplM2C(aPF0);
+
+   // MPD le 17/06/2014 : je ne comprend plus le [1], qui fait planter les camera ortho
+   // a priori la zone utile se juge a la fin
+   if (GetZoneUtilInPixel() && ( ! IsInZoneUtile(aPF1,true))) return false;
+
+
+   Pt2dr aI0Again = DistInverse(aPF1);
+
+
+    return euclid(aPI0-aI0Again) < 1.0/ mScaleAfnt;
 }
 
 
-void ElCamera::UndefAltisSol() 
+void ElCamera::UndefAltisSol()
 {
      mAltisSolIsDef = false;
      mAltiSol       = -1e30;
@@ -1518,14 +1587,20 @@ double  ElCamera::ResolSolGlob() const
 }
 
 
-bool  ElCamera::CaptHasData(const Pt2dr & aP) const 
+bool  ElCamera::CaptHasData(const Pt2dr & aP) const
 {
-   return  IsInZoneUtile(aP);
+   return  IsInZoneUtile(DComplC2M(aP));
+   // return  IsInZoneUtile(aP);
 }
 
-bool &   ElCamera::IsScanned()
+const bool &   ElCamera::IsScanned() const
 {
     return mScanned;
+}
+
+void ElCamera::SetScanned(bool mIsSC )
+{
+    mScanned = mIsSC;
 }
 
 
@@ -1546,15 +1621,15 @@ Pt2dr ElCamera::ImRef2Capteur   (const Pt2dr & aP) const
 
 double ElCamera::ResolImRefFromCapteur() const {return 1.0;}
 
-bool  ElCamera::HasRoughCapteur2Terrain() const 
+bool  ElCamera::HasRoughCapteur2Terrain() const
 {
     return ProfIsDef() || AltisSolIsDef();
 }
-bool  ElCamera::HasPreciseCapteur2Terrain() const 
+bool  ElCamera::HasPreciseCapteur2Terrain() const
 {
     return false;
 }
-Pt3dr  ElCamera::RoughCapteur2Terrain   (const Pt2dr & aP) const 
+Pt3dr  ElCamera::RoughCapteur2Terrain   (const Pt2dr & aP) const
 {
    if (ProfIsDef())
       return ImEtProf2Terrain(aP,GetProfondeur());
@@ -1565,7 +1640,7 @@ Pt3dr  ElCamera::RoughCapteur2Terrain   (const Pt2dr & aP) const
    ELISE_ASSERT(false,"Nor Alti, nor prof : Camera has no \"RoughCapteur2Terrain\"  functionality");
    return Pt3dr(0,0,0);
 }
-Pt3dr ElCamera::PreciseCapteur2Terrain   (const Pt2dr & aP) const 
+Pt3dr ElCamera::PreciseCapteur2Terrain   (const Pt2dr & aP) const
 {
    ELISE_ASSERT(false,"Camera has no \"PreciseCapteur2Terrain\"  functionality");
    return Pt3dr(0,0,0);
@@ -1575,7 +1650,7 @@ Pt3dr ElCamera::PreciseCapteur2Terrain   (const Pt2dr & aP) const
 
 
 
-const ElAffin2D &  ElCamera::IntrOrImaC2M() const 
+const ElAffin2D &  ElCamera::IntrOrImaC2M() const
 {
    return mIntrOrImaC2M;
 }
@@ -1621,15 +1696,23 @@ void ElCamera::SetParamGrid(const NS_ParamChantierPhotogram::cParamForGrid & aPa
    mRayonInvGrid = aParam.RayonInv();
 }
 
-bool ElCamera::IsInZoneUtile(const Pt2dr & aP) const
+bool ElCamera::IsInZoneUtile(const Pt2dr & aQ,bool Pixel) const
 {
-   Pt2di aSz = Sz();
+   
+   // Pt2dr aP = mZoneUtilInPixel ? DComplM2C(aQ) : aQ;
+    Pt2dr aP = aQ;
+   Pt2di aSz = Pixel ?  Pt2di(SzPixel()) : Sz() ;
    if ((aP.x<=0)  || (aP.y<=0) || (aP.x>=aSz.x) || (aP.y>=aSz.y))
       return false;
-   if (mRayonUtile <= 0) return true;
 
-   return euclid(aP-Sz()/2.0) < mRayonUtile;
+   double aR = mRayonUtile;
+   if (aR <= 0) return true;
+   if (Pixel) aR *= mScaleAfnt;
+
+
+   return euclid(aP-aSz/2.0) < aR;
 }
+
 
 bool ElCamera::HasRayonUtile() const
 {
@@ -1667,7 +1750,7 @@ double  ElCamera::RatioInterSol(const ElCamera & aCam2) const
       return 0.0;
 
    cElPolygone aPI = mEmpriseSol * aCam2.mEmpriseSol;
-   
+
    return aPI.Surf() / mEmpriseSol.Surf();
     //mEmpriseSol
 }
@@ -1687,6 +1770,11 @@ double ElCamera::GetProfondeur() const
     ELISE_ASSERT(ProfIsDef(),"Profondeur non init");
     return mProfondeur;
 }
+double  ElCamera::GetRoughProfondeur() const
+{
+   return GetProfondeur();
+}
+
 
 
 const cElPolygone &  ElCamera::EmpriseSol() const
@@ -1704,10 +1792,10 @@ void  ElCamera::SetAltiSol(double  aZ)
     // Box2dr aBox(Pt2dr(0,0),Pt2dr(Sz()));
     // Pt2dr aP4Im[4];
     // aBox.Corners(aP4Im);
-  
+
 
     Pt2dr aP0,aP1;
- 
+
     std::vector<Pt2dr>  aCont;
     for (int aK=0 ; aK<int(ContourUtile().size()) ; aK++)
     {
@@ -1753,6 +1841,17 @@ double ElCamera::GetAltiSol() const
    return mAltiSol;
 }
 
+cCamStenopeBilin *  ElCamera::CSBil_SVP()
+{
+   return 0;
+}
+cCamStenopeBilin * ElCamera::CSBil()
+{
+   cCamStenopeBilin * aCSBil = CSBil_SVP();
+   ELISE_ASSERT(aCSBil!=0,"ElCamera::CSBil");
+
+   return aCSBil;
+}
 
 CamStenope *  ElCamera::CS()
 {
@@ -1790,7 +1889,7 @@ void ElCamera::ReCalcGlbOrInt()
 {
    mGlobOrImaM2C = mIntrOrImaM2C * mScanOrImaM2C;
    mGlobOrImaC2M = mGlobOrImaM2C.inv();
-   
+
    mScaleAfnt = euclid(mGlobOrImaM2C.IVect(Pt2dr(1,1))) / euclid(Pt2dr(1,1));
    // std::cout << "AAAAA XXXX " << this << mScaleAfnt << "\n"; getchar();
 }
@@ -1849,7 +1948,7 @@ void ElCamera::SetIntrImaC2M(const tOrIntIma & aOrC2M)
 
 
 
-void ElCamera::SetSz(const Pt2di &aSz)
+void ElCamera::SetSz(const Pt2di &aSz,bool AcceptInitMult)
 {
 /*
 static int aCpt = 0; aCpt++;
@@ -1857,7 +1956,7 @@ std::cout << "Organge " << aCpt << "\n";
 if (aCpt>=8) getchar();
 */
 
-   if (mSz.x != -1)
+   if ((mSz.x != -1)  && (!AcceptInitMult))
    {
        ELISE_ASSERT(aSz==mSz,"Multiple Sz incoherent in ElCamera::SetSz");
    }
@@ -1940,19 +2039,45 @@ Box2dr ElCamera::BoxUtile() const
     return aBox;
 }
 
-
+Pt2dr ElCamera::DistDirecteSsComplem(Pt2dr aP) const
+{
+    return mDIsDirect ? Dist().Direct(aP) : Dist().Inverse(aP);
+}
 Pt2dr ElCamera::DistDirecte(Pt2dr aP) const
 {
-   return DComplM2C(mDIsDirect ? Dist().Direct(aP) : Dist().Inverse(aP));
+   // return DComplM2C(mDIsDirect ? Dist().Direct(aP) : Dist().Inverse(aP));
+   return DComplM2C(DistDirecteSsComplem(aP));
 }
+
+
+Pt2dr ElCamera::DistInverseSsComplem(Pt2dr aP) const
+{
+    return  mDIsDirect ? Dist().Inverse(aP) : Dist().Direct(aP);
+}
+
 
 Pt2dr ElCamera::DistInverse(Pt2dr aP) const
 {
+    return DistInverseSsComplem(DComplC2M(aP));
 
+/*
    aP = DComplC2M(aP);
    aP= mDIsDirect ? Dist().Inverse(aP) : Dist().Direct(aP);
-// std::cout << "xxxxxxxxxxx 333333\n";
    return aP;
+*/
+/*
+   static int aCpt=0; aCpt++;
+   // std::cout << "aCPpppt " <<  aCpt << "\n";
+   bool Bug =    (aCpt==149927) || ((aCpt>=159927) && (aCpt<=159930));  //  Avec 1500
+   // bool Bug = (aCpt==242400) || ((aCpt>=252400) && (aCpt<=252403));  //  Avec -1
+   if (Bug)
+   {
+       NS_ParamChantierPhotogram::cOrientationConique  aCO = StdExportCalibGlob();
+       MakeFileXML(aCO,"Debug-"+ToString(aCpt) + ".xml");
+       std::cout << "EXPPPoort ElCamera::DistInverse\n";
+   }
+*/
+
 }
 
 // void ElCamera::SetDistInverse() { mDIsDirect=false; }
@@ -2035,6 +2160,7 @@ void  ElCamera::CamHeritGen(const ElCamera & aCam,bool WithCompl,bool WithOrient
         mStepGrid = aCam.mStepGrid;
         mRayonInvGrid = aCam.mRayonInvGrid;
     }
+    mScanned = aCam.mScanned;
 }
 
 void  ElCamera::AddDistCompl
@@ -2049,11 +2175,11 @@ void  ElCamera::AddDistCompl
     }
 }
 
-const ElDistortion22_Gen   &  ElCamera::Get_dist() const 
+const ElDistortion22_Gen   &  ElCamera::Get_dist() const
 {
    return Dist();
 }
-ElDistortion22_Gen   &  ElCamera::Get_dist() 
+ElDistortion22_Gen   &  ElCamera::Get_dist()
 {
    return Dist();
 }
@@ -2077,9 +2203,9 @@ Pt2dr ElCamera::DComplC2M(Pt2dr aP) const
       aP = mCRAP->CorrC2M(aP);
    for (int aK=0 ; aK<int(mDistCompl.size()) ; aK++)
    {
-        aP = mDComplIsDirect[aK]         ? 
-	     mDistCompl[aK]->Inverse(aP) : 
-	     mDistCompl[aK]->Direct(aP)  ;
+        aP = mDComplIsDirect[aK]         ?
+         mDistCompl[aK]->Inverse(aP) :
+         mDistCompl[aK]->Direct(aP)  ;
    }
    return Pt2dr
           (
@@ -2107,16 +2233,19 @@ Pt2dr ElCamera::NormM2C(Pt2dr aP) const
 }
 
 
-Pt2dr  ElCamera::DComplM2C(Pt2dr aP ) const
+Pt2dr  ElCamera::DComplM2C(Pt2dr aP,bool UseTrScN ) const
 {
-    aP.x = aP.x * mScN + mTrN.x;
-    aP.y = aP.y * mScN + mTrN.y;
+    if (UseTrScN)
+    {
+       aP.x = aP.x * mScN + mTrN.x;
+       aP.y = aP.y * mScN + mTrN.y;
+    }
 
     for (int aK=int(mDistCompl.size())-1 ; aK>=0 ; aK--)
     {
         aP =  mDComplIsDirect[aK]           ?
-	      mDistCompl[aK]->Direct(aP)    :
-	      mDistCompl[aK]->Inverse(aP)   ;
+          mDistCompl[aK]->Direct(aP)    :
+          mDistCompl[aK]->Inverse(aP)   ;
     }
     if (mCRAP)
       aP = mCRAP->CorrM2C(aP);
@@ -2125,11 +2254,11 @@ Pt2dr  ElCamera::DComplM2C(Pt2dr aP ) const
 
 
 ElRotation3D &       ElCamera::Orient()       {return _orient;}
-const ElRotation3D & ElCamera::Orient() const {return _orient;} 
+const ElRotation3D & ElCamera::Orient() const {return _orient;}
 
-void ElCamera::SetOrientation(const ElRotation3D &ORIENT) 
+void ElCamera::SetOrientation(const ElRotation3D &ORIENT)
 {
- 
+
      _orient = ORIENT;
 }
 
@@ -2158,14 +2287,14 @@ Pt2dr ElCamera::R3toF2(Pt3dr p) const
 }
 
 
-Pt2dr ElCamera::F2toC2(Pt2dr p) const  
+Pt2dr ElCamera::F2toC2(Pt2dr p) const
 {
    return DistInverse(p);
 }
 
 Pt3dr    ElCamera::C2toDirRayonL3(Pt2dr p) const
 {
-   return Proj().DirRayon(p);
+   return Proj().DirRayon(DComplC2M(p));
 }
 
 Pt3dr    ElCamera::F2toDirRayonL3(Pt2dr p) const
@@ -2184,6 +2313,12 @@ Pt3dr    ElCamera::F2toDirRayonR3(Pt2dr p) const
 {
    return  _orient.IRecVect(F2toDirRayonL3(p));
 }
+Pt3dr    ElCamera::C2toDirRayonR3(Pt2dr p) const
+{
+   return  _orient.IRecVect(C2toDirRayonL3(p));
+}
+
+
 
 
 Pt3dr   ElCamera::DirK() const
@@ -2198,8 +2333,8 @@ ElCplePtsHomologues ElCamera::F2toPtDirRayonL3(const ElCplePtsHomologues & aCpl,
           (
                F2toPtDirRayonL3(aCpl.P1()),
                aCam2->F2toPtDirRayonL3(aCpl.P2()),
-	       aCpl.Pds()
-	  );
+           aCpl.Pds()
+      );
 }
 
 
@@ -2214,10 +2349,10 @@ ElPackHomologue  ElCamera::F2toPtDirRayonL3(const ElPackHomologue & aPckIn,ElCam
   Pt2di aSz1 = Sz();
   Pt2di aSz2 = aCam2->Sz();
 
-   if (aCam2==0) 
+   if (aCam2==0)
        aCam2 = this;
    ElPackHomologue aPckOut;
-   for 
+   for
    (
        ElPackHomologue::const_iterator itP=aPckIn.begin();
        itP!=aPckIn.end();
@@ -2234,7 +2369,7 @@ ElPackHomologue  ElCamera::F2toPtDirRayonL3(const ElPackHomologue & aPckIn,ElCam
              "Pt Out Cam in ElCamera::F2toPtDirRayonL3"
           );
       }
-      if ( 
+      if (
                 IsInZoneUtile(itP->P1())
              && aCam2->IsInZoneUtile(itP->P2())
          )
@@ -2259,7 +2394,7 @@ std::list<Appar23>  ElCamera::F2toPtDirRayonL3(const std::list<Appar23> & aLin)
 {
    std::list<Appar23> aRes;
 
-   for 
+   for
    (
        std::list<Appar23>::const_iterator itA=aLin.begin();
        itA != aLin.end();
@@ -2275,11 +2410,11 @@ std::list<Appar23>  ElCamera::F2toPtDirRayonL3(const std::list<Appar23> & aLin)
 
 Pt2dr  ElCamera::L3toC2(Pt3dr p) const
 {
-	return Proj().Proj(p);
+    return Proj().Proj(p);
 }
 Pt2dr  ElCamera::L3toF2(Pt3dr p) const
 {
-	return DistDirecte(Proj().Proj(p));
+    return DistDirecte(Proj().Proj(p));
 }
 
 Pt2dr   ElCamera::PtDirRayonL3toF2(Pt2dr aP) const
@@ -2327,7 +2462,7 @@ Pt3dr ElCamera::PtFromPlanAndIm(const cElPlan3D  & aPlan,const Pt2dr& aP) const
 }
 
 
-ElCamera::~ElCamera() 
+ElCamera::~ElCamera()
 {
 }
 
@@ -2338,21 +2473,6 @@ ElCamera::~ElCamera()
 //  R2 =  R1 S2toS1 = R1 S1.FromSys2This(S2
 
 
-/*
-void ElCamera::ChangeSys(const cSysCoord & a1Source,const cSysCoord & a2Cible,const Pt3dr & aP1)
-{
-      Pt3dr aCam = _orient.ImAff(aP1);
-      Pt3dr aP2 = a2Cible.FromSys2This(a1Source,aP1);
-
-
-      ElMatrix<double>  aMatr2 =  _orient.Mat()*  a1Source.JacobSys2This(a2Cible,aP2) ;
-      aMatr2 = NearestRotation(aMatr2);
-
-      Pt3dr aTr2 =  aCam - aMatr2*aP2;
-
-      _orient = ElRotation3D(aTr2,aMatr2);
-}
-*/
 
 //
 //  Orientation Monde to Cam (CamStenope::CentreOptique() = _orient.IRecAff(Pt3dr(0,0,0))
@@ -2361,7 +2481,7 @@ void ElCamera::ChangeSys(const cSysCoord & a1Source,const cSysCoord & a2Cible,co
 //       PCam = RSrc2Cam PSrc  PCam  = RCible2Cam PCible
 //       PGeoC = S2G (PSrc)      PCible = G2C (PGeoC)
 //        RCible2Cam PCible = PCam =  RSrc2Cam PSrc = RSrc2Cam S2G-1 G2C-1 PCible
-//       
+//
 //        RCible2Cam -1     = G2C S2G RSrc2Cam -1
 //        RCam2Cible = G2C S2G R Cam2Src
 
@@ -2378,8 +2498,99 @@ void TestCamCHC(ElCamera & aCam)
     std::cout << " TTttCamm  " << aCam.ImEtProf2Terrain(aPIm1,aProf0+1) -  aCam.ImEtProf2Terrain(aPIm1,aProf0) << "\n";
 }
 
-void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cSysCoord & aSource,const cSysCoord & aCible,bool ForceRot)
+
+// Dans cEq12Param.cpp
+extern void AffinePose(ElCamera & aCam,const std::vector<Pt2dr> & aVIm,const std::vector<Pt3dr> & aVPts);
+
+/*   
+    0 = (p0 x + p1 y + p2 z + p3) - I (p8 x + p9 y + p10 z + p11)
+    0 = (p4 x + p5 y + p6 z + p7) - J (p8 x + p9 y + p10 z + p11)
+*/
+
+#if (0)
+#endif
+
+
+void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cTransfo3D & aTransfo3D,bool ForceRot,bool AtGroundLevel)
 {
+
+    // Pour l'instant, pas encore ecrit la fonction  qui transform l'eq aux 12 param en  param physique ....
+    //
+    //if (! ForceRot)
+    {
+        for (int aK=0 ; aK<int(aVCam.size()); aK++)
+        {
+            std::vector<Pt2dr> aVIm;
+            std::vector<Pt2dr> aVPhGr;
+            std::vector<Pt3dr> aVSource;
+            cEq12Parametre anEq12;
+            int aNbXY = 5;
+            int aNbProf  = 3;
+            double aPropProf= 0.2;
+
+            ElCamera & aCam = *(aVCam[aK]);
+            Pt2dr aSzP = aCam.SzPixel();
+            double aProfMoy = aCam.GetRoughProfondeur();
+            int anIndCentre =-1;
+ 
+            for (int aKp= -aNbProf ; aKp<= aNbProf ; aKp++)
+            {
+                if (AtGroundLevel || (aKp!=0))
+                {
+                    double aMul = aKp/double(aNbProf);
+                    if (AtGroundLevel) 
+                       aMul =  pow(1+aPropProf,aMul);
+                    double aProf =  aProfMoy * aMul;
+                    for (int aKx=0 ; aKx<= aNbXY ; aKx++)
+                    {
+                        for (int aKy=0 ; aKy<= aNbXY ; aKy++)
+                        {
+                            Pt2dr aPIm = aSzP.mcbyc(Pt2dr(aKx,aKy)/aNbXY);
+                            Pt2dr aPPhgr = aCam.F2toPtDirRayonL3(aPIm);
+                        // if (Test) aPPhgr = Pt2dr(aPPhgr.x*1.1 +0.05 * aPPhgr.y,aPPhgr.y*0.9) + Pt2dr(0.1,0.15)  ;
+                            Pt3dr aPSource = aCam.ImEtProf2Terrain(aPIm,aProf) ;//   + Pt3dr(1e6,1e7,1e5);
+                            if ((aKp==0) && (aKx==0) && (aKy==0))
+                               anIndCentre = aVSource.size();
+                            aVPhGr.push_back(aPPhgr);
+                            aVSource.push_back(aPSource);
+                            aVIm.push_back(aPIm);
+                        }
+                    }
+                }
+            }
+
+            // std::vector<Pt3dr> aVCible = aCible.FromGeoC(aSource.ToGeoC(aVSource));
+            std::vector<Pt3dr> aVCible = aTransfo3D.Src2Cibl(aVSource); 
+            Pt3dr aPCentreCible  = aVCible[anIndCentre];
+            for (int aKP = 0 ; aKP<int(aVCible.size()) ; aKP++)
+            {
+                anEq12.AddObs(aVCible[aKP],aVPhGr[aKP],1.0);
+            }
+
+            if (ForceRot) 
+            {
+                std::pair<ElMatrix<double>,ElRotation3D> aPair = anEq12.ComputeOrtho();
+                aCam.SetOrientation(aPair.second.inv());
+                aCam.SetAltiSol(aPCentreCible.z);
+                aCam.SetProfondeur(aCam.ProfondeurDeChamps(aPCentreCible));
+
+                AffinePose(aCam,aVIm,aVCible);
+            }
+            else
+            {
+                std::pair<ElMatrix<double>,Pt3dr>  aTransfo = anEq12.ComputeNonOrtho();
+                ElRotation3D aOriCam2Cible(aTransfo.second,aTransfo.first,false);
+                aCam.SetOrientation(aOriCam2Cible.inv());
+                aCam.SetAltiSol(aPCentreCible.z);
+                aCam.SetProfondeur(aCam.ProfondeurDeChamps(aPCentreCible));
+            }
+        }
+        return ;
+    }
+
+
+#if (0) // Ancienne facon a priori obsolete
+
     bool Test = false;
     std::vector<Pt3dr> aVCenterSrc;
     std::vector<Pt3dr> aPMoy;
@@ -2398,7 +2609,8 @@ void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cSysCoord 
     Pt3dr aGeoC1(0,0,0);
     Pt3dr aCible1(0,0,0);
     double aProf1=110;
-
+/*
+*/
 
     for (int aK=0 ; aK<int(aVCam.size()); aK++)
     {
@@ -2424,7 +2636,7 @@ void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cSysCoord 
                 std::cout << "REPROJ-init " << aCam.R3toF2(aPSrc0) << aCam.R3toF2(aPSrc1) << "\n";
             }
         }
-       
+
         const ElRotation3D &  aOriSrc2Cam = aCam.Orient();
         Pt3dr aC = aOriSrc2Cam.ImRecAff(Pt3dr(0,0,0));
         aVCenterSrc.push_back(aC);
@@ -2453,13 +2665,13 @@ void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cSysCoord 
     for (int aK=0 ; aK<int(aVCam.size()); aK++)
     {
         ElCamera & aCam = *(aVCam[aK]);
-          
+
         ElRotation3D  aOriCam2Src = aCam.Orient().inv();
         ElMatrix<double> aMatCam2Cible  = aVJacG2C[aK] * aVJacS2G[aK] * aOriCam2Src.Mat();
 
 // TestMatr("aVJacG2C ",  aVJacG2C[aK]);
 
-        if (ForceRot) 
+        if (ForceRot)
         {
           aMatCam2Cible = NearestRotation(aMatCam2Cible);
         }
@@ -2490,6 +2702,7 @@ void ElCamera::ChangeSys(const std::vector<ElCamera *> & aVCam, const cSysCoord 
             }
         }
     }
+#endif
 }
 
 
@@ -2544,13 +2757,13 @@ REAL ElCamera::EcProj(const ElSTDNS list<Appar23> & P23)
 void ElCamera::DiffR3F2(ElMatrix<REAL> & M,Pt3dr r) const
 {
 
-    Pt3dr l = _orient.ImAff(r); 
+    Pt3dr l = _orient.ImAff(r);
     Pt2dr c = Proj().Proj(l);
-     
+
     ELISE_ASSERT(mDIsDirect,"No ElCamera::DiffR3F2");
     ELISE_ASSERT(mDistCompl.empty(),"No ElCamera::DiffR3F2");
     M =  Dist().Diff(c) * Proj().Diff(l) *  _orient.Mat();
-             
+
 }
 ElMatrix<REAL>  ElCamera::DiffR3F2(Pt3dr r) const
 {
@@ -2561,9 +2774,9 @@ ElMatrix<REAL>  ElCamera::DiffR3F2(Pt3dr r) const
 
 void ElCamera::DiffR3F2Param(ElMatrix<REAL> & M,Pt3dr r) const
 {
-    Pt3dr l = _orient.ImAff(r); 
+    Pt3dr l = _orient.ImAff(r);
     Pt2dr c = Proj().Proj(l);
-     
+
     ELISE_ASSERT(mDIsDirect,"No ElCamera::DiffR3F2");
     ELISE_ASSERT(mDistCompl.empty(),"No ElCamera::DiffR3F2");
     M =  Dist().Diff(c) * Proj().Diff(l) *  _orient.DiffParamEn1pt(r);
@@ -2680,7 +2893,7 @@ cVerifOrient ElCamera::MakeVerif(int aNbVerif,double aProf,const char * aNAux,co
           Pt3dr aP3 = ImEtProf2Terrain(aP2,aP);
           Pt2dr aQ2 = R3toF2(aP3);
 
-	   // std::cout << euclid(aQ2,aP2) << " :: " << aQ2 << aP2 << "\n";
+       // std::cout << euclid(aQ2,aP2) << " :: " << aQ2 << aP2 << "\n";
           cMesureAppuis aMA;
           aMA.Im() = aQ2;
           aMA.Ter() = aP3;
@@ -2692,7 +2905,7 @@ cVerifOrient ElCamera::MakeVerif(int aNbVerif,double aProf,const char * aNAux,co
              Pt3dr aL3 =  R3toL3(aP3);
              Pt2dr aC2  = R3toC2(aP3);
              Pt2dr aF2  = R3toF2(aP3);
-            
+
              fprintf(aFPAux,"NUM%d\n",aK);
              fprintf(aFPAux,"L3 %lf %lf %lf\n",aL3.x,aL3.y,aL3.z);
              fprintf(aFPAux,"C2 %lf %lf\n",aC2.x,aC2.y);
@@ -2728,7 +2941,7 @@ cOrientationConique  ElCamera::ExportCalibGlob
                          int aNbVerif,
                          bool aModeMatr,
                          const char * aNameAux,
-                         const Pt3di * aNbVeridDet 
+                         const Pt3di * aNbVeridDet
                       ) const
 {
    cCalibrationInternConique aCIC = ExportCalibInterne2XmlStruct(aSzIm);
@@ -2753,6 +2966,8 @@ cOrientationConique  ElCamera::ExportCalibGlob
    anOC.OrIntImaM2C().SetVal(El2Xml(mScanOrImaM2C));
    anOC.TypeProj().SetVal(El2Xml(mTypeProj));
 
+   anOC.ZoneUtileInPixel().SetVal(GetZoneUtilInPixel());
+
    if (aNbVerif || aNbVeridDet)
    {
       anOC.Verif().SetVal(MakeVerif(aNbVerif,Prof,aNameAux,aNbVeridDet));
@@ -2774,6 +2989,9 @@ cCalibrationInternConique  ElCamera::ExportCalibInterne2XmlStruct(Pt2di aSzIm) c
     // aParam.PP() = PP();
     // aParam.F()  = Focale();
     aParam.SzIm() = aSzIm;
+    if (mSzPixel.x >0)
+      aParam.PixelSzIm().SetVal(mSzPixel);
+
 
     aParam.OrIntGlob().SetNoInit();
     if (! mIntrOrImaC2M.IsId())
@@ -2800,12 +3018,12 @@ cCalibrationInternConique  ElCamera::ExportCalibInterne2XmlStruct(Pt2di aSzIm) c
     {
         bool  isKD = mDComplIsDirect[aKD];
         aParam.CalibDistortion().push_back(mDistCompl[aKD]->ToXmlStruct(this));
-	aParam.ComplIsC2M().push_back(! isKD);
-	if (isKD!=DistIsDirecte())
-	   OneDif = true;
+    aParam.ComplIsC2M().push_back(! isKD);
+    if (isKD!=DistIsDirecte())
+       OneDif = true;
     }
 
-    if (!OneDif) 
+    if (!OneDif)
         aParam.ComplIsC2M().clear();
 
     aParam.CalibDistortion().push_back(Get_dist().ToXmlStruct(this));
@@ -2815,7 +3033,10 @@ cCalibrationInternConique  ElCamera::ExportCalibInterne2XmlStruct(Pt2di aSzIm) c
        aParam.CorrectionRefractionAPosteriori().SetVal(mCRAP->ToXML());
     }
 
-   
+
+    if (IsScanned())
+       aParam.ScannedAnalogik().SetVal(true);
+
    return aParam;
 }
 
@@ -2824,6 +3045,18 @@ cCalibrationInternConique  ElCamera::ExportCalibInterne2XmlStruct(Pt2di aSzIm) c
 /*              CamStenope                                     */
 /*                                                             */
 /***************************************************************/
+
+double  CamStenope::GetRoughProfondeur() const
+{
+    if (ProfIsDef())  return mProfondeur;
+    if (AltisSolIsDef()) return ElAbs(PseudoOpticalCenter().z-mAltiSol);
+
+    ELISE_ASSERT(false,"Nor Prof nor Alti in ElCamera::GetRoughProfondeur");
+    return 0;
+}
+
+
+
 
 Pt3dr CamStenope::OrigineProf() const
 {
@@ -2876,15 +3109,15 @@ double   ElCamera::EcartAngulaire
 
 double   ElCamera::SomEcartAngulaire
          (
-             const ElPackHomologue & aPackH, 
-             const ElCamera & CamB, 
+             const ElPackHomologue & aPackH,
+             const ElCamera & CamB,
              double & aSomP
          ) const
 {
     aSomP=0;
     double aSomE=0;
-    for 
-    (   
+    for
+    (
         ElPackHomologue::const_iterator itC = aPackH.begin();
         itC != aPackH.end();
         itC++
@@ -2902,17 +3135,17 @@ double   ElCamera::SomEcartAngulaire
 
 Pt3dr   ElCamera::PseudoInter
         (
-	     Pt2dr aPF2A,
-	     const ElCamera & CamB,
-	     Pt2dr aPF2B,
-	     double * aDist
-	) const
+         Pt2dr aPF2A,
+         const ElCamera & CamB,
+         Pt2dr aPF2B,
+         double * aDist
+    ) const
 {
    ElSeg3D aSegA = F2toRayonR3(aPF2A);
    ElSeg3D aSegB = CamB.F2toRayonR3(aPF2B);
 
    Pt3dr aRes = aSegA.PseudoInter(aSegB);
-   if (aDist) 
+   if (aDist)
        *aDist = aSegA.DistDoite(aRes);
    return aRes;
 }
@@ -2922,7 +3155,7 @@ Pt3dr  ElCamera::CdgPseudoInter(const ElPackHomologue & aPckIn,const ElCamera & 
    double aSPds =0;
    Pt3dr aSInter (0,0,0);
    aD = 0;
-   for 
+   for
    (
        ElPackHomologue::const_iterator itP=aPckIn.begin();
        itP!=aPckIn.end();
@@ -2964,16 +3197,69 @@ double CamStenope::ResolutionSol(const Pt3dr & aP) const
 double CamStenope::ResolutionAngulaire() const
 {
    double aEps = 1e-3;
+   // double aEps = 1e-5;
+/*  Ne marche pas avec les cameras de type epipolair quand la vertical local est hor image
+   double aEps = 1e-5;
    Pt2dr aP0 = L3toF2(Pt3dr(0,0,1));
    Pt2dr aP1 = L3toF2(Pt3dr(aEps,0,1));
 
+   double aD = euclid(aP0-aP1) / aEps;
+
+   return 1/aD ;
+   return  _orient.IRecVect(F2toDirRayonL3(p));
+*/
+
+
+
+   // Ci dessus ne marche pas avec point hors image
+// std::cout << "Szzz " << Sz() << "\n"; getchar();
+   // Pt2dr aMil = Pt2dr(Sz()) /2.0;
+
+   // Pt2dr aMil = DComplM2C(Pt2dr(Sz()) /2.0);
+   Pt2dr aMil = SzPixel()/2.0;
+   Pt2dr aMil2 = aMil + Pt2dr(aEps,0);
+// aMil = DComplM2C(aMil);
+
+   // std::cout << "Dif MIL = " << aMil -aMil2 << "\n";
+   // std::cout << "Dif Ray = " << F2toDirRayonR3(aMil) -F2toDirRayonR3(aMil2) << "\n";
+   // std::cout << "Dif Ray = " << F2toDirRayonL3(aMil) -F2toDirRayonL3(aMil2) << "\n";
+
+   // Pt3dr aQ0 = ImEtProf2Terrain(aMil,1.0);    NE MARCHE PAS AVEC GRDE COORDONNEES SUR LES CENTRES
+   // Pt3dr aQ1 = ImEtProf2Terrain(aMil2,1.0);
+
+
+   Pt3dr aQ0 = F2toDirRayonL3(aMil);
+   Pt3dr aQ1 = F2toDirRayonL3(aMil2);
+
+   double aDQ = euclid(aQ0-aQ1) / aEps;
+
+
+/*
+   std::cout << mGlobOrImaC2M(aMil)  <<  mGlobOrImaC2M(aMil2) << "\n";
+   std::cout << DComplC2M(aMil)  <<  DComplC2M(aMil2) << "\n";
+   std::cout << DistInverse(aMil)  <<  DistInverse(aMil2) << "\n";
+   std::cout << " dddDQ " <<  aMil << " " << aDQ  << aQ0 << aQ1 << "\n"; getchar();
+*/
+
+/*
+std::cout << "HHHHh   " <<  aDQ  << " " << 1/Focale() << "\n";
+Pt2dr aM2 = aMil+Pt2dr(aEps,0);
+
+std::cout << "AAAAAAAAAAAAAAAAaa " <<  Proj().DirRayon(DistInverse(aMil)) - Proj().DirRayon(DistInverse(aM2)) << "\n" ;
+std::cout << "AAAAAAAAAAAAAAAAaa " << DistInverse(aMil) <<  DistInverse(aMil) - DistInverse(aM2) << "\n" ;
+std::cout << "HHHHh   " <<  aDQ  << " " << 1/Focale() << "\n";
+getchar();
+*/
+
+    return aDQ;
 /*
 */
 
-   double aD = euclid(aP0-aP1) / aEps;
- 
-   return 1/aD ;  // La focale ne marche pas avec les grille tres loin de Id
+// std::cout << "DdddddddDD  " << aD << " " << aD * aDQ<< "\n";
+// getchar();
+
 /*
+La focale ne marche pas avec les grille tres loin de Id
    std::cout << "RAGgg " << aD << " " << 1/aD << "\n";
 getchar();
 
@@ -2988,7 +3274,42 @@ REAL CamStenope::Focale() const
 
 Pt2dr CamStenope::PP() const
 {
-   return _PrSten.PP();
+    return _PrSten.PP();
+}
+
+void CamStenope::Coins(Pt3dr &aP1,Pt3dr &aP2,Pt3dr &aP3,Pt3dr &aP4, double aZ) const
+{
+    aP1 = ImEtProf2Terrain(Pt2dr(0.f,0.f),aZ);       // HAUT GAUCHE
+    aP2 = ImEtProf2Terrain(Pt2dr(Sz().x,0.f),aZ);    // HAUT DROIT
+    aP3 = ImEtProf2Terrain(Pt2dr(0.f,Sz().y),aZ);    // BAS GAUCHE
+    aP4 = ImEtProf2Terrain(Pt2dr(Sz().x,Sz().y),aZ); // BAS DROIT
+}
+
+// for  aerial imagery, project the 4 camera corners on a ground surface assumed to be at Z=aZ
+void CamStenope::CoinsProjZ(Pt3dr &aP1,Pt3dr &aP2,Pt3dr &aP3,Pt3dr &aP4, double aZ) const
+{
+    aP1 = ImEtZ2Terrain(Pt2dr(0.f,0.f),aZ);       // HAUT GAUCHE
+    aP2 = ImEtZ2Terrain(Pt2dr(Sz().x,0.f),aZ);    // HAUT DROIT
+    aP3 = ImEtZ2Terrain(Pt2dr(0.f,Sz().y),aZ);    // BAS GAUCHE
+    aP4 = ImEtZ2Terrain(Pt2dr(Sz().x,Sz().y),aZ); // BAS DROIT
+}
+
+void ElCamera::SetSzPixel(const Pt2dr & aSzP)
+{
+   mSzPixel = aSzP;
+}
+
+Pt2dr  ElCamera::SzPixelBasik() const
+{
+   return mSzPixel;
+}
+
+Pt2dr  ElCamera::SzPixel() const
+{
+   if (mSzPixel.x>0)
+      return mSzPixel;
+
+   return DComplM2C(Pt2dr(Sz()) /2.0,false) * 2;
 }
 
 double ElCamera::ProfondeurDeChamps(const Pt3dr & aP) const
@@ -2998,7 +3319,7 @@ double ElCamera::ProfondeurDeChamps(const Pt3dr & aP) const
 
 Pt3dr ElCamera::DirVisee() const
 {
-	return _orient.IRecVect(Pt3dr(0,0,1));
+    return _orient.IRecVect(Pt3dr(0,0,1));
 }
 
 
@@ -3096,6 +3417,13 @@ Pt3dr  CamStenope::ImEtProf2Terrain(const Pt2dr & aP,double aZ) const
      return OpticalVarCenterIm(aP) + F2toDirRayonR3(aP) * aZ;
 }
 
+Pt3dr  CamStenope::NoDistImEtProf2Terrain(const Pt2dr & aP,double aZ) const
+{
+     return OpticalVarCenterIm(aP) + C2toDirRayonR3(aP) * aZ;
+}
+
+
+
 
 Pt3dr  CamStenope::ImEtZ2Terrain(const Pt2dr & aP,double aZ) const
 {
@@ -3139,7 +3467,10 @@ Ori3D_Std *  CamStenope::NN_CastOliLib()
 }
 double CamStenope::ResolutionPDVVerticale()
 {
-  return (PseudoOpticalCenter().z -GetAltiSol()) / Focale();
+//    std::cout <<  "fffFOCALE " << Focale() <<  " " << 1/ ResolutionAngulaire()  << "\n";
+// getchar();
+  // return (PseudoOpticalCenter().z -GetAltiSol()) / Focale();
+  return (PseudoOpticalCenter().z -GetAltiSol()) * ResolutionAngulaire() ;
 }
 
 
@@ -3173,7 +3504,7 @@ CamStenope * CamStenope::StdCamFromFile
 
 Pt3dr CamStenope::PseudoOpticalCenter() const
 {
-	return _orient.ImRecAff(Pt3dr(0,0,0));
+    return _orient.ImRecAff(Pt3dr(0,0,0));
 }
 
 bool CamStenope::UseAFocal() const
@@ -3245,7 +3576,7 @@ cDistStdFromCam::cDistStdFromCam
 {
 }
 
-Pt2dr cDistStdFromCam::Direct(Pt2dr aP) const 
+Pt2dr cDistStdFromCam::Direct(Pt2dr aP) const
 {
      return mCam.F2toPtDirRayonL3(aP);
 }
@@ -3277,7 +3608,7 @@ void CamStenope::UnNormalize()
    bool doTr =     Dist().AcceptTranslate() ;
    std::cout << "UN-S " << doScale << " Tr " << doTr << "\n";
 */
-   
+
    if ((mScN==1.0) && (mTrN==Pt2dr(0,0)))
      return;
 
@@ -3296,7 +3627,7 @@ void CamStenope::StdNormalise(bool doScale,bool  doTr,double aS,Pt2dr aTr)
 {
    doScale = doScale && Dist().AcceptScaling();
    doTr =    doTr && Dist().AcceptTranslate() ;
- 
+
    mScN =  doScale ? aS: 1.0;
    mTrN    =  doTr    ?  aTr : Pt2dr(0,0);
 
@@ -3319,7 +3650,7 @@ void CamStenope::StdNormalise(bool doScale,bool  doTr)
 
 
 
-double CamStenope::SzDiffFinie() const 
+double CamStenope::SzDiffFinie() const
 {
     return Focale() / 1000.0;
 }
@@ -3333,6 +3664,7 @@ CamStenope::CamStenope(const CamStenope & cam,const ElRotation3D & ORIENT) :
     SetOrientation(ORIENT);
 }
 
+/*
 CamStenope::CamStenope(const CamStenope & cam) :
     ElCamera  (DistIsC2M(),eProjectionStenope),
     _PrSten   (cam._PrSten),
@@ -3340,7 +3672,9 @@ CamStenope::CamStenope(const CamStenope & cam) :
 {
     AddDistCompl(cam.DistComplIsDir(),cam.DistCompl());
     SetOrientation(cam._orient);
+    HeritComplAndSz(cam);
 }
+*/
 
 
 
@@ -3364,7 +3698,7 @@ void CamStenope::OrientFromPtsAppui
          ElSTDNS list<ElRotation3D> & Res,
          Pt3dr R3A, Pt3dr R3B, Pt3dr R3C,
          Pt2dr F2A, Pt2dr F2B, Pt2dr F2C
-     )   
+     )
 {
 
     Pt2dr C2A =  DistInverse(F2A);
@@ -3380,12 +3714,13 @@ void CamStenope::OrientFromPtsAppui
 
 
     ElSTDNS list<Pt3dr>  Prof;
-    ElPhotogram::ProfChampsFromDist 
+    ElPhotogram::ProfChampsFromDist
     (
         Prof,
         RayA,RayB,RayC,
         euclid(R3A-R3B),euclid(R3A-R3C),euclid(R3B-R3C)
     );
+
 
     Res.clear();
     for (INT sign =-1; sign<=1 ; sign += 2)
@@ -3395,13 +3730,13 @@ void CamStenope::OrientFromPtsAppui
            Pt3dr L3A = RayA * it->x * sign;
            Pt3dr L3B = RayB * it->y * sign;
            Pt3dr L3C = RayC * it->z * sign;
-    
+
            Pt3dr LAB = L3B-L3A;
            Pt3dr LAC = L3C-L3A;
            Pt3dr RAB = R3B-R3A;
            Pt3dr RAC = R3C-R3A;
-    
-           ElMatrix<REAL> M3 = MatFromImageBase 
+
+           ElMatrix<REAL> M3 = MatFromImageBase
                                (
                                    RAB,RAC,RAB^RAC,
                                    LAB,LAC,LAB^LAC
@@ -3416,7 +3751,7 @@ void CamStenope::OrientFromPtsAppui
      (
          ElSTDNS list<ElRotation3D> & Res,
          const ElSTDNS list<Pt3dr> & PR3 ,
-         const ElSTDNS list<Pt2dr> & PF2 
+         const ElSTDNS list<Pt2dr> & PF2
      )
 {
      Res.clear();
@@ -3453,6 +3788,7 @@ void CamStenope::OrientFromPtsAppui
     OrientFromPtsAppui(Res,PR3,PF2);
 }
 
+
 ElRotation3D  CamStenope::OrientFromPtsAppui
               (
                     bool RequireTousDevant,
@@ -3460,7 +3796,7 @@ ElRotation3D  CamStenope::OrientFromPtsAppui
                     const ElSTDNS list<Pt2dr> & PF2 ,
                     REAL * Res_Dmin,
                     INT  * NbSol
-              )  
+              )
 {
 
     ElSTDNS list<ElRotation3D>  Ors;
@@ -3470,12 +3806,12 @@ ElRotation3D  CamStenope::OrientFromPtsAppui
     if (NbSol)
     {
         *NbSol = (int) Ors.size();
-	if (*NbSol == 0)
-	{
-            if (Res_Dmin) 
+    if (*NbSol == 0)
+    {
+            if (Res_Dmin)
               *Res_Dmin = 1e15;
             return ElRotation3D(Pt3dr(1000,2220,9990),10,20,30);
-	}
+    }
     }
     else
     {
@@ -3492,6 +3828,9 @@ ElRotation3D  CamStenope::OrientFromPtsAppui
        if ((!RequireTousDevant) || Cam.TousDevant(PR3))
        {
           REAL dist = Cam.EcProj(PR3,PF2);
+
+// if (DebugOFPA) std::cout << " " << dist << " " <<  it->IRecVect(Pt3dr(0,0,1)) << "\n";
+
           if (dist<dmin)
           {
               dmin = dist;
@@ -3500,7 +3839,9 @@ ElRotation3D  CamStenope::OrientFromPtsAppui
        }
     }
 
-    if (Res_Dmin) 
+// if (DebugOFPA) std::cout <<  "\n";
+
+    if (Res_Dmin)
        *Res_Dmin = dmin;
 
     return res;
@@ -3511,12 +3852,12 @@ void RansacTriplet
          int & aK1,
          int & aK2,
          int & aK3,
-	 int   aNb
+     int   aNb
      )
 {
    aK1 = NRrandom3(aNb);
    aK2 = NRrandom3(aNb);
-   while (aK2==aK1) 
+   while (aK2==aK1)
    {
       aK2 = NRrandom3(aNb);
    }
@@ -3527,6 +3868,7 @@ void RansacTriplet
    }
 }
 
+
 ElRotation3D  CamStenope::CombinatoireOFPAGen
               (
                     bool TousDevant,
@@ -3534,10 +3876,11 @@ ElRotation3D  CamStenope::CombinatoireOFPAGen
                     const ElSTDNS list<Pt3dr> & PR3 ,
                     const ElSTDNS list<Pt2dr> & PF2 ,
                     REAL * Res_Dmin,
-		    bool  aModeRansac,
+            bool  aModeRansac,
                     Pt3dr * aDirApprox
-	      )
+          )
 {
+
      ELISE_ASSERT(PR3.size() == PF2.size(),"CombinatoireOFPA Dif Size");
      ELISE_ASSERT(INT(PR3.size())>=4,"CombinatoireOFPA, Size Insuffisant");
 
@@ -3548,16 +3891,16 @@ ElRotation3D  CamStenope::CombinatoireOFPAGen
      std::vector < Pt3dr > V3( PR3.begin() , PR3.end() );
      std::vector < Pt2dr > V2( PF2.begin() , PF2.end() );
 #else
-	 ELISE_ASSERT(false,"No Vector interval init, with Visual");
-	 std::vector < Pt3dr > V3;
-	 std::vector < Pt2dr > V2;
+     ELISE_ASSERT(false,"No Vector interval init, with Visual");
+     std::vector < Pt3dr > V3;
+     std::vector < Pt2dr > V2;
 #endif
      std::list<Pt3dr>   L3(PR3);
      std::list<Pt2dr>   L2(PF2);
 
 
      INT aNB = ElMin((INT) V3.size(),ElMax(3,NbTest));
-     
+
      int aNbTestMade= 0;
      for (INT k0= 0 ; k0<aNB ; k0++)
      {
@@ -3565,57 +3908,74 @@ ElRotation3D  CamStenope::CombinatoireOFPAGen
           {
                for (INT k2= k1+1 ; k2<aNB ; k2++)
                {
-	            if (aModeRansac)
+
+                if (aModeRansac)
                         RansacTriplet(k0,k1,k2,V3.size());
-	            L3.push_front(V3[k0]);
-	            L2.push_front(V2[k0]);
-	            L3.push_front(V3[k1]);
-	            L2.push_front(V2[k1]);
-	            L3.push_front(V3[k2]);
-	            L2.push_front(V2[k2]);
+                L3.push_front(V3[k0]);
+                L2.push_front(V2[k0]);
+                L3.push_front(V3[k1]);
+                L2.push_front(V2[k1]);
+                L3.push_front(V3[k2]);
+                L2.push_front(V2[k2]);
+
+                    double aDist2 = ElMin3(dist8(V2[k0]-V2[k1]),dist8(V2[k1]-V2[k2]),dist8(V2[k2]-V2[k0]));
+
+                    if (0)
+                    {
+                        std::cout << "AVANT OrientFromPtsAppu " << aNbTestMade  << " D=" << aDist2  << " NBt" << aNbTestMade  << " Nb=" << aNB << " " << V3.size() << "\n";
+                        std::cout << V3[k0] << V3[k1] << V3[k2] << "\n";
+                        std::cout << V2[k0] << V2[k1] << V2[k2] << "\n";
+                    }
+
+                    if (aDist2>1e-6)
+                    {
+
+                 REAL aDist;
+                 INT  aNbSol;
+                         ElRotation3D   aRot = OrientFromPtsAppui(TousDevant,L3,L2,&aDist,&aNbSol);
 
 
+if (0)
+{
+    std::cout << "OrientFromPtsAppui DIST " << aDist   << " NbS " << aNbSol << "\n";
+}
 
-		    REAL aDist;
-		    INT  aNbSol;
-                    ElRotation3D   aRot = 
-			    OrientFromPtsAppui(TousDevant,L3,L2,&aDist,&aNbSol);
-		    if ((aNbSol)&& (aDist < *Res_Dmin))
-		    {
-                       bool Ok = true;
-                       if (aDirApprox !=0)
-                       {
-                           Ok = (scal(*aDirApprox,aRot.IRecVect(Pt3dr(0,0,1))) > 0);
-                       }
-                       if (Ok)
-                       {
-		          *Res_Dmin = aDist;
-		          aRes = aRot;
-                       }
-		    }
-	            L3.pop_front();
-	            L2.pop_front();
-	            L3.pop_front();
-	            L2.pop_front();
-	            L3.pop_front();
-	            L2.pop_front();
-		    aNbTestMade ++;
-		    if (aModeRansac)
-		    {
-		       if (aNbTestMade==NbTest)
-		       {
+                 if ((aNbSol)&& (aDist < *Res_Dmin))
+                 {
+                            bool Ok = true;
+                            if (aDirApprox !=0)
+                            {
+                                Ok = (scal(*aDirApprox,aRot.IRecVect(Pt3dr(0,0,1))) > 0);
+                            }
+                            if (Ok)
+                            {
+                       *Res_Dmin = aDist;
+                       aRes = aRot;
+                            }
+                 }
+                 aNbTestMade ++;
+            }
+            if (aModeRansac)
+            {
+               if (aNbTestMade==NbTest)
+               {
                            return aRes;
-		       }
-		       else
-		       {
-		           k0 = k1 = k2 = 0;
-		       }
-		    }
+               }
+               else
+               {
+                   k0 = k1 = k2 = 0;
+               }
+            }
+                L3.pop_front();
+                L2.pop_front();
+                L3.pop_front();
+                L2.pop_front();
+                L3.pop_front();
+                L2.pop_front();
                }
 
           }
      }
-
      return aRes;
 }
 
@@ -3629,7 +3989,7 @@ ElRotation3D  CamStenope::CombinatoireOFPA
                     const ElSTDNS list<Pt2dr> & PF2 ,
                     REAL * Res_Dmin,
                     Pt3dr * aDirApprox
-	      )
+          )
 {
    return CombinatoireOFPAGen(TousDevant,NbTest,PR3,PF2,Res_Dmin,false,aDirApprox);
 }
@@ -3641,7 +4001,7 @@ ElRotation3D  CamStenope::CombinatoireOFPA
                     const ElSTDNS list<Appar23> & P23 ,
                     REAL * Res_Dmin,
                     Pt3dr * aDirApprox
-	      )
+          )
 {
     ElSTDNS list<Pt3dr> PR3;
     ElSTDNS list<Pt2dr> PF2;
@@ -3657,13 +4017,15 @@ ElRotation3D  CamStenope::RansacOFPA
                     const ElSTDNS list<Appar23> & P23 ,
                     REAL * Res_Dmin,
                     Pt3dr * aDirApprox
-	      )
+          )
 {
     ElSTDNS list<Pt3dr> PR3;
     ElSTDNS list<Pt2dr> PF2;
 
     ToSepList(PR3,PF2,P23);
-    return CombinatoireOFPAGen(TousDevant,NbTest,PR3,PF2,Res_Dmin,true,aDirApprox);
+    ElRotation3D aR =  CombinatoireOFPAGen(TousDevant,NbTest,PR3,PF2,Res_Dmin,true,aDirApprox);
+
+    return  aR;
 }
 
 
@@ -3677,7 +4039,7 @@ ElRotation3D  CamStenope::OrientFromPtsAppui
                     const ElSTDNS list<Appar23> & P23 ,
                     REAL * Res_Dmin,
                     INT   * NbSol
-              )  
+              )
 {
     ElSTDNS list<Pt3dr> PR3;
     ElSTDNS list<Pt2dr> PF2;
@@ -3692,7 +4054,7 @@ REAL CamStenope::EcartProj(Pt2dr aPC2A,const ElCamera & CamB,Pt2dr aPC2B)
 {
     Pt3dr RayB0,RayB1;
     CamB.F2toRayonR3(aPC2B,RayB0,RayB1);
-  
+
     Pt3dr DirR = RayB1-RayB0;
 
     RayB0 = RayB0 + DirR * 10;
@@ -3758,15 +4120,15 @@ void  CamStenope::Set_GPS_Orientation_From_Appuis
             ElRotation3D aRC2M_Id(aGPS,0,0,0);
             SetOrientation(aRC2M_Id.inv());
 
-            Appar23 anAp1= aVApp[aK1]; 
-            Appar23 anAp2= aVApp[aK2]; 
+            Appar23 anAp1= aVApp[aK1];
+            Appar23 anAp2= aVApp[aK2];
 
             Pt3dr  aD1Cam = vunit(F2toDirRayonL3(anAp1.pim));
             Pt3dr  aD2Cam = vunit(F2toDirRayonL3(anAp2.pim));
 
             Pt3dr aD1Monde = vunit(anAp1.pter-aGPS);
             Pt3dr aD2Monde = vunit(anAp2.pter-aGPS);
-            
+
             ElMatrix<REAL> aMatC2M = ComplemRotation(aD1Cam,aD2Cam,aD1Monde,aD2Monde);
 
             ElRotation3D aRC2M_Test(aGPS,aMatC2M,true);
@@ -3882,11 +4244,11 @@ cCamStenopeGen::cCamStenopeGen
 /*                                               */
 /*************************************************/
 
-cCamStenopeDistRadPol::cCamStenopeDistRadPol 
+cCamStenopeDistRadPol::cCamStenopeDistRadPol
     (  bool isDistC2M,
        REAL Focale,
-       Pt2dr Centre, 
-       ElDistRadiale_PolynImpair aDist, 
+       Pt2dr Centre,
+       ElDistRadiale_PolynImpair aDist,
        const std::vector<double> & ParamAF,
        ElDistRadiale_PolynImpair * aRefDist,
        const Pt2di  & aSz
@@ -3904,14 +4266,14 @@ const cCamStenopeDistRadPol * cCamStenopeDistRadPol::Debug_CSDRP() const
    return this;
 }
 
-void cCamStenopeDistRadPol::write(class  ELISE_fp & aFile) 
+void cCamStenopeDistRadPol::write(class  ELISE_fp & aFile)
 {
         ELISE_ASSERT(ParamAF().size()==0,"cCamStenopeDistRadPol::write no AF");
-	aFile.write(Focale());
-	aFile.write(PP());
-	aFile.write(DistIsC2M());
-	mDist.write(aFile);
-	aFile.write(Orient());
+    aFile.write(Focale());
+    aFile.write(PP());
+    aFile.write(DistIsC2M());
+    mDist.write(aFile);
+    aFile.write(Orient());
 }
 void cCamStenopeDistRadPol::write(const std::string & aName)
 {
@@ -3923,17 +4285,17 @@ void cCamStenopeDistRadPol::write(const std::string & aName)
 cCamStenopeDistRadPol * cCamStenopeDistRadPol::read_new(ELISE_fp & aFile)
 {
        std::vector<double> NoAF;
-	REAL aFoc = aFile.read((REAL  *)0);
-	Pt2dr aPP = aFile.read((Pt2dr *)0);
-	bool isDC2M = aFile.read((bool *)0);
-	ElDistRadiale_PolynImpair aDist = ElDistRadiale_PolynImpair::read(aFile);
+    REAL aFoc = aFile.read((REAL  *)0);
+    Pt2dr aPP = aFile.read((Pt2dr *)0);
+    bool isDC2M = aFile.read((bool *)0);
+    ElDistRadiale_PolynImpair aDist = ElDistRadiale_PolynImpair::read(aFile);
 
-	cCamStenopeDistRadPol * aCam = new cCamStenopeDistRadPol (isDC2M,aFoc,aPP,aDist,NoAF);
-	ElRotation3D aRot = aFile.read((ElRotation3D *)0);
+    cCamStenopeDistRadPol * aCam = new cCamStenopeDistRadPol (isDC2M,aFoc,aPP,aDist,NoAF);
+    ElRotation3D aRot = aFile.read((ElRotation3D *)0);
         aCam->SetOrientation(aRot);
 
 
-	return aCam;
+    return aCam;
 }
 
 cCamStenopeDistRadPol * cCamStenopeDistRadPol::read_new(const std::string & aName)
@@ -3948,7 +4310,7 @@ const ElDistRadiale_PolynImpair & cCamStenopeDistRadPol::DRad() const
 {
    return mDist;
 }
-ElDistRadiale_PolynImpair & cCamStenopeDistRadPol::DRad() 
+ElDistRadiale_PolynImpair & cCamStenopeDistRadPol::DRad()
 {
    return mDist;
 }
@@ -3959,7 +4321,7 @@ const ElDistortion22_Gen & cCamStenopeDistRadPol::Dist() const
 // std::cout << "KKKKKKKKKKKKKkkkk\n";
    return mDist;
 }
-ElDistortion22_Gen & cCamStenopeDistRadPol::Dist() 
+ElDistortion22_Gen & cCamStenopeDistRadPol::Dist()
 {
    return mDist;
 }
@@ -3972,7 +4334,6 @@ cParamIntrinsequeFormel * cCamStenopeDistRadPol::AllocParamInc(bool isDC2M,cSetE
 cParamIFDistRadiale * cCamStenopeDistRadPol::AllocDRadInc(bool isDC2M,cSetEqFormelles & aSetEq)
 {
 
-   // ELISE_ASSERT(!DistIsDirecte(),"cCamStenopeDistRadPol::AllocDRadInc");
 
 
    cParamIFDistRadiale * aRes = aSetEq.NewIntrDistRad(isDC2M,this,5);
@@ -4011,15 +4372,15 @@ cCamStenopeModStdPhpgr::cCamStenopeModStdPhpgr
 
 cDistModStdPhpgr & cCamStenopeModStdPhpgr::DModPhgrStd()
 {
-	return mDist;
+    return mDist;
 }
 
 const cDistModStdPhpgr & cCamStenopeModStdPhpgr::DModPhgrStd() const
 {
-	return mDist;
+    return mDist;
 }
 
-ElDistortion22_Gen & cCamStenopeModStdPhpgr::Dist() 
+ElDistortion22_Gen & cCamStenopeModStdPhpgr::Dist()
 {
    return mDist;
 }
@@ -4035,9 +4396,6 @@ cParamIntrinsequeFormel * cCamStenopeModStdPhpgr::AllocParamInc(bool isDC2M,cSet
 
 cParamIFDistStdPhgr * cCamStenopeModStdPhpgr::AllocPhgrStdInc(bool isDC2M,cSetEqFormelles & aSetEq)
 {
-   // ELISE_ASSERT(!DistIsDirecte(),"cCamStenopeDistRadPol::AllocDRadInc");
-   /*
-   */
 
    cParamIFDistStdPhgr * aRes = aSetEq.NewIntrDistStdPhgr (isDC2M,this,5);
    aRes->SetFocFree(true);
@@ -4059,7 +4417,7 @@ cCamStenopeDistPolyn::cCamStenopeDistPolyn
 (
      bool isDC2M,
      REAL Focale,
-     Pt2dr Centre, 
+     Pt2dr Centre,
      const ElDistortionPolynomiale & aDist,
      const std::vector<double> &     aParamAF
 )   :
@@ -4068,7 +4426,7 @@ cCamStenopeDistPolyn::cCamStenopeDistPolyn
 {
 }
 
-ElDistortion22_Gen & cCamStenopeDistPolyn::Dist() 
+ElDistortion22_Gen & cCamStenopeDistPolyn::Dist()
 {
    return mDist;
 }
@@ -4092,7 +4450,7 @@ cCamStenopeDistHomogr::cCamStenopeDistHomogr
 (
      bool isDC2M,
      REAL Focale,
-     Pt2dr Centre, 
+     Pt2dr Centre,
      const cDistHomographie & aDist,
      const std::vector<double> &  aParamAF
 )  :
@@ -4101,7 +4459,7 @@ cCamStenopeDistHomogr::cCamStenopeDistHomogr
 {
 }
 
-ElDistortion22_Gen & cCamStenopeDistHomogr::Dist() 
+ElDistortion22_Gen & cCamStenopeDistHomogr::Dist()
 {
    return mDist;
 }
@@ -4158,7 +4516,7 @@ double   cAnalyseZoneLiaison::Score(double ExposantDist,double ExposantPds)
            Ok=true;
    }
 
-   if (! Ok) 
+   if (! Ok)
       return -1;
  // std::cout << "cAnalyseZoneLiaison::Score  " << mVPts.size() << "\n";
     SegComp aSeg = seg_mean_square(mMat,1.0);
@@ -4173,11 +4531,11 @@ double   cAnalyseZoneLiaison::Score(double ExposantDist,double ExposantPds)
         aRes += pow(aD,ExposantDist);
         aSPds++;
     }
-    aRes /= aSPds; 
+    aRes /= aSPds;
     aRes = pow(aRes,1/ExposantDist);
 
     return aRes * pow(aSPds,ExposantPds);
-   
+
 }
 
 /*************************************************/
@@ -4187,8 +4545,8 @@ double   cAnalyseZoneLiaison::Score(double ExposantDist,double ExposantPds)
 /*                                               */
 /*************************************************/
 
-cCamStenopeGrid::cCamStenopeGrid 
-    (  
+cCamStenopeGrid::cCamStenopeGrid
+    (
         const double & aFoc,
         const Pt2dr & aCentre,
         cDistCamStenopeGrid * aDCSG,
@@ -4218,13 +4576,14 @@ cCamStenopeGrid * cCamStenopeGrid::Alloc
   Pt2dr  aSauvTr = aCS.TrCamNorm();
   const_cast<CamStenope &>(aCS).UnNormalize();
 
- cDistCamStenopeGrid * aDist = 
+ cDistCamStenopeGrid * aDist =
        cDistCamStenopeGrid::Alloc(aRayInv,aCS,aStepGr,doDir,doInv);
 
   cCamStenopeGrid * aRes =  new cCamStenopeGrid(aCS.Focale(),aCS.PP(),aDist,aCS.Sz(),aCS.ParamAF());
 
+  aRes->mSzPixel =  aCS.SzPixelBasik();
 
-  // HERE 
+  // HERE
 
   aRes->CamHeritGen(aCS,false,false);
 
@@ -4258,14 +4617,14 @@ Pt2dr cCamStenopeGrid::L2toF2AndDer(Pt2dr aP,Pt2dr & aGX,Pt2dr & aGY)
 
     return aP;
 
-    
+
 }
 
 
 
 CamStenope * CamCompatible_doublegrid(const std::string & aNameFile)
 {
-   
+
     cElXMLTree aTree(aNameFile);
 
    if (aTree.Get("doublegrid") && aTree.Get("focal") &&  aTree.Get("usefull-frame"))
@@ -4308,7 +4667,7 @@ CamStenope * CamCompatible_doublegrid(const std::string & aNameFile)
            //    ElProjIdentite
 
 
-Pt2dr ElProjIdentite::Proj(Pt3dr aP) const 
+Pt2dr ElProjIdentite::Proj(Pt3dr aP) const
 {
     return Pt2dr (aP.x,aP.y);
 }
@@ -4323,7 +4682,7 @@ void   ElProjIdentite::Diff(ElMatrix<REAL> &,Pt3dr) const
    ELISE_ASSERT(false,"No ElProjIdentite::Diff");
 }
 
-void  ElProjIdentite::Rayon(Pt2dr aP,Pt3dr &p0,Pt3dr & p1) const 
+void  ElProjIdentite::Rayon(Pt2dr aP,Pt3dr &p0,Pt3dr & p1) const
 {
       p0 = Pt3dr(aP.x,aP.y,0);
       p1 = Pt3dr(aP.x,aP.y,1);
@@ -4331,7 +4690,7 @@ void  ElProjIdentite::Rayon(Pt2dr aP,Pt3dr &p0,Pt3dr & p1) const
 
 ElProjIdentite ElProjIdentite::TheOne;
 
-           //  cCameraOrtho 
+           //  cCameraOrtho
 
 cCameraOrtho::cCameraOrtho(const Pt2di & aSz) :
    ElCamera(false,eProjectionOrtho)
@@ -4354,11 +4713,11 @@ Pt3dr cCameraOrtho::R3toL3(Pt3dr aP) const
           );
 }
 
-double cCameraOrtho::ResolutionSol() const 
+double cCameraOrtho::ResolutionSol() const
 {
     return  _orient.tr().z;
 }
-double cCameraOrtho::ResolutionSol(const Pt3dr &) const 
+double cCameraOrtho::ResolutionSol(const Pt3dr &) const
 {
     return  ResolutionSol();
 }
@@ -4421,6 +4780,10 @@ Pt3dr cCameraOrtho::ImEtProf2Terrain(const Pt2dr & aP,double aZ) const
 {
      return mCentre + F2toDirRayonR3(aP) * aZ;
 }
+Pt3dr cCameraOrtho::NoDistImEtProf2Terrain(const Pt2dr & aP,double aZ) const
+{
+     return ImEtProf2Terrain(aP,aZ);
+}
 
 
 Pt3dr  cCameraOrtho::OrigineProf() const
@@ -4430,7 +4793,8 @@ Pt3dr  cCameraOrtho::OrigineProf() const
 
 bool  cCameraOrtho::HasOrigineProf() const
 {
-    return true;
+    // Modif MPD le 17/06/2014 ; semle + logique comme cela et est utilise dans ElCamera::PIsVisibleInImage
+    return false;
 }
 
 
@@ -4463,13 +4827,13 @@ class cCameraOrtho : public ElCamera
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -4479,17 +4843,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

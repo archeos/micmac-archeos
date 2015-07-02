@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -46,6 +46,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #ifndef _ELISE_SYS_DEP_H
 #define _ELISE_SYS_DEP_H
+
+#include "general/CMake_defines.h"
+#include "GpGpu/GpGpu_BuildOptions.h"
 
 // Only for g++ 2.7.2.1 on alpha
 #define BUG_CPP_Fclose 0
@@ -72,9 +75,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 // Pour l'instant : Unix=>X11, Win => pas de visu
 
 #ifndef NO_X11
-	#ifndef ELISE_X11
-		#define ELISE_X11  (ELISE_unix | ELISE_MacOs)
-	#endif 
+    #ifndef ELISE_X11
+        #define ELISE_X11  (ELISE_unix | ELISE_MacOs)
+    #endif
 #endif
 /*
 */
@@ -92,80 +95,110 @@ Header-MicMac-eLiSe-25/06/2007*/
 //===================================================
 
 #if ELISE_unix
-	#define SYS_MV "mv"
-	#define SYS_RM "\\rm"   // MODID MPD CAR rm ne fonctionne pas si il a ete redefini par alias !!
-	#define SYS_CP "cp"
-	#define SYS_CAT "cat"
-	#define ELISE_CAR_DIR  '/' 
-	#define ELISE_Current_DIR  "./"
+    #define SYS_MV "mv"
+    #define SYS_RM "\\rm"   // MODID MPD CAR rm ne fonctionne pas si il a ete redefini par alias !!
+    #define SYS_CP "cp"
+    #define SYS_CAT "cat"
+    #define ELISE_CAR_DIR  '/'
+    #define ELISE_Current_DIR  "./"
     #define ELISE_STR_DIR "/"
-	// the character separating directories in PATH environment variable
+    // the character separating directories in PATH environment variable
     #define ELISE_CAR_ENV ':'
 #endif
 
 #if ELISE_MacOs
-	#define SYS_MV "mv"
-	#define SYS_RM "rm"
-	#define SYS_CP "cp"
-	#define SYS_CAT "cat"
-	#define ELISE_CAR_DIR  '/' 
-	#define ELISE_Current_DIR  "./"
+    #define SYS_MV "mv"
+    #define SYS_RM "rm"
+    #define SYS_CP "cp"
+    #define SYS_CAT "cat"
+    #define ELISE_CAR_DIR  '/'
+    #define ELISE_Current_DIR  "./"
     #define ELISE_STR_DIR "/"
     #define ELISE_CAR_ENV ':'
 #endif
 
 #if ELISE_windows
-	#define SYS_MV "move"
-	#define SYS_RM "del"
-	#define SYS_CP "copy"
-	#define SYS_CAT "type"
-	#define ELISE_CAR_DIR  '/' 
-	#define ELISE_Current_DIR  "./"
-	#include <float.h>
-	#define isnan _isnan 
+	#define _MSC_VER_2015 1900
+	#define _MSC_VER_2013 1800
+	#define _MSC_VER_2012 1700
+	#define _MSC_VER_2010 1600
+
+    #define SYS_MV "move"
+    #define SYS_RM "del"
+    #define SYS_CP "copy"
+    #define SYS_CAT "type"
+    #define ELISE_CAR_DIR  '/'
+    #define ELISE_Current_DIR  "./"
+    #include <float.h>
+    #define std_isnan _isnan
+    #define std_isinf isinf
+
     #define ELISE_STR_DIR "/"
-	// the character separating directories in PATH environment variable
+    // the character separating directories in PATH environment variable
     #define ELISE_CAR_ENV ';'
+    #define isinf(x) (!_finite(x))
+
+	#if _MSC_VER<_MSC_VER_2013
+		double round( double aX );
+	#endif
+#else
+    #include <cmath>
+    #define std_isnan std::isnan
+    #define std_isinf std::isnan
+#endif
+
+template <class Type> bool BadNumber(const Type & aVal) {return (std_isnan(aVal)||std_isinf(aVal));}
+
+#if __cplusplus > 199711L | (_MSC_VER == 1800 & CPP11THREAD_NOBOOSTTHREAD == 1)
+    #define std_unique_ptr std::unique_ptr
+    #define NULLPTR nullptr
+    #define CPPX11
+    #ifndef     __CUDACC__
+        #define    NOCUDA_X11
+    #endif
+#else // under c++11
+    #define std_unique_ptr std::auto_ptr
+    #define NULLPTR NULL
 #endif
 
 #if Compiler_Gpp2_7_2   // =========
-	#define ElTyName typename
+    #define ElTyName typename
 #elif(GPP3etPlus || Compiler_Visual_7_0)      // =========
-	#define ElTyName typename
+    #define ElTyName typename
 #else                  // =========
-	#define ElTyName 
+    #define ElTyName
 #endif
 
 #define ElTemplateInstantiation 1
 
-// Apparamment MSW est assez restrictif sur l'emploi du typename
+// Apparemment MSW est assez restrictif sur l'emploi du typename
 #if ( ELISE_windows & !ELISE_MinGW )
-	#define ElTypeName_NotMSW
-	#define  ClassFriend
+    #define ElTypeName_NotMSW
+    #define  ClassFriend
 #else
-	#define ElTypeName_NotMSW typename
-	#define  ClassFriend class
+    #define ElTypeName_NotMSW typename
+    #define  ClassFriend class
 #endif
 
 
 
-#if ElUseNameSpace 
-	#define STDSORT std::sort
-	#define STDUNIQUE std::unique
-	#define STDOSTREAM std::ostream
-	#define STDLIST std::list
-	#define USING_STD_NAME_SPACE using namespace std;
-	#define NS_BEGIN_eLiSe  namespace eLiSe{
-	#define NS_END_eLiSe }
-	#define NS_USING_eLiSe using namespace eLiSe;
+#if ElUseNameSpace
+    #define STDSORT std::sort
+    #define STDUNIQUE std::unique
+    #define STDOSTREAM std::ostream
+    #define STDLIST std::list
+    #define USING_STD_NAME_SPACE using namespace std;
+    #define NS_BEGIN_eLiSe  namespace eLiSe{
+    #define NS_END_eLiSe }
+    #define NS_USING_eLiSe using namespace eLiSe;
 #else
-	#define STDSORT sort
-	#define STDUNIQUE unique
-	#define STDOSTREAM ostream
-	#define STDLIST list
-	#define USING_STD_NAME_SPACE  
-	#define BEGIN_ELISE_NAME_SPACE
-	#define END_ELISE_NAME_SPACE
+    #define STDSORT sort
+    #define STDUNIQUE unique
+    #define STDOSTREAM ostream
+    #define STDLIST list
+    #define USING_STD_NAME_SPACE
+    #define BEGIN_ELISE_NAME_SPACE
+    #define END_ELISE_NAME_SPACE
 #endif
 
 #define ElSTDNS  std::
@@ -173,12 +206,12 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 
 #if (SUN_WS5)
-	#define ElMemberTpl 0
+    #define ElMemberTpl 0
 #else
-	#define ElMemberTpl 1
+    #define ElMemberTpl 1
 #endif
 
-// Directory where Elise is installed 
+// Directory where Elise is installed
 
 
 //===================================================
@@ -186,9 +219,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 //===================================================
 
 #if (Compiler_Visual_5_0 || Compiler_Visual_6_0)
-	#define PRE_CLASS
+    #define PRE_CLASS
 #else
-	#define PRE_CLASS class
+    #define PRE_CLASS class
 #endif
 
 #define SUN_WS (SUN_WS5 || SUN_WS6)
@@ -199,10 +232,10 @@ Header-MicMac-eLiSe-25/06/2007*/
  *   ISO/IEC 14881:1998 (E) (autrement dit la norme ANSI/C++).
  *
  */
-#if (ELISE_windows)&&(!ELISE_MinGW)
-	#define STRICT_ANSI_FRIEND_TPL 0
+#if (ELISE_windows & !ELISE_MinGW)
+    #define STRICT_ANSI_FRIEND_TPL 0
 #else
-	#define STRICT_ANSI_FRIEND_TPL 1
+    #define STRICT_ANSI_FRIEND_TPL 1
 #endif
 /******************************************************************/
 /******************************************************************/
@@ -217,7 +250,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 typedef enum
 {
      ELISE_VW_X11,
-	 
+
 }
 TY_ELISE_VIDEO_WIN;
 
@@ -270,6 +303,8 @@ const  TY_OPERATING_SYST   ELISE_OS        =  ELISE_WNT;
 #include <stdint.h>
 #define U_INT4 unsigned  int
 #define INT4   int
+#define U_INT8 unsigned long long int
+#define _INT8   long long int // INT8 is already defined by windows.h and means "char"
 #define U_INT2 unsigned short
 #define INT2   signed short
 #define U_INT1 unsigned char
@@ -317,7 +352,7 @@ extern FILE * (*popen_call)( const char *cmd, const char *acces );
 /************* SPECIAL BUGS AND PROBLEMS ******************/
 
 
-   // bugs, with g++ 2.7.2, on linux, 
+   // bugs, with g++ 2.7.2, on linux,
    // see  "bugs_cpp/stat_const_class.C"
 
 #if (ELISE_OS==ELISE_LINUX)
@@ -335,7 +370,7 @@ typedef const REAL * const *  Const_REAL_PP ;
 #if (MACHINE_BLERIOT)
 #define STD_INPUT_STRING_STREAM   istrstream
 #else
-#define STD_INPUT_STRING_STREAM   istringstream 
+#define STD_INPUT_STRING_STREAM   istringstream
 #endif
 #else
 #define STD_INPUT_STRING_STREAM   istrstream
@@ -344,7 +379,7 @@ typedef const REAL * const *  Const_REAL_PP ;
            /****************  PRAGMA ************/
 
 #if (Compiler_Turbo_4_5)
-typedef enum  {false,true} bool; 
+typedef enum  {false,true} bool;
 #endif
 
 
@@ -367,19 +402,33 @@ typedef REAL8  tSysCho ;
 #endif
 
 
+// Version int de __HG_REV__
+int NumHgRev();
+
+#if ELISE_PTR_SIZE==4
+    #define ELISE_PTR_U_INT U_INT4
+    #define ELISE_PTR_FORMAT "%l"
+#elif ELISE_PTR_SIZE==8
+    #define ELISE_PTR_U_INT U_INT8
+    #define ELISE_PTR_FORMAT "%ll"
+#else
+    unhandled size of pointer
+#endif
+
+
 #endif /* ! _ELISE_SYS_DEP_H */
 
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -389,17 +438,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

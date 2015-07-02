@@ -37,14 +37,28 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 #include "cModuleOrientation.h"
 #include "cOrientationGrille.h"
 #include "cOrientationRTO.h"
 #include "cOrientationCon.h"
 
-namespace NS_ParamMICMAC
+
+void ShowPoly(cElPolygone  aPoly)
 {
+  std::list<std::vector<Pt2dr> > aLC = aPoly.Contours();
+  std::list<bool> aLH = aPoly.IsHole();
+  std::list<bool>::iterator itH = aLH.begin();
+  for( std::list<std::vector<Pt2dr> >::iterator itC=aLC.begin() ; itC!=aLC.end() ; itC++)
+  {
+       std::vector<Pt2dr> aC = *itC;
+       std::cout << "H=" << ((*itH) ? "Hole" : "Fill") << "\n";
+       for (int aK= 0 ; aK<int(aC.size()) ; aK++)
+           std::cout << aC[aK] ;
+       std::cout << "\n";
+       itH++;
+  }
+}
 
 /*****************************************/
 /*                                       */
@@ -90,9 +104,9 @@ cGeomImage::cGeomImage
   mDimPx      (aDimPx),
   mPIV_Done   (false),
   mCoeffDilNonE (0.0)
-{
+{    
    mSzImInit   =aSzIm;
-//  std::cout <<  "KKKKK " << aPDV.Name() << " " << aSzIm << "\n";
+  // std::cout <<  "KKKKK " << aPDV.Name() << " " << aSzIm  << " " << aPDV.SzIm() << "\n";
 /*
    mContourIm.reserve(4);
    mContourIm.push_back(Pt2dr(0,0));
@@ -182,10 +196,26 @@ Pt3dr cGeomImage::Bascule(const Pt3dr & aPIm) const
 
 
 
-ElSeg3D cGeomImage::FaisceauPersp(const Pt2dr & )  const
+ElSeg3D cGeomImage::FaisceauPersp(const Pt2dr & aPIm )  const
 {
-      ELISE_ASSERT(false,"cGeomImage::Faisceau non defini");
-      return ElSeg3D(Pt3dr(0,0,0),Pt3dr(0,0,0));
+      // std::cout << "PXXXXXxxx " << mAppli 
+      double aPx[2];
+      aPx[1] = 0;
+      double aPxMoy =  mAppli.GeomDFPxInit().V0Px()[0];
+
+      double aPx0 = 0.99 *  aPxMoy;
+      aPx[0] =   aPx0;
+      Pt2dr aP2Ter0 = ImageAndPx2Obj_Euclid(aPIm,aPx);
+
+      double aPx1 = 1.01 *  aPxMoy;
+      aPx[0] =   aPx1;
+      Pt2dr aP2Ter1 = ImageAndPx2Obj_Euclid(aPIm,aPx);
+
+      Pt3dr aP3Ter0(aP2Ter0.x,aP2Ter0.y,aPx0);
+      Pt3dr aP3Ter1(aP2Ter1.x,aP2Ter1.y,aPx1);
+
+      // ELISE_ASSERT(false,"cGeomImage::Faisceau non defini");
+      return ElSeg3D(aP3Ter0,aP3Ter1);
 }
 
 Pt3dr cGeomImage::GeomFP2GeomFinale(const Pt3dr & aP)  const
@@ -219,9 +249,10 @@ cGeomImage * cGeomImage::NC_GeoTerrainIntrinseque()
 }
 
 
-ElCamera * cGeomImage::GetCamera(const Pt2di & aSz,bool & ToDel) const
+ElCamera * cGeomImage::GetCamera(const Pt2di & aSz,bool & ToDel,bool & aZUP) const
 {
    ToDel = true;
+   aZUP = true;
    return  cCameraOrtho::Alloc(aSz);
 }
 
@@ -235,12 +266,17 @@ void ShowAff(const ElAffin2D & anAff)
 
 void cGeomImage::RemplitOriXMLNuage
            (
+                bool CallFromMere,
                 const cMTD_Nuage_Maille &,
                 const cGeomDiscFPx & aGT,
                 cXML_ParamNuage3DMaille & aNuage,
                 eModeExportNuage
            ) const
 {
+
+
+
+
    aNuage.PM3D_ParamSpecifs().NoParamSpecif().SetNoInit();
    cModeFaisceauxImage aMFI;
    aMFI.ZIsInverse() = false;
@@ -251,7 +287,8 @@ void cGeomImage::RemplitOriXMLNuage
    // cCameraOrtho * aCam = cCameraOrtho::Alloc(aGT.SzDz());
    // ElCamera * aCam = cCameraOrtho::Alloc(aGT.SzDz());
    bool ToDel;
-   ElCamera * aCam = GetCamera(aGT.SzDz(),ToDel);
+   bool aZUP = false;
+   ElCamera * aCam = GetCamera(aGT.SzDz(),ToDel,aZUP);
 
 
    Pt2dr anOrigine,aResol;
@@ -291,6 +328,8 @@ getchar();
    aCam->SetScanImaC2M(anAffC2M);
 
    aNuage.Orientation() = aCam->StdExportCalibGlob();
+   if (aZUP)
+       aNuage.Orientation().ZoneUtileInPixel().SetVal(true);
    if (ToDel)
       delete aCam;
 /*
@@ -332,6 +371,7 @@ void cGeomImage::SetDeZoomIm(int aDeZoom)
 
 Pt2dr cGeomImage::CurObj2Im(Pt2dr aPTer,const REAL * aPx) const
 {
+
    return Objet2ImageInit_Euclid(aPTer,aPx)/double(mDeZoom) - Pt2dr(mP0Clip);
 }
 
@@ -348,7 +388,26 @@ void cGeomImage::PostInitVirtual(const std::vector<cModGeomComp *> & aVM)
    if (mPIV_Done)  // Evite la recursion infinie
       return;
    mPIV_Done = true;
-   mContourIm = EmpriseImage();
+
+
+   // mContourIm = EmpriseImage();
+   cElPolygone aPol1;
+   aPol1.AddContour(EmpriseImage(),false);
+   cElPolygone aPol2;
+   aPol2.AddContour(cGeomImage::EmpriseImage(),false);
+
+   cElPolygone aPol12 = aPol1 * aPol2;
+
+   mContourIm = aPol12.ContSMax();
+
+
+/*
+for (int aK=0; aK<int(mContourIm.size()) ; aK++)
+{
+   std::cout << "cGeomImage::EmpriseTerrain " <<mContourIm[aK] << "\n";
+}
+getchar();
+*/
 
 
    NC_GeoTerrainIntrinseque()->PostInitVirtual(aVM);
@@ -427,10 +486,20 @@ void cGeomImage::PostInit()
        //mAnamPMasq =  // StdGetObjFromFile<cParamMasqAnam>
       //return mAnamPMasq.BoxTer();
     }
+
+// std::cout << "CCCCCcccterrrrrr " << mContourTer.size() << "\n";
 // std::cout << mBoxTerPx0._p0 << " " << mBoxTerPx0._p1 << "\n";
 // std::cout << " F " << CanCal << " DDDDDDDDDDD "<< aPx0[0] << " " << aPx0[1] << "\n";
 // getchar();
+
     mPolygTerPx0.AddContour(mContourTer,false);
+
+/*
+std::cout << " EEEEEE mPolygTerPx0 \n";
+ShowPoly(mPolygTerPx0);
+getchar();
+*/
+
     InstPostInit();
 
 }
@@ -517,7 +586,7 @@ Box2dr cGeomImage::BoxImageOfBox
 
 std::string cGeomImage::NameMasqAnamSA(const std::string & aPost) const
 {
-   return mAppli.FullDirMEC() + "Anam_" + StdPrefix(mPDV.Name())+aPost;
+   return mAppli.FullDirMEC() + "Anam_" +  mAppli.NameChantier() + "_" + StdPrefix(mPDV.Name())+aPost;
 }
 
 
@@ -533,8 +602,11 @@ Box2dr cGeomImage::EmpriseTerrain
             double aRab
        )  const
 {
+
+
     if (mUseTerMasqAnam)
       return mAnamSAPMasq.BoxTer();
+
 
     Box2dr aRes= BoxImageOfVPts
                  (
@@ -827,14 +899,43 @@ bool  cGeomImage::IntersectEmprTer
       return false;
    }
 
+
    cElPolygone aPolInter = PolygTerPx0() * aGeo2.PolygTerPx0();
    const std::list<cElPolygone::tContour> & aContInter = aPolInter.Contours();
 
    if (aContInter.empty())
       return false;
 
+
+   double aSomS = 0;
+   Pt2dr  aSomP(0,0);
+   // std::cout << "============================mmmLLmmmIo====================\n";
+   for (std::list<cElPolygone::tContour>::const_iterator itP=aContInter.begin(); itP!=aContInter.end();itP++)
+   {
+       double aS0 = surf_or_poly(*itP);
+       if (aSomS && aS0)
+       {
+           // ELISE_ASSERT( (aSomS<0)==(aS0<0) , "Intersection d'emprises incoherente");
+       }
+
+       aSomS += aS0;
+       aSomP = aSomP +  barrycentre(*itP) * aS0;
+
+
+       // std::cout << "SSurff " << aS0 << "\n";
+   }
+
+   aPMoyEmpr =  aSomP / aSomS;
+   if (aSurf)
+   {
+      *aSurf = ElAbs(aSomS);
+   }
+
+
+/*
    if (aContInter.size()!=1)
    {
+       // std::cout << "For Cple = " << mName <<  " " << aGeo2.mName << "\n";
        ELISE_ASSERT(aContInter.size()==1,"Intersection d'emprises incoherente");
    }
    aPMoyEmpr = barrycentre(*(aContInter.begin()));
@@ -842,6 +943,7 @@ bool  cGeomImage::IntersectEmprTer
    {
       *aSurf = ElAbs(surf_or_poly(*(aContInter.begin())));
    }
+*/
    
 
    return true;
@@ -944,6 +1046,7 @@ Pt2dr cGeomImage::ImageAndPx2Obj_Euclid(Pt2dr aPIm,const REAL * aPx) const
 
 Pt2dr cGeomImage::Objet2ImageInit_Euclid(Pt2dr aPTer,const REAL * aPx) const
 {
+
     Pt2dr aPIm ;
     if (mRC)
     {
@@ -1196,8 +1299,6 @@ class cGeomImage_NoGeom : public cGeomImage
 {
 }
 
-void cGeomImage::InvCorrDistModeleCple(Pt2dr &,Pt2dr &) const
-{
 */
 
 
@@ -1338,17 +1439,9 @@ class cGeomImage_DHD_Px : public cGeomImage
 class cGeomImage_Terrain_Ori : public cGeomImage
 {
     public :
-/*
-      std::string NameMasqImNadir(int aBK)
-      {
-           return mAppli.FullDirPyr() + "MasqNadir_K" + ToString(aKB) +  "_" + mPDV.Name() + ".tif";
-      }
-*/
+      Pt2dr ToGeomMasqAnam(const Pt2dr & aPTer) const;
 
-      std::string NameMasqImNadir()
-      {
-           return cGeomImage::NameMasqImNadir(mAppli.MMImNadir()->KBest());
-      }
+      std::string NameMasqImNadir() { return cGeomImage::NameMasqImNadir(mAppli.MMImNadir()->KBest()); }
 
 
       cGeomImage_Terrain_Ori
@@ -1445,7 +1538,10 @@ class cGeomImage_Terrain_Ori : public cGeomImage
           return true;
        }
 
-       double IncidTerrain(Pt2dr aPTer);
+      
+       double IncidTerrain(Pt2dr aPTer);  // Interf virtuelle
+       double CalcIncidTerrain(Pt3dr aPTer);
+       double ReadIncidTerrain(Pt2dr aPTer);
 
        
        double GetResolMoyenne_NonEuclid() const 
@@ -1466,7 +1562,7 @@ class cGeomImage_Terrain_Ori : public cGeomImage
 */
               // std::cout << "aaaaaaaaaNNaa " << aCa << "\n";
           }
-/// std::cout << "XXXXXXXXXXXX " << mOri->ResolutionPDVVerticale() << "\n";
+ // std::cout << "XXXXXXXXXXXX " << mOri->ResolutionPDVVerticale() << "\n"; getchar();
           return ElAbs(mOri->ResolutionPDVVerticale());
        }
        void  RemplitOri(cFileOriMnt & aFOM) const
@@ -1544,15 +1640,11 @@ class cGeomImage_Terrain_Ori : public cGeomImage
        }
 };
 
-bool cGeomImage_Terrain_Ori::MasqImNadirIsDone()
-{
-   return ELISE_fp::exist_file(NameMasqImNadir());
-}
+bool cGeomImage_Terrain_Ori::MasqImNadirIsDone() { return ELISE_fp::exist_file(NameMasqImNadir()); }
 
 
 void cGeomImage_Terrain_Ori::DoMasImNadir(TIm2D<REAL4,REAL8> & aImKN,cGeomDiscFPx & aGDF)
 {
-// mNameMasqImNadir
       Pt2dr aSzImR1 = Pt2dr(mOri->Sz());
       Pt2di aSzR = round_up(aSzImR1/mAnDeZoomM);
       Im2D_Bits<1> aMaskN(aSzR.x,aSzR.y,0);
@@ -1568,7 +1660,7 @@ void cGeomImage_Terrain_Ori::DoMasImNadir(TIm2D<REAL4,REAL8> & aImKN,cGeomDiscFP
           {
               Pt2di aPIm = aPRed * mAnDeZoomM;
               Pt2dr aPTer = ImageAndPx2Obj_Euclid(Pt2dr(aPIm),aPx0);
-              double anIncIm =  IncidTerrain(aPTer);
+              double anIncIm =  ReadIncidTerrain(aPTer);
               if (anIncIm>=0)
               {
                   Pt2dr aPK = aGDF.R2ToRDisc(aPTer);
@@ -1618,15 +1710,66 @@ void cGeomImage_Terrain_Ori::DoMasImNadir(TIm2D<REAL4,REAL8> & aImKN,cGeomDiscFP
        MakeMetaData_XML_GeoI(NameMasqImNadir(),mAnDeZoomM);
 }
 
+double cGeomImage_Terrain_Ori::CalcIncidTerrain(Pt3dr aP3A)
+{
+      double aEps = 1e-4 * mAnamSA->SignDZSensRayCam();
+      Pt3dr aP3B (aP3A.x,aP3A.y,aP3A.z+aEps);
+      Pt3dr aQ3A = mAnamSA->UVL2E(aP3A);
+      Pt3dr aQ3B = mAnamSA->UVL2E(aP3B);
+      Pt3dr aNormRentr= vunit(aQ3B-aQ3A);
+
+      // double aSc = scal(aNormRentr,aSeg.TgNormee());
+      Pt3dr aC = mOri->OpticalVarCenterTer(aQ3A);
+      double aScalE = scal(aNormRentr,vunit(aQ3A-mOri->OpticalVarCenterTer(aQ3A)));
+
+
+
+      Pt3dr aTgtE = vunit(aQ3A-aC);
+      Pt3dr aP3C =  mAnamSA->E2UVL(aQ3A+aTgtE*aEps);
+      Pt3dr aTgtUlv = vunit(aP3C-aP3A);
+      double aScaleULV = aTgtUlv.z;
+
+      if (0)
+      {
+          static int aNB0 =0;
+          static int aNB1 =0;
+          aNB0+= (aScalE<aScaleULV);
+          aNB1+= (aScalE>=aScaleULV);
+          std::cout << "GGGG " << aNB0 << " " << aNB1 << "\n";
+      }
+
+      return ElMin(aScalE,aScaleULV);
+}
+/*
+
+               Pt2dr aP2Ter = aP0Ter + Pt2dr(aP)*aResTer;
+               Pt3dr  aPA(aP2Ter.x,aP2Ter.y,0.0);
+               Pt3dr  aPB(aP2Ter.x,aP2Ter.y,aEps);
+               Pt3dr  aQA = mAnamSA->UVL2E(aPA);
+               Pt3dr  aQB = mAnamSA->UVL2E(aPB);
+
+               Pt3dr aNormRentr= vunit(aQB-aQA);
+
+*/
+
 void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
 {
+  double DynVisu=0.0000002;  // Purement heuristique pour ce param de debugage, flemme de trouver une valeur rationnelle
+  TIm2D<U_INT1,INT> aTImInit(Pt2di(1,1));
+  TIm2D<U_INT1,INT> aTImOrtho(Pt2di(1,1));
+  
   if (! mAnamSA) 
      return;
 
   std::string aNameXML =  NameMasqAnamSA("_Mtd.xml");
   std::string aNameTerTif =  NameMasqAnamSA("_MasqTer.tif");
   // std::cout << "XXMMLNAME " << aNameXML << "\n";
-  // std::cout << aNameTerTif << "\n\n";
+
+  mDoImMasqAnam = mAppli.MMImNadir()!=0;
+  mUseTerMasqAnam = (mAppli.MMImNadir()==0) || (mAppli.MMImNadir()->MakeAlsoMaskTerrain().Val());
+
+  if (mDoImMasqAnam)
+     mDynIncidTerr = mAppli.MMImNadir()->DynIncid().Val();
 
   mDoImMasqAnam = mAppli.MMImNadir()!=0;
   mUseTerMasqAnam = (mAppli.MMImNadir()==0) || (mAppli.MMImNadir()->MakeAlsoMaskTerrain().Val());
@@ -1638,16 +1781,17 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
   {
 
       static Video_Win * aW = 0; 
-      //if (aW==0)  aW =  Video_Win::PtrWStd(Pt2di(700,500));
+      // if (aW==0)  aW =  Video_Win::PtrWStd(Pt2di(900,900));
 
-      Pt2dr aSzImR1 = Pt2dr(mOri->Sz());
+      //Pt2dr aSzImR1 = Pt2dr(mOri->Sz());
+      Pt2dr aSzImR1 = Pt2dr(mOri->SzPixel());
       Pt2di aSzR = round_up(aSzImR1/mAnDeZoomM);
       Im2D_Bits<1> aMi(aSzR.x,aSzR.y,0);
       TIm2DBits<1> aTMi(aMi);
 
-      double aEps = 1e-4 * mAnamSA->SignDZSensRayCam();
+      // double aEps = 1e-4 * mAnamSA->SignDZSensRayCam();
 
-      double aScalLim = cos(mAppli.AnamLimAngleVisib().Val());
+      double aScalLim = ElMax(0.0,cos(ElMax(0.0,ElMin(PI/2,mAppli.AnamLimAngleVisib().Val()))));
       Pt2dr  aP0Ter (1e20,1e20);
       Pt2dr  aP1Ter (-1e20,-1e20);
 
@@ -1662,8 +1806,10 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
       {
           for (aP.x=0 ; aP.x <aSzR.x ; aP.x++)
           {
+
+
               Pt2dr aPF =Pt2dr(aP)*mAnDeZoomM;
-              if (mOri->IsInZoneUtile(aPF))
+              if (mOri->IsInZoneUtile(aPF,true)) // TRUE POU PIXEL
               {
                  ElSeg3D aSeg = mOri->F2toRayonR3(aPF);
               // donne le point, en coordonne UV d'intersection rayon incident surf L=0
@@ -1672,19 +1818,9 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
                   if (aPGI3A.IsInit() )
                   {
                      Pt3dr aP3A = aPGI3A.Val();
-                     Pt3dr aP3B (aP3A.x,aP3A.y,aP3A.z+aEps);
-                     // aQ3A - aQ3A est la droite sortante de Z variable,
-                     // !! Ce n'est pas de maniere general la normale, a voir ...
-                     Pt3dr aQ3A = mAnamSA->UVL2E(aP3A);
-                     Pt3dr aQ3B = mAnamSA->UVL2E(aP3B);
-                     Pt3dr aNormRentr= vunit(aQ3B-aQ3A);
-
-             // Signe -, le rayon part vert le haut de la camera, alors
-             // qu'elle voit en bas ?!
-                     double aSc = scal(aNormRentr,aSeg.TgNormee());
+                     double aSc = CalcIncidTerrain(aP3A);
                      if (aSc>aScalLim)
                      {
-//std::cout << "GOTTTTTTTTTTTTTTTT\n";
                          aNbOk++;
                          aTMi.oset(aP,1);
                          Pt2dr aP2A(aP3A.x,aP3A.y);
@@ -1705,45 +1841,124 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
           std::cout << "StatNormale " << (aNbOk) / double(aNbTot) << " " << aNbTot << "\n"; getchar();
       }
 
+      if (aW)
+      {
+          // std::string aNameIm = mPDV.NameMasqOfResol(mAnDeZoomM);
+          // std::cout << aNameTerTif <<  "  " << mDynIncidTerr  << "\n\n"; getchar();
+          std::string aNameIm = mAppli.FullDirPyr()  +  mAppli.NameFilePyr(mPDV.Name(),mAnDeZoomM);
+          std::cout << "NAAAMMEIN " << aNameIm << "\n";
+
+          Tiff_Im aTI(aNameIm.c_str());
+          aTImInit.Resize(aTI.sz());
+          ELISE_COPY(aTI.all_pts(),Min(255,aTI.in()*DynVisu),aTImInit._the_im.out());
+          Symb_FNum aFC (aTImInit._the_im.in());
+          ELISE_COPY
+          (
+                aMi.all_pts(),
+                Virgule
+                (
+                     aFC,
+                     aFC,
+                     aMi.in() *255
+                ),
+                aW->orgb()
+           );
+// NameMasqOfResol
+          // aW->draw_rect(aP0Ter/mAnDeZoomM,aP1Ter/mAnDeZoomM,aW->pdisc()(P8COL::red));
+          std::cout << " Boxx " << aP0Ter << aP1Ter << "\n";
+          std::cout << "StatNormale " << (aNbOk) / double(aNbTot) << " " << aNbTot << "\n"; 
+          getchar();
+      }
+
       // Precaution anti inifini, pour eviter que sur des interection razante la boite soit 
       // trop grande, on refait un calcul en prenant le cone epsilon du milieue de l'image que l'on 
-      // dilatera de 1/epsilon
+      // dilatera de 3/epsilon
+      //
+      //  En fait, avec le milieu on ne trouve pas toujours d'intersection, donc on modifie le code 
+      // en testant plusieur points
+      //  On espere que c'est devenu inutile avec le produit scalaire fait dans le 2 sens, mais on maintient quand meme avec une valeur de seuil
+      // tres forte sur aMulRay
+
+      if (0)  // JE COMPRENDS PLUS TROP A QUOI CA SERT ET CA CREE DES PBS .....
       {
-           Pt2dr  aPExtr0 (1e20,1e20);
-           Pt2dr  aPExtr1 (-1e20,-1e20);
-           Pt2dr aMil = mOri->Sz() / 2.0;
-           ElSeg3D aSegA = mOri->F2toRayonR3(aMil);
-           cTplValGesInit<Pt3dr> aPGI3A = mAnamSA->InterDemiDroiteVisible(aSegA,0);
-           ELISE_ASSERT(aPGI3A.IsInit(),"Milieu a Pb dans Anam");
-           Pt3dr aP3A = aPGI3A.Val();
-           Pt2dr aP2A(aP3A.x,aP3A.y);
+           Pt2dr  aPExtr0Glob (1e20,1e20);
+           Pt2dr  aPExtr1Glob (-1e20,-1e20);
+           double aSurfMin = 1e60;
+           bool BoxGlobInit = false;
 
-           int aNb = 100;
-           double aMul = euclid(aMil*1.5);
+           int aNbXY = 10;
+           int aNbRay = 20;
+           double aRay = euclid(mOri->Sz())/2.0;
+           double aMulRay = 6.0;
 
-
-           for (int aK=0 ; aK< aNb ; aK++)
+           for (int aKX=1 ; aKX<aNbXY ; aKX++)
            {
-               Pt2dr aDep =  Pt2dr::FromPolar(1.0,(2*PI*aK)/aNb);
-               Pt2dr aPB = aMil + aDep;
-               ElSeg3D aSegB = mOri->F2toRayonR3(aPB);
-               cTplValGesInit<Pt3dr>  aPGI3B  =  mAnamSA->InterDemiDroiteVisible(aSegB,0);
-               ELISE_ASSERT(aPGI3B.IsInit(),"Milieu a Pb dans Anam");
-               Pt3dr aP3B = aPGI3B.Val();
-               Pt2dr aP2B (aP3B.x,aP3B.y);
+               for (int aKY=1 ; aKY<aNbXY ; aKY++)
+               {
 
-               Pt2dr aPExtr = aP2A + (aP2B-aP2A) * aMul;
-               aPExtr0.SetInf(aPExtr);
-               aPExtr1.SetSup(aPExtr);
+// bool TEST = (aKX==aNbXY /2) && (aKY==aNbXY /2) && (MPD_MM()) ;
+bool TEST = (aKX==2) && (aKY==2) && (MPD_MM()) ;
+
+                   Pt2dr aPds(double(aKX)/aNbXY,double(aKY)/aNbXY);
+                   Pt2dr aCdg = aPds.mcbyc(Pt2dr(mOri->SzPixel()));
+                   ElSeg3D aSegA = mOri->F2toRayonR3(aCdg);
+                   cTplValGesInit<Pt3dr> aPGI3A = mAnamSA->InterDemiDroiteVisible(aSegA,0);
+
+
+if (TEST) std::cout << "CDDDGGGg " << aCdg << "\n";
+                   if (aPGI3A.IsInit())
+                   {
+                        bool AllOk=true;
+                        Pt2dr  aPExtr0 (1e20,1e20);
+                        Pt2dr  aPExtr1 (-1e20,-1e20);
+                        Pt3dr aP3A = aPGI3A.Val();
+                        Pt2dr aP2A(aP3A.x,aP3A.y);
+
+                        double aMul = aRay * aMulRay;
+
+                        for (int aK=0 ; aK< aNbRay ; aK++)
+                        {
+                            Pt2dr aDep =  Pt2dr::FromPolar(1.0,(2*PI*aK)/aNbRay);
+                            Pt2dr aPB = aCdg + aDep;
+                            ElSeg3D aSegB = mOri->F2toRayonR3(aPB);
+                            cTplValGesInit<Pt3dr>  aPGI3B  =  mAnamSA->InterDemiDroiteVisible(aSegB,0);
+                            if (aPGI3B.IsInit())
+                            {
+                                Pt3dr aP3B = aPGI3B.Val();
+                                Pt2dr aP2B (aP3B.x,aP3B.y);
+
+                                Pt2dr aPExtr = aP2A + (aP2B-aP2A) * aMul;
+                                aPExtr0.SetInf(aPExtr);
+                                aPExtr1.SetSup(aPExtr);
+                            }
+                            else
+                            {
+                               AllOk= false;
+                            }
+                        }
+if (TEST) std::cout << "ALLAOOOK  " << aCdg  << " " << AllOk  << " " << aPExtr0 << " " << aPExtr1 << "\n";
+
+                        if (AllOk)
+                        {
+                            double aSurf = (aPExtr1.x-aPExtr0.x) * (aPExtr1.y-aPExtr0.y);
+                            if (aSurf<aSurfMin)
+                            {
+                                aSurfMin = aSurf;
+                                aPExtr0Glob = aPExtr0;
+                                aPExtr1Glob = aPExtr1;
+                                BoxGlobInit = true;
+                            }
+                        }
+                   }
+               }
            }
-
-
-           aP0Ter.SetSup(aPExtr0);
-           aP1Ter.SetInf(aPExtr1);
+           ELISE_ASSERT(BoxGlobInit,"Cannot compute box in cGeomImage_Terrain_Ori::Init0MasqAnamSA");
+           aP0Ter.SetSup(aPExtr0Glob);
+           aP1Ter.SetInf(aPExtr1Glob);
       }
 
 
-      if (0) // ( aW)
+      if ( aW)
       {
          std::cout << "BOX AFETR " <<  aP0Ter << " " << aP1Ter << "\n"; 
          ELISE_COPY(aW->all_pts(),P8COL::blue,aW->odisc());
@@ -1762,6 +1977,10 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
       Im2D_INT1 aMt(aSzTer.x,aSzTer.y,0);
       TIm2D<INT1,INT> aTMt(aMt);
 
+      if (aW)
+      {
+         aTImOrtho.Resize(aSzTer);
+      }
 
 
       mTIncidTerr.Resize(aSzTer);
@@ -1771,35 +1990,75 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
           {
                Pt2dr aP2Ter = aP0Ter + Pt2dr(aP)*aResTer;
                Pt3dr  aPA(aP2Ter.x,aP2Ter.y,0.0);
-               Pt3dr  aPB(aP2Ter.x,aP2Ter.y,aEps);
                Pt3dr  aQA = mAnamSA->UVL2E(aPA);
-               Pt3dr  aQB = mAnamSA->UVL2E(aPB);
+               double aScal = CalcIncidTerrain(aPA);
 
-               Pt3dr aNormRentr= vunit(aQB-aQA);
-
-               double aScal = scal(aNormRentr,vunit(aQA-mOri->OpticalVarCenterTer(aQA)));
                Pt2dr aPIm = mOri->R3toF2(aQA);
                if (   (aPIm.x >0) && (aPIm.y >0)
                    && (aPIm.x <aSzImR1.x) && (aPIm.y <aSzImR1.y)
                   )
                {
-                    aTMt.oset(aP,ElMax(-127,ElMin(127,round_ni((aScal-aScalLim)*100))));
-                    mTIncidTerr.oset(aP,round_ni(acos(ElMax(-1.0,ElMin(1.0,aScal)))*mDynIncidTerr));
+                  aTMt.oset(aP,ElMax(-127,ElMin(127,round_ni((aScal-aScalLim)*100))));
+                  mTIncidTerr.oset(aP,round_ni(acos(ElMax(-1.0,ElMin(1.0,aScal)))*mDynIncidTerr));
                }
                else
                {
                   aTMt.oset(aP,-100);
                   mTIncidTerr.oset(aP,-10);
                }
+               if (aW)
+               {
+                  aTImOrtho.oset(aP,aTImInit.getprojR(aPIm/mAnDeZoomM));
+               }
           }
       }
 
       if (0) // (aW)
       {
-         std::cout << mPDV.Name() <<  aSzTer << "\n";
+         std::cout <<  "ORTHO  " <<  mPDV.Name() <<  aSzTer << "\n";
 
          ELISE_COPY(aW->all_pts(),P8COL::red,aW->odisc());
-         ELISE_COPY(aMt.all_pts(),aMt.in()>0,aW->odisc());
+         
+         //ELISE_COPY(aMt.all_pts(),aMt.in()>0,aW->odisc());
+
+         ELISE_COPY(aMt.all_pts(),aTImOrtho._the_im.in(),aW->ogray());
+         ELISE_COPY
+         (
+               aW->all_pts(),
+               nflag_close_sym(flag_front8(aMt.in_proj()>0)),
+               aW->out_graph(Line_St(aW->pdisc()(P8COL::red)))
+         );
+         getchar();
+
+
+         ELISE_COPY(aMt.all_pts(),mod(aMt.in(),8),aW->odisc());
+         getchar();
+      }
+      if (aW)
+      {
+          ELISE_COPY(aW->all_pts(),P8COL::red,aW->odisc());
+          Im2D_INT2 aImN = mTIncidTerr._the_im;
+          ELISE_COPY(aImN.all_pts(),Min(255,Max(0,aImN.in()/100)),aW->ogray());
+          getchar();
+      }
+
+      if (mUseTerMasqAnam)
+      {
+         Tiff_Im::CreateFromIm(aMt,aNameTerTif);
+      }
+
+      if (mDoImMasqAnam)
+      {
+         Tiff_Im::CreateFromIm(mTIncidTerr._the_im,mNameIncTerTif);
+      }
+
+
+      if (aW)
+      {
+         std::cout << aNameTerTif << "\n";
+         Tiff_Im aTF = Tiff_Im::StdConv(aNameTerTif);
+         ELISE_COPY(aW->all_pts(),P8COL::yellow,aW->odisc());
+         ELISE_COPY(aTF.all_pts(),mod(aTF.in(),8),aW->odisc());
          getchar();
          ELISE_COPY(aMt.all_pts(),mod(aMt.in(),8),aW->odisc());
          getchar();
@@ -1866,8 +2125,17 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
   // std::cout << Objet2ImageInit_Euclid(Pt2dr(0,0),0)
 }
 
+Pt2dr cGeomImage_Terrain_Ori::ToGeomMasqAnam(const Pt2dr & aPTer) const
+{
+   return (aPTer-mAnamSAPMasq.BoxTer()._p0)/mAnamSAPMasq.Resol();
+}
 
 double cGeomImage_Terrain_Ori::IncidTerrain(Pt2dr aPTer)
+{
+   return ReadIncidTerrain(aPTer);
+}
+
+double cGeomImage_Terrain_Ori::ReadIncidTerrain(Pt2dr aPTer)
 {
    ELISE_ASSERT(mDoImMasqAnam,"cGeomImage_Terrain_Ori::IncidTerrain");
    if (! mLoadIncT)
@@ -1876,8 +2144,8 @@ double cGeomImage_Terrain_Ori::IncidTerrain(Pt2dr aPTer)
        mTIncidTerr = TIm2D<INT2,INT>(Im2D_INT2::FromFileStd(mNameIncTerTif));
    }
 
-
-   aPTer = (aPTer-mAnamSAPMasq.BoxTer()._p0)/mAnamSAPMasq.Resol();
+   // aPTer = (aPTer-mAnamSAPMasq.BoxTer()._p0)/mAnamSAPMasq.Resol();
+   aPTer = ToGeomMasqAnam(aPTer);
 
    Pt2di aPIT = round_down(aPTer);
    if (
@@ -1897,6 +2165,9 @@ double cGeomImage_Terrain_Ori::IncidTerrain(Pt2dr aPTer)
    return aRes;
 }
 
+
+
+
 bool cGeomImage_Terrain_Ori::IsInMasqAnamSA(Pt2dr aPTer)
 {
    if (! mUseTerMasqAnam)
@@ -1908,7 +2179,8 @@ bool cGeomImage_Terrain_Ori::IsInMasqAnamSA(Pt2dr aPTer)
       return false;
 */
 
-   return mTMTA.get(round_ni((aPTer-mAnamSAPMasq.BoxTer()._p0)/mAnamSAPMasq.Resol()) ,0) > 0;
+   // return mTMTA.get(round_ni((aPTer-mAnamSAPMasq.BoxTer()._p0)/mAnamSAPMasq.Resol()) ,0) > 0;
+   return mTMTA.get(round_ni(ToGeomMasqAnam(aPTer)) ,0) > 0;
 }
  
 void cGeomImage_Terrain_Ori::InitAnamSA(double aResol,const Box2dr & )
@@ -1928,12 +2200,12 @@ class cGeomFaisZTerMaitre : public cGeomImage_Id
 {
     public :
 
-      ElCamera * GetCamera(const Pt2di & aSz,bool & ToDel) const
+      ElCamera * GetCamera(const Pt2di & aSz,bool & ToDel,bool & aZUP) const
       {
             ToDel = false;
             ElCamera * aCam = GetOri();
             if (aCam) return aCam;
-            return  cGeomImage::GetCamera(aSz,ToDel);
+            return  cGeomImage::GetCamera(aSz,ToDel,aZUP);
       }
       Pt3dr TerrainRest2Euclid(const Pt2dr & aP,double * aPax) const
       {
@@ -1954,7 +2226,7 @@ class cGeomFaisZTerMaitre : public cGeomImage_Id
          cGeomImage_Id  (anAppli,aPDV,aTag,aSzIm,aDimPx),
          mGeoRef        (aGeomRef)
       {
-// std::cout << "AAAAAAAAAAAAakkkoooooooooo\n";
+
       }
       Pt3dr  Centre() const { return mGeoRef->Centre(); }
       bool  HasCentre() const { return mGeoRef->HasCentre(); }
@@ -1968,6 +2240,14 @@ class cGeomFaisZTerMaitre : public cGeomImage_Id
        {
           return "cGeomFaisZTerMaitre::" +mGeoRef->Name();
        }
+    
+    
+    
+    // Par defaut erreur fatale si pas mode Image_Nuage
+    void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
+    {
+        mGeoRef->RemplitOriXMLNuage(true,mtd,aGT,aNuage,mode);
+    }
 
     protected :
       bool GetPxMoyenne_NonEuclid(double * aPxMoy,bool MakeInvIfNeeded) const
@@ -2254,7 +2534,9 @@ class cGeomImage_Id_Ori : public cGeomImage_Id
 	   }
 */
            // OO  aPxMoy[0] = mOriRef.ProfInDir(aPC,mNormPl);
+
            Pt3dr aPC = mAppli.GetPtMoyOfOri(mOriRef);
+/// std::cout << "AAAAAAAAAAlllllmmmmmm" << aPC <<  " " << mNormPl << "\n";
            aPxMoy[0] = mOriRef->ProfInDir(aPC,mNormPl);
 
   // std::cout << "BP " << ByProf << " "  << aPC << "\n"; getchar();
@@ -2265,6 +2547,11 @@ class cGeomImage_Id_Ori : public cGeomImage_Id
 
            if (mDimPx>1)
               aPxMoy[1] = 0.0;
+
+/*
+ std::cout << mPDV.Name() << "\n"; 
+getchar();
+*/
            return true;
       }
 
@@ -2290,6 +2577,7 @@ class cGeomImage_Id_Ori : public cGeomImage_Id
 
       void RemplitOriXMLNuage
            (
+                bool CFM,
                 const cMTD_Nuage_Maille &,
                 const cGeomDiscFPx & aGT,
                 cXML_ParamNuage3DMaille & aNuage,
@@ -2413,6 +2701,8 @@ if (1)
     private :
        inline Pt2dr PtOfProf(const Pt2dr & aPt,double aProf) const
        {
+
+
           // OO  return mOri.to_photo(mOriRef.ImDirEtProf2Terrain(aPt,aProf,mNormPl));
           return mOri->R3toF2
                  (
@@ -2460,8 +2750,17 @@ if (1)
           aRatio[0] = aCDNE* (mOri->ResolutionAngulaire() / euclid(aC1-aC2));
 
 
+         // std::cout << "GRRAP " << mOri->ResolutionAngulaire() << " " << euclid(aC1-aC2) << " " << mOri->Focale() << "\n";
+
+// std::cout << "HHHH:GetRatioResolAltiPlani " << aRatio[0] << " CDNE " << aCDNE << "\n";
+// std::cout << "HHHH:RA  " << mOri->ResolutionAngulaire() << " FFFFF " << 1/mOri->Focale() << "\n";
+
+
+// std::cout << "HHHhhhhhhhhhhhhhhhhhhhhhhhhh " << aRatio[0] << " " << aC1 << aC2 << "\n";
+// std::cout << "XXxxx " << aCDNE << " " << mOri->ResolutionAngulaire() << " " <<  euclid(aC1-aC2) << "\n";
           for (int aK=1 ; aK<mDimPx ; aK++)
               aRatio[aK] = 1.0;
+
 
           return true;
       }
@@ -2543,6 +2842,21 @@ class cGeomImage_Module : public cGeomImage
        delete mModule;
     }
     std::string Name() const {return "Mod::" +mNameModule;}
+    
+    
+    
+    // Par defaut erreur fatale si pas mode Image_Nuage
+    void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
+    {
+        cGeomImage::RemplitOriXMLNuage(false,mtd,aGT,aNuage,mode);
+        if (CFM)
+        {
+            cModuleOrientationFile oriFile;
+            oriFile.NameFileOri()=mModule->GetFilename();
+            aNuage.Orientation().ModuleOrientationFile().SetVal(oriFile);
+            aNuage.Orientation().TypeProj().SetVal(eProjGrid);
+         }
+    }
 
   private:
     ModuleOrientation * mModule;
@@ -2925,12 +3239,11 @@ const std::list<cModifieurGeometrie>  &
 
 
 
-};
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -2946,17 +3259,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

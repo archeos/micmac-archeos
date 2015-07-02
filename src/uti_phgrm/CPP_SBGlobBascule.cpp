@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -61,8 +61,8 @@ Bascule ".*.jpg" RadialExtended R3.xml MesureIm=OutAligned.xml Teta=180
 
 int SBGlobBascule_main(int argc,char ** argv)
 {
-	NoInit = "NoP1P2";
-	aNoPt = Pt2dr(123456,-8765432);
+    NoInit = "NoP1P2";
+    aNoPt = Pt2dr(123456,-8765432);
 
     // MemoArg(argc,argv);
     MMD_InitArgcArgv(argc,argv);
@@ -73,54 +73,71 @@ int SBGlobBascule_main(int argc,char ** argv)
     std::string PostPlan="_Masq";
     std::string FileMesures ;
     std::string TargetRep = "ki" ;
+    bool  CPI = false;
 
 
     double DistFE = 0;
-    Pt3dr  Normal;
-    Pt3dr  SNormal;
+    //Pt3dr  Normal;
+    //Pt3dr  SNormal;
 
     ElInitArgMain
     (
-	argc,argv,
-	LArgMain()  << EAMC(aFullDir,"Full name (Dir+Pat)" )
-                    << EAMC(AeroIn,"Orientaion in")
-                    << EAMC(FileMesures,"XML File of Images Measures")
-                    << EAMC(AeroOut,"Out : orientation "),
-	LArgMain()  
-                    << EAM(ExpTxt,"ExpTxt",true)	
-                    << EAM(PostPlan,"PostPlan",true)	
-                    << EAM(DistFE,"DistFS",true,"Distance between  Ech1 and Ech2 to fixe scale (if not given no scaling)")
-                    << EAM(TargetRep,"Rep",true,"Target repere (Def = ki, ie normal is vertical)")
+    argc,argv,
+    LArgMain()  << EAMC(aFullDir,"Full name (Dir+Pat)", eSAM_IsPatFile )
+                    << EAMC(AeroIn,"Orientation in", eSAM_IsExistDirOri)
+                    << EAMC(FileMesures,"Images measures xml file", eSAM_IsExistFile)
+                    << EAMC(AeroOut,"Out : orientation ", eSAM_IsOutputDirOri),
+    LArgMain()
+                    << EAM(ExpTxt,"ExpTxt",true)
+                    << EAM(PostPlan,"PostPlan",true)
+                    << EAM(DistFE,"DistFS",true,"Distance between Ech1 and Ech2 to fix scale (if not given no scaling)")
+                    << EAM(TargetRep,"Rep",true,"Target coordinate system (Def = ki, ie normal is vertical)")
+                    << EAM(CPI,"CPI",true,"Calibration Per Image (Def=false)")
 
     );
-	
-	#if (ELISE_windows)
-		replace( aFullDir.begin(), aFullDir.end(), '\\', '/' );
-	#endif
-    SplitDirAndFile(aDir,aPat,aFullDir);
-    
-	MMD_InitArgcArgv(argc,argv);
 
-    std::string aCom =   MM3dBinFile( "Apero" )
-                       + MMDir() + std::string("include/XML_MicMac/Apero-SB-Bascule.xml ")
-                       + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
-                       + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
-                       + std::string(" +AeroOut=-") +  AeroOut
-                       + std::string(" +Ext=") + (ExpTxt?"txt":"dat")
-                       + std::string(" +AeroIn=-") + AeroIn
-                       + std::string(" +PostMasq=") + PostPlan
-                       + std::string(" +DistFE=") + ToString(DistFE)
-                       + std::string(" +RepNL=") + TargetRep
-                       + std::string(" +FileMesures=") + FileMesures
-                    ;
+    if (!MMVisualMode)
+    {
+#if (ELISE_windows)
+        replace( aFullDir.begin(), aFullDir.end(), '\\', '/' );
+#endif
+        SplitDirAndFile(aDir,aPat,aFullDir);
+        if (EAMIsInit(&PostPlan))
+        {
+            CorrecNameMasq(aDir,aPat,PostPlan);
+        }
+
+        StdCorrecNameOrient(AeroIn,aDir);
 
 
+        MMD_InitArgcArgv(argc,argv);
 
-   std::cout << "Com = " << aCom << "\n";
-   int aRes = system_call(aCom.c_str());
+        std::string aCom =   MM3dBinFile( "Apero" )
+                + MMDir() + std::string("include/XML_MicMac/Apero-SB-Bascule.xml ")
+                + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                + std::string(" +AeroOut=-") +  AeroOut
+                + std::string(" +Ext=") + (ExpTxt?"txt":"dat")
+                + std::string(" +AeroIn=-") + AeroIn
+                + std::string(" +PostMasq=") + PostPlan
+                + std::string(" +DistFE=") + ToString(DistFE)
+                + std::string(" +RepNL=") + TargetRep
+                + std::string(" +FileMesures=") + FileMesures
+                + std::string(" +CPI=") + ToString(CPI)
+                ;
 
-   
-   return aRes;
+
+
+        std::cout << "Com = " << aCom << "\n";
+        int aRes = system_call(aCom.c_str());
+
+
+        return aRes;
+    }
+    else
+    {
+        return EXIT_SUCCESS;
+    }
 }
 
 
@@ -129,13 +146,13 @@ int SBGlobBascule_main(int argc,char ** argv)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -145,17 +162,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/
