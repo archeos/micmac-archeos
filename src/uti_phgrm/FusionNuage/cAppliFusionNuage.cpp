@@ -39,6 +39,11 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "FusionNuage.h"
 
+std::string cAppliFusionNuage::NameFileInput(const std::string & aNameIm,const std::string aPost)
+{
+   return mDir + "Fusion-0/NuageRed" + aPost ;
+}
+
 
 cAppliFusionNuage::cAppliFusionNuage
 (
@@ -120,7 +125,7 @@ cAppliFusionNuage::cAppliFusionNuage
     //=============================================================
 
 
-    std::vector<tFNuArc *> aVArc;
+   // std::vector<tFNuArc *> aVArc;
     for (int aK1=0 ; aK1 <mNbSom ; aK1++)
     {
         tFNuSom * aS1 = mVSom[aK1];

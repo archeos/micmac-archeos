@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -52,9 +52,9 @@ template <class Type> class Pt3d;
 
 
 inline INT  scal(INT v1 ,INT v2 ) { return v1 * v2;}
-inline REAL scal(REAL v1,REAL v2) { return v1 * v2;}  
+inline REAL scal(REAL v1,REAL v2) { return v1 * v2;}
 
-template <class Type> class ElStdTypeScal 
+template <class Type> class ElStdTypeScal
 {
     public :
         typedef ElStdTypeScal<REAL>  TypeReel;
@@ -62,9 +62,9 @@ template <class Type> class ElStdTypeScal
         typedef Type                 TypeEff;
         typedef bool                 TypeBool;
 
-		typedef  REAL TypeScalReel;
-		typedef  Type TypeVarProv;
-		typedef  REAL TypeVarProvReel;
+        typedef  REAL TypeScalReel;
+        typedef  Type TypeVarProv;
+        typedef  REAL TypeVarProvReel;
 
         static  Type RtoT(REAL);
         static  Type RTtoT(TypeScalReel);
@@ -103,10 +103,10 @@ template <> class ElStdTypeScal<Fonc_Num>
         typedef Fonc_Num                 TypeEff;
         typedef Fonc_Num                 TypeBool;
 
-		typedef  Fonc_Num TypeScalReel;
-		typedef  Symb_FNum  TypeVarProv;
+        typedef  Fonc_Num TypeScalReel;
+        typedef  Symb_FNum  TypeVarProv;
 
-		typedef  Symb_FNum TypeVarProvReel;
+        typedef  Symb_FNum TypeVarProvReel;
 
         static  Fonc_Num RtoT(REAL aV);
         static  Fonc_Num RTtoT(Fonc_Num);
@@ -135,33 +135,33 @@ template <> class TCompl<Fonc_Num>
     public :
     // A priori inutile, pour eviter un overlaod
         typedef double  TypeCompl;
-        static Fonc_Num FromC(double aV);// {return aV;} 
+        static Fonc_Num FromC(double aV);// {return aV;}
 };
 
 template <> class TCompl<int>
 {
     public :
         typedef double  TypeCompl;
-        static int FromC(double aV) {return round_ni(aV);} 
+        static int FromC(double aV) {return round_ni(aV);}
 };
 template <> class TCompl<double>
 {
     public :
         typedef int  TypeCompl;
-        static double FromC(int aV) {return aV;} 
+        static double FromC(int aV) {return aV;}
 };
 template <> class TCompl<float>
 {
     public :
         typedef double  TypeCompl;
-        static float FromC(double aV) {return (float)aV;} 
+        static float FromC(double aV) {return (float)aV;}
 };
 
 template <> class TCompl<long double>
 {
     public :
         typedef double  TypeCompl;
-        static long double FromC(double aV) {return (long double)aV;} 
+        static long double FromC(double aV) {return (long double)aV;}
 };
 
 
@@ -181,13 +181,13 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
      Type   x;
      Type   y;
 
-    
+
   // Constructeur
 
-     Pt2d<Type>()  : x (0), y (0) {};
-     Pt2d<Type>(Type X,Type Y) : x (X), y (Y) {};
+     Pt2d<Type>()  : x (0), y (0) {}
+     Pt2d<Type>(Type X,Type Y) : x (X), y (Y) {}
 
-     Pt2d<Type>(const Pt2d<Type>& p) : x (p.x), y (p.y) {};
+     Pt2d<Type>(const Pt2d<Type>& p) : x (p.x), y (p.y) {}
      explicit Pt2d<Type>(const Pt2d<tCompl>& p) :
               x( TCompl<Type>::FromC( p.x)),
               y( TCompl<Type>::FromC( p.y))
@@ -210,23 +210,23 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
         return   Pt2d<Type>(ElStdTypeScal<Type>::RtoT(cos(teta)*rho),ElStdTypeScal<Type>::RtoT(sin(teta)*rho));
      }
 
-	 static Pt2d<double> polar(const Pt2d<double> & p,REAL AngDef);
+     static Pt2d<double> polar(const Pt2d<double> & p,REAL AngDef);
 
  // Operateurs
 
          // unaires,  Pt => Pt
 
-     TypeProvPtScalR  ToPtProvR() const 
+     TypeProvPtScalR  ToPtProvR() const
      {
            return TypeProvPtScalR (this->T2R(x),this->T2R(y));
      }
 
      Pt2d<Type> operator - () const { return Pt2d<Type>(-x,-y); }
-     Pt2d<Type> yx() const { return Pt2d(y,x);};
-     Pt2d<Type> conj() const { return Pt2d(x,-y);};
-     Pt2d<typename ElStdTypeScal<Type>::TypeScalReel> inv() const 
-	 {
-         typename ElStdTypeScal<Type>::TypeVarProvReel  n= this->T2R(x)*x+y*y;  
+     Pt2d<Type> yx() const { return Pt2d(y,x);}
+     Pt2d<Type> conj() const { return Pt2d(x,-y);}
+     Pt2d<typename ElStdTypeScal<Type>::TypeScalReel> inv() const
+     {
+         typename ElStdTypeScal<Type>::TypeVarProvReel  n= this->T2R(x)*x+y*y;
          return Pt2d<typename ElStdTypeScal<Type>::TypeScalReel>(x/n,-y/n);
      };
       Pt2d<Type> Square() const;
@@ -235,24 +235,24 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
 
          // binaires,  PtxPt => Pt
 
-     Pt2d<Type> operator + (const Pt2d<Type> & p2) const 
+     Pt2d<Type> operator + (const Pt2d<Type> & p2) const
                 {return Pt2d<Type>(x+p2.x,y+p2.y);}
-     Pt2d<Type> operator * (const Pt2d<Type> & p2) const 
+     Pt2d<Type> operator * (const Pt2d<Type> & p2) const
                 {return Pt2d<Type>(x*p2.x-y*p2.y,x*p2.y+y*p2.x);}
 
      // TCompl
-     Pt2d<Type> operator / (const Pt2d<Type> & p2) const 
+     Pt2d<Type> operator / (const Pt2d<Type> & p2) const
      {
             TypeProvPtScalR aRes = this->ToPtProvR() * p2.inv().ToPtProvR();
              return Pt2d<Type> ((Type)aRes.x,(Type)aRes.y);
      }
 
-     Pt2d<Type> operator - (const Pt2d<Type> & p2) const 
+     Pt2d<Type> operator - (const Pt2d<Type> & p2) const
                 {return Pt2d<Type>(x-p2.x,y-p2.y);}
-     Pt2d<Type> mcbyc(const Pt2d<Type> & p2) const 
-                {return Pt2d(x*p2.x,y*p2.y);};
-     Pt2d<Type> dcbyc(const Pt2d<Type> & p2) const 
-                {return Pt2d(x/p2.x,y/p2.y);};
+     Pt2d<Type> mcbyc(const Pt2d<Type> & p2) const
+                {return Pt2d(x*p2.x,y*p2.y);}
+     Pt2d<Type> dcbyc(const Pt2d<Type> & p2) const
+                {return Pt2d(x/p2.x,y/p2.y);}
 
 
      void SetSup(const Pt2d<Type> & p){ElSetMax(x,p.x); ElSetMax(y,p.y);}
@@ -263,26 +263,26 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
 
          // binnaire, affectation composee
 
-     Pt2d<Type> & operator += (const Pt2d<Type> & p2) 
-                { x += p2.x; y += p2.y; return * this;};
-     Pt2d<Type> & operator -= (const Pt2d<Type> & p2) 
-                { x -= p2.x; y -= p2.y; return * this;};
+     Pt2d<Type> & operator += (const Pt2d<Type> & p2)
+                { x += p2.x; y += p2.y; return * this;}
+     Pt2d<Type> & operator -= (const Pt2d<Type> & p2)
+                { x -= p2.x; y -= p2.y; return * this;}
 
-     Pt2d<Type>  &  operator = (const Pt2d<Type> & p2) 
+     Pt2d<Type>  &  operator = (const Pt2d<Type> & p2)
      {
             x = p2.x;
             y = p2.y;
             return * this;
-     } 
+     }
 
          // binaire,  PtxPt => bool
      typename ElStdTypeScal<Type>::TypeBool  operator == (const Pt2d<Type> & p2) const {return (x==p2.x) && (y==p2.y);}
      typename ElStdTypeScal<Type>::TypeBool  operator != (const Pt2d<Type> & p2) const {return (x!=p2.x) || (y!=p2.y);}
-	 // p1 < p2 , utile par ex ds les map<Pt2di,Machin>
-	 typename ElStdTypeScal<Type>::TypeBool  operator <  (const Pt2d<Type> & p2) const {return (x<p2.x) || ((x==p2.x)&&(y<p2.y));}
+     // p1 < p2 , utile par ex ds les map<Pt2di,Machin>
+     typename ElStdTypeScal<Type>::TypeBool  operator <  (const Pt2d<Type> & p2) const {return (x<p2.x) || ((x==p2.x)&&(y<p2.y));}
 
-     typename ElStdTypeScal<Type>::TypeBool   xety_inf_ou_egal (const Pt2d<Type> & p2) const 
-            {return (x<=p2.x) && (y<=p2.y);}                                                           
+     typename ElStdTypeScal<Type>::TypeBool   xety_inf_ou_egal (const Pt2d<Type> & p2) const
+            {return (x<=p2.x) && (y<=p2.y);}
 
          // binaires,  PtxScalaire => Pt
 
@@ -315,11 +315,11 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
 
      friend void pt_set_min_max<>(Pt2d<Type> & p0,Pt2d<Type> & p1);
 
-	        // tertiaire
-	 
-	 // in_sect_angulaire :  est que le pt est dans le secteur partant de p1
-	 // et defini par un parcourt trigo jusqu'a p2
-	 bool in_sect_angulaire(const Pt2d<Type> & p1,const Pt2d<Type> & p2) const;
+            // tertiaire
+
+     // in_sect_angulaire :  est que le pt est dans le secteur partant de p1
+     // et defini par un parcourt trigo jusqu'a p2
+     bool in_sect_angulaire(const Pt2d<Type> & p1,const Pt2d<Type> & p2) const;
 
      // Ceux-ci n'ont aucun interet a etre iniline
 
@@ -334,15 +334,15 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
      Output WhichMin();
 
 
-     private : 
+     private :
           void Verif_adr_xy();
-     
+
 };
 
 template <class Type>
 Pt2d<double> Pt2d<Type>::polar( const Pt2d<double> & p,REAL AngDef )
 {
-	if ((p.x==0) && (p.y== 0))
+    if ((p.x==0) && (p.y== 0))
         return Pt2d<double>(0,AngDef);
     return Pt2d<double>(hypot(p.x,p.y),atan2(p.y,p.x));
 }
@@ -352,6 +352,25 @@ template <class Type>
 
 template <class Type>
 Type  dist8(const Pt2d<Type> & p){return ElMax(ElAbs(p.x),ElAbs(p.y));}
+
+template <class Type>
+Type  dist48(const Pt2d<Type> & p)
+{
+   Type Ax = ElAbs(p.x);
+   Type Ay = ElAbs(p.y);
+   return ElMax(Ax,Ay) + Ax + Ay;
+}
+
+template <class Type>
+Type  dist48_euclid(const Pt2d<Type> & p)
+{
+   Type Ax = ElAbs(p.x);
+   Type Ay = ElAbs(p.y);
+   return (3*ElMax(Ax,Ay) +  2*(Ax + Ay)) / 5.0;
+}
+
+
+
 
 
 /*
@@ -364,6 +383,15 @@ template <> Pt2d<Fonc_Num>::Pt2d(const Pt2d<double>& p) : x (p.x), y (p.y) {};
      Pt2d<Type>(const Pt2d<INT>& p) : x (p.x), y (p.y) {};
      Pt2d<Type>(const Pt2d<REAL>& p): x (Pt2d<Type>::RtoT(p.x)), y (Pt2d<Type>::RtoT(p.y)) {};
 */
+
+//Rotate aPt(X,Y) with angle(rad) and center(X,Y)
+template <class Type>
+Pt2d<Type> Rot2D(double aAngle, Pt2d<Type> aPt, Pt2d<Type> aRotCenter)
+                 {  Pt2d<Type> PtOut;
+                    PtOut.x=cos(aAngle)*(aPt.x-aRotCenter.x)+sin(aAngle)*(aPt.y-aRotCenter.y)+aRotCenter.x;
+                    PtOut.y=-sin(aAngle)*(aPt.x-aRotCenter.x)+cos(aAngle)*(aPt.y-aRotCenter.y)+aRotCenter.y;
+                    return PtOut;}
+
 
 template <class Type>
 void pt_set_min_max(Pt2d<Type> & p0,Pt2d<Type> & p1)
@@ -391,22 +419,22 @@ template <class Type>
 typename ElStdTypeScal<Type>::TypeScalReel  euclid(const Pt2d<Type> & p1,const Pt2d<Type> & p2)
                  {return sqrt(square_euclid(p1,p2));}
 
-template <class Type> Pt2d<Type> Sup (const Pt2d<Type> & p1,const Pt2d<Type> & p2) 
-{ 
-	return Pt2d<Type>(ElMax(p1.x,p2.x),ElMax(p1.y,p2.y));
-}
-template <class Type>Pt2d<Type> Inf(const Pt2d<Type> & p1,const Pt2d<Type> & p2) 
+template <class Type> Pt2d<Type> Sup (const Pt2d<Type> & p1,const Pt2d<Type> & p2)
 {
-	return Pt2d<Type>(ElMin(p1.x,p2.x),ElMin(p1.y,p2.y));
+    return Pt2d<Type>(ElMax(p1.x,p2.x),ElMax(p1.y,p2.y));
+}
+template <class Type>Pt2d<Type> Inf(const Pt2d<Type> & p1,const Pt2d<Type> & p2)
+{
+    return Pt2d<Type>(ElMin(p1.x,p2.x),ElMin(p1.y,p2.y));
 }
 
-template <class Type> Pt2d<Type> Inf3 (const Pt2d<Type> & p1,const Pt2d<Type> & p2,const Pt2d<Type> & p3) 
+template <class Type> Pt2d<Type> Inf3 (const Pt2d<Type> & p1,const Pt2d<Type> & p2,const Pt2d<Type> & p3)
 {
-		return Inf(p1,Inf(p2,p3));
+        return Inf(p1,Inf(p2,p3));
 }
-template <class Type>Pt2d<Type> Sup3 (const Pt2d<Type> & p1,const Pt2d<Type> & p2,const Pt2d<Type> & p3) 
+template <class Type>Pt2d<Type> Sup3 (const Pt2d<Type> & p1,const Pt2d<Type> & p2,const Pt2d<Type> & p3)
 {
-		return Sup(p1,Sup(p2,p3));
+        return Sup(p1,Sup(p2,p3));
 }
 
 
@@ -423,13 +451,13 @@ extern std::ostream & operator << (std::ostream & ofs,const Pt2dr  &p);
 extern std::ostream & operator << (std::ostream & ofs,const Pt2di  &p);
 extern std::istream & operator >> (std::istream & ifs,Pt2dr  &p);
 extern std::istream & operator >> (std::istream & ifs,Pt2di  &p);
-                     
+
 
 class cElMap2D
 {
     public :
          virtual Pt2dr operator () (const Pt2dr & p) const = 0;
-	virtual ~cElMap2D(){}
+    virtual ~cElMap2D(){}
 };
 
 class ElSimilitude : public cElMap2D
@@ -442,7 +470,7 @@ class ElSimilitude : public cElMap2D
          {
          }
 
-         static ElSimilitude SimOfCentre(Pt2dr centre,Pt2dr ComplScale) 
+         static ElSimilitude SimOfCentre(Pt2dr centre,Pt2dr ComplScale)
          {
             return ElSimilitude
                    (
@@ -459,7 +487,7 @@ class ElSimilitude : public cElMap2D
                            Pt2dr::FromPolar(rho,teta)
                        );
          }
-     
+
          Pt2dr operator () (const Pt2dr & p) const
          {
                return _tr + p * _sc;
@@ -493,6 +521,7 @@ class ElSimilitude : public cElMap2D
           Pt2dr  _sc;
 };
 
+class cElHomographie;
 class ElAffin2D : public cElMap2D
 {
      public :
@@ -512,8 +541,8 @@ class ElAffin2D : public cElMap2D
         static ElAffin2D Id();
         static ElAffin2D trans(Pt2dr aTr);  // Ajoute Tr
 
-  // Soit une image I1, que l'on Crop de Tr, puis que l'on sous echantillone 
-  // a d'une resolutiobn aResol, pour avoir une image I2 renvoie la transfo qui donne les coordonnees
+  // Soit une image I1, que l'on Crop de Tr, puis que l'on sous echantillone
+  // a d'une resolution aResol, pour avoir une image I2 renvoie la transfo qui donne les coordonnees
   // de l'homologue de I1 dans I2
   //
   //  Si aSzInOut est donne, on rajoute une eventuelle translation pour que l'image
@@ -528,7 +557,7 @@ class ElAffin2D : public cElMap2D
 
         ElAffin2D (const ElSimilitude &);
 
-        ElAffin2D();  // idenitite, on le laisse par compatibilite 
+        ElAffin2D();  // identite, on le laisse par compatibilite
 
         Pt2dr IVect (const Pt2dr & aP) const
         {
@@ -539,13 +568,22 @@ class ElAffin2D : public cElMap2D
               return  mI00 + IVect(aP);
         }
 
-         // ideme sim Aff1 * Aff2 renvoie l'affinite e composee (celle z-> Aff1(Aff2(z)))
+         // idem sim Aff1 * Aff2 renvoie l'affinite e composee (celle z-> Aff1(Aff2(z)))
        ElAffin2D operator * (const ElAffin2D & sim2) const;
        ElAffin2D inv() const;
 
        Pt2dr I00() const {return mI00;}
        Pt2dr I10() const {return mI10;}
        Pt2dr I01() const {return mI01;}
+       static ElAffin2D FromTri2Tri
+               (
+                    const Pt2dr & a0, const Pt2dr & a1, const Pt2dr & a2,
+                    const Pt2dr & b0, const Pt2dr & b1, const Pt2dr & b2
+               );
+
+       cElHomographie ToHomographie() const;
+
+
      private :
 
             Pt2dr mI00;
@@ -559,7 +597,7 @@ double DMaxCoins(ElAffin2D AfC2M,Pt2dr aSzIm,Pt2dr aC);
 
 // Fonctions specifiques a un des types de points
 
-    // When a Pt2di p is used as a ``seed'' to generate a digital line the average eculidean
+    // When a Pt2di p is used as a ``seed'' to generate a digital line the average euclidean
     // distance d between two consecutives points is variable according to p
     // For example  : d = sqrt(2) for p = (1,1) or p = (234,234) and d = 1 for p = (-99,0)
 REAL  average_euclid_line_seed (Pt2di);
@@ -598,8 +636,8 @@ inline Pt2di arrondi_sup(Pt2di a,int b)
    return arrondi_sup(a,Pt2di(b,b));
 }
 
-	
-	
+
+
 inline Pt2dr rot90(Pt2dr p)
 {
     return Pt2dr(-p.y,p.x);
@@ -617,7 +655,13 @@ inline Pt2dr vunit(Pt2dr p)
    return vunit(p,d);
 }
 
+/*
 inline Pt2dr barry(REAL pds1,const Pt2dr & p1,const Pt2dr & p2 )
+{
+     return p1*pds1  + p2*(1-pds1);
+}
+*/
+template <class TPds,class TVal> inline TVal barry(TPds pds1,const TVal & p1,const TVal & p2 )
 {
      return p1*pds1  + p2*(1-pds1);
 }
@@ -635,7 +679,7 @@ template <class Type> void assert_not_nul(const Pt2d<Type> &){}
 // angle avec vecteur (1,0), compris entre -pi et pi
 // par ex (0,1) => pi / 2, si deux arg angle de p1 vers p2
 // en fait juste encapsulation de atan2
-REAL  angle(const Pt2dr & p);  
+REAL  angle(const Pt2dr & p);
 REAL  angle(const Pt2dr & p1,const Pt2dr & p2);
 
 
@@ -645,9 +689,9 @@ REAL  angle(const Pt2dr & p1,const Pt2dr & p2);
 // angle de droite (entre -pi/2 et pi/2),
 //  angle de droite non oriente (entre 0 et pi/2, symetrique)
 
-REAL  angle_de_droite(const Pt2dr & p);  
+REAL  angle_de_droite(const Pt2dr & p);
 REAL  angle_de_droite(const Pt2dr & p1,const Pt2dr & p2);
-REAL  angle_de_droite_nor(const Pt2dr & p);  
+REAL  angle_de_droite_nor(const Pt2dr & p);
 REAL  angle_de_droite_nor(const Pt2dr & p1,const Pt2dr & p2);
 
 
@@ -656,7 +700,7 @@ REAL  angle_de_droite_nor(const Pt2dr & p1,const Pt2dr & p2);
 std::vector<Pt2di> PointInCouronne(int aD8Min,int aD8Max);
     // Par ex dist [2,5,9] et recuper (0-1) + (2-4) + (5-8)
     // AddD4First mets les 4 voisin d'abord
-std::vector<std::vector<Pt2di> > PointOfCouronnes(const std::vector<int> Dist,bool AddD4First);
+std::vector<std::vector<Pt2di> > PointOfCouronnes(const std::vector<int> &Dist,bool AddD4First);
 
 std::vector<std::vector<Pt2di> > StdPointOfCouronnes(int aDMax,bool AddD4First);
 
@@ -689,7 +733,7 @@ template <class Type> class Pt3d : public  ElStdTypeScal<Type>
 
 
      Pt3d(Type X,Type Y,Type Z);
-     Pt3d<Type> operator + (const Pt3d<Type> & p2) const; 
+     Pt3d<Type> operator + (const Pt3d<Type> & p2) const;
 
      Pt3d<Type> operator * (Type) const;
      Pt3d<Type> operator / (Type) const;
@@ -709,8 +753,8 @@ template <class Type> class Pt3d : public  ElStdTypeScal<Type>
      }
 */
 
-     Pt3d<Type>  operator ^ (const Pt3d<Type> & p2) const;  
-     Pt3d<Type>  &  operator = (const Pt3d<Type> & p2) ;  
+     Pt3d<Type>  operator ^ (const Pt3d<Type> & p2) const;
+     Pt3d<Type>  &  operator = (const Pt3d<Type> & p2) ;
 
 
      void to_tab(Type (& t)[3] ) const;
@@ -719,10 +763,10 @@ template <class Type> class Pt3d : public  ElStdTypeScal<Type>
 
 
      Pt3d<Type> AbsP() const {return Pt3d<Type>(ElAbs(x),ElAbs(y),ElAbs(z));}
-	 /*
-     friend Pt3d<Type> Sup (const Pt3d<Type> & p1,const Pt3d<Type> & p2) 
+     /*
+     friend Pt3d<Type> Sup (const Pt3d<Type> & p1,const Pt3d<Type> & p2)
            { return Pt3d<Type>(ElMax(p1.x,p2.x),ElMax(p1.y,p2.y),ElMax(p1.z,p2.z));}
-     friend Pt3d<Type> Inf (const Pt3d<Type> & p1,const Pt3d<Type> & p2) 
+     friend Pt3d<Type> Inf (const Pt3d<Type> & p1,const Pt3d<Type> & p2)
             { return Pt3d<Type>(ElMin(p1.x,p2.x),ElMin(p1.y,p2.y),ElMin(p1.z,p2.z));}
       */
      Output sigma();
@@ -739,22 +783,22 @@ template <class Type> class Pt3d : public  ElStdTypeScal<Type>
      static  Pt3d<Type>  TyFromSpherique(Type Rho,Type Teta,Type Phi)
      {
         return   Pt3d<Type>
-		 (
+         (
           ElStdTypeScal<Type>::RTtoT(cos(Phi)*cos(Teta)*Rho),
           ElStdTypeScal<Type>::RTtoT(cos(Phi)*sin(Teta)*Rho),
           ElStdTypeScal<Type>::RTtoT(sin(Phi)*Rho)
-		 );
+         );
      }
 
-     private : 
+     private :
           void Verif_adr_xy();
 };
 
 template <class Type>
-Pt3d<Type> Sup (const Pt3d<Type> & p1,const Pt3d<Type> & p2) 
+Pt3d<Type> Sup (const Pt3d<Type> & p1,const Pt3d<Type> & p2)
 { return Pt3d<Type>(ElMax(p1.x,p2.x),ElMax(p1.y,p2.y),ElMax(p1.z,p2.z));}
 template <class Type>
-Pt3d<Type> Inf (const Pt3d<Type> & p1,const Pt3d<Type> & p2) 
+Pt3d<Type> Inf (const Pt3d<Type> & p1,const Pt3d<Type> & p2)
 { return Pt3d<Type>(ElMin(p1.x,p2.x),ElMin(p1.y,p2.y),ElMin(p1.z,p2.z));}
 
 inline Pt3dr Pcoord2(const Pt3dr & aP) { return Pt3dr(ElSquare(aP.x),ElSquare(aP.y),ElSquare(aP.z)); }
@@ -768,49 +812,48 @@ inline double SomCoord(const Pt2dr & aP) { return aP.x+aP.y;}
 
 template <class Type> typename ElStdTypeScal<Type>::TypeScalReel  square_euclid(const Pt3d<Type> & p)
      {
-		typename ElStdTypeScal<Type>::TypeScalReel aX = p.x;
-		typename ElStdTypeScal<Type>::TypeScalReel aY = p.y;
-		typename ElStdTypeScal<Type>::TypeScalReel aZ = p.z;
+        typename ElStdTypeScal<Type>::TypeScalReel aX = p.x;
+        typename ElStdTypeScal<Type>::TypeScalReel aY = p.y;
+        typename ElStdTypeScal<Type>::TypeScalReel aZ = p.z;
 
-		return aX*aX + aY*aY + aZ*aZ;
+        return aX*aX + aY*aY + aZ*aZ;
      }
 template <class Type>  typename ElStdTypeScal<Type>::TypeScalReel  euclid(const Pt3d<Type> & p ){return sqrt(square_euclid(p));}
 template <class Type> typename ElStdTypeScal<Type>::TypeScalReel  square_euclid(const Pt3d<Type> & p1,const Pt3d<Type> & p2)
 {
-	return ElSquare(p2.x-p1.x) + ElSquare(p2.y-p1.y) + ElSquare(p2.z-p1.z);
+    return ElSquare(p2.x-p1.x) + ElSquare(p2.y-p1.y) + ElSquare(p2.z-p1.z);
 }
 template <class Type>
 Type  scal (const Pt3d<Type> & p1,const Pt3d<Type> & p2)
 {
-	return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
+    return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
 }
 
-template <class Type>	 
+template <class Type>
 Type Det(const Pt3d<Type> & p1,const Pt3d<Type> & p2,const Pt3d<Type> & p3)
 {
-	return scal(p1 ,p2^p3);
+    return scal(p1 ,p2^p3);
 }
 
 
 Pt3dr OneDirOrtho(const Pt3dr &);  // Vecteur unitaire
 
-template <class Type> Pt2d<Type> Proj(Pt3d<Type> aP) 
-{return Pt2d<Type>(aP.x,aP.y);}
+template <class Type> inline Pt2d<Type> Proj(Pt3d<Type> aP) {return Pt2d<Type>(aP.x,aP.y);}
 
-template <class Type> Pt2d<Type> ProjStenope(Pt3d<Type> aP) 
+template <class Type> Pt2d<Type> ProjStenope(Pt3d<Type> aP)
 {return Pt2d<Type>(aP.x,aP.y)/aP.z;}
 
 
-template <class Type> Pt3d<Type> PtAndZ(Pt2d<Type> aP,Type aZ) 
+template <class Type> Pt3d<Type> PtAndZ(Pt2d<Type> aP,Type aZ)
 {return Pt3d<Type>(aP.x,aP.y,aZ);}
 
-template <class Type> Pt3d<Type> PZ1(Pt2d<Type> aP) 
+template <class Type> Pt3d<Type> PZ1(Pt2d<Type> aP)
 {return Pt3d<Type>(aP.x,aP.y,(Type)1);}
-template <class Type> Pt3d<Type> PZ0(Pt2d<Type> aP) 
+template <class Type> Pt3d<Type> PZ0(Pt2d<Type> aP)
 {return Pt3d<Type>(aP.x,aP.y,(Type)0);}
 
 template <class Type> Pt3d<Type> PointNorm1(const Pt3d<Type> & aP)
-{return aP / sqrt(aP.x*aP.x+aP.y*aP.y + aP.z*aP.z);};
+{return aP / sqrt(aP.x*aP.x+aP.y*aP.y + aP.z*aP.z);}
 
 inline Pt3di round_down(Pt3dr  p)
 {
@@ -854,7 +897,7 @@ template <class Type> class Pt4d
 
      static Type instantiate();
 
-     private : 
+     private :
 //          void Verif_adr_xy();
 // Methode jamais ecrite
 };
@@ -957,7 +1000,7 @@ template <class Type> class Box2d
      double Interiorite(const Pt2dr & aP) const;
 
 
-     Box2d(){};
+     Box2d(){}
      Box2d(Type);
      Box2d(Pt2d<Type>);
      Box2d(const Pt2d<Type> *,INT aNb);
@@ -966,9 +1009,9 @@ template <class Type> class Box2d
      Box2d(Pt2dlr,Pt2dlr);  // cast up and down
      Box2d(const Type *,const Type *,INT);
      bool include_in(const Box2d<Type> & b2) const;
-     Box2d<Type>  erode(Pt2d<Type>) const;      
-     Box2d<Type>  dilate(Pt2d<Type>) const;      
-     Box2d<Type>  dilate(Type) const;      
+     Box2d<Type>  erode(Pt2d<Type>) const;
+     Box2d<Type>  dilate(Pt2d<Type>) const;
+     Box2d<Type>  dilate(Type) const;
 
      std::vector<Pt2d<Type> >   Contour() const;
 
@@ -976,24 +1019,24 @@ template <class Type> class Box2d
      // + ou - dilatation signee, en fait equivalent avec la
      // definition actuelle de dilate (mais le cote algebrique de
      // de dilate n'est pas acquis a 100%)
-     Box2d<Type>  AddTol(const Box2d<Type> &) const;      
-     Box2d<Type>  AddTol(const Pt2d<Type> &) const;      
-     Box2d<Type>  AddTol(const Type &) const;      
+     Box2d<Type>  AddTol(const Box2d<Type> &) const;
+     Box2d<Type>  AddTol(const Pt2d<Type> &) const;
+     Box2d<Type>  AddTol(const Type &) const;
 
      bool  inside(const Pt2d<Type> & p) const;  // p0 <= Box._p1
      bool  inside_std(const Pt2d<Type> & p) const;  // p0 < Box._p1
 
      bool contains(const Pt2d<int> & pt) const
      {
-		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
+        return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
      bool contains(const Pt2d<double> & pt) const
      {
-		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
+        return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
      bool contains(const Pt2d<long double> & pt) const
      {
-		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
+        return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
 
 
@@ -1050,24 +1093,32 @@ template <class Type> class Box2d
 
 typedef Box2d<INT> Box2di;
 typedef Box2d<REAL>  Box2dr;
+Pt2di BoxPClipedIntervC(const Box2di &,const Pt2di &);
+
+extern std::istream & operator >> (std::istream & ifs,Box2dr  &aBox);
+extern std::istream & operator >> (std::istream & ifs,Box2di  &aBox);
 Pt2di  RandomlyGenereInside(const Box2di &) ;
 
 Box2dr  I2R(const Box2di &);
 Box2di  R2I(const Box2dr &);   // Par round_ni
 Box2di  R2ISup(const Box2dr &);   // Par down et sup
 
+ostream & operator << (ostream & ofs,const Box2di  &aBox);
+ostream & operator << (ostream & ofs,const Box2dr  &aBox);
+
+
 
 void AdaptParamCopyTrans(INT& X0src,INT& X0dest,INT& NB,INT NbSrc,INT NbDest);
 
 void AdaptParamCopyTrans(Pt2di& p0src,Pt2di& p0dest,Pt2di& sz,
-                          Pt2di   SzSrc, Pt2di   SzDest);        
+                          Pt2di   SzSrc, Pt2di   SzDest);
 
 
 template <class Type>
 Box2d<Type> I2Box
        (
-	    const cInterv1D<Type>  & IntervX,
-	    const cInterv1D<Type>  & IntervY
+        const cInterv1D<Type>  & IntervX,
+        const cInterv1D<Type>  & IntervY
        );
 template <class Type> cInterv1D<Type> IntX(const Box2d<Type> &);
 template <class Type> cInterv1D<Type> IntY(const Box2d<Type> &);
@@ -1076,7 +1127,7 @@ class cDecoupageInterv2D
 {
       public :
 
-          // dil peut etre < 0, dilate sauf 
+          // dil peut etre < 0, dilate sauf
           Box2di DilateBox(int aKBox,const Box2di &,int aDil);
 
 
@@ -1084,10 +1135,11 @@ class cDecoupageInterv2D
           (
               const Box2di & aBoxGlob,
               Pt2di aSzMax,
-              const Box2di   & aSzBord
+              const Box2di   & aSzBord,
+              int              anArrondi=1
           );
-          static cDecoupageInterv2D SimpleDec(Pt2di aSz,int aSzMax,int aSzBrd);
-	                    
+          static cDecoupageInterv2D SimpleDec(Pt2di aSz,int aSzMax,int aSzBrd,int anArrondi=1);
+
           int NbInterv() const;
           Box2di KthIntervOut(int aK) const;
           Pt2di  IndexOfKBox(int aKBOx) const;
@@ -1096,14 +1148,15 @@ class cDecoupageInterv2D
           Box2di  KthIntervIn(int aK) const;
           Box2di  KthIntervIn(int aK, const Box2di   & aSzBord) const;
        // Majorant de la taille des boites
-	  Pt2di   SzMaxOut() const;
-	  Pt2di   SzMaxIn (const Box2di   & aSzBord) const;
-	  Pt2di   SzMaxIn () const;
+      Pt2di   SzMaxOut() const;
+      Pt2di   SzMaxIn (const Box2di   & aSzBord) const;
+      Pt2di   SzMaxIn () const;
+      int     NbX() const;
       private :
           cDecoupageInterv1D mDecX;
           cDecoupageInterv1D mDecY;
-	  int mNbX;
-	  Box2di mSzBrd;
+      int mNbX;
+      Box2di mSzBrd;
 
 };
 
@@ -1130,6 +1183,7 @@ class cMetaDataPhoto
         double FocMm(bool Svp=false) const;
         double Foc35(bool Svp=false) const;
         double  FocPix() const;
+        int NbBits(bool Svp=false) const;
 
         double ExpTime(bool Svp=false) const;
         double Diaph(bool Svp=false) const;
@@ -1144,25 +1198,37 @@ class cMetaDataPhoto
         bool XYZTetasInit() const;
         const Pt3dr & XYZ() const;
         const Pt3dr & Tetas() const;
-        
-        
+
+
+         const bool   &  HasGPSLatLon() const;
+         const double &  GPSLat() const;
+         const double &  GPSLon() const;
+         const bool   &  HasGPSAlt() const;
+         const double &  GPSAlt() const;
+         void SetGPSLatLon(const double & aLat,const double & aLon);
+         void SetGPSAlt(const double & anAlt);
+
          cMetaDataPhoto
-         ( 
+         (
                 const std::string & aNameIm,
                 Pt2di aSzIm,
                 const std::string & aCam,
                 cElDate mDate,double aFocMm,double Foc35,double aExpTime,
-                double aDiaph,double anIsoSpeed,const std::string & aBayPat
+                double aDiaph,double anIsoSpeed,const std::string & aBayPat,
+                const std::string & anOrientation, const std::string & aCameraOrientation,
+                int aNbBits
          );
          cMetaDataPhoto();
          const std::string  & BayPat() const;
          bool & FocForced();
+         const std::string & Orientation() const;
+         const std::string & CameraOrientation() const;
    private :
         static cMetaDataPhoto  CreateNewExiv2(const std::string &);
 
          static cMetaDataPhoto Create(const std::string & aCom,const std::string &);
          static std::string  ExeCom(const std::string & aNameProg,const std::string & aNameFile);
-         
+
          static cElRegex * mDateRegExiV2;
          static cElRegex * mFocRegExiV2;
          static cElRegex * mFoc35RegExiV2;
@@ -1172,9 +1238,9 @@ class cMetaDataPhoto
          static cElRegex * mCameraExiV2;
          static cElRegex * mSzImExiV2;
          static const std::string theNameTMP;
-         
+
          static const cMetaDataPhoto  TheNoMTD;
-         
+
          std::string  mNameIm;
          mutable Pt2di   mTifSzIm;
          Pt2di   mXifSzIm;
@@ -1191,6 +1257,15 @@ class cMetaDataPhoto
          Pt3dr   mXYZ;
          Pt3dr   mTetas;
          std::string  mBayPat;
+         bool    mHasGPSLatLon;
+         double  mGPSLat;
+         double  mGPSLon;
+         bool    mHasGPSAlt;
+         double  mGPSAlt;
+         std::string mOrientation;
+         std::string mCameraOrientation;
+         int         mNbBits;  // Par defaut initialisee a -1
+
 };
 // cCameraEntry *  CamOfName(const std::string & aName);
 
@@ -1199,14 +1274,12 @@ extern double GetFocalMmDefined(const std::string & aNameFile);
 extern bool CmpY(const Pt2di & aP1,const Pt2di & aP2);
 
 
-namespace NS_ParamChantierPhotogram {
 
 class cSystemeCoord;
 class cChangementCoordonnees;
 class cBasicSystemeCoord;
 class cXmlGeoRefFile;
 
-};
 
 class cSysCoordPolyn;
 template <class Type>  class ElMatrix;
@@ -1220,7 +1293,7 @@ class cSysCoord
          ElMatrix<double> JacobFromGeoc(const Pt3dr &,const Pt3dr& Epsilon = Pt3dr(0.1,0.1,0.1)) const;
 
 
-  
+
          // Au moins un des deux ToGeoC doit etre defini, car les version par defaut definissent l'un par rapport
          // a l'autre, d'ou possible recursion infinie ....
          virtual Pt3dr ToGeoC(const Pt3dr &) const ;
@@ -1231,7 +1304,7 @@ class cSysCoord
          virtual std::vector<Pt3dr> FromGeoC(const std::vector<Pt3dr> &) const ;
 
 
-          
+
 
 
 
@@ -1239,15 +1312,16 @@ class cSysCoord
 
          ElMatrix<double> JacobSys2This(const cSysCoord &,const Pt3dr &,const Pt3dr& Epsilon = Pt3dr(0.1,0.1,0.1)) const;
 
-         virtual NS_ParamChantierPhotogram::cSystemeCoord ToXML() const = 0;
+         virtual cSystemeCoord ToXML() const = 0;
 
           virtual Pt3dr OdgEnMetre() const = 0;  // Ordre dde grandeir en metre
                                                  //  tq. p.x est la valeur donnant en ordre de grandeur un dep de 1
 
           static cSysCoord * GeoC();
           static cSysCoord * WGS84();
+          static cSysCoord * WGS84Degre();
           static cSysCoord * RTL(const Pt3dr & Ori);
-          static cSysCoord * FromXML(const NS_ParamChantierPhotogram::cSystemeCoord &,const char * aDir);
+          static cSysCoord * FromXML(const cSystemeCoord &,const char * aDir);
 
           static cSysCoord * FromFile(const std::string & aNF,const std::string & aTag="SystemeCoord");
 
@@ -1256,7 +1330,7 @@ class cSysCoord
                                     Pt3di aDegX,
                                     Pt3di aDegY,
                                     Pt3di aDegZ,
-                                    cSysCoord * aSysIn,  
+                                    cSysCoord * aSysIn,
                                     const std::vector<Pt3dr> & aVin,
                                     const std::vector<Pt3dr> & aVout
                              );
@@ -1266,7 +1340,7 @@ class cSysCoord
                                     Pt3di aDegX,
                                     Pt3di aDegY,
                                     Pt3di aDegZ,
-                                    cSysCoord * aSysIn,  
+                                    cSysCoord * aSysIn,
                                     const std::vector<Pt3dr> & aVin,
                                     const std::vector<Pt3dr> & aVout
                              );
@@ -1287,7 +1361,7 @@ class cSysCoord
 
           static cSysCoord * FromXML
                              (
-                                   const NS_ParamChantierPhotogram::cBasicSystemeCoord * &,
+                                   const cBasicSystemeCoord * &,
                                    int  & aNbB,
                                    const char * aDir
                              );
@@ -1295,7 +1369,14 @@ class cSysCoord
 
 class ElCamera;
 
-class cChSysCo
+class cTransfo3D
+{
+     public :
+          virtual std::vector<Pt3dr> Src2Cibl(const std::vector<Pt3dr> &) const = 0;
+
+};
+
+class cChSysCo : public cTransfo3D
 {
      public :
            Pt3dr Src2Cibl(const Pt3dr &) const;
@@ -1308,6 +1389,7 @@ class cChSysCo
      private :
            //   cChSysCo(const cChangementCoordonnees &,const std::string &) ;
            cChSysCo(cSysCoord * aSrc,cSysCoord * aCibl);
+           ~cChSysCo();
            cSysCoord * mSrc;
            cSysCoord * mCibl;
 };
@@ -1316,7 +1398,7 @@ class cChSysCo
 class cGeoRefRasterFile
 {
      public :
-        cGeoRefRasterFile(const NS_ParamChantierPhotogram::cXmlGeoRefFile &,const char * aDir);
+        cGeoRefRasterFile(const cXmlGeoRefFile &,const char * aDir);
         static cGeoRefRasterFile * FromFile(const std::string & aNF,const std::string & aTag="XmlGeoRefFile");
 
         Pt3dr File2Loc(const Pt3dr & ) const;
@@ -1348,13 +1430,39 @@ Pt3dr  tCho2double(const Pt3d<tSysCho> & aP);
 typedef TypeSubst<Pt2di>   Pt2diSubst;
 typedef TypeSubst<Pt2dr>   Pt2drSubst;
 
-std::vector<Pt3dr> GetDistribRepresentative(const std::vector<Pt2dr> & aV,const Pt2di & aNb);
+std::vector<Pt3dr>  GetDistribRepreBySort(std::vector<Pt2dr> & aVP,const Pt2di & aNbOut,Pt3dr & aPRep);
+
+std::vector<Pt3dr> GetDistribRepresentative(Pt3dr & aCdg,const std::vector<Pt2dr> & aV,const Pt2di & aNb);
 
 
 namespace std
 {
 bool operator < (const Pt3di & aP1,const Pt3di & aP2);
-};
+}
+
+
+class cMTDImCalc;
+class cMIC_IndicAutoCorrel;
+
+cMTDImCalc GetMTDImCalc(const std::string & aNameIm);
+const cMIC_IndicAutoCorrel * GetIndicAutoCorrel(const cMTDImCalc & aMTD,int aSzW);
+std::string NameMTDImCalc(const std::string & aFullName);
+
+
+inline double CoutAttenueTetaMax(const double & aVal,const double & aVMax)
+{
+      return  (aVal*aVMax) / (aVal + aVMax);
+}
+
+inline double GenCoutAttenueTetaMax(const double & aVal,const double & aVMax)
+{
+      if (aVMax<=0) return aVal;
+      return CoutAttenueTetaMax(aVal,aVMax);
+}
+
+Pt2dr arrondi_ni(const Pt2dr & aP,double aPer);
+
+
 
 
 #endif //  _ELISE_INCLUDE_GENERAL_PTXD_H_
@@ -1369,7 +1477,7 @@ correspondances d'images pour la reconstruction du relief.
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -1380,16 +1488,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
 manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
 logiciel �  leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

@@ -37,9 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
-namespace NS_ParamMICMAC
-{
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 /*****************************************/
 /*                                       */
@@ -214,8 +212,11 @@ cGeomDiscFPx::cGeomDiscFPx
    cGeomDiscR2     (anAppli),
    mRDec           (0,0),
    mRRIsInit       (false),
-   mRCoordIsInit   (false)
+   mRCoordIsInit   (false),
+   mTronkExport    (false)
 {
+   for (int aK=0 ; aK<theDimPxMax ; aK++)
+     mRatioPasCompUser[aK] = -1;
 }
 
 
@@ -297,10 +298,7 @@ Box2dr  cGeomDiscFPx::RoundCoord(const Box2dr  & aBox)
 
 void cGeomDiscFPx::PostInit()
 {
-if (MPD_MM())
-{
-    std::cout << "VOIR===PB Z<0 en Prof Champs \n";
-}
+
 
 
   cFileOriMnt * aFileExt = 0;
@@ -363,10 +361,15 @@ if (MPD_MM())
                {
                    mV0Px[aD] += aPx[aD];
                }
-           }  
+            }  
+            else
+            {
+            }
          }
 
          double aResol = (*itFI)->Geom().GetResolMoyenne_Euclid();
+
+
          mResol  += aResol;
          aNbResolGot++;
          double aRatio[theDimPxMax];
@@ -380,11 +383,13 @@ if (MPD_MM())
          if ((*itFI)->Geom().HasCentre())
          {
               aNbCentreGot ++;
+            // Par exemple si cylindre, c'est en coordonnees cylindriques
               Pt3dr aC =  (*itFI)->Geom().CentreRestit();
               aCentre = aCentre + aC;
          }
       }
   }
+
 
 
   if (mAp->RatioAltiPlani().IsInit())
@@ -408,12 +413,14 @@ if (MPD_MM())
   ELISE_ASSERT(aNbResolGot," Resolution pas trouvee");
   mResol /= aNbResolGot;
   double aResolNotRound = mResol;
-  // SetResol(mResol,mAp->GeoRefAutoRoundResol().ValWithDef(mAp->ModeGeomMEC()==eGeomMECTerrain)) ;
+
   SetResol(mResol,mAp->GeoRefAutoRoundResol().ValWithDef(mAp->GeomMNT()==eGeomMNTEuclid)) ;
+
+
+
   if (aFileExt)
   {
        SetUnroundResol(ElAbs(aFileExt->ResolutionPlani().x));
-       // mResol = ElAbs(aFileExt->ResolutionPlani().x);
        //  Attention -(-x) != x  avec les flottant 
        ELISE_ASSERT
        (
@@ -430,8 +437,9 @@ if (MPD_MM())
      if  (mAp->ResolutionTerrain().IsInit())
      {
          SetUnroundResol(mAp->ResolutionTerrain().Val());
+         if (mAp->RoundSpecifiedRT().ValWithDef(false))
+             SetResol(mResol,true);
      }
-     //     mResol = mAp->ResolutionTerrain().Val();
   } 
   mRCoordIsInit =  mAp->GeoRefAutoRoundBox().ValWithDef(true);
 
@@ -593,6 +601,9 @@ if (MPD_MM())
   {
       if (mAp->IntervSpecialZInv().IsInit())
       {
+// PXXXXX 14.5776 0.0685982
+// AAAAAAAAAAlllllmmmmmm[-5.58743,6.90435,-23.1572] [0.913081,-0.403743,0.057229]
+
            double aPxMin =  1/(mV0Px[0]*mAp->IntervSpecialZInv().Val().MulZMax());
            double aPxMax =  1/(mV0Px[0]*mAp->IntervSpecialZInv().Val().MulZMin());
 
@@ -602,7 +613,7 @@ if (MPD_MM())
 
             ELISE_ASSERT((mEcPxInitPlus[0]>0) && (mEcPxInitMoins[0]>0),"Error in IntervSpecialZInv");
 
-if ( mAp->DebugMM().Val())
+if ( 0 )
 {
     std::cout << " V0PX " << mV0Px[0] << " " << 1/mV0Px[0] << "\n";
     std::cout  << "AAA  " << mEcPxInitPlus[0] << " " << mEcPxInitMoins[0] << " " << mEcPxZone[0] << "\n";
@@ -651,10 +662,8 @@ if ( mAp->DebugMM().Val())
       aPxMaxZone[aD] = mV0Px[aD] +mEcPxZone[aD];
   }
 
-// std::cout << "HHHHHH  " << aPxMinZone[0] << " " << aPxMaxZone[0] << "\n"; getchar();
   for (tCsteIterPDV itFI=mAp->PdvBegin(); itFI!=mAp->PdvEnd(); itFI++)  
   {
-  //std::cout << (*itFI)->Name() << "  HHHHHhhYY\n";// getchar();
       if ((aSelName==0) || (aSelName->IsSetIn((*itFI)->Name())))
       {
            Box2dr aVraiE = (*itFI)->Geom().EmpriseTerrain(mV0Px,mV0Px,0);
@@ -830,6 +839,10 @@ if ( mAp->DebugMM().Val())
       aBox = mBoxEngl;
   }
   aBox = RoundCoord(aBox);
+
+
+  aBox._p0 = arrondi_ni(aBox._p0,mResol*mAp->DeZoomMin());
+  aBox._p1 = arrondi_ni(aBox._p1,mResol*mAp->DeZoomMin());
   mP0 = aBox._p0;
   mP1 = aBox._p1;
   mBoxEngl  = aBox;  // A priori redondance entre les 2
@@ -883,6 +896,7 @@ double  cGeomDiscFPx::CorrectDerivee() const
 
 int cGeomDiscFPx::GetEcartInitialGen(double aPas,int aKPx,double anEcart) const
 {
+   // std::cout << " E " << anEcart << " P " << aPas << " R " << mRatioResAltPlani[aKPx] << "\n";
    return  round_ni(anEcart/(aPas*mResolDz* mRatioResAltPlani[aKPx]));
 }
 
@@ -920,10 +934,17 @@ void cGeomDiscFPx::SetStep(const REAL * aVStep)
        if ((aD==0) && mTronkExport)
        {
            double aRatioDZ = mResolDz /mAp->DeZoomMin();
-           cDecimal aSAr = StdRound(mStepAbs[0]/aRatioDZ);
+           double aStepNotRound = mStepAbs[0]/aRatioDZ;
+           cDecimal aSAr = StdRound(aStepNotRound);
+           mRatioPasCompUser[aD] =  (aSAr.RVal() / aStepNotRound);
+// std::cout << "AAAAAAAAAAAAAAAAAaaa " << aSAr.RVal() << " " << aStepNotRound << "\n"; getchar();
            mStepAbs[0] =  aSAr.RVal() * aRatioDZ;
            mStepRel[0] = mStepAbs[0] / (mResolDz * mRatioResAltPlani[aD]);
            mAp->AddPrecisionOfDec(aSAr,aRatioDZ);
+       }
+       else
+       {
+            mRatioPasCompUser[aD] = 1.0;
        }
 /*
 */
@@ -935,6 +956,12 @@ void cGeomDiscFPx::SetDeZoom(REAL aDz)
 {
    cGeomDiscR2::SetDeZoom(aDz);
    SetStep(mStepRel);
+}
+
+double cGeomDiscFPx::RatioPasCompUser(int aD) const
+{
+   ELISE_ASSERT((aD>=0) && (aD<theDimPxMax)  && ( mRatioPasCompUser[aD]>=0),"cGeomDiscFPx::RatioPasCompUser");
+   return mRatioPasCompUser[aD];
 }
 
 
@@ -978,6 +1005,15 @@ void cGeomDiscFPx::PxReel2PxDisc(REAL * aPxD,const double * aPxR) const
     }
 }
 
+void cGeomDiscFPx::SetZIsAbs() 
+{
+    for (int aD=0 ; aD<mDimPx ; aD++)
+    {
+        mV0Px[aD] = 0;
+        mStepAbs[aD] = 1;
+    }
+}
+
 
 const REAL *  cGeomDiscFPx::EcPxZone() const
 {
@@ -990,7 +1026,20 @@ const REAL *  cGeomDiscFPx::V0Px() const
 }
 
 Pt2di cGeomDiscFPx::NbPixel() const { return mSzDz; }
-double cGeomDiscFPx::OrigineAlti() const { return  mV0Px[0]; }
+double cGeomDiscFPx::OrigineAlti4Export() const 
+{ 
+    if (mAp->mCorrecAlti4ExportIsInit)
+       return mAp->mValmCorrecAlti4Export;
+    return  OrigineAlti4Compute();
+}
+
+
+double cGeomDiscFPx::OrigineAlti4Compute() const 
+{
+    return  mV0Px[0]; 
+}
+
+
 double cGeomDiscFPx::ResolutionAlti() const { return  mStepAbs[0]; }
 
 void cGeomDiscFPx::SetOriResolPlani(Pt2dr & aOriP,Pt2dr & aResolP) const
@@ -1009,7 +1058,7 @@ void cGeomDiscFPx::RemplitOri(cFileOriMnt & aFOM,bool DoZAbs) const
 {
   aFOM.NombrePixels()    = NbPixel();
   SetOriResolPlani(aFOM.OriginePlani() ,aFOM.ResolutionPlani());
-  aFOM.OrigineAlti()     = OrigineAlti();
+  aFOM.OrigineAlti()     = OrigineAlti4Export();
   aFOM.ResolutionAlti()  = ResolutionAlti();
 
   if (DoZAbs)
@@ -1017,6 +1066,7 @@ void cGeomDiscFPx::RemplitOri(cFileOriMnt & aFOM,bool DoZAbs) const
       aFOM.OrigineAlti()     = 0;
       aFOM.ResolutionAlti()  = 1.0;
   }
+
 
 /*
   aFOM.NombrePixels()    = mSzDz;
@@ -1172,12 +1222,11 @@ void cLineariseProj::NexStep()
 
 
 
-};
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1193,17 +1242,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

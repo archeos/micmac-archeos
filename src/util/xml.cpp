@@ -42,14 +42,15 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
 
 #include <map>
 #include <locale>
 
 std::string TheEliseDirXmlSpec=string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
 bool ValInitNameDecl = false;
+
+std::vector<std::string> VCurXmlFile;
+
 
 /***********************************************************/
 /*                                                         */
@@ -89,11 +90,22 @@ class cOpPolI
 
 };
 
+static double FLog2(const std::vector<double> & aV) { return log2(aV[0]);}
+static double FRoundNI(const std::vector<double> & aV) { return round_ni(aV[0]);}
 static double FTrue(const std::vector<double> & aV) { return 1; }
 static double FFalse(const std::vector<double> & aV) { return 0; }
 static double FNot(const std::vector<double> & aV) { return aV[0]==0; }
+
+static double FEq(const std::vector<double> & aV) { return aV[0]==aV[1]; }
+static double FNotEq(const std::vector<double> & aV) { return aV[0]!=aV[1]; }
     
 static double FSom(const std::vector<double> & aV) { return aV[0]+aV[1]; }
+static double FPow(const std::vector<double> & aV) { return pow(aV[0],aV[1]); }
+static double FBarPow(const std::vector<double> & aV) { return  pow(aV[0],aV[2]) * pow(aV[1],1-aV[2]);}
+
+
+static double FOr(const std::vector<double> & aV) { return (aV[0]!=0)||(aV[1]!=0); }
+static double FAnd(const std::vector<double> & aV) { return (aV[0]!=0)&&(aV[1]!=0); }
 static double FMul(const std::vector<double> & aV) { return aV[0]*aV[1]; }
 static double FInfEq(const std::vector<double> & aV) { return aV[0]<=aV[1]; }
 static double FSupEq(const std::vector<double> & aV) { return aV[0]>=aV[1]; }
@@ -112,7 +124,11 @@ const std::vector<cOpPolI> & OpPolI()
    static  std::vector<cOpPolI>  aRes;
    if (aRes.empty())
    {
+       aRes.push_back(cOpPolI(3,"BarPow",FBarPow));
+       aRes.push_back(cOpPolI(2,"Pow",FPow));
        aRes.push_back(cOpPolI(2,"+",FSom));
+       aRes.push_back(cOpPolI(2,"Or",FOr));
+       aRes.push_back(cOpPolI(2,"And",FAnd));
        aRes.push_back(cOpPolI(2,"*",FMul));
        aRes.push_back(cOpPolI(2,"InfEq",FInfEq));
        aRes.push_back(cOpPolI(2,"SupEq",FSupEq));
@@ -124,6 +140,10 @@ const std::vector<cOpPolI> & OpPolI()
        aRes.push_back(cOpPolI(0,"false",FFalse));
        aRes.push_back(cOpPolI(1,"!",FNot));
        aRes.push_back(cOpPolI(2,"-",FMoins));
+       aRes.push_back(cOpPolI(2,"Eq",FEq));
+       aRes.push_back(cOpPolI(2,"Neq",FNotEq));
+       aRes.push_back(cOpPolI(1,"Log2",FLog2));
+       aRes.push_back(cOpPolI(1,"Int",FRoundNI));
    }
    return aRes;
 }
@@ -227,11 +247,18 @@ eElXMLKindTree MergeForComp(eElXMLKindTree aKind)
 char fgetcNN(cVirtStream * aFp)
 {
 	int aC = aFp->my_getc();
+
 	if (aC==aFp->my_eof())
 	{
 		std::cout << "NAME=" << aFp->Name() << "\n";
 		ELISE_ASSERT(aC!=aFp->my_eof(),"Unexpected EOF in cElXMLToken");
 	}
+/*
+if (!isascii(aC))
+{
+   std::cout << "NON ASCII " << int(aC) << "\n";
+}
+*/
 	return aC;
 }
 
@@ -805,7 +832,7 @@ std::string filename_normalize( const std::string &i_filename)
 }
 
 // return true if i_str starts with i_start (case sensitive)
-bool startWith( const std::string i_str, const std::string i_start )
+bool startWith( const std::string &i_str, const std::string &i_start )
 {
 	if ( i_str.length()<i_start.length() ) return false;
 	string strStart = i_str.substr( 0, i_start.length() );
@@ -997,8 +1024,12 @@ bool cElXMLTree::IsBranche() const
 
 bool ValInitUseSubst =true;
 
+
+
 cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool DoFileInclu) 
 {
+        VCurXmlFile.push_back(aName);
+
 	cArgCreatXLMTree anArg00(aName,false,false);
 	if (anArgEx== 0)
 		anArgEx = & anArg00;
@@ -1018,12 +1049,14 @@ cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool
 		{
 			VerifCreation();
 			delete aFp;
+                        VCurXmlFile.pop_back();
 			return;
 		}
 		//cArgCreatXLMTree anArg(aName);
 
 		mFils.push_back(new cElXMLTree(DoFileInclu,aUseSubst,aFp,aToken,this,*anArgEx ));
 	}
+        VCurXmlFile.pop_back();
 }
 
 void cElXMLTree::ExpendRef
@@ -1358,8 +1391,12 @@ void cElXMLTree::VerifCreation()
 	}
 }
 
+
+// extern bool BUGGET;
+
 cElXMLTree * cElXMLTree::Get(const std::string & aName,int aDepthMax)
 {
+// if (BUGGET) std::cout <<  "cElXMLTree::Get " << mValTag  << " " << aName << "\n";
 	if (aName==mValTag)
 		return this;
 
@@ -1431,7 +1468,7 @@ cElXMLTree * cElXMLTree::GetUniqueFils()
 cElXMLTree * cElXMLTree::GetOneOrZero(const std::string & aName)
 {
 	std::list<cElXMLTree *> aRes = GetAll(aName);
-	if (aRes.size() == 0)
+	if (aRes.empty())
 		return 0;
 	else if (aRes.size() == 1)
 		return *(aRes.begin());
@@ -1835,12 +1872,19 @@ cElXMLTree *  cElXMLTree::Missmatch
 	std::string &  aMes
 	)
 {
+// std::cout << "VerifM " <<  ValTag() << " " << aTSpecif->ValTag() << "\n";
+        if (
+                 (aT2->ValAttr("Type","")=="XmlXml")
+              || (ValAttr("Type","")=="XmlXml")
+           )
+          return 0;
+
 	std::string aStrFalse = "false";
 	bool  aUnionType =     (!isSpecOn2)
 		&& (ValAttr("UnionType",aStrFalse)=="true") ;
 	if (aUnionType && (aT2->mFils.size() != 1))
 	{
-		aMes = "UnionType must have exactly on descendant";
+		aMes = "UnionType must have exactly on descendant, Tag : " + aT2->ValTag();
 		return this;
 	}
 	for 
@@ -1909,6 +1953,7 @@ cElXMLTree *  cElXMLTree::Missmatch
 
 void  cElXMLTree::VerifMatch(cElXMLTree* aTSpecif)
 {
+
 	std::string aMes;
 
 	cElXMLTree * aMM = Missmatch(aTSpecif,true,aMes);
@@ -1974,6 +2019,8 @@ void cElXMLTree::ShowAscendance(FILE * aFp)
 		aK++;
 	}
 	fprintf(aFp,"\n");
+        if (VCurXmlFile.size())
+           fprintf(aFp,"in file : %s\n",VCurXmlFile.back().c_str());
 }
 
 const std::string & cElXMLTree::ValAttr
@@ -2233,6 +2280,9 @@ std::string  GetValLC
 
 void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
 {
+        if (anArg[0] == cInterfChantierNameManipulateur::theCharSymbOptGlob ) return;
+// std::cout << "cElXMLTree::ModifLC " << anArg << "\n";
+
 	if (anArg[0] == cInterfChantierNameManipulateur::theCharModifDico)
 		return;
 	// std::cout << "ARG="<<  anArg<< "\n";
@@ -2262,11 +2312,14 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
 
 		if (aLSymSp.size() != 1)
 		{
+                        if (aSpecif) aSpecif->StdShow("ShowSpec.xml");
 			cout << "ModifLC :: MATCH ERROR FOR SYMB [" << aSymb << "] : ";
 			if (aLSymSp.empty())
 				cout << "NO MATCH\n";
 			else
-				cout << "MULTIPLE MATCH\n";
+                        {
+				cout << "MULTIPLE MATCH " << aLSymSp.size() << "\n";
+                        }
 			ELISE_ASSERT(false,"MATCH ERROR dans la ligne de commande");
 		}
 		aSymSp = *(aLSymSp.begin());
@@ -2316,7 +2369,7 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
 		"XML-MODIF LC MATCH ERROR, Multiple found (Value)"
 		);
 
-	if (aLSymVal.size() == 0)
+	if (aLSymVal.empty())
 	{
 		if (aSymSp==0)
 		{
@@ -2404,6 +2457,34 @@ bool GetOneModifLC
 	}
 	return false;
 }
+
+void cElXMLTree::breadthFirstFunction( Functor &i_functor )
+{
+	list<cElXMLTree *> nodeList;
+	cElXMLTree *node;
+
+	// first node is the current node
+	nodeList.push_back(this);
+	unsigned int nbNodes = 1;
+
+	while ( nbNodes!=0 ){
+		// get first node from the list and remove it
+		node = nodeList.front();
+		nodeList.pop_front();
+		nbNodes--;
+
+		// add node's children to the list
+		list<cElXMLTree *>::iterator itChild = node->mFils.begin();
+		while ( itChild!=node->mFils.end() ){
+			nodeList.push_back( *itChild++ );
+			nbNodes++;
+		}
+
+		// process node
+		i_functor( *node );
+	}
+}
+
 
 /***********************************************************/
 /*                                                         */

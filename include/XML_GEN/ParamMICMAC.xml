@@ -13,12 +13,11 @@
 </Verbatim>
 
 <Verbatim File=".h">
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
+// NO MORE
 </Verbatim>
 
 <Verbatim File=".h.cpp">
-namespace NS_ParamMICMAC{
+// Quelque chose
 </Verbatim>
 
 
@@ -28,17 +27,17 @@ namespace NS_ParamMICMAC{
        Trois type de geometrie interviennent
 
 
-       - La géométrie image est liée à l'instrument d'acquisition
+       - La geometrie image est liee a l'instrument d'acquisition
        (conique ou barette, calibration ...); elle est definie
        dans la section <Section_PriseDeVue> par le champss
       GeomImages qui doit etre dans l'enumeration eGeomImage.
 
-       - La géométrie de mise en correspondance qui
+       - La geometrie de mise en correspondance qui
        a une influence forte sur l'algorithmie, elle
        est definie dans  <section_MEC>, par le champs
        GeomMEC qui doit etre dans l'enumeration eModeGeomMEC
 	
-       - la géométrie du MNT resultat (par exemple
+       - la geometrie du MNT resultat (par exemple
        cartographique ou euclidien local), elle est
        definie dans  <Section_Results> par le champs
        GeoMNT qui doit etre dans l'enumeration
@@ -60,6 +59,12 @@ namespace NS_ParamMICMAC{
 	   <eGeomMECIm1 >     </eGeomMECIm1>
            <eGeomMECTerrain > </eGeomMECTerrain>
            <eNoGeomMEC >      </eNoGeomMEC>
+   </enum>
+   <enum Name="eModeCensusCost">
+	   <eMCC_GrCensus >          </eMCC_GrCensus>
+           <eMCC_CensusBasic >       </eMCC_CensusBasic>
+           <eMCC_CensusCorrel >      </eMCC_CensusCorrel>
+           <eMCC_CensusMixCorrelBasic >      </eMCC_CensusMixCorrelBasic>
    </enum>
 
 
@@ -377,6 +382,8 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
    <MemPartMICMAC Nb="1" Class="true">
        <NbMaxImageOn1Point Nb="?" Type="int"> </NbMaxImageOn1Point>
        <BSurHGlob  Nb="?" Type="double"> </BSurHGlob>
+       <DeZoomLast  Nb="?" Type="int"> </DeZoomLast>
+       <NumLastEtape  Nb="?" Type="int"> </NumLastEtape>
    </MemPartMICMAC>
 
 
@@ -532,6 +539,7 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
               -->
              <RatioResolImage Nb="?" Type="double"> </RatioResolImage>
              <ResolutionTerrain Nb="?" Type="double"> </ResolutionTerrain>
+             <RoundSpecifiedRT  Nb="?" Type="bool"> </RoundSpecifiedRT>
 
              <!-- Parfois on peut souhaiter que des images 
                   (par exemple HR servant a l'ortho) ne soient
@@ -665,6 +673,8 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
 
              <ImPat Nb="*" Type="std::string">   </ImPat>
              <!-- Utilise le mecanisem ImSecOfMaster d'Apero -->
+
+             <ImageSecByCAWSI Nb="?" Type="std::string"> </ImageSecByCAWSI>
              <ImSecCalcApero Nb="?">
                   <Key Nb="1" Type="std::string"> </Key>
                   <!-- Si Pas donne utilise Score  -->
@@ -893,6 +903,13 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
              <ValRef    Nb="?"  Type="double" Def="0.048"> </ValRef>
         </AdapteDynCov>
 
+        <MMUseMasq3D Nb="?" AccessorFils="false">
+             <NameMasq Nb="1" Type="std::string"> </NameMasq>
+             <ZoomBegin Nb="?" Def="16"  Type="int"> </ZoomBegin>
+             <Dilate Nb="?" Def="2"  Type="int"> </Dilate>
+             <PrefixNuage Nb="?"  Type="std::string"> </PrefixNuage>
+        </MMUseMasq3D>
+
         <EtapeMEC Nb="+" DeltaPrec="1">
             <DeZoom  Nb="1" Type="int">                    </DeZoom>
 
@@ -903,15 +920,20 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
                 <EpsilonMulMoyenne Nb="?" Type="double" Def="0.0"> </EpsilonMulMoyenne>
 
                 <SzBlocAH Nb="?" Type="int" Def="40"> </SzBlocAH>
-                <CorrelMultiScale Nb="?">
+                <CorrelMultiScale Nb="?">                      
+                      <UseGpGpu Nb="?" Type="bool" Def="false"> </UseGpGpu>
                       <ModeDense Nb="?" Type="bool"> </ModeDense>
+                      <!-- Si true un indicateur de forme est calcule sur l'image maitresse pour choisir quel type de fenetre est utilise -->
                       <UseWAdapt Nb="?" Type="bool" Def="false"> </UseWAdapt>
+                      <ModeMax Nb="?" Type="bool" Def="false">  </ModeMax> <!--Pour l'instant Uniquement Implante dans la filiere Census-->
                       <OneParamCMS Nb="+" Container="std::vector">
                            <SzW Nb="1" Type="Pt2di"> </SzW>
                            <!-- A priori Sigma doit etre fonction de  SzW, mais quelle fonction ?? -->
                            <Sigma Nb="1" Type="double"> </Sigma>
                            <!-- Poids apres normalisation des tailles de fenetres -->
                            <Pds Nb="1" Type="double"> </Pds> 
+                           <!-- Si pas Square W : filtre gauss -->
+                           <SquareW Nb="?" Type="bool" Def="false"> </SquareW> 
                       </OneParamCMS>
                 </CorrelMultiScale>
 
@@ -920,6 +942,16 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
 
 
                 <TypeCAH Nb="1" Union="true">
+                        <CensusCost Nb="?" AccessorFils="false">
+                              <PdsCrown  Type="double" Def="0.5" Nb="?"> </PdsCrown>
+                              <TypeCost Type="eModeCensusCost" Nb="1">   </TypeCost>
+                              <Verif Type="bool" Nb="?" Def="false">   </Verif>
+                              <AttenDist  Type="double" Def="0.0" Nb="?"> </AttenDist>
+                              <SeuilHautCorMixte Type="double" Def="0.8" Nb="?"> </SeuilHautCorMixte>
+                              <SeuilBasCorMixte Type="double" Def="0.6" Nb="?">  </SeuilBasCorMixte>
+                        </CensusCost>
+
+
                         <Correl2DLeastSquare Nb="?" AccessorFils="false">    
                              <SzW Nb="1" Type="int"> </SzW>
                              <PeriodEch Nb="1" Type="int"> </PeriodEch>
@@ -969,9 +1001,41 @@ est obligatoirement un Tiff; si false ce peut etre eventuellement un raw data,
                         </Correl_NC_Robuste>
 
                         <MasqueAutoByTieP Nb="?" AccessorFils="false"> 
+                            <FilterPrgDyn Nb="?" RefType="ParamFiltreDepthByPrgDyn"  RefFile="SuperposImage.xml"> </FilterPrgDyn>
+                            <!-- Si true, s'arrete apres avoir rechecher les point qui correlent bien sans chercher a boucher les trous -->
+                            <ComputeAndExportEnveloppe Nb="?">
+
+                                   <EndAfter Nb="?" Type="bool" Def="true"> </EndAfter>
+                                   <NuageExport Nb="?" Type="std::string"> </NuageExport>
+                                   <SsEchFilter Type="double" Nb="?" Def="3.0"> </SsEchFilter>
+                                   <SzFilter    Type="int" Nb="?" Def="7"> </SzFilter>
+                                   <ParamPropFilter    Type="double" Nb="?" Def="0.9"> </ParamPropFilter>
+
+                                   <ProlResolCible Type="double" Nb="?" Def="25">   </ProlResolCible>
+                                   <ProlResolCur  Type="double" Nb="?" Def="10"> </ProlResolCur>
+                                   <ProlDistAdd Type="double" Nb="?" Def="0.25"> </ProlDistAdd>
+                                   <ProlDistAddMax Nb="?" Type="double" Def="3.0"> </ProlDistAddMax>
+
+                                   <DilatAltiCible Nb="?" Type="int" Def="5"> </DilatAltiCible>
+                                   <DilatPlaniCible Nb="?" Type="int" Def="5"> </DilatPlaniCible>
+                                   <DilatPlaniCur Nb="?" Type="int" Def="2"> </DilatPlaniCur>
+                                   <DilatAltiCur Nb="?" Type="int" Def="2"> </DilatAltiCur>
+                            </ComputeAndExportEnveloppe>
+                            <!-- Filtre permettant de supprimer le ciel (sans nuage ...) en virant les zones tres homogenes -->
+                            <mmtpFilterSky Nb="?">
+                                <PertPerPix Type="double" Nb="?" Def="0.005"> </PertPerPix>
+                                <SzKernelHom Type="int" Nb="?" Def="5"> </SzKernelHom>
+                                <PropZonec  Type="double" Nb="?" Def="0.001"> </PropZonec>
+                            </mmtpFilterSky>
+
+                            <BasicOneIter Type="bool" Def="true" Nb="?"> </BasicOneIter>
+                            <Masq3D Nb="?" Type="std::string">        </Masq3D>
+                            <ParamFiltreRegProf RefType="ParamFiltreDetecRegulProf" Nb="?"  RefFile="SuperposImage.xml"> </ParamFiltreRegProf>
+
                             <GlobFilePt3D  Nb="?" Type="std::string"> </GlobFilePt3D>
                             <KeyImFilePt3D  Nb="1" Type="std::string"> </KeyImFilePt3D>
                             <DeltaZ Nb="1" Type="int"> </DeltaZ>
+<!-- Attention, ce sont distance Correl = (2-D) /2.0 , donc D>0.6 equiv correl < 0.7 -->
                             <SeuilSomCostCorrel Nb="1" Type="double"> </SeuilSomCostCorrel>
                             <SeuilMaxCostCorrel Nb="1" Type="double"> </SeuilMaxCostCorrel>
                             <SeuilMedCostCorrel Nb="1" Type="double"> </SeuilMedCostCorrel>
@@ -1276,6 +1340,9 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
               defaut=false sauf pour la derniere etape 
               -->
             <GenImagesCorrel Nb="?" Type="bool"> </GenImagesCorrel>
+            <GenCubeCorrel   Nb="?" Type="bool"> </GenCubeCorrel>
+
+
 
 	    <GenerateProjectionInImages Nb="*">
 	        <NumsImageDontApply Nb="*" Type="int"> </NumsImageDontApply>
@@ -1283,11 +1350,11 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
 		<!-- Soustrait l'identdite (X,Y), au resultat; a du sens en GeomIm1 pour
 		avoir + de "dynamique"-->
 		<SubsXY  Nb="?" Type="bool" Def="false"> </SubsXY>
-<!--
-	        <ImagePattern  Nb="1" Type="std::string"> </ImagePattern>
-		<NameX   Nb="?" Type="std::string" Def="X"> </NameX>
-		<NameY   Nb="?" Type="std::string" Def="Y"> </NameY>
--->
+		<Polar  Nb="?" Type="bool" Def="false"> </Polar>
+                <GenerateImageRedr Nb="?">
+                     <FCND_CalcRedr Nb="1" Type="std::string"> </FCND_CalcRedr>
+                     <Type Nb="?" Type="eTypeNumerique" > </Type>
+                </GenerateImageRedr>
 	    </GenerateProjectionInImages>
 
 
@@ -1337,7 +1404,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
 
              <!--  Export des meta donnees associees a la carte de profondeur pour en faire
                    un fichier XML utilisable en autonome, par defaut vaut non initialise -->
-             <ExportNuage Nb="*" UnionType="true"> 
+             <MMExportNuage Nb="*" UnionType="true"> 
                   <MTD_Nuage_Maille Nb="?">
                       <!-- Permettra d'embarquer les donnees image dans le fichier xml, pas implante pour l'instant -->
                       <DataInside Nb="?" Type="bool" Def="false"> </DataInside>
@@ -1356,7 +1423,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                            <FlagUse Nb="?" Type="int">  </FlagUse>
                       </CannauxExportPly>
                   </PlyFile>
-             </ExportNuage>
+             </MMExportNuage>
 
              
 
@@ -1534,8 +1601,8 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                        ces param pa def
                    -->
 
-                  <SzBloc Nb="?" Type="int" Def="6000"> </SzBloc>
-                  <SzBord Nb="?" Type="int" Def="400"> </SzBord>
+                  <SzBloc Nb="?" Type="int" Def="4000"> </SzBloc>
+                  <SzBord Nb="?" Type="int" Def="300"> </SzBord>
                   <ImSuperpMNT Nb="?" Type="bool" Def="false"> </ImSuperpMNT>
                   <!-- Si cette valeur est donnees tous les calculs d'emprise sont fait dessus, utile lorsqu'une partie
                        meme faible du MNE est tres bruitees -->
@@ -1598,6 +1665,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                  <NameOut Type="std::string" Nb="1"> </NameOut>
                  <NameMasq Type="std::string" Nb="1"> </NameMasq>
                  <NameOriGlob Type="std::string" Nb="1"> </NameOriGlob>
+                 <NameNuage Type="std::string" Nb="?"> </NameNuage>
 
                  <XRecouvrt Type="int" Def="300" Nb="?"> </XRecouvrt>
                  <MemAvalaible Type="double" Def="3e7" Nb="?"> </MemAvalaible>
@@ -1678,6 +1746,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                   <ButDoTA Nb="?" Type="bool" Def="false">             </ButDoTA>
                   <ButDoMasqueChantier Nb="?" Type="bool" Def="false"> </ButDoMasqueChantier>
                   <ButDoOriMNT Nb="?" Type="bool" Def="false">         </ButDoOriMNT>
+                  <ButDoMTDNuage Nb="?" Type="bool" Def="false">         </ButDoMTDNuage>
                   <ButDoFDC Nb="?" Type="bool" Def="false">            </ButDoFDC>
                   <ButDoExtendParam Nb="?" Type="bool" Def="false">    </ButDoExtendParam>
 		  <ButDoGenCorPxTransv  Nb="?" Type="bool" Def="false"> </ButDoGenCorPxTransv>
@@ -1761,6 +1830,8 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                peut relacher cette contrainte ?
           -->
          <AnamorphoseGeometrieMNT Nb="?">
+             <!-- Pour gerer le desanamorphose des ortho .... -->
+             <UnUseAnamXCste Nb="?" Def="false" Type="bool"> </UnUseAnamXCste>
              <AnamSurfaceAnalytique Nb="?">
                    <NameFile Nb="1" Type="std::string"> </NameFile>
                    <Id Nb="1" Type="std::string"> </Id>
@@ -1772,8 +1843,11 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                  <DynIncid Nb="?" Type="double" Def="1e4"> </DynIncid>
 <!-- A priori si on fait des masque image, on ne veut pas utiliser cela en geometrie terrain -->
                  <MakeAlsoMaskTerrain Type="bool" Nb="?" Def="false"> </MakeAlsoMaskTerrain>
+                <!-- Selectionne les KBest -->
                  <KBest  Nb="1" Type="int">   </KBest>
-                  <!-- de 0 a 1 , effet de l'inc Z sur les angles -->
+                  <!-- Comme il y a une certaine incert, on selectionne ceux t.q 
+                            Incid<  (1+IncertAngle) KBetsIncid
+                  -->
                  <IncertAngle  Nb="?" Type="double" Def="0.1"> </IncertAngle>
                  <Dilat32 Nb="?" Type="int" Def="6"> </Dilat32>
                  <Erod32 Nb="?" Type="int"  Def="3"> </Erod32>
@@ -1893,6 +1967,9 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
                    Ne jamais les positionner "a la main" 
 	      !!!! -->
 	 <CalledByProcess  Nb="?" Def="false" Type="bool"> </CalledByProcess>
+	 <IdMasterProcess  Nb="?" Def="-1" Type="int"> </IdMasterProcess>
+         <!-- Pour pouvoir specifier par Key dans le DicoLoc : commandes simplifiees -->
+         <CreateGrayFileAtBegin  Nb="?" Def="false" Type="bool"> </CreateGrayFileAtBegin>
 	 <Visu Nb="?" Def="false" Type="bool">             </Visu>
 	 <ByProcess Nb="?" Def="0" Type="int"> </ByProcess>
          <StopOnEchecFils Nb="?" Def="true" Type="bool"> </StopOnEchecFils>
@@ -1945,6 +2022,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
         </PurgeFiles>
 
         <PurgeMECResultBefore Nb="?" Type="bool" Def="false"> </PurgeMECResultBefore>
+        <PreservedFile Nb="?" Type="std::string"> </PreservedFile>
 
 	<UseChantierNameDescripteur Nb="?" Type="bool" Def="false"> </UseChantierNameDescripteur>
 	<FileChantierNameDescripteur Nb="?" Type="string"> </FileChantierNameDescripteur>
@@ -1962,7 +2040,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
         </PostProcess>
         
         <ComprMasque Nb="?" Type="eComprTiff" Def="eComprTiff_FAX4"> </ComprMasque>
-        <TypeMasque Nb="?" Type="NS_ParamChantierPhotogram::eTypeNumerique" Def="eTN_Bits1MSBF"> </TypeMasque>
+        <TypeMasque Nb="?" Type="eTypeNumerique" Def="eTN_Bits1MSBF"> </TypeMasque>
 
 
      </Section_WorkSpace>
@@ -1998,6 +2076,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
           <SL_PackHom0 Nb="?" Type="std::string" Def=""> </SL_PackHom0>
 	  <SL_RedrOnCur Nb="?" Type="bool" Def="false">   </SL_RedrOnCur>
 	  <SL_NewRedrCur   Nb="?" Type="bool" Def="false">   </SL_NewRedrCur>
+	  <SL_L2Estim   Nb="?" Type="bool" Def="true">   </SL_L2Estim>
 
 
           <SL_FILTER Nb="?" Type="std::vector<std::string>"> </SL_FILTER>
@@ -2044,7 +2123,7 @@ plus proche du sinus cardinal, il vaut mieux etre autour de -1.2.
    </ParamMICMAC>
 
 <Verbatim File=".h.cpp">
-};
+// Quelque chose
 </Verbatim>
 
 <Verbatim File=".h">

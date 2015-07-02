@@ -37,9 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
-namespace NS_ParamMICMAC
-{
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 int cAppliMICMAC::MemSizePixelImage() const
 {
@@ -75,23 +73,14 @@ int cAppliMICMAC::GetTXY() const
     return aSz-aStep;
 }
 
-
-
 void cAppliMICMAC::DoAllMEC()
 {
 
-#ifdef CUDA_ENABLED
-	
-	// Cr�ation du contexte GPGPU
-	cudaDeviceProp deviceProp;
-	// Obtention de l'identifiant de la carte la plus puissante
-	int devID = gpuGetMaxGflopsDeviceId();
-	// Initialisation du contexte 
-	checkCudaErrors(cudaSetDevice(devID));
-    // Obtention des proprietes de la carte
-	checkCudaErrors(cudaGetDeviceProperties(&deviceProp, devID));
-	// Affichage des propriétés de la carte
-	printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n", devID, deviceProp.name, deviceProp.major, deviceProp.minor);
+
+#if CUDA_ENABLED
+
+    CGpGpuContext<cudaContext> gpgpuContext;
+    gpgpuContext.createContext();
 
 #endif
 
@@ -104,7 +93,9 @@ void cAppliMICMAC::DoAllMEC()
      {          
         OneEtapeSetCur(**itE);
         if (mDoTheMEC  && (!DoNothingBut().IsInit()))
+        {
            DoOneEtapeMEC(**itE);
+        }
         if (
                  ( (*itE)->Num()>=FirstEtapeMEC().Val())
            &&    ( (*itE)->Num()<LastEtapeMEC().Val())
@@ -136,12 +127,11 @@ void cAppliMICMAC::DoAllMEC()
         }
      }
 
-#ifdef CUDA_ENABLED
-
-	checkCudaErrors( cudaDeviceReset() );
-    printf("Reset Device GpGpu.\n");
-
+#if CUDA_ENABLED
+    if (mCorrelAdHoc && mCorrelAdHoc->GPU_CorrelBasik().IsInit())    
+        gpgpuContext.deleteContext();
 #endif
+
 }
 
 /*
@@ -172,9 +162,16 @@ double FromSzW2FactExp(double aSzW,double mCurNbIterFenSpec)
 
 void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
 {
+     mPrecEtape = mCurEtape;
      mCurEtape = & anEtape;
+     
+     if (anEtape.EtapeMEC().GenCubeCorrel().ValWithDef(false))
+     {
+        ELISE_fp::MkDirSvp(DirCube());
+     }
      mEBI = mCurEtape->EBI();
      const cEtapeMEC & anEM = mCurEtape->EtapeMEC();
+     mCorrelAdHoc = anEM.CorrelAdHoc().PtrVal();
 
      mSzWR.x = anEM.SzW().Val();
      mSzWR.y = anEM.SzWy().ValWithDef(mSzWR.x);
@@ -240,13 +237,16 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
 	      mSzWFixe==mSzWR.x,
 	      "Fenetre reelle en mode fenetre fixe"
 	 );
-         ELISE_ASSERT
-	 (
-	      mSzWR.x==mSzWR.y,
-	      "tx!=ty en mode fenetre fixe"
-	 );
+         if (! mCorrelAdHoc)
+         {
+             ELISE_ASSERT
+	     (
+	          mSzWR.x==mSzWR.y,
+	          "tx!=ty en mode fenetre fixe"
+	     );
+         }
      }
-     mPtSzWFixe = Pt2di(mSzWFixe,mSzWFixe);
+     mPtSzWFixe = Pt2di(mSzWFixe,round_ni(mSzWR.y));
 
 
      mModeIm1Maitre = IsModeIm1Maitre(mCurEtape->EtapeMEC().AggregCorr().Val());
@@ -268,7 +268,6 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
      }
 
 
-     mCorrelAdHoc = anEM.CorrelAdHoc().PtrVal();
      mCMS_ModeEparse = false;
      if (mCorrelAdHoc)
      {
@@ -333,6 +332,8 @@ void cAppliMICMAC::OneEtapeSetCur(cEtapeMecComp & anEtape)
      );
 }
 
+const std::string & mm_getstrpid();
+
 
 std::string cAppliMICMAC::PrefixGenerikRecalEtapeMicmMac(cEtapeMecComp & anEtape)
 {
@@ -343,7 +344,8 @@ std::string cAppliMICMAC::PrefixGenerikRecalEtapeMicmMac(cEtapeMecComp & anEtape
     //std::string aNameProcess = std::string("\"")+mNameXML+std::string("\"")
    std::string aNameProcess = mNameXML 
                                + std::string(" CalledByProcess=1 ")
-                               + std::string(" ByProcess=0 ");
+                               + std::string(" ByProcess=0 ")
+                               + std::string(" IdMasterProcess="+ mm_getstrpid() + " ");
 
     // MODIF MPD mise entre " des parametre pour etre completement reentrant
     for (int aKArg=0; aKArg<mNbArgAux ; aKArg++)
@@ -550,6 +552,21 @@ int cAppliMICMAC::NbApproxVueActive()
   return mNbApproxVueActive;
 }
 
+const Box2di & cAppliMICMAC::BoxIn()  const {return mBoxIn;}
+const Box2di & cAppliMICMAC::BoxOut() const {return mBoxOut;}
+
+std::string  cAppliMICMAC::DirCube() const
+{
+   return  FullDirMEC() + "Cube" + ToString(mCurEtape->Num());
+}
+std::string cAppliMICMAC::NameFileCurCube(const std::string & aName) const
+{
+   Pt2di aP0 = mBoxOut._p0;
+   return DirCube() + "/Data_" + ToString(aP0.x) + "_" + ToString(aP0.y)  + "_" +aName;
+}
+  
+
+
 
 void cAppliMICMAC::DoOneBloc
      (
@@ -567,8 +584,9 @@ void cAppliMICMAC::DoOneBloc
    mSurfOpt = 0;
    mNbApproxVueActive = -1;
 
-#ifdef CUDA_ENABLED
-   mLoadTextures = true;
+#if CUDA_ENABLED
+   if (mCorrelAdHoc && mCorrelAdHoc->GPU_CorrelBasik().IsInit())
+       IMmGg.SetTexturesAreLoaded(false);
 #endif
 
 
@@ -774,7 +792,6 @@ void cAppliMICMAC::DoOneBloc
        mDefCost =  mStatGlob->CorrelToCout(mDefCorr);
        mSurfOpt = cSurfaceOptimiseur::Alloc(*this,*mLTer,anEqX,anEqY);
 
-
        InitCostCalcCorrel();
 
 
@@ -794,12 +811,23 @@ void cAppliMICMAC::DoOneBloc
    
         aTimeCorrel = aChrono.ValAndInit();
         if (mShowMes)
-            mCout << "       Correl Calc, Begin Opt\n";
+        {
+			if((mCorrelAdHoc != 0 && mCorrelAdHoc->TypeCAH().GPU_CorrelBasik().IsInit())||
+			   (mCMS!=0 && mCMS->UseGpGpu().Val()))
+
+				mCout << "       Cuda Correlation Finished, Begin Cuda Optimisation\n";
+            else
+                mCout << "       Correl Calc, Begin Opt\n";
+        }
+
         mSurfOpt->SolveOpt();
 
-#ifdef CUDA_ENABLED
-		IMmGg.DeallocMemory();
-		//freeGpuMemory();
+#if CUDA_ENABLED
+        if (mCorrelAdHoc && mCorrelAdHoc->GPU_CorrelBasik().IsInit())
+        {
+            IMmGg.Data().DeallocDeviceData();
+            IMmGg.Data().DeallocHostData();
+        }
 #endif
     }
 
@@ -1357,6 +1385,7 @@ void   cAppliMICMAC::CalcCorrelByRect(Box2di aBox,int * aPx)
           for (aP.x =aBox._p0.x; aP.x<aBox._p1.x ; aP.x++)
           {
               // if (mLTer->OkPx(aP,aPx))
+
               if (mLTer->IsInMasqOfPx(aP))
               {
                  mNbPointByRectGen++;
@@ -1371,6 +1400,7 @@ void   cAppliMICMAC::CalcCorrelByRect(Box2di aBox,int * aPx)
                         (*itFI)->LoadedIm().AddToStat(*mStatGlob,aP);
                  }
                  REAL aCost = mStatGlob->Cout();
+
                  mSurfOpt->SetCout(aP,aPx,aCost);
               }
           }
@@ -1381,7 +1411,6 @@ void   cAppliMICMAC::CalcCorrelByRect(Box2di aBox,int * aPx)
 
 
 
-};
 
 
 

@@ -113,7 +113,7 @@ class cP2d_Etat_PhgrF;
 class cMatr_Etat_PhgrF;
 
 // -----------------------------
-class cMapIncInterv;
+//class cMapIncInterv;
 class cElCompiledFonc ;
 
 class cIncIntervale;
@@ -124,6 +124,7 @@ class cSetEqFormelles;
 class cHomogFormelle;
 class cDistRadialeFormelle;
 class cEqHomogFormelle;
+class cEqOneHomogFormelle;
 class cParamIntrinsequeFormel;
 class cRotationFormelle;
 class cCameraFormelle;
@@ -153,6 +154,15 @@ class cCylindreRevolFormel;
 
 class cL2EqObsBascult;
 class cSolBasculeRig;
+
+class cPIF_Bilin;
+
+
+class cEqOffsetGPS;
+class cBaseGPS;
+class cEqObsBlockCam;
+class cEqRelativeGPS;
+
 
 
 //   Il n'avait pas ete prevu de renumeroter les intervales. Quand le besoin
@@ -266,9 +276,13 @@ class cIdIntCmp
      public :
           bool operator()(const cIncIntervale & anII1,const cIncIntervale & anII2) const;
 };
+
+typedef std::set<cIncIntervale,cIdIntCmp> cMapIncInterv;
+/*
 class cMapIncInterv  : public std::set<cIncIntervale,cIdIntCmp>
 {
 };
+*/
 
 
 
@@ -293,17 +307,17 @@ class  cIncListInterv
 
        const cMapIncInterv &Map() const;
        bool  MayOverlap() const;
-    private :
 
        void Init();
+    private :
 
-       cIncListInterv  (const cIncListInterv &) ; // Un imlemanted
+       // cIncListInterv  (const cIncListInterv &) ; // Un imlemanted
        void operator = (const cIncListInterv &) ; // Un imlemanted
 
        INT          mI0Min;
        INT          mI1Max;
        INT          mSurf;
-       cMapIncInterv * mMap;
+       cMapIncInterv mMap;
        bool          mMayOverlap;  // Est-ce que l'overlap est possible
 };
 
@@ -343,7 +357,8 @@ class cNameSpaceEqF
 	          eRotFigee,
 	          eRotBaseU,
 	          eRotPseudoBaseU,
-                  eRotCOptFige
+                  eRotCOptFige,
+                  eRotAngleFige
 	     } eModeContrRot;
 	     typedef enum
 	     {
@@ -465,8 +480,6 @@ class  cElemEqFormelle :  public cNameSpaceEqF
 
 
         protected :
-	    cElemEqFormelle (const cElemEqFormelle &) ; // Prohib
-	    void operator =  (const cElemEqFormelle &) ; // Prohib
 
 	    void AddFoncteurEEF(cElCompiledFonc *);
             void CloseEEF(bool asIntervBlock = true);
@@ -487,6 +500,9 @@ class  cElemEqFormelle :  public cNameSpaceEqF
             std::vector<double *>      mAdrFR;
             std::vector<double  >      mValsInit;
             bool                       mClosed;
+       private :
+	    cElemEqFormelle (const cElemEqFormelle &) ; // Prohib
+	    void operator =  (const cElemEqFormelle &) ; // Prohib
 };
 
 class cEqFPtLiaison
@@ -547,7 +563,7 @@ class cManipOrdInc
      public :
         
         cManipOrdInc();
-        void Init(const std::vector<cIncIntervale *> aBlocsIncAlloc);
+        void Init(const std::vector<cIncIntervale *> &aBlocsIncAlloc);
         Im1D_REAL8 ReordonneSol(Im1D_REAL8 aIm);
         std::vector<cIncIntervale *> &  BlocsIncSolve();
         std::vector<int>             &  I02NblSolve();
@@ -619,7 +635,7 @@ class cSetEqFormelles : public cNameSpaceEqF
 	  
 
               ~cSetEqFormelles();
-              cSetEqFormelles(eTypeSysResol = eSysPlein,int aNbEq=1);
+              cSetEqFormelles(eTypeSysResol = eSysPlein,int aNbEq=1,bool CanUseCstr=false);
               AllocateurDInconnues & Alloc();
               cHomogFormelle * NewHomF
 		      (const cElHomographie &,
@@ -642,7 +658,32 @@ class cSetEqFormelles : public cNameSpaceEqF
                              cDistRadialeFormelle *,
 			     bool Code2Gen = false
                          );
-	      cParamIntrinsequeFormel * NewParamIntrNoDist(bool isDC2M,CamStenope * aCamInit,bool ParamVar=true);
+              cEqOneHomogFormelle * NewOneEqHomog
+                         (
+                             cHomogFormelle &,
+			     bool Code2Gen = false
+                         );
+
+
+
+
+	       cParamIntrinsequeFormel * NewParamIntrNoDist(bool isDC2M,CamStenope * aCamInit,bool ParamVar=true);
+
+               cBaseGPS * NewBaseGPS(const Pt3dr & aV0);
+               cEqOffsetGPS * NewEqOffsetGPS(cRotationFormelle & aRF,cBaseGPS  &aBase,bool Code2Gen = false);
+               cEqOffsetGPS * NewEqOffsetGPS(cCameraFormelle & aRF,cBaseGPS  &aBase);
+
+               cEqRelativeGPS * NewEqRelativeGPS(cRotationFormelle & aR1,
+                                                 cRotationFormelle & aR2);
+
+
+               cEqObsBlockCam * NewEqBlockCal( cRotationFormelle & aRotRT0,
+                                               cRotationFormelle & aRotLT0,
+                                               cRotationFormelle & aRotRT1,
+                                               cRotationFormelle & aRotLT1,
+                                               bool                doGenerateCode
+                                           );
+
 
 	       cRotationFormelle * NewRotation
                                    (
@@ -676,6 +717,11 @@ class cSetEqFormelles : public cNameSpaceEqF
 		cParamIFDistPolynXY  * NewIntrPolyn(bool isDistC2M,cCamStenopeDistPolyn *);
                 cParamIFDistStdPhgr * NewIntrDistStdPhgr
 			              (bool isDistC2M,cCamStenopeModStdPhpgr *, int aDegFig);
+
+
+                cPIF_Bilin *  NewPIFBilin(cCamStenopeBilin * aCSB);
+                cParamIntrinsequeFormel *  AsPIF_NewPIFBilin(cCamStenopeBilin * aCSB); // Pour utiliser sans connaitre cPIF_Bilin
+
 
                 cEqEllipseImage * NewEqElIm
                 (
@@ -777,9 +823,18 @@ class cSetEqFormelles : public cNameSpaceEqF
 	  const std::vector<REAL> & VAddEqFonctToSys
                (
                   cElCompiledFonc * aFonct,
+                  const std::vector<double> & aVPds,
+                  bool WithDerSec
+               );
+	  const std::vector<REAL> & VAddEqFonctToSys
+               (
+                  cElCompiledFonc * aFonct,
                   REAL aPds,
                   bool WithDerSec
                );
+
+
+
           REAL AddEqFonctToSys
                (
                   cElCompiledFonc * aFonct,
@@ -879,7 +934,15 @@ class cSetEqFormelles : public cNameSpaceEqF
           cManipOrdInc                  mMOI;
           Im1D_REAL8                    mSolQuad;
           Im1D_REAL8                    mCurSol;
+          bool                          mCanUseCstr;
+
+
+          cSetEqFormelles(const cSetEqFormelles &); // N.I.
+          cSetEqFormelles operator = (const cSetEqFormelles &); // N.I.
 };
+
+extern void ShowSpectrSys(cSetEqFormelles & aSetEq);
+
 
 
 #if (0)
@@ -1047,6 +1110,16 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
                                 public cObjFormel2Destroy
 {
 	public  :
+           // certaine camera (par exe de type grid def) ont besoin de "changer l'état" des equations ou
+           // elle interviennet notamment sur la numeroration  dans les inconnues des variable
+           virtual void PrepareEqFForPointIm(const cIncListInterv &,cElCompiledFonc *,const Pt2dr &,bool EqDroite,int aKCam); 
+
+           // Avant il y avait en dur :   mLInterv.AddInterv(mCam.PIF().IncInterv());
+           // Pour prendre en compte les camera grilles avec des intervalles d'inconnues non connexes
+           // (et evolutif) on ajoute cette fonction virtuelle qui pemet de specialiser
+           virtual void AddToListInterval( cIncListInterv &);
+
+
            bool UseAFocal() const;
            bool   AllParamIsFiged() const;
            virtual bool IsDistFiged() const;
@@ -1084,7 +1157,8 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
                                    cCameraFormelle *  = 0, // Cam Att,
 				   const std::string &  aName = "",
 				   bool  CompEqAppui = false,
-				   bool  GenCodeAppui = false
+				   bool  GenCodeAppui = false,
+                                   bool  HasEqDroite  = false
                               );
 
             REAL  CurFocale() const;
@@ -1130,6 +1204,7 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
 
 
             void AssertNoAFocalParam(const std::string &);
+            void AddRapViscosite(double aTol);
 
 
         protected :
@@ -1354,13 +1429,13 @@ class cRotationFormelle : public cElemEqFormelle,
 
           friend class cSetEqFormelles;
           cMultiContEQF      StdContraintes() ;
-	  Pt3d<Fonc_Num>   C2M(Pt3d<Fonc_Num>);  // ImAff
-	  Pt3d<Fonc_Num>   M2C(Pt3d<Fonc_Num>);
+	  Pt3d<Fonc_Num>   C2M(Pt3d<Fonc_Num>,int  aKForceGL=-1);  // ImAff
+	  Pt3d<Fonc_Num>   M2C(Pt3d<Fonc_Num>,int  aKForceGL=-1);
 
-	  Pt3d<Fonc_Num>   VectM2C(Pt3d<Fonc_Num>);
-	  Pt3d<Fonc_Num>   VectC2M(Pt3d<Fonc_Num>); // == ImVect
+	  Pt3d<Fonc_Num>   VectM2C(Pt3d<Fonc_Num>,int  aKForceGL=-1);
+	  Pt3d<Fonc_Num>   VectC2M(Pt3d<Fonc_Num>,int  aKForceGL=-1); // == ImVect
 	  // Monde -> Cam
-	  Pt3d<Fonc_Num>   ImVect(Pt3d<Fonc_Num>);
+	  Pt3d<Fonc_Num>   ImVect(Pt3d<Fonc_Num>,int aKForceGL=-1);
           Pt3d<Fonc_Num>   COpt();
 	  ElRotation3D     CurRot();
 	  void     SetCurRot(const ElRotation3D & aR2CM);
@@ -1388,7 +1463,8 @@ class cRotationFormelle : public cElemEqFormelle,
 
            // cMatr_Etat_PhgrF &  MatGL(bool) ;     // Mode Gimbal Lock
            void SetGL(bool aModeGL);
-           const ElMatrix<Fonc_Num> & MatFGL();
+           const ElMatrix<Fonc_Num> & MatFGL(int ForceGL);
+           ElMatrix<Fonc_Num>  MatFGLComplete(int ForceGL);
            const ElMatrix<REAL> &       MGL() const;
            bool IsGL() const;
            // void InitEtatGL(bool isP);
@@ -1481,6 +1557,7 @@ class cCameraFormelle :  public cNameSpaceEqF ,
 {
      public :
           
+          void PrepareEqFForPointIm(const cIncListInterv &,cElCompiledFonc *,const Pt2dr &,bool EqDroite,int aKCam);  // Transmet a Intrinseque
           ElAffin2D & ResiduM2C();
 
 
@@ -1517,13 +1594,13 @@ class cCameraFormelle :  public cNameSpaceEqF ,
 	         // Donne le residu mais n'ajoute pas au systeme
 	  Pt2dr  ResiduAppui(Pt3dr aP,Pt2dr aPIm);
 
-	   Pt2dr  CorrigePFromDAdd(const Pt2dr & aP1,bool UseGrid);
+	   Pt2dr  CorrigePFromDAdd(const Pt2dr & aP1,bool UseGrid,bool ModeDr);
 
            class cEqAppui ;
-	   cEqAppui * AddFctrEqAppuisInc(bool aGenCode,bool Proj,bool isGL,bool wDist);  // Initialise si nec le fcteur
-	   cEqAppui * AddForUseFctrEqAppuisInc(bool aGenCode,bool Proj,bool wDist);  // Initialise si nec le fcteur
+	   cEqAppui * AddFctrEqAppuisInc(bool aGenCode,bool Proj,bool isGL,bool wDist,bool EqDr);  // Initialise si nec le fcteur
+	   cEqAppui * AddForUseFctrEqAppuisInc(bool aGenCode,bool Proj,bool wDist,bool IsEqDr);  // Initialise si nec le fcteur
 	   cIncListInterv & IntervAppuisPtsInc(); 
-	   Pt2dr AddEqAppuisInc(const Pt2dr & aPIm,double aPds, cParamPtProj &);
+	   Pt2dr AddEqAppuisInc(const Pt2dr & aPIm,double aPds, cParamPtProj &,bool IsEqDroite);
            virtual void Update_0F2D();
            void TestVB10(const std::string& aMes) const;
            void SetGL(bool aModeGL);
@@ -1533,6 +1610,7 @@ class cCameraFormelle :  public cNameSpaceEqF ,
 	  class cEqAppui
 	  {
 		  public :
+                      void PrepareEqFForPointIm(const Pt2dr &);  // Transmet a Camera Formelle
                       friend class cCameraFormelle;
                       cEqAppui
 		      (
@@ -1542,7 +1620,8 @@ class cCameraFormelle :  public cNameSpaceEqF ,
 		           bool isPTerrainFixe,
 		           bool Comp,
 			   cCameraFormelle &,
-			   bool GenCode
+			   bool GenCode, 
+                           bool IsEqDroite
                       );
 		      void GenCode();
                       cIncListInterv & LInterv();
@@ -1588,6 +1667,7 @@ class cCameraFormelle :  public cNameSpaceEqF ,
                       cP2d_Etat_PhgrF *  mNDP0;
                       cP2d_Etat_PhgrF *  mNDdx;
                       cP2d_Etat_PhgrF *  mNDdy;
+                      bool               mEqDroite;
 
 	  };
 	  CamStenope *  DuplicataCameraCourante();
@@ -1603,7 +1683,8 @@ class cCameraFormelle :  public cNameSpaceEqF ,
                  cCameraFormelle * CamAttach ,
 		 const std::string & aName,
 		 bool   CompEqAppui,
-		 bool   GenCodeAppui
+		 bool   GenCodeAppui,
+                 bool   HasEqDroite
           );
           cCameraFormelle   *         pCamAttach;
           cParamIntrinsequeFormel &   mIntr;
@@ -1624,6 +1705,10 @@ class cCameraFormelle :  public cNameSpaceEqF ,
           cEqAppui *                    mEqAppuiSDistProjIncXY ;
           cEqAppui *                    mEqAppuiSDistGLIncXY ;
           cEqAppui *                    mEqAppuiSDistGLProjIncXY ;
+
+          static const int TheNbEqDr = 8;
+          cEqAppui *                    mEqAppuiDroite[TheNbEqDr] ; // Dist X Proj X Gl
+
 	  CamStenope *                  mCameraCourante;
 
 
@@ -1631,6 +1716,7 @@ class cCameraFormelle :  public cNameSpaceEqF ,
          // permet de gerer les marques fiduciaire qui etant integre par modif
          // des points homols, n'interviennent pas dans la camera
          ElAffin2D                      mResiduM2C;
+         bool                           mHasEqDroite;
 
 
 };
@@ -1750,6 +1836,63 @@ class cEqHomogFormelle : public  cNameSpaceEqF ,
           cEq*                  pFEqY;
 };
 #endif
+
+
+
+class cEqOneHomogFormelle : public  cNameSpaceEqF ,
+                         public cEqFPtLiaison,
+                         public cObjFormel2Destroy
+{
+      public :
+          ~cEqOneHomogFormelle();
+          cEqOneHomogFormelle
+          (
+                cHomogFormelle &,
+                bool Code2Gen
+          );
+
+         // WithD2 : avec derivees secondes
+          REAL AddLiaisonP1P2(Pt2dr P1, Pt2dr aP2, REAL aPds,bool WithD2);
+          Pt2dr StdAddLiaisonP1P2(Pt2dr P1,Pt2dr P2,REAL aPds,bool WithD2); // Version moderne type camera
+          REAL ResiduNonSigneP1P2(Pt2dr aP1,Pt2dr aP2);
+          Pt2dr  PtResidu(Pt2dr aP1,Pt2dr aP2);
+
+          cHomogFormelle&       HF();
+          cSetEqFormelles &       Set();
+      private :
+          struct cOneHEq
+          {
+              cEqOneHomogFormelle & mEQF;
+              cElCompiledFonc * pFEq;
+              double          * pAdrX1;
+              double          * pAdrY1;
+              double          * pAdrX2;
+              double          * pAdrY2;
+              std::string     mName;
+
+              ~cOneHEq();
+              cOneHEq(Fonc_Num F,cEqOneHomogFormelle &,bool isX,bool Code2Gen);
+
+              REAL AddLiaisonP1P2(Pt2dr P1,Pt2dr P2,REAL aPds,bool WithD2);
+              REAL ResiduSigneP1P2(Pt2dr aP1,Pt2dr aP2);
+              void  InitPts(Pt2dr P1,Pt2dr P2);
+          };
+          friend struct cOneHEq;
+
+          cSetEqFormelles & mSet;
+          cHomogFormelle&       mHF;
+
+          Pt2d<Fonc_Num>        mEqHom;
+          cIncListInterv        mLInterv;
+          cOneHEq*                  pFEqX;
+          cOneHEq*                  pFEqY;
+};
+
+
+
+
+
+
 class cEqHomogFormelle : public  cNameSpaceEqF ,
                          public cEqFPtLiaison,
                          public cObjFormel2Destroy
@@ -2651,6 +2794,92 @@ class cEqFormelleLineaire
 	     std::string                 mNameType;
              cElCompiledFonc *           mFctr ;
 
+};
+
+class cSomBilin
+{
+     public :
+        cSomBilin(cSetEqFormelles &,Pt2dr &,const cIncIntervale & anInt);
+
+        Pt2d<Fonc_Num>   mPtF;
+        cIncIntervale    mInterv;
+
+};
+
+class cQuadrangle
+{
+      public :
+           cQuadrangle
+           (
+                   const cIncIntervale & aI00,
+                   const cIncIntervale & aI10,
+                   const cIncIntervale & aI01,
+                   const cIncIntervale & aI11
+           );
+           cIncIntervale    mInt00;
+           cIncIntervale    mInt10;
+           cIncIntervale    mInt01;
+           cIncIntervale    mInt11;
+};
+
+
+class cPIF_Bilin : public cParamIntrinsequeFormel
+{
+     public :
+         cPIF_Bilin(cCamStenopeBilin *,cSetEqFormelles &);
+         static cPIF_Bilin * Alloc(const cPIF_Bilin &,cSetEqFormelles &);
+
+         void SetDistFigee();
+         void SetDistFree(int aDegree);
+
+     private  :
+          // virtual Fonc_Num  NormGradC2M(Pt2d<Fonc_Num>); a priori inutile
+          virtual void PrepareEqFForPointIm(const cIncListInterv &,cElCompiledFonc *,const Pt2dr &,bool EqDroite,int aKCam);
+          virtual  Pt2d<Fonc_Num> VDist(Pt2d<Fonc_Num>,int aKCam);
+          void    NV_UpdateCurPIF();   // Non virtuel, pour appel constructeur ????
+          virtual void    UpdateCurPIF();
+          virtual bool IsDistFiged() const;
+          virtual std::string  NameType() const;
+          virtual ~cPIF_Bilin();
+          virtual CamStenope * CurPIF(); ;
+          virtual CamStenope * DupCurPIF(); ;
+          virtual cMultiContEQF  StdContraintes();
+
+          virtual void AddToListInterval(cIncListInterv & aLInterv);
+          // virtual bool UseSz() const; ==> A priori 
+/*
+
+
+
+
+*/
+
+          cSomBilin & FDist(const Pt2di & aP);
+
+       // ==============================================
+          static const std::string TheNameType ;
+       // ==============================================
+          cSetEqFormelles &                            mSet;
+          std::vector<cP2d_Etat_PhgrF>                 mCornF; // Size 8, pour eventuelleme,t gerer aKCam=1
+          bool                                         mFiged;
+          int                                          mDegreFree;
+          cDistorBilin                                 mDistInit;
+          cDistorBilin                                 mDistCur;
+          cCamStenopeBilin *                           mCurPIF;
+          // std::vector<Pt2d<Fonc_Num>  >                mFVDist;
+          std::vector<std::vector<cSomBilin > >        mFVDist;
+          std::vector<std::vector<cQuadrangle > >      mQuads;
+
+          std::vector<cElCompiledFonc* >               mFctrRegul;
+
+          // Index des deux point qui doivent etre figee arbirtairemnt pour fixer PP,Focale, Rotation
+          // situes sur les extre de la ligne horiz coupant la capteur en 2
+          int                                          mIndFrozen0;
+          int                                          mIndFrozen1;
+
+          Pt2di                                        mLastCase;
+          // cIncListInterv                               mLInterv;
+          // cCamStenopeBilin                             
 };
 
 

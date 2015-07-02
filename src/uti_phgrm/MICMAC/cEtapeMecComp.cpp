@@ -37,13 +37,12 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 extern void  t(Im2DGen I,int,int);
-namespace NS_ParamMICMAC
-{
 
 
 static const std::string PrefAutoM = "AutoMask_";
+static const std::string PrefMasq3d2d = "Mask3d2d_";
 
 /*************************************************/
 /*                                               */
@@ -100,7 +99,8 @@ static void InitArgOneEtapePx
           {
 	      anArg.mRegul_Quad  = aRegul_Quad.ValWithDef(0.0);
 	      anArg.mRegul      = aRegul.Val();
-	      anArg.mPas        =  isOptimDiff ?  aPas.Val()  : anAppli.AdaptPas(aPas.Val());
+	      anArg.mUserPas        =  isOptimDiff ?  aPas.Val()  : anAppli.AdaptPas(aPas.Val());
+              anArg.mComputedPas    =  anArg.mUserPas;
 
 
 	      anArg.mDilatAltiPlus  = aDilatAlti.Val();
@@ -115,12 +115,13 @@ static void InitArgOneEtapePx
               {
                   ELISE_ASSERT
                   (
-                     anArg.mPas == 1.0,
+                     anArg.mUserPas == 1.0,
                      "Optim Diff, Steps must be 1.0"
                   );
               }
-              anArg.mIncertPxPlus = aGeomOfEtape.GetEcartInitialPlus(anArg.mPas,aNumPx);
-              anArg.mIncertPxMoins = aGeomOfEtape.GetEcartInitialMoins(anArg.mPas,aNumPx);
+
+              anArg.mIncertPxPlus = aGeomOfEtape.GetEcartInitialPlus(anArg.mUserPas,aNumPx);
+              anArg.mIncertPxMoins = aGeomOfEtape.GetEcartInitialMoins(anArg.mUserPas,aNumPx);
 	      if (isVraiFirstEtape)
 	      {
 	          anArg.mDilatAltiPlus +=  anArg.mIncertPxPlus ;
@@ -299,10 +300,15 @@ cEtapeMecComp::cEtapeMecComp
   mUseWAdapt         (false),
   mNameXMLNuage      ("")
 {
+// std::cout << "XPPOOOOOORRT ZZZZzzz Aaabs  " << mIsExportZAbs << "\n"; getchar();
 
      if (mIsExportZAbs)
      {
-          ELISE_ASSERT(mIsOptimCont && isLastEtape,"ExportZAbs requires continuous optimisation && last step");
+          ELISE_ASSERT
+          (
+                   mIsOptimCont && isLastEtape && (mAppli.DimPx()==1),
+                  "ExportZAbs requires continuous optimisation && last step"
+          );
      }
     
      if (mIsOptimCont)
@@ -352,6 +358,7 @@ cEtapeMecComp::cEtapeMecComp
          mIsOptimCont
       );
 
+
       if (anAppli.ModeGeomMEC()==eGeomMECTerrain)
       {
           mFilesPx.push_back
@@ -374,36 +381,6 @@ cEtapeMecComp::cEtapeMecComp
 	   }
       }
 
-      // INTERVERTI AVEC L'ETAPE TYU pour prendre en compte
-      // la dilat init
-
-      // Pour l'etape 1 (la premiere, une fois
-      // enlevee 000) on augment DilatAlti de l'incertitude
-      // en Z
-
-              // RAJOUTE apres l'intervretion car sinon le pas relatif (celui du xml) n'est pas initialise
-	      // et la dilat init est incorrecte !
-/*
-      for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
-      {
-          aVPas[aK] = mFilesPx[aK]->Pas();
-      }
-      mGeomTer.SetStep(aVPas);
-
-      if (aVEtPrec.size()==1)
-      {
-         int anEcInit[theDimPxMax];
-         mGeomTer.GetEcartInt(anEcInit);
-         for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
-         {
-             mFilesPx[aK]->DilatAlti() += anEcInit[aK];
-	     // std::cout << "DAL " << mFilesPx[aK]->DilatAlti() << "\n"; getchar();
-         }
-      }
-      for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
-             std::cout << mFilesPx[aK]->DilatAlti() += anEcInit[aK];
-*/
-        
       double aVPas[theDimPxMax];
 
      // == TYU ===================
@@ -412,7 +389,7 @@ cEtapeMecComp::cEtapeMecComp
 
       for (int aK=0 ; aK<int(mFilesPx.size()) ; aK++)
       {
-          aVPas[aK] = mFilesPx[aK]->Pas();
+          aVPas[aK] = mFilesPx[aK]->UserPas();
           if (mFilesPx[aK]->NappeIsEpaisse())
           {
              mNumSeuleNapEp = aK;
@@ -439,6 +416,10 @@ cEtapeMecComp::cEtapeMecComp
       if (mNbNappesEp > 1)
          mNumSeuleNapEp=-1;
       mGeomTer.SetStep(aVPas);
+      for (int aK=0 ; aK < int(mFilesPx.size()) ; aK++)
+      {
+          mFilesPx[aK]->InitComputedPas(mGeomTer.RatioPasCompUser(aK));
+      }
 
 
       // CreateMNTInit();
@@ -571,12 +552,10 @@ cEtapeMecComp::cEtapeMecComp
       }
 
 
-      if ((mNum !=0) && (mEtape.AlgoRegul().Val()==eAlgo2PrgDyn))
+      if ((mNum !=0) && (mEtape.AlgoRegul().Val()==eAlgo2PrgDyn || mEtape.AlgoRegul().Val()==eAlgoTestGPU))
       {
           bool NewPrgDynOblig = false;
           bool NewPrgDynInterdit = false;
-
-
 
           const cTplValGesInit< cModulationProgDyn > &  aTplModul =  mEtape.ModulationProgDyn();
           if ( aTplModul.IsInit())
@@ -673,7 +652,7 @@ cEtapeMecComp::cEtapeMecComp
       }
 
 
-      if (mArgMaskAuto)
+      if (mArgMaskAuto && (!mAppli.DoNothingBut().IsInit()))
       {
           FileMaskAuto();
       }
@@ -818,7 +797,7 @@ Tiff_Im  cEtapeMecComp::FileRes(GenIm::type_el aTypeEl,const std::string &  aPre
       aLArg = aLArg +  Arg_Tiff(Tiff_Im::AFileTiling(Pt2di(1000000,1000000)));
    }
    bool IsModified;
-   return Tiff_Im::CreateIfNeeded
+   Tiff_Im aRes = Tiff_Im::CreateIfNeeded
           (
               IsModified,
               NameFileRes(aPref),
@@ -828,6 +807,11 @@ Tiff_Im  cEtapeMecComp::FileRes(GenIm::type_el aTypeEl,const std::string &  aPre
               Tiff_Im::BlackIsZero,
               aLArg
           );
+
+   if (IsModified) 
+      ELISE_COPY(aRes.all_pts(),0,aRes.out());
+
+   return aRes;
 }
 
 Tiff_Im  cEtapeMecComp::FileCorrel() const
@@ -839,6 +823,10 @@ Tiff_Im  cEtapeMecComp::FileMaskAuto() const
    return FileRes(GenIm::bits1_msbf,PrefAutoM,true);
 }
 
+Tiff_Im  cEtapeMecComp::FileMask3D2D() const
+{
+   return FileRes(GenIm::bits1_msbf,PrefMasq3d2d,true);
+}
 
 
 
@@ -1043,6 +1031,15 @@ const cGeomDiscFPx &  cEtapeMecComp::GeomTer() const
    return mGeomTer;
 }
 
+cGeomDiscFPx  cEtapeMecComp::GeomTerFinal() const
+{
+   cGeomDiscFPx aRes = mGeomTer;
+   if(mIsExportZAbs) 
+     aRes.SetZIsAbs();
+
+   return aRes;
+}
+
 cGeomDiscFPx &  cEtapeMecComp::GeomTer() 
 {
    return mGeomTer;
@@ -1153,6 +1150,20 @@ Fonc_Num cEtapeMecComp::FoncMasqIn(bool ForceReinj)
           aFMAuto = dilat_32(aFMAuto,aNbErod);
       }
 
+      aFoncMasq =    aFoncMasq && aFMAuto;
+   }
+
+   if (mPrec && mAppli.Masq3DOfEtape(*mPrec))
+   {
+      Tiff_Im aTFM =   mPrec->FileMask3D2D();
+      double aRatio  = DeZoomTer() / double(mPrec->DeZoomTer());
+      Fonc_Num  aFMAuto = StdFoncChScale_Bilin (
+                               aTFM.in(0),
+                               Pt2dr(0,0),
+                               Pt2dr(aRatio,aRatio),
+                               Pt2dr(1,1)
+                          );
+      aFMAuto = aFMAuto > 0.5;
       aFoncMasq =    aFoncMasq && aFMAuto;
    }
 
@@ -1292,10 +1303,21 @@ if (0)
    return aNbPx;
 }
 
+void TestGeomTer(const cGeomDiscFPx & aGT,const std::string & aMessage)
+{
+   double aZ0 =   0;
+   double aZ1 = 100;
+   aGT.PxDisc2PxReel(&aZ0,&aZ0);
+   aGT.PxDisc2PxReel(&aZ1,&aZ1);
+   std::cout << aMessage  << aZ0 << " " << aZ1 << "\n";
+}
+
+
 
 void cEtapeMecComp::RemplitOri(cFileOriMnt & aFOM) const
 {
    mGeomTer.RemplitOri(aFOM,mIsExportZAbs);
+
    if (mFilesPx.size())
       mFilesPx[0]->RemplitOri(aFOM);
    aFOM.NameFileMasque().SetVal(mAppli.NameImageMasqOfResol(mEtape.DeZoom()));
@@ -1582,16 +1604,38 @@ void cEtapeMecComp::SauvProjImage
    Im2D_REAL4 aImY(aSz.x,aSz.y,0.0);
    TIm2D<REAL4,REAL8> aTY(aImY);
 
+   const cGenerateImageRedr * aGIR = aGPI.GenerateImageRedr().PtrVal();
+   Pt2di aSIR = (aGIR ? aSz : Pt2di(1,1));
+   Im2D_REAL4 aImSup(aSIR.x,aSIR.y,0.0);
+   TIm2D<REAL4,REAL8> aTSup(aImSup);
+   Im2D_REAL4 * aIm2 =  const_cast<cPriseDeVue &>(aPDV).LoadedIm().FirstFloatIm();
+   TIm2D<REAL4,REAL8> aTIm2(*aIm2);
+   std::string aNameSup = mAppli.FullDirMEC() + (aGIR ? mAppli.ICNM()->Assoc1To1(aGIR->FCND_CalcRedr(),aPDV.Name(),true) :"");
+   Pt2di aDecIm = aPDV.Geom().BoxClip()._p0;
+
+
    Pt2di aP;
    bool aSubXY = aGPI.SubsXY().Val();
+   bool aPolar = aGPI.Polar().Val();
    for (aP.x =0 ; aP.x<aSz.x ; aP.x++)
    {
        for (aP.y =0 ; aP.y<aSz.y ; aP.y++)
        {
            Pt2dr aPIm = ProjectionInImage(aPDV.Geom(),aLT,Pt2dr(aP));
+           if (aGIR)
+           {
+                aTSup.oset(aP,aTIm2.getprojR(aPIm-Pt2dr(aDecIm)));
+                // aTSup.oset(aP,aTIm2.getprojR(Pt2dr(aP)));
+                // aTSup.oset(aP,mGeomTer.RDiscToR2(Pt2dr(aP)).y);
+   // return aGeom.Objet2ImageInit_Euclid(mGeomTer.RDiscToR2(aP),aPx);  
+           }
            if (aSubXY)
            {
               aPIm = aPIm -mGeomTer.RDiscToR2(Pt2dr(aP));
+           }
+           if (aPolar)
+           {
+              aPIm = Pt2dr::polar(aPIm,0.0);
            }
 
            aTX.oset(aP,aPIm.x);
@@ -1600,11 +1644,32 @@ void cEtapeMecComp::SauvProjImage
    }
 
    std::pair<std::string,std::string>   aNames= mAppli.ICNM()->Assoc2To1(aGPI.FCND_CalcProj(),aPDV.Name(),true);
+   int aPId = mAppli.IdMasterProcess().Val();
+   if (aPId <0) aPId = mm_getpid();
+   std::string aNameTest = mAppli.FullDirMEC() + aNames.first + ".TestCreate-" + ToString(aPId);
+   bool BoxCreate = (aBoxOut._p0 == Pt2di(0,0));
+
    for (int aK=0 ; aK<2 ; aK++)
    {
       Im2D_REAL4 aRes = (aK==0) ? aImX : aImY;
       std::string aNameRes = mAppli.FullDirResult() + (aK==0 ? aNames.first : aNames.second);
       bool isNew;
+
+      if (!BoxCreate)
+      {
+          bool  Cont = true;
+          while (Cont)
+          {
+              if (ELISE_fp::exist_file(aNameTest))
+              {
+                 Cont = false;
+                 SleepProcess(0.1);
+              }
+              else
+                 SleepProcess(1);
+          }
+      }
+
       Tiff_Im aTF = Tiff_Im::CreateIfNeeded
                     (
                        isNew,
@@ -1620,6 +1685,30 @@ void cEtapeMecComp::SauvProjImage
          trans(aRes.in(),-aBoxIn._p0),
          aTF.out()
       );
+
+      if ((aK==0) && aGIR)
+      {
+          Tiff_Im aTSup = Tiff_Im::CreateIfNeeded
+                    (
+                       isNew,
+                       aNameSup,
+                       mSzFile,
+                       GenIm::u_int1,
+                       Tiff_Im::No_Compr,
+                       Tiff_Im::BlackIsZero
+                    );
+           ELISE_COPY
+           (
+              rectangle(aBoxOut._p0,aBoxOut._p1),
+              trans(aImSup.in(),-aBoxIn._p0),
+              aTSup.out()
+           );
+      }
+   }
+   if (BoxCreate)
+   {
+      ELISE_fp aFile(aNameTest.c_str(),ELISE_fp::WRITE);
+      aFile.close();
    }
 }
 
@@ -1695,8 +1784,8 @@ void cEtapeMecComp::DoRemplitXMLNuage() const
    DoRemplitXML_MTD_Nuage();
    for
    (
-        std::list<cExportNuage>::const_iterator itEN=mEtape.ExportNuage().begin() ;
-        itEN !=  mEtape.ExportNuage().end() ;
+        std::list<cMMExportNuage>::const_iterator itEN=mEtape.MMExportNuage().begin() ;
+        itEN !=  mEtape.MMExportNuage().end() ;
         itEN++
    )
    {
@@ -1710,18 +1799,18 @@ cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXML_MTD_Nuage() const
    // fonctionner avec toutes les geometries
 
 
-
    cMTD_Nuage_Maille aMTD;
    aMTD.DataInside().SetVal(false);
    aMTD.RatioPseudoConik().SetVal(1000);
    aMTD.KeyNameMTD() = "Key-Assoc-Nuage-ImProf";
-   cExportNuage anEN;
+   cMMExportNuage anEN;
    anEN.MTD_Nuage_Maille().SetVal(aMTD);
    return DoRemplitXMLNuage(anEN);
 }
 
+const  std::string TheStringLastNuageMM = "MMLastNuage.xml";
 
-cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & anEN) const
+cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXMLNuage(const cMMExportNuage & anEN) const
 {
     cXML_ParamNuage3DMaille aNuage;
     bool aMTD = anEN.MTD_Nuage_Maille().IsInit();
@@ -1733,6 +1822,16 @@ cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & an
           eModeCarteProfInterne           : 
           eModeCarteProfExterne
     );
+
+    if (mIsExportZAbs)
+    {
+         cImage_Profondeur * aIP = aNuage.PN3M_Nuage().Image_Profondeur().PtrVal();
+         if (aIP)
+         {
+               aIP->OrigineAlti() = 0;
+               aIP->ResolutionAlti() = 1;
+         }
+    }
     if (aMTD)
     {
        std::string aName =    mAppli.FullDirMEC()
@@ -1745,6 +1844,11 @@ cXML_ParamNuage3DMaille cEtapeMecComp::DoRemplitXMLNuage(const cExportNuage & an
                               );
         MakeFileXML(aNuage,aName);
         mNameXMLNuage = aName;
+
+        if (mIsLast)
+        {
+             ELISE_fp::CpFile(mNameXMLNuage,mAppli.FullDirMEC()+TheStringLastNuageMM);
+        }
     }
     if (anEN.PlyFile().IsInit())
     {
@@ -1826,6 +1930,7 @@ void cEtapeMecComp::RemplitXMLNuage
              eModeExportNuage aMode
      ) const
 {
+    aNuage.RatioResolAltiPlani().SetVal(mGeomTer.RatioResAltiPlani());
     // Ce sera aux geometries qui ont un besoin de param specif de corriger
     aNuage.NoParamSpecif().SetVal("toto");
     aNuage.NbPixel() = mGeomTer.NbPixel();
@@ -1868,9 +1973,8 @@ void cEtapeMecComp::RemplitXMLNuage
         {
            aIP.Correl().SetNoInit();
         }
-        aIP.OrigineAlti() = mGeomTer.OrigineAlti();
-        aIP.ResolutionAlti() =   mGeomTer.ResolutionAlti();
-        // aIP.GeomRestit() = eGeomMNTFaisceauIm1PrCh_Px1D;
+        aIP.OrigineAlti() =  mGeomTer.OrigineAlti4Export();
+        aIP.ResolutionAlti() =    mGeomTer.ResolutionAlti();
         aIP.GeomRestit() = mAppli.GeomMNT();
 
    
@@ -1883,11 +1987,25 @@ void cEtapeMecComp::RemplitXMLNuage
    {
       mAppli.PDV1()->Geom().RemplitOriXMLNuage
       (
+          false,
           aMTD.Val(),
           mGeomTer,
           aNuage,
           aMode
       );
+
+      if (mAppli.PDV2())
+      {
+         Pt2dr aPxT(-5,-5);
+         bool aGotET = mAppli.PDV2()->Geom().DirEpipTransv(aPxT);
+         if (aGotET)
+         {
+            cModeFaisceauxImage * aMFI = aNuage.PM3D_ParamSpecifs().ModeFaisceauxImage().PtrVal();
+            ELISE_ASSERT(aMFI!=0,"Incoherence in .DirEpipTransv fill");
+            aMFI->DirTrans().SetVal(aPxT);
+            // std::cout << "ZZZZZ " << aPxT << "\n";
+         }
+      }
    }
 
     cGeomDiscFPx  aGT = GeomTer();
@@ -1897,7 +2015,7 @@ void cEtapeMecComp::RemplitXMLNuage
     // mGeomTer.SetOriResolPlani(aOriPlani,aResolPlani);
     aGT.SetOriResolPlani(aOriPlani,aResolPlani);
 
-    if ((mAppli.GeomMNT() == eGeomMNTFaisceauIm1PrCh_Px1D) || (mAppli.GeomMNT()==eGeomMNTFaisceauPrChSpherik))
+    if ((mAppli.GeomMNT() == eGeomMNTFaisceauIm1PrCh_Px1D) || (mAppli.GeomMNT()==eGeomMNTFaisceauPrChSpherik) || (mAppli.GeomMNT() == eGeomMNTFaisceauIm1PrCh_Px2D))
     {
        ElAffin2D anAff =   ElAffin2D::TransfoImCropAndSousEch(aOriPlani,aResolPlani);
        AddAffinite(aNuage.Orientation(),anAff);
@@ -1947,7 +2065,6 @@ void cEtapeMecComp::RemplitXMLNuage
     // aIP.Image() =;
 }
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

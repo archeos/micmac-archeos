@@ -82,7 +82,8 @@ extern bool BugDG;
 	#endif
 #endif
 
-#include  "general/MM_InstalDir.h"
+#include  "general/HG_defines.h"
+#include  "general/CMake_defines.h"
 
 #include "general/sys_dep.h"
 
@@ -202,10 +203,7 @@ template <class Type> const Type & AT(const std::vector<Type> & V,const INT & K)
 }
 #endif
 
-namespace NS_ParamChantierPhotogram
-{
    class cOrientationConique;
-};
 
   
 using namespace std;
@@ -237,6 +235,7 @@ using namespace std;
 #include "general/optim.h"
 #include "general/error.h"
 #include "general/arg_main.h"
+#include "general/cMMSpecArg.h"
 #include "general/compr_im.h"
 #include "general/correl.h"
 

@@ -39,14 +39,12 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
 // template class cMatrOfSMV<int>;
 // template class cMatrOfSMV<Pt2di>;
 
 
-namespace NS_ParamMICMAC
-{
 
 
 /*********************************************/
@@ -86,6 +84,7 @@ cSurfaceOptimiseur::cSurfaceOptimiseur
    mLTRed      (mWithEQ ? new cLoadTer(mLTInit,mEqX,mEqY) : 0),
    mLTCur      (mWithEQ ?  mLTRed : & mLTInit),
    mSzCur      (mLTCur->Sz()),
+   mCubeCorrel (false),
    mMemoCorrel (0),
    mCanFillCorrel  (CanFillCorrel),
    mDoFileCorrel   (mEtape.GenImageCorrel()),
@@ -94,6 +93,7 @@ cSurfaceOptimiseur::cSurfaceOptimiseur
    mMaskCalcDone (false),
    mMaskCalc     (1,1)
 {
+
 
 
    for (int aK=0 ; aK<theDimPxMax ; aK++)
@@ -109,13 +109,13 @@ cSurfaceOptimiseur::cSurfaceOptimiseur
       double aEp = isRugInit ? anAppli.EnergieExpRegulPlani().Val() : -1.0 ;
       double aEa = isRugInit ? anAppli.EnergieExpRegulAlti().Val() :  -1.0;
 
-      double aFacRugos =  pow(aFP.Pas(),-aEa)
+      double aFacRugos =  pow(aFP.ComputedPas(),-aEa)
                         * pow((double)mEtape.DeZoomTer(),aEc-aEp-aEa)
                         * pow(mGlobSR,aEc-aEp);
 
 
       mCostRegul[aK] =    aFP.Regul() * aFacRugos;
-      mCostRegul_Quad[aK] = aFP.Pas() *   aFP.Regul_Quad() * aFacRugos;
+      mCostRegul_Quad[aK] = aFP.ComputedPas() *   aFP.Regul_Quad() * aFacRugos;
 
 
       mSeuilAttenZReg[aK] = 1e5;
@@ -160,9 +160,11 @@ cSurfaceOptimiseur::cSurfaceOptimiseur
    }
 
 
-   if (mEtape.GenImageCorrel())
+   mCubeCorrel= mEtape.EtapeMEC().GenCubeCorrel().ValWithDef(false);
+
+   if (mEtape.GenImageCorrel() | mCubeCorrel)
    {
-      if (! mCanFillCorrel)
+      if ((! mCanFillCorrel) | mCubeCorrel)
       {
           mMemoCorrel = new cMatrOfSMV<U_INT1>(aBox,mDXMin,mDYMin,mDXMax,mDYMax,0);
       }
@@ -239,6 +241,7 @@ cSurfaceOptimiseur * cSurfaceOptimiseur::Alloc
 
        case eAlgoMaxOfScore :
        case eAlgoLeastSQ :
+
             aRes = cSurfaceOptimiseur::AllocCoxMaxOfCorrel(mAppli,aLT,anEqX,anEqY);
        break;
 
@@ -262,6 +265,7 @@ cSurfaceOptimiseur * cSurfaceOptimiseur::Alloc
 
 void cSurfaceOptimiseur::SetCout(Pt2di aPTer,int * aPX,REAL aCost,int aLabel)
 {
+
 
    if ((aLabel !=0) && (! mEBI))
    {
@@ -650,6 +654,15 @@ void cSurfaceOptimiseur::SolveOpt()
 
      if (mMemoCorrel)
      {
+        //std::string aDirSauv;
+        //std::string aPref;
+        FILE * aFileDataCube=0;
+        if (mCubeCorrel)
+        {
+             aFileDataCube = FopenNN(mAppli.NameFileCurCube("Cube.dat"),"w","Data cube");
+             Tiff_Im::CreateFromIm(mLTCur->KthNap(0).mImPxMin,mAppli.NameFileCurCube("ZMin.tif"));
+             Tiff_Im::CreateFromIm(mLTCur->KthNap(0).mImPxMax,mAppli.NameFileCurCube("ZMax.tif"));
+        }
         Im2D_U_INT1 aICor = mLTInit.ImCorrelSol();
         TIm2D<U_INT1,INT> aTCor(aICor);
         TIm2DBits<1> aTMaskCal(mMaskCalc);
@@ -664,23 +677,49 @@ void cSurfaceOptimiseur::SolveOpt()
         {
             for (aP.x=0; aP.x<aSz.x ; aP.x++)
             {
-                if((!mMaskCalcDone) || (aTMaskCal.get(aP,0)))
+                bool OkP = (!mMaskCalcDone) || (aTMaskCal.get(aP,0));
+                if (mCubeCorrel)
+                {
+                     const cSmallMatrixOrVar<U_INT1> & aM =(*mMemoCorrel)[ToSRAlg(aP)];
+                     //  const Box2di & aB = aM.Box();
+                     ELISE_ASSERT(mAppli.DimPx()==1,"Dim Px 2 with mCubeCorrel");
+                     INT2 ** mDXMin = mLTCur->KthNap(0).mImPxMin.data();
+                     INT2 ** mDXMax = mLTCur->KthNap(0).mImPxMax.data();
+                     int aZ0 = mDXMin[aP.y][aP.x];
+                     int aZ1 = mDXMax[aP.y][aP.x];
+                     for (int aZ=aZ0 ; aZ<aZ1; aZ++)
+                     {
+                          Pt2di aPPx(aZ,0);
+                          U_INT1  aC = aM.GetClipedIntervC(aPPx);
+                          fwrite(&aC,sizeof(aC),1,aFileDataCube);
+                          // std::cout << (int) aC << "\n";
+                     }
+                }
+
+                if(OkP)
                 {
                     for (int aK=0 ; aK<mAppli.DimPx() ; aK++)
                         aVPx[aK] = aDRes[aK][aP.y][aP.x] ;
                     Pt2di aPPx = mAppli.Px2Point(aVPx);
                     const cSmallMatrixOrVar<U_INT1> & aM =(*mMemoCorrel)[ToSRAlg(aP)];
+/*
                     const Box2di & aB = aM.Box();
                     Pt2di aPClip = Pt2di
                                (
                                   ElMax(aB._p0.x,ElMin(aPPx.x,aB._p1.x-1)),
                                   ElMax(aB._p0.y,ElMin(aPPx.y,aB._p1.y-1))
                                );
+*/
 
-                    aTCor.oset(aP,aM[aPClip]);
+                    // aTCor.oset(aP,aM[aPClip]);
+                    aTCor.oset(aP,aM.GetClipedIntervC(aPPx));
                  }
 // PB
             }
+        }
+        if (mCubeCorrel)
+        {
+             fclose(aFileDataCube);
         }
      }
 
@@ -887,11 +926,10 @@ cSurfaceOptimiseur * cSurfaceOptimiseur::AllocCoxRoy
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -907,17 +945,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

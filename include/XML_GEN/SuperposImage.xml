@@ -19,10 +19,9 @@
 // #include "general/all.h"
 // #include "private/all.h"
 // #include "XML_GEN/ParamChantierPhotogram.h"
-using namespace NS_ParamChantierPhotogram;
 </Verbatim>
 <Verbatim File=".h.cpp">
-namespace NS_SuperposeImage{
+// 
 </Verbatim>
 
     <enum Name="eTypeSurfaceAnalytique">
@@ -35,6 +34,21 @@ namespace NS_SuperposeImage{
          <eMBF_First >     </eMBF_First>
     </enum>
 
+
+    <enum Name="eQualCloud">
+         <eQC_Out >            </eQC_Out>  
+         <eQC_ZeroCohBrd >     </eQC_ZeroCohBrd>
+         <eQC_ZeroCoh >        </eQC_ZeroCoh>
+         <eQC_ZeroCohImMul >   </eQC_ZeroCohImMul>
+         <eQC_GradFort >       </eQC_GradFort>
+         <eQC_GradFaibleC1 >   </eQC_GradFaibleC1>
+         <eQC_Bord >           </eQC_Bord>
+         <eQC_Coh1 >           </eQC_Coh1>
+         <eQC_GradFaibleC2 >   </eQC_GradFaibleC2>
+         <eQC_Coh2 >           </eQC_Coh2>
+         <eQC_Coh3 >           </eQC_Coh3>
+         <eQC_NonAff >         </eQC_NonAff>
+    </enum>
 
 
     <LutConvertion  Nb="1"  Class="true" ToReference="true">
@@ -426,6 +440,13 @@ namespace NS_SuperposeImage{
          <POnCyl  Nb="1" Type="Pt3dr"> </POnCyl>
     </XmlCylindreRevolution>
 
+    <XmlToreRevol   Nb="1"  Class="true" ToReference="true">
+        <!-- P0-P1 , deux points sur la droite -->
+         <Cyl Nb="1" RefType="XmlCylindreRevolution"> </Cyl>
+         <POriTore  Nb="1" Type="Pt3dr"> </POriTore>
+    </XmlToreRevol>
+
+
      <XmlOrthoCyl  Nb="1"  Class="true" ToReference="true">
           <Repere Nb="1" RefType="RepereCartesien"  RefFile="ParamChantierPhotogram.xml"> </Repere>
           <P0 Nb="1" Type="Pt3dr"> </P0>
@@ -435,7 +456,8 @@ namespace NS_SuperposeImage{
 
      <XmlDescriptionAnalytique Nb="1" Class="true" ToReference="true">
                <Cyl Nb="?" RefType="XmlCylindreRevolution"> </Cyl>
-               <OrthoCyl Nb="?" RefType="XmlOrthoCyl"> </OrthoCyl>
+               <OrthoCyl Nb="?" RefType="XmlOrthoCyl">      </OrthoCyl>
+               <Tore Nb="?" RefType="XmlToreRevol">         </Tore>
      </XmlDescriptionAnalytique>
       <XmlOneSurfaceAnalytique Nb="1" Class="true" ToReference="true">
             <XmlDescriptionAnalytique Nb="1" UnionType="true" RefType="XmlDescriptionAnalytique"> </XmlDescriptionAnalytique>
@@ -480,6 +502,7 @@ namespace NS_SuperposeImage{
          les sous ech auront pour valeur 1 2 4 8 16 ...
          -->
          <SsResolRef Nb="?" Type="double" Def="1.0"> </SsResolRef>
+         <Empty Nb="?" Type="bool" Def="false"> </Empty>  <!-- Pour traiter le cas des nuage vide -->
          <NbPixel Nb="1" Type="Pt2di"> </NbPixel>
          <PN3M_Nuage Nb="1"   UnionType="true">
              <Image_Point3D Nb="?" AccessorFils="false"> 
@@ -495,6 +518,7 @@ namespace NS_SuperposeImage{
                    <!-- PL2XmlTree evite que l'appelle ToXMLTree ait une portee globale -->
                    <GeomRestit Nb="1" Type="eModeGeomMNT" PL2XmlTree=""> </GeomRestit>
              </Image_Profondeur>
+             <EmptyPN3M Nb="?" Type="bool"> </EmptyPN3M> <!--- Necessaire pour l'union -->
 <!--
              <Image_MNT Nb="?" AccessorFils="false"> 
                    <Image  Nb="1" Type="std::string"> </Image>
@@ -529,6 +553,9 @@ namespace NS_SuperposeImage{
            >
            </Orientation>
 
+          <!-- Devrait tjrs etre init, mais pb compatibilite anterieure -->
+           <RatioResolAltiPlani Nb="?" Type="double" Def="1.0"> </RatioResolAltiPlani>
+
 
           <!-- Parametre specifique a un mode calcul des points, non
               inclu dans l'orientation (qui ne decrit qu'un capteur)
@@ -539,6 +566,7 @@ namespace NS_SuperposeImage{
                   <DirFaisceaux Nb="1" Type="Pt3dr"> </DirFaisceaux>
                   <ZIsInverse   Nb="1" Type="bool"> </ZIsInverse>
                   <IsSpherik    Nb="?" Type="bool" Def="false"> </IsSpherik>
+                  <DirTrans     Nb="?" Type="Pt2dr"> </DirTrans>
               </ModeFaisceauxImage>
               <NoParamSpecif Nb="?" Type="std::string"> </NoParamSpecif>
           </PM3D_ParamSpecifs>
@@ -642,6 +670,8 @@ namespace NS_SuperposeImage{
         </SectionEntree>
 
          <SectionFiltrageIn Nb="1">
+             <!-- When this value is specified for any pixel with any channel over this threshold, it will be out of mask -->
+             <SaturThreshold Nb="?" Type="double"> </SaturThreshold>
              <SzDilatPC Nb="?" Type="int" Def="1"> </SzDilatPC>
              <SzOuvPC Nb="?" Type="int" Def="2"> </SzOuvPC>
 
@@ -1045,6 +1075,17 @@ namespace NS_SuperposeImage{
          <UseIt Nb="?" Type="bool" Def="false"> </UseIt> <!-- Pour anihilier dans EtapeMEC -->
   </ParamGenereStrVois>
 
+
+  <ParamFiltreDetecRegulProf Nb="1" Class="true"   ToReference="true">
+         <SzCC Nb="?" Type="int" Def="2"> </SzCC>
+         <PondZ Nb="?" Type="double" Def="2.0"> </PondZ>
+         <Pente Nb="?" Type="double" Def="0.5"> </Pente>
+         <SeuilReg Nb="?" Type="double" Def="0.5"> </SeuilReg>
+         <V4 Nb="?" Type="bool" Def="false"> </V4>
+         <NbCCInit Nb="?" Type="int" Def="5"> </NbCCInit>
+         <NameTest Nb="?" Type="std::string"> </NameTest>
+  </ParamFiltreDetecRegulProf>
+
   <ParamFusionMNT  Nb="1" Class="true">
        <DicoLoc  Nb="?" RefType="ChantierDescripteur"
                          RefFile="ParamChantierPhotogram.xml"
@@ -1059,40 +1100,64 @@ namespace NS_SuperposeImage{
              <KeyNuage Type="std::string" Nb="1"> </KeyNuage>
              <!-- Doit genere le nom du fichier XML-resultat, a partir d'un declencheur -->
              <KeyResult   Type="std::string" Nb="1"> </KeyResult>
+             <KeyResultIsLoc   Type="bool" Nb="?" Def="true"> </KeyResultIsLoc>
 
              <!-- Definit le modele de geometrie resultant, c'est un cle d'association
                  par defaut il sera pris sur le premier input-->
              <ModeleNuageResult Type="std::string" Nb="?"> </ModeleNuageResult>
+
+             <!-- Defaut Identite, par exemple Nuage-IMGP7046.JPG.xml -> IMGP7046.JPG.xml -->
+             <KeyNuage2Im   Type="std::string" Nb="?" Def="NKS-Assoc-Prefix"> </KeyNuage2Im>
        </SectionName>
+
+       <!-- Pour gerer le score pas toujours simple fonction de correlation -->
+       <SectionScoreQualite Nb="?" UnionType="true">
+           <ScoreMM1P Nb="?">
+                 <MakeFileResult Nb="?" Type="bool" Def="false"> </MakeFileResult>
+                 <PdsAR Nb="?" Type="double" Def="1.0"> </PdsAR>
+
+                 <PdsDistor Nb="?" Type="double" Def="0.5"> </PdsDistor>
+                 <AmplImDistor Nb="?" Type="double" Def="100.0"> </AmplImDistor>
+                 <!-- Score = Seuil/ (Seuil+Dist) -->
+                 <SeuilDist  Nb="?"  Type="double" Def="0.5"> </SeuilDist>
+                 
+                 <PdsDistBord Nb="?" Type="double" Def="0.25"> </PdsDistBord>
+                 <!-- Score = Min(1, D/Seuil) -->
+                 <SeuilDisBord  Nb="?" Type="double" Def="3.0"> </SeuilDisBord>
+           </ScoreMM1P>
+       </SectionScoreQualite>
 
 
        <ParamAlgoFusionMNT Nb="1">
            <FMNTSeuilCorrel Nb="1" Type="double"> </FMNTSeuilCorrel>
            <FMNTGammaCorrel Nb="1" Type="double"> </FMNTGammaCorrel>
-           <SpecAlgoFMNT Nb="1" UnionType="true">
-                <FMNtBySort Nb="?">
-                       <PercFusion Nb="?" Type="double" Def="50.0"> </PercFusion>
-                </FMNtBySort>
-                <FMNtByMaxEvid Nb="?">
-                       <SigmaPds  Type="double" Nb="1"> </SigmaPds>
-                       <SigmaZ    Type="double" Nb="?"> </SigmaZ> <!-- Par defaut SigmaZ=SigmaPds -->
-                       <MaxDif Type="double" Nb="?" Def="1e9"> </MaxDif>
-                       <FMNT_ProgDyn Nb="?">
-                            <Regul Nb="1" Type="double"> </Regul>
+           <KeyPdsNuage Nb="?" Type="std::string"> </KeyPdsNuage>
+
+           <SpecAlgoFMNT Nb="1">
+                <SigmaPds  Type="double" Nb="1"> </SigmaPds>
+                <SigmaZ    Type="double" Nb="?"> </SigmaZ> <!-- Par defaut SigmaZ=SigmaPds -->
+                <SeuilMaxLoc Type="double" Nb="1"> </SeuilMaxLoc> <!-- Utilise pour selction MaxLoc -->
+                <SeuilCptOk Type="double" Nb="1"> </SeuilCptOk> <!-- Utilise pour Compteur Nb Image -->
+                <MaxDif Type="double" Nb="?" Def="1e9">  </MaxDif> <!-- Inutilise pour l'instant-->
+                <NBMaxMaxLoc Type="int" Nb="?" Def="5"> </NBMaxMaxLoc>
+
+                <QuickExp Nb="?" Type="bool" Def="false"> </QuickExp>
+                <FMNT_ProgDyn Nb="?">
+                       <Regul Nb="1" Type="double"> </Regul>
                             <!-- Le cout de regul pour dun delta Z = D est
                                  (sqrt(1 +D/S0) -1) * 2S0  ; c.a.d un cout concave, qui
                                  en 0 est nul et de pente 1
                              -->
-                            <Sigma0 Nb="1" Type="double"> </Sigma0>
-                            <NbDir Nb="1" Type="int"> </NbDir>
-                            <FMNT_GesNoVal Nb="?">
-                                <PenteMax Nb="1" Type="double"> </PenteMax>
+                       <Sigma0 Nb="1" Type="double"> </Sigma0>
+                       <NbDir Nb="1" Type="int"> </NbDir>
+                       <FMNT_GesNoVal Nb="?">
+                            <PenteMax Nb="1" Type="double"> </PenteMax>
                                 <!-- GainNoVal : proportion du gain max; Gain 0 privilegie le NoVal -->
-                                <GainNoVal Nb="1" Type="double"> </GainNoVal>
-                                <Trans Nb="1" Type="double"> </Trans>
-                            </FMNT_GesNoVal>
-                       </FMNT_ProgDyn>
-                </FMNtByMaxEvid>
+                            <CostNoVal Nb="1" Type="double"> </CostNoVal>
+                             <Trans Nb="1" Type="double"> </Trans>
+                        </FMNT_GesNoVal>
+                </FMNT_ProgDyn>
+                <ParamRegProf RefType="ParamFiltreDetecRegulProf" Nb="?"> </ParamRegProf>
            </SpecAlgoFMNT>
        </ParamAlgoFusionMNT>
 
@@ -1110,19 +1175,249 @@ namespace NS_SuperposeImage{
              <SzDalles Nb="?" Type="int" Def="2000"> </SzDalles>
              <RecouvrtDalles Nb="?" Type="int" Def="40"> </RecouvrtDalles>
              <ParalMkF Nb="?" Type="std::string"> </ParalMkF>
+             <ByProcess Nb="?" Type="bool" Def="false"> </ByProcess>
 
              <!-- Ne pas utiliser, usage interne a la paralellisation -->
              <InterneCalledByProcess  Nb="?" Type="bool" Def="false"> </InterneCalledByProcess>
              <InterneSingleImage Nb="?" Type="std::string" Def=""> </InterneSingleImage>
              <InterneSingleBox Nb="?" Type="int" Def="-1"> </InterneSingleBox>
+             <WorkDirPFM Nb="?" Type="std::string"> </WorkDirPFM>
+             <BoxTest Nb="?" Type="Box2di"> </BoxTest>
        </SectionGestionChantier>
 
 
   </ParamFusionMNT>
 
+  <ParamFusionNuage  Nb="1" Class="true">
+      <ModeMerge Nb="1" Type="eTypeMMByP"> </ModeMerge>
+      <PFNMiseAuPoint Nb="1">
+            <SzVisu  Nb="?" Type="Pt2di"> </SzVisu>
+            <!-- Visualise les diff de prof par couple -->
+            <TestImageDif Nb="?" Type="bool" Def="false"></TestImageDif>
+            <VisuGrad Nb="?" Type="bool"  Def="false"></VisuGrad>
+            <VisuLowPts Nb="?" Type="bool"  Def="false"></VisuLowPts>
+            <VisuImageCoh Nb="?" Type="bool"  Def="false"></VisuImageCoh>
+            <VisuSelect  Nb="?" Type="bool"  Def="false"> </VisuSelect> <!-- Visualise la construction des points selectionnes -->
+            <VisuEnv  Nb="?" Type="bool"  Def="false"> </VisuEnv> <!-- Visualise les enveloppes -->
+            <VisuElim  Nb="?" Type="bool"  Def="false"> </VisuElim> <!-- Visualise chaque elimination -->
+            <ImageMiseAuPoint Nb="?" Type="std::string"> </ImageMiseAuPoint> <!-- Images pour lesquelles on active la visu -->
+      </PFNMiseAuPoint>
+      <GrapheRecouvrt Nb="1"> 
+             <TauxRecMin Nb="1" Type="double"> </TauxRecMin>
+             <ExtHom Nb="?" Type="std::string" Def="dat"> </ExtHom>
+             <MinSzFilHom Nb="?" Type="int" Def="1000"> </MinSzFilHom>
+             <RecSeuilDistProf Nb="?" Type="double" Def="1.0"> </RecSeuilDistProf>
+             <NbPtsLowResume Nb="1" Type="int"> </NbPtsLowResume>
+             <CostPerImISOM Nb="?" Type="double" Def="0.2"> </CostPerImISOM>
+      </GrapheRecouvrt>
+      <ImageVariations Nb="1">
+           <V4Vois Nb="1" Type="bool"> </V4Vois>
+           <DistVois Nb="1" Type="int"> </DistVois>
+           <DynAngul Nb="1" Type="double"> </DynAngul>
+           <SeuilStrictVarIma Nb="1" Type="double"> </SeuilStrictVarIma>
+           <PenteRefutInitInPixel Nb="?" Type="double" Def="0.5"> </PenteRefutInitInPixel>
+           <ComputeIncid Nb="?" Type="bool" Def="true"> </ComputeIncid>
+           <DilateBord Nb="?" Type="int" Def="3"> </DilateBord>
+      </ImageVariations>
+      <PFM_Selection Nb="1">
+            <ElimDirectInterior Nb="?" Type="double" Def="10.0"> </ElimDirectInterior>
+            <LowRatioSelectIm Nb="?" Type="double" Def="0.001"> </LowRatioSelectIm>
+            <HighRatioSelectIm Nb="?" Type="double" Def="0.05"> </HighRatioSelectIm>
+      </PFM_Selection>
+  </ParamFusionNuage>
+
+
+  <CWWSImage Nb="1" Class="true" ToReference="true">
+      <NameIm Nb="1" Type="std::string"> </NameIm>
+      <CWWSIVois Nb="*">
+            <NameVois Nb="1" Type="std::string"> </NameVois>
+      </CWWSIVois>
+  </CWWSImage>
+
+   <ChantierAppliWithSetImage Nb="1" Class="true" ToReference="true">
+       <Images Nb="*" RefType="CWWSImage"> </Images>
+   </ChantierAppliWithSetImage>
+
+
+   <AnaTopoBascule Nb="1" Class="true" ToReference="true">
+       <OneZonzATB Nb="*">
+           <BoxGlob Type="Box2di" Nb="1"> </BoxGlob>
+           <BoxMasq Type="Box2di" Nb="1"> </BoxMasq>
+           <GermGlob Type="Pt2di" Nb="1"> </GermGlob>
+           <GermMasq Type="Pt2di" Nb="1"> </GermMasq>
+           <NbGlob Type="int" Nb="1"> </NbGlob>
+           <NbMasq Type="int" Nb="1"> </NbMasq>
+           <Num Type="int" Nb="1">  </Num>
+           <Valide Type="bool" Nb="1"> </Valide>
+       </OneZonzATB>
+   </AnaTopoBascule>
+
+   <!-- En fait on ne sauve que les XML avec masq modifie , car c'est plus simple et cela permet
+    de traiter en meme temps le cas ou il n'y a pas de pb
+   -->
+
+   <AnaTopoXmlBascule Nb="1" Class="true" ToReference="true">
+       <ResFromAnaTopo Nb="1" Type="bool"> </ResFromAnaTopo>
+       <OneZonXmlAMTB Nb="*">
+            <NameXml Nb="1" Type="std::string"> </NameXml>
+       </OneZonXmlAMTB>
+   </AnaTopoXmlBascule>
+    
+
+
+   <ParamFiltreDepthByPrgDyn Nb="1" Class="true" ToReference="true">
+        <CostNonAff Nb="?" Type="double" Def="0.5">   </CostNonAff>
+        <CostTrans Nb="?" Type="double" Def="10">     </CostTrans>
+        <CostRegul Nb="?" Type="double" Def="0.3">    </CostRegul>
+        <StepZ     Nb="1" Type="double">              </StepZ>
+        <DzMax     Nb="?" Type="double" Def="10.0">   </DzMax>
+        <NbDir     Nb="?" Type="int" Def="9">         </NbDir>
+   </ParamFiltreDepthByPrgDyn>
+
+
+  <!-- Pourra servir pour construire des affinite, homographie ... -->
+
+  <XmlAffinR2ToR  Nb="1" Class="true"  ToReference="true">
+         <CoeffX Nb="1" Type="double">   </CoeffX>
+         <CoeffY Nb="1" Type="double">   </CoeffY>
+         <Coeff1 Nb="1" Type="double">   </Coeff1>
+  </XmlAffinR2ToR>
+
+
+   <XmlHomogr  Nb="1" Class="true"  ToReference="true">
+        <X Nb="1" RefType="XmlAffinR2ToR">   </X>
+        <Y Nb="1" RefType="XmlAffinR2ToR">   </Y>
+        <Z Nb="1" RefType="XmlAffinR2ToR">   </Z>
+   </XmlHomogr>
+
+
+   <XmlRHHResLnk  Nb="1" Class="true"  ToReference="true">
+        <Hom12 Nb="1"  RefType="XmlHomogr">  </Hom12>
+        <Ok Nb="1"  Type="bool">               </Ok>
+        <Qual Nb="1"  Type="double">           </Qual>
+        <NbPts Nb="1"  Type="int">           </NbPts>
+        <EchRepP1 Nb="*" Type="Pt3dr" Container="std::vector"> </EchRepP1>
+        <PRep Nb="1" Type="Pt3dr"> </PRep>
+   </XmlRHHResLnk>
+
+
+    <XMLSaveOriRel2Im  Nb="1" ToReference="true" Class="true">
+        <!-- Rotation  :  P1 = C + R * P2, C est la base dans les coordonnes image 1 -->
+        <ParamRotation  Nb="1"  RefType="RotationVect"  RefFile="ParamChantierPhotogram.xml">  </ParamRotation>
+        <Centre Nb="1" Type="Pt3dr"> </Centre>
+        <!-- Homographie P1 => P2 -->
+        <Homogr Nb="1" RefType="XmlHomogr"> </Homogr>
+        <BOnHRatio Nb="1" Type="double"> </BOnHRatio>
+        <!-- Fov experimental, calcules sur l'ellipse d'inertie -->
+        <FOVMin Nb="1" Type="double"> </FOVMin>
+        <FOVMax Nb="1" Type="double"> </FOVMax>
+    </XMLSaveOriRel2Im>
+
+<Polyg3D  Nb="1" ToReference="true" Class="true">
+ <Item Nb="*" Container="std::vector">
+      <Pt Type="Pt3dr" Nb="*"  Container="std::vector"></Pt>
+      <Mode Type="int" Nb="1"></Mode>
+ </Item>
+</Polyg3D>
+
+<XML_TestImportOri Nb="1" ToReference="true" Class="true">
+   <x Type="int" Nb="1"> </x>
+   <Tree Type="XmlXml" Nb="1"> </Tree>
+</XML_TestImportOri>
+
+
+
+
+<Xml_O2IRotation Nb="1" Class="true" ToReference="true">
+     <Ori Nb="1" RefType="TypeCodageMatr"> </Ori>
+     <Centre Nb="1" Type="Pt3dr" > </Centre>
+     <ResiduOr Nb="1" Type="double" > </ResiduOr> <!-- Residu pondere par 1/(1+(R/S)^2) -->
+     <ResiduHighPerc Nb="1" Type="double" > </ResiduHighPerc>  <!-- Reisidu a X % (X entre 85 et 95) -->
+     <PMed1   Nb="1" Type="Pt3dr"> </PMed1> <!-- P Median en coord Cam1 -->
+</Xml_O2IRotation>
+<Xml_O2IRotPure Nb="1" Class="true" ToReference="true">
+     <Ori Nb="1" RefType="TypeCodageMatr"> </Ori>
+     <ResiduRP Nb="1" Type="double" > </ResiduRP>
+</Xml_O2IRotPure>
+<Xml_O2IHom Nb="1" Class="true" ToReference="true">
+     <Hom Nb="1" RefType="XmlHomogr"> </Hom>
+     <ResiduHom Nb="1" Type="double" > </ResiduHom>
+</Xml_O2IHom>
+
+
+
+<Xml_O2ITiming  Nb="1" Class="true" ToReference="true">
+    <TimeRPure Nb="1" Type="double">     </TimeRPure>
+    <TimePatchP Nb="1" Type="double">    </TimePatchP>
+    <TimeRanMin Nb="1" Type="double">    </TimeRanMin>
+    <TimeRansacStd Nb="1" Type="double"> </TimeRansacStd>
+    <TimeL2MatEss Nb="1" Type="double">  </TimeL2MatEss>
+    <TimeL1MatEss Nb="1" Type="double">   </TimeL1MatEss>
+    <TimeHomStd Nb="1" Type="double">     </TimeHomStd>
+</Xml_O2ITiming>
+
+
+
+
+<Xml_O2IComputed Nb="1" Class="true" ToReference="true">
+    <Timing Nb="1"  RefType="Xml_O2ITiming">     </Timing>
+    <OrientAff Nb="1"  RefType="Xml_O2IRotation">      </OrientAff>
+    <RPure Nb="1"  RefType="Xml_O2IRotPure" >    </RPure>
+    <HomWithR Nb="1" RefType="Xml_O2IHom">            </HomWithR>
+    <BSurH Nb="1" Type="double">   </BSurH>
+    <RecHom Nb="1" Type="double">   </RecHom>  <!-- Recouvrement en faisant l'hypothese homographique -->
+</Xml_O2IComputed>
+
+
+<Xml_Ori2Im Nb="1" Class="true" ToReference="true">
+
+     <Im1 Nb="1" Type="std::string"  > </Im1>
+     <Im2 Nb="1" Type="std::string"  > </Im2>
+     <!-- Nom de la calibration interne optionnelle qui a ete utilisee -->
+     <Calib Nb="1" Type="std::string"  > </Calib>
+     <NbPts Nb="1" Type="int"> </NbPts>
+     <Foc1 Nb="1" Type="double"  > </Foc1>
+     <Foc2 Nb="1" Type="double"  > </Foc2>
+     <FocMoy Nb="1" Type="double"  > </FocMoy>
+     <Geom Nb="?" RefType="Xml_O2IComputed"> </Geom>
+</Xml_Ori2Im>
+
+
+<Xml_Rotation Nb="1" Class="true" ToReference="true">
+     <Ori Nb="1" RefType="TypeCodageMatr"> </Ori>
+     <Centre Nb="1" Type="Pt3dr" > </Centre>
+</Xml_Rotation>
+
+
+<Xml_Ori3ImInit  Nb="1" Class="true" ToReference="true">
+    <Ori2On1 Nb="1"  RefType="Xml_Rotation"> </Ori2On1>
+    <Ori3On1 Nb="1"  RefType="Xml_Rotation"> </Ori3On1>
+    <NbTriplet Nb="1" Type="int"> </NbTriplet>
+    <ResiduTriplet Nb="1" Type="double"> </ResiduTriplet>
+    <BSurH Nb="1" Type="double"> </BSurH>
+    <PMed Nb="1" Type="Pt3dr"> </PMed>
+</Xml_Ori3ImInit>
+
+<Xml_OneTriplet  Nb="1" Class="true" ToReference="true">
+       <Name1 Nb="1" Type="std::string"> </Name1>
+       <Name2 Nb="1" Type="std::string"> </Name2>
+       <Name3 Nb="1" Type="std::string"> </Name3>
+</Xml_OneTriplet>
+
+
+<!-- Représente uniquement la "topologie" des triplets selectionnes -->
+
+<Xml_TopoTriplet Nb="1" Class="true" ToReference="true">
+       <Triplets  Nb="*" RefType="Xml_OneTriplet"> </Triplets>
+</Xml_TopoTriplet>
+
+
+
+
+
 
 <Verbatim File=".h.cpp">
-};
+// };
 </Verbatim>
 <Verbatim File=".h">
 #endif // Define_NotSupIm

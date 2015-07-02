@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
 void cAppliApero::ExportVisuConfigPose(const cExportVisuConfigGrpPose & anEVCGP)
 {
@@ -58,7 +56,7 @@ void cAppliApero::ExportVisuConfigPose(const cExportVisuConfigGrpPose & anEVCGP)
        for ( int aK=0 ; aK<int(aVC.size()) ; aK++)
        {
             double aPds = 1.0;
-            aCdg = aCdg  +aVC[aK]->CF()->CameraCourante()->PseudoOpticalCenter()*aPds;
+            aCdg = aCdg  +aVC[aK]->CurCam()->PseudoOpticalCenter()*aPds;
             aSPds += aPds;
        }
        aCdg = aCdg/ aSPds;
@@ -66,7 +64,7 @@ void cAppliApero::ExportVisuConfigPose(const cExportVisuConfigGrpPose & anEVCGP)
        {
            fprintf(aFP,"  ------------------\n");
            fprintf(aFP,"       Pose=%s\n",aVC[aK]->Name().c_str());
-           Pt3dr aC = aVC[aK]->CF()->CameraCourante()->PseudoOpticalCenter();
+           Pt3dr aC = aVC[aK]->CurCam()->PseudoOpticalCenter();
            fprintf(aFP,"       DCDG=%f\n",euclid(aC-aCdg));
        }
    }
@@ -98,7 +96,7 @@ void cAppliApero::ExportCalib(const cExportCalib & anEC)
        {
 
 	   std::string Engl="ExportAPERO";
-	   std::string aNXml =   DC()
+	   std::string aNXml =   mOutputDirectory
                                + (   (anEC.KeyIsName().Val()) ? 
                                      anEC.KeyAssoc() : 
                                      mICNM->Assoc1To1(anEC.KeyAssoc(),aNC,true)
@@ -203,7 +201,7 @@ void cAppliApero::ExportSauvAutom()
    {
       if (! mParam.SauvAutomBasic().Val())
          return;
-      aPref = "Tmp-MM-Dir/";
+      aPref = MMTemporaryDirectory();
       aStrS ="Autom";
    }
    aStrS = "-Sauv-" + aStrS + "-" + ToString(mNumSauvAuto);
@@ -262,7 +260,7 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
            double aP= aPC->Profondeur();
 	   std::string Engl="ExportAPERO";
 
-           const CamStenope * aCS = aPC->CF()->CameraCourante();
+           const CamStenope * aCS = aPC->CurCam();
 
 	   if (aPC->PMoyIsInit())
 	   {
@@ -276,7 +274,8 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
            {
                // ELISE_ASSERT(false,"CHC in Apero, inhibed : use ad-hoc command\n");
               // On modifie, donc on travaille sur un dupl
-                CamStenope *aCS2 = aPC->CF()->DuplicataCameraCourante();
+                CamStenope *aCS2 = aPC->DupCurCam();
+                aCS2->UnNormalize();
                 aCS2->SetProfondeur(aP);
                 std::vector<ElCamera*> aVC;
                 aVC.push_back(aCS2);
@@ -295,11 +294,11 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
            }
 
 
-           std::string aNXml = DC() +  aPref + mICNM->Assoc1To1(anEP.KeyAssoc(),aNP,true);
+           std::string aNXml = mOutputDirectory +  aPref + mICNM->Assoc1To1(anEP.KeyAssoc(),aNP,true);
            ELISE_fp::MkDirRec(aNXml);
 	   if (anEP.AddCalib().Val())
 	   {
-               CamStenope * aCS2 = aPC->CF()->PIF().DupCurPIF();
+               CamStenope * aCS2 = aPC->CamF()->PIF().DupCurPIF();
 	       Pt2di aSzIm = aPC->Calib()->SzIm();
                if (anEP.ExportAsNewGrid().IsInit())
                {
@@ -321,6 +320,25 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
                //const char * aNAux = aNXml.c_str();
 
 	       cOrientationConique anOC = aCS2->ExportCalibGlob(aSzIm,aZ,aP,aNbV,aMM,aNAux,aPVerifDet);
+
+               if (anEP.Force2ObsOnC().IsInit())
+               {
+                  const cForce2ObsOnC & aFOC = anEP.Force2ObsOnC().Val();
+                  if (aPC->HasObsOnCentre())
+                  {
+                       anOC.Externe().Centre() = aPC->ObsCentre();
+                  }
+                  else
+                  {
+                     if (!aFOC.WhenExist().Val())
+                     {
+                          std::cout << "For camera " << aPC->Name() << "\n";
+                          ELISE_ASSERT(false,"Camera has no center in Force2ObsOnC");
+                     }
+                  }
+               }
+
+
                if (aPC->FidExist())
                {
                     anOC.OrIntImaM2C().SetVal(El2Xml(aPC->OrIntM2C())) ;
@@ -353,6 +371,7 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
                }
                else
                {
+
 	          MakeFileXML(anOC,aNXml,Engl);
                }
 
@@ -379,7 +398,7 @@ void cAppliApero::ExportPose(const cExportPose & anEP,const std::string & aPref)
 	   }
 	   else
            {
-               XML_SauvFile(aPC->CF()->CurRot(),aNXml,Engl,aZ,aP,aMM);
+               XML_SauvFile(aPC->CamF()->CurRot(),aNXml,Engl,aZ,aP,aMM);
            }
        }
    }
@@ -479,7 +498,7 @@ void cAppliApero::ExportOrthoCyl
     cXmlOneSurfaceAnalytique OneSurf;
 
     OneSurf.Id() = "TheSurf";
-    OneSurf.VueDeLExterieur() = aPOC.IsVueExt();
+    OneSurf.VueDeLExterieur() = aPOC.VueDeLext();
     OneSurf.XmlDescriptionAnalytique() = aPOC.Xml();
     cXmlModeleSurfaceComplexe aCplxSur;
     aCplxSur.XmlOneSurfaceAnalytique().push_back(OneSurf);
@@ -504,7 +523,17 @@ void cAppliApero::ExportRepereLoc(const cExportRepereLoc & anERL)
 
     std::vector<cPoseCam *> aVP = mVecPose;
     std::string aNameP1P2 = anERL.ImP1P2().ValWithDef(anERL.PatternEstimPl());
-    if (aNameP1P2 != "NoP1P2")
+    if (anERL.P1P2Hor().Val())
+    {
+           Pt3dr aNormPl = vunit(Pt3dr(aVZ.x,aVZ.y,0));  
+           Pt3dr aHorInPl (-aNormPl.y,aNormPl.x,0);
+
+           Pt3dr aVertInPl = vunit(aVZ ^ aHorInPl);
+
+           aVX = aHorInPl;
+           aVY = aVertInPl;
+    }
+    else if (aNameP1P2 != "NoP1P2")
     {
        std::string aNameP1 = aNameP1P2;
        std::string aNameP2 = aNameP1P2;
@@ -542,12 +571,17 @@ void cAppliApero::ExportRepereLoc(const cExportRepereLoc & anERL)
        const CamStenope * aCS2 =  aPose2->CurCam();
        const CamStenope * aCSOri =  aPoseOri->CurCam();
 
+
+
+
        Pt3dr aQ1 = aCS1->PtFromPlanAndIm(aPlan,aP1);
        Pt3dr aQ2 = aCS2->PtFromPlanAndIm(aPlan,aP2);
        anO = aCSOri->PtFromPlanAndIm(aPlan,anOriPl);
 
        aVX = vunit(aQ2-aQ1) ;
        aVZ = aPlan.Norm();
+       AjustNormalSortante(true,aVZ,aCS1,aP1);
+
        aVY = vunit(aVZ ^ aVX);
        aVX = aVY ^aVZ ;   // Sans doute inutile, mais bon  ....
 
@@ -596,11 +630,6 @@ void cAppliApero::ExportRepereLoc(const cExportRepereLoc & anERL)
 
 void  cAppliApero::Export(const cSectionExport & anEx)
 {
-
-    if (anEx.ChoixImMM().IsInit())
-    {
-       ExportImMM(anEx.ChoixImMM().Val());
-    }
     for
     (
          std::list<cExportMesuresFromCarteProf>::const_iterator itM = anEx.ExportMesuresFromCarteProf().begin();
@@ -700,6 +729,26 @@ void  cAppliApero::Export(const cSectionExport & anEx)
           ExportNuage(*itEN);
     }
 
+
+    for 
+    (
+         std::list<cExportBlockCamera>::const_iterator itBC = anEx.ExportBlockCamera().begin();
+         itBC != anEx.ExportBlockCamera().end();
+         itBC++
+    )
+    {
+          ExportBlockCam(*itBC);
+    }
+
+    if (anEx.ExportResiduXml().IsInit())
+    {
+        MakeFileXML(mXMLExport,mDC+anEx.ExportResiduXml().Val());
+    }
+
+    if (anEx.ChoixImMM().IsInit())
+    {
+       ExportImMM(anEx.ChoixImMM().Val());
+    }
 }
 
 void  cAppliApero::InitRapportDetaille(const cTxtRapDetaille & aTRD)
@@ -751,7 +800,6 @@ void  cAppliApero::InitRapportDetaille(const cTxtRapDetaille & aTRD)
 
 
 
-};
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

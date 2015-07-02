@@ -40,8 +40,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 template  class ElQT<NS_ParamApero::cOnePtsMult *,Pt2dr,NS_ParamApero::cFctrPtsOfPMul> ;
 
-namespace NS_ParamApero
-{
 
 #define VERIF_PackMUL 1
 
@@ -55,9 +53,42 @@ namespace NS_ParamApero
 
 cStatObs::cStatObs(bool aAddEq) :
    mSomErPond (0),
-   mAddEq     (aAddEq)
+   mAddEq     (aAddEq),
+   mMaxEvol   (0),
+   mPdsEvol   (0),
+   mSomEvol   (0)
 {
 }
+
+
+void cStatObs::AddEvol(const double & aPds,const double & anEvol,const double &  aMaxEvol)
+{
+   if (aPds)
+   {
+      ElSetMax(mMaxEvol,aMaxEvol);
+      mPdsEvol += aPds;
+      mSomEvol += anEvol ;
+   }
+}
+
+void cStatObs::AssertPdsEvolNN() const
+{
+    ELISE_ASSERT(mPdsEvol!=0,"cStatObs::AssertPdsEvolNN");
+}
+
+double cStatObs::PdsEvol() const {return mPdsEvol;}
+double cStatObs::MaxEvol() const 
+{
+   
+   AssertPdsEvolNN();
+   return mMaxEvol;
+}
+double cStatObs::MoyEvol() const 
+{
+   AssertPdsEvolNN();
+   return mSomEvol / mPdsEvol;
+}
+
 
 void cStatObs::AddSEP(double aSEP)
 {
@@ -183,12 +214,15 @@ void cOneCombinMult::AddLink(cAppliApero & anAppli)
 /*                                                */
 /**************************************************/
 
+static const Pt3dr NoMemPt(0,0,0);
 
 cOnePtsMult::cOnePtsMult() :
    mMemPds (0),
+   mMemPt  (NoMemPt),
    mNPts (0,1.0),
    mOCM  (0),
-   mOnPlaneRapOnz (true)
+   mOnPlaneRapOnz (true),
+   mMemPtOk       (false)
 {
 }
 
@@ -201,6 +235,17 @@ void cOnePtsMult::SetOnPRaz(bool aPRaz)
 {
    mOnPlaneRapOnz  = aPRaz;
 }
+
+bool cOnePtsMult::MemPtOk() const
+{
+   return mMemPtOk;
+}
+
+void cOnePtsMult::SetMemPtOk(bool aOk)
+{
+   mMemPtOk = (aOk != 0);
+}
+
 
 const Pt2dr& cOnePtsMult::P0()  const
 {
@@ -254,11 +299,15 @@ cOneCombinMult * cOnePtsMult::OCM()
    return mOCM;
 }
 
-double & cOnePtsMult::MemPds()
+double & cOnePtsMult::MemPds() 
 {
    return mMemPds;
 }
 
+Pt3dr & cOnePtsMult::MemPt() 
+{
+   return mMemPt;
+}
 
 
 
@@ -346,7 +395,7 @@ ElSeg3D  cOnePtsMult::GetUniqueDroiteInit(bool UseZU)
    }
    ELISE_ASSERT(aPcK!=0,"cOnePtsMult::GetUniqueDroiteInit Aucune");
  
-   const CamStenope & aCS =   * (aPcK->CF()->CameraCourante());
+   const CamStenope & aCS =   * (aPcK->CurCam());
 
 // std::cout << "ttttt " << aPtK << aCS.CentreOptique() << "\n";
 
@@ -389,7 +438,8 @@ Pt3dr InterFaisceaux
      {
          if ( (aKR>=int(aVPds.size())) || (aVPds[aKR] >0))
          {
-             const CamStenope * aCS =   aVC[aKR]->CF()->CameraCourante();
+              // C'EST LA IL FAUT TESTER LA CAMERA NON ORTHO
+             const CamStenope * aCS =   aVC[aKR]->CurCam();
              ElSeg3D aSeg = aCS->F2toRayonR3(aNPt.PK(aKR));
              aVSeg.push_back(aSeg);
          }
@@ -415,12 +465,12 @@ Pt3dr TestInterFaisceaux
 
       for (int aK1=0 ; aK1 <int( aVC.size()) ; aK1++)
       {
-          const CamStenope * aCS1 =   aVC[aK1]->CF()->CameraCourante();
+          const CamStenope * aCS1 =   aVC[aK1]->CurCam();
           Pt2dr aP1 = aNPt.PK(aK1);
           ElSeg3D aSeg1 = aCS1->F2toRayonR3(aP1);
           for (int aK2=aK1+1 ; aK2 <int( aVC.size()) ; aK2++)
           {
-              const CamStenope * aCS2 =   aVC[aK2]->CF()->CameraCourante();
+              const CamStenope * aCS2 =   aVC[aK2]->CurCam();
               Pt2dr aP2 = aNPt.PK(aK2);
               ElSeg3D aSeg2 = aCS2->F2toRayonR3(aP2);
 
@@ -429,7 +479,7 @@ Pt3dr TestInterFaisceaux
 
               for (int aK3 = 0 ; aK3<int( aVC.size()) ; aK3++)
               {
-                  const CamStenope * aCS3 =   aVC[aK3]->CF()->CameraCourante();
+                  const CamStenope * aCS3 =   aVC[aK3]->CurCam();
                   Pt2dr aP3 = aNPt.PK(aK3);
                   Pt2dr aQ3 = aCS3->R3toF2(aPTest);
                   double aDist = euclid(aP3,aQ3);
@@ -449,7 +499,7 @@ Pt3dr TestInterFaisceaux
    {
        for (int aK3 = 0 ; aK3<int( aVC.size()) ; aK3++)
        {
-            const CamStenope * aCS3 =   aVC[aK3]->CF()->CameraCourante();
+            const CamStenope * aCS3 =   aVC[aK3]->CurCam();
             Pt2dr aP3 = aNPt.PK(aK3);
             Pt2dr aQ3 = aCS3->R3toF2(aPMax);
             double aDist = euclid(aP3,aQ3);
@@ -536,7 +586,8 @@ cObsLiaisonMultiple::cObsLiaisonMultiple
     const std::string & aNamePack,
     const std::string & aName1,
     const std::string & aName2,
-    bool                isFirstSet
+    bool                isFirstSet,
+    bool                packMustBeSwapped
 )  :
     mAppli       (anAppli),
     mSurf        (0),
@@ -566,7 +617,7 @@ cObsLiaisonMultiple::cObsLiaisonMultiple
    AddPose(aName1,isFirstSet);
    AddPose(aName2,isFirstSet);
 
-   AddPack(aNamePack,aName1,aName2,isFirstSet);
+   AddPack(aNamePack,aName1,aName2,isFirstSet,packMustBeSwapped);
 }
 
 cPoseCam *  cObsLiaisonMultiple::Pose1() const
@@ -593,13 +644,15 @@ void cObsLiaisonMultiple::AddPack
          const std::string & aNamePack,
          const std::string & aName1,
          const std::string & aName2,
-         bool                IsFirstSet
+         bool                IsFirstSet,
+         bool                packMustBeSwapped
      )
 {
    int anInd1 = GetIndexeOfName(aName1);
    int anInd2 = GetIndexeOfName(aName2);
 
    ElPackHomologue aPack = ElPackHomologue::FromFile(aNamePack);
+   if ( packMustBeSwapped ) aPack.SelfSwap();
    cPoseCam * aC1 =  mAppli.PoseFromName(aName1);
    cPoseCam * aC2 =  mAppli.PoseFromName(aName2);
 
@@ -692,8 +745,9 @@ int  cObsLiaisonMultiple::IndOfCam(const cPoseCam * aCam) const
 }
 
 
-Pt3dr cObsLiaisonMultiple::CentreNuage() const
+Pt3dr cObsLiaisonMultiple::CentreNuage(const cMasqBin3D * aMasq3D,int * aNb) const
 {
+
   std::vector<double> aVPds;
 
   const CamStenope &   aCS  = *(mPose1->CurCam());
@@ -703,15 +757,27 @@ Pt3dr cObsLiaisonMultiple::CentreNuage() const
   for (int aKPt=0 ; aKPt<int(mVPMul.size()) ;aKPt++)
   {
       cOnePtsMult& anOPM = *(mVPMul[aKPt]);
+
       if (anOPM.MemPds() >0)
       {
            Pt3dr aPI = anOPM.QuickInter(aVPds);
-           aPMoy = aPMoy+ anOPM.P0();
-           aVProf.push_back(aCS.ProfondeurDeChamps(aPI));
+           if ((aMasq3D==0) || (aMasq3D->IsInMasq(aPI)))
+           {
+              aPMoy = aPMoy+ anOPM.P0();
+              aVProf.push_back(aCS.ProfondeurDeChamps(aPI));
+           }
       }
   }
 
-  ELISE_ASSERT(aVProf.size()!=0,"cObsLiaisonMultiple::CentreNuage No Point");
+  if (aNb)
+  {
+      *aNb = aVProf.size();
+      if (*aNb==0) return Pt3dr(0,0,0);
+  }
+  else
+  {
+      ELISE_ASSERT(aVProf.size()!=0,"cObsLiaisonMultiple::CentreNuage No Point");
+  }
 
   aPMoy = aPMoy/double(aVProf.size());
   
@@ -787,10 +853,10 @@ const std::vector<cOnePtsMult *> & cObsLiaisonMultiple::VPMul()
    return mVPMul;
 }
 
-void cObsLiaisonMultiple::AddLiaison(const std::string & aNamePack,const std::string & aName2,bool isFirstSet)
+void cObsLiaisonMultiple::AddLiaison(const std::string & aNamePack,const std::string & aName2,bool isFirstSet,bool packMustBeSwapped)
 {
    AddPose(aName2,isFirstSet);
-   AddPack(aNamePack,mVPoses[0]->NameCam(),aName2,isFirstSet);
+   AddPack(aNamePack,mVPoses[0]->NameCam(),aName2,isFirstSet,packMustBeSwapped);
 }
 
 
@@ -866,7 +932,7 @@ cOneCombinMult *  cObsLiaisonMultiple::AddAFlag(const cOnePtsMult & aPM)
     {
          if (aFlag.IsIn(aK))  // (aFlag & (1<<(aK-1))()
          {
-             aVCF.push_back(mVPoses[aK]->Pose()->CF());
+             aVCF.push_back(mVPoses[aK]->Pose()->CamF());
 	     aVP.push_back(mVPoses[aK]->Pose());
          }
     }
@@ -951,6 +1017,18 @@ double cObsLiaisonMultiple::AddObsLM
        )
 {
 
+/*
+  static int aCpt = 0 ; aCpt ++;
+  bool aBug = false;
+  if ( mAppli.NumSauvAuto()==6)
+  {
+      aBug = ((aCpt%4) == 0);
+  }
+  if (aBug) return 0;
+*/
+  
+
+
   FILE * aFpRT = mAppli.FpRT() ;
 
   for (int aKP=0 ;  aKP<int(mVPoses.size()) ; aKP++)
@@ -1001,12 +1079,27 @@ double cObsLiaisonMultiple::AddObsLM
 
    InitRapOnZ(aRAZGlob);
 
+   bool Add2C =  aImPPM.Add2Compens().Val();
+
+
+   double aMaxEvolPt=0 ;
+   double aSomEvolPt=0 ;
+   double aSomPdsEvol=0;
 
    int aNbNN=0;
    for (int aKPm=0 ; aKPm<int(mVPMul.size()) ; aKPm++)
    {
         cOnePtsMult * aPM = mVPMul[aKPm];
         aPM->MemPds() = 0;
+
+        bool aOldMemPtOk = aPM->MemPtOk();
+        Pt3dr aOldMemPt  = aPM->MemPt();
+        if (Add2C )
+        {
+           aPM->SetMemPtOk(false);
+           aPM->MemPt() =  NoMemPt;
+        }
+
         cOneCombinMult * aCOM = aPM->OCM();
         const  cNupletPtsHomologues & aNupl = aPM->NPts() ;
         const std::vector<cPoseCam *> & aVP = aCOM->VP();
@@ -1033,17 +1126,17 @@ double cObsLiaisonMultiple::AddObsLM
                 }
 
 
-                double aDist = euclid(aRes.mPTer-aVP[0]->CurCentre());
-                if (aDist >aMaxDistW)
+                double aDistPtC0 = euclid(aRes.mPTer-aVP[0]->CurCentre());
+                if (aDistPtC0 >aMaxDistW)
                 {
                     static bool first = true;
                     if (first)
                     {
                        first = false;
                        std::cout <<  "WWWwwwaarning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! \n";
-	               std::cout << " Dist = " << aDist <<   " Pose 0 " << aVP[0]->Name() << "\n";
+	               std::cout << " Dist = " << aDistPtC0 <<   " Pose 0 " << aVP[0]->Name() << "\n";
                     }
-                    if (aDist >aMaxDistE)
+                    if (aDistPtC0 >aMaxDistE)
                     {
                         for (int aKC=0 ; aKC<int(aVP.size()) ; aKC++)
                            aVP[aKC]->Trace();
@@ -1057,7 +1150,7 @@ double cObsLiaisonMultiple::AddObsLM
                    if (aVP[aKPose]->RotIsInit())
                    {
 	              aResidu += square_euclid(aRes.mEcIm[aKPose]);//  *ElSquare(aScN);
-                      if (isnan(aResidu))
+                      if (std_isnan(aResidu))
                       {
                           std::cout <<  aRes.mEcIm[aKPose] << " " << aKPose << " " << aVP[aKPose]->Name() << "\n";
                           std::cout << "CPT= " << aCpt << "\n";
@@ -1174,7 +1267,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                            for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                            {
                               if (aVpds[aK] > 0)
-                                 std::cout << aVP[aK]->CF()->CameraCourante()->R3toF2(aRes.mPTer) 
+                                 std::cout << aVP[aK]->CurCam()->R3toF2(aRes.mPTer) 
                                       <<  aRes.mEcIm[aK] 
                                       << aNupl.PK(aK) << "\n";
                               else
@@ -1200,7 +1293,8 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                    aPM->MemPds() = aPdsIm;
                 }
 
-                if (   ((aPdsIm >0) &&  aImPPM.Add2Compens().Val()) && isInF3D)
+
+                if (((aPdsIm >0) &&  (Add2C)) && isInF3D)
                 {
                     aNbPdsNN++;   
                     aNbMultPdsNN += (aNbRInit>=3);
@@ -1225,15 +1319,26 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                      aCOM->LiaisTer()->SetMulPdsGlob(1.0);
                      aCOM->LiaisTer()->SetTerrainInit(false);  // Conservatif
 
+                     if (aRes2.mOKRP3I)
+                     {
+                        aSO.AddSEP(aRes2.mSomPondEr);
+                        aPM->MemPds() = aPdsIm;
 
+                        aPM->SetMemPtOk(true);
+                        aPM->MemPt() = aRes2.mPTer;
+                        if (aOldMemPtOk)
+                        {
+                            Pt3dr aPDif = aRes2.mPTer-aOldMemPt;
+                            // On calcule une variation  normalise / distance au centre camera 0
+                            double aVarPt = euclid(aPDif) / aDistPtC0;
 
-
-                    if (aRes2.mOKRP3I)
-                    {
-                       aSO.AddSEP(aRes2.mSomPondEr);
-                       aPM->MemPds() = aPdsIm;
-                    }
-                    // aNb++;
+                            double aPdsDif = 1.0;
+                            
+                            aSomPdsEvol += aPdsDif;
+                            aSomEvolPt +=  aPdsDif * aVarPt;
+                            ElSetMax(aMaxEvolPt,aVarPt);
+                        }
+                     }
                 }
                 if (anAVA &&  (anAVA->VA().TypeVerif()==eVerifDZ) && (aPdsIm >0) && (aNbRInit>=3))
                 {
@@ -1256,12 +1361,27 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
         }
         BugUPL = false;
    }
+   if (aSomPdsEvol)
+   {
+      aSO.AddEvol(aSomPdsEvol,aSomEvolPt,aMaxEvolPt);
+      aSomEvolPt /= aSomPdsEvol;
+   }
+
+
+
 
    aSEr2 /= aSPds2;
    int aNbP = mVPMul.size();
       
   mVPoses[0]->Pose()->SetNbPtsMulNN(aNbMultPdsNN+mVPoses[0]->Pose()->NbPtsMulNN());
 
+
+
+/*
+   double aMaxEvolPt=0 ;
+   double aSomEvolPt=0 ;
+   double aSomPdsEvol=0;
+*/
    if (aSO.AddEq())
    {
        if (int(aImPPM.Show().Val()) >= int(eNSM_Paquet))
@@ -1271,15 +1391,33 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
           // myfile = std::cout;
 
           if (mEqS)
+          {
              mAppli.COUT() << "PDS Surf = " << aSomPSurf << "\n";
+          }
+          double aPercOk =  (100.0*aNbPdsNN)/double(aNbP);
+
+          cXmlSauvExportAperoOneIm aXmlE;
+          aXmlE.Name() = mVPoses[0]->NameCam();
+          aXmlE.Residual() = sqrt(aSEr2);
+          aXmlE.PercOk() = aPercOk;
+          aXmlE.NbPts() = aNbP;
+          aXmlE.NbPtsMul() = aNbMult;
+          mAppli.CurXmlE().OneIm().push_back(aXmlE);
+
           mAppli.COUT() << "RES:["  << mVPoses[0]->NameCam() << "]"
                 <<  " ER2 " << sqrt(aSEr2)
-                << " Nn " << (100.0*aNbPdsNN)/double(aNbP) 
+                << " Nn " <<  aPercOk
                 << " Of " << aNbP
                 << " Mul " << aNbMult
                 << " Mul-NN " << aNbMultPdsNN
-                <<  " Time " << aT0.uval()
-                << "\n";
+                <<  " Time " << aT0.uval();
+
+          if (0 && aSomPdsEvol)
+          {
+             mAppli.COUT() << " Evol, Moy=" <<  aSomEvolPt << " Max=" << aMaxEvolPt ;
+          }
+
+          mAppli.COUT() << "\n";
        }
        cElRegex_Ptr aFilterImAff  = mAppli.Param().Im2Aff().ValWithDef(0);  
        bool aMatchIm0 =   (aFilterImAff==0)
@@ -1347,6 +1485,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
          delete aGSD;
        }
    }
+
 
    return aSEr2;
 }
@@ -1858,7 +1997,7 @@ void cObsLiaisonMultiple::TestMEPAppuis
                 {
                     aCostMin = aC;
                     aRSol = itR->inv();
-                    RChanged = true;
+                    //RChanged = true;
                     //std::cout  <<   aC*aFoc  << "\n";
                 }
              }
@@ -2057,13 +2196,12 @@ std::map<std::string,cObsLiaisonMultiple *> & cPackObsLiaison::DicoMul()
    return mDicoMul;
 }
 
-};
 
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -2079,17 +2217,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

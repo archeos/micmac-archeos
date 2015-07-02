@@ -42,6 +42,18 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
+Im2D_Bits<1> ImMarqueurCC(Pt2di aSz)
+{
+   Im2D_Bits<1> aMasq(aSz.x,aSz.y,1);
+   ELISE_COPY(aMasq.border(1),0,aMasq.out());
+   return aMasq;
+}
+
+void ResetMarqueur(TIm2DBits<1> & aMarq,const std::vector<Pt2di> & aVPts)
+{
+   for (int aKP=int(aVPts.size()) -1 ; aKP>=0 ;aKP--)
+     aMarq.oset(aVPts[aKP],1);
+}
 
 
 template <const INT nbb,const bool msbf>  INT
@@ -88,6 +100,14 @@ template <const INT nbb,const bool msbf>
          Tabul_Bits<nbb,msbf>::Tabul_Bits(int )
 {
 }
+
+ template <const INT nbb,const bool msbf>
+ Tabul_Bits<nbb,msbf>::~Tabul_Bits()
+ {
+
+     delete[] input_tab ;
+     delete[] out_tab ;
+ }
 
 template <const INT nbb,const bool msbf>  void
          Tabul_Bits<nbb,msbf>::input
@@ -604,7 +624,8 @@ template <const INT nbb>  void DataIm2D_Bits<nbb>::q_dilate
 
    INT nb_in = set_to_dilate->nb();
    INT nb_out = 0;
-   INT szb_out = set_dilated->pck_sz_buf();
+   //INT szb_out = set_dilated->pck_sz_buf();  TRES MAUVAIS IDEE DE COMMENTER 
+   set_dilated->pck_sz_buf();
 
    INT * x_neigh = neigh[0];
    INT * y_neigh = neigh[1];
@@ -884,6 +905,10 @@ template class Im2D_Bits<4>;
 template class DataGenImBits<1>;
 template class DataGenImBits<2>;
 template class DataGenImBits<4>;
+
+template class DataIm2D_Bits<1>;
+template class DataIm2D_Bits<2>;
+template class DataIm2D_Bits<4>;
 
 #if (0)
 // template <> int cTestTPL<int>::theTab[4] ={0,1,2,3};

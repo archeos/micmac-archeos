@@ -43,10 +43,10 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include <vector>
 #include <list>
 
-#ifdef WIN32
-#include "win_regex.h"
+#if ELISE_windows
+	#include "win_regex.h"
 #else
-#include <regex.h>
+	#include <regex.h>
 #endif
 
 
@@ -134,7 +134,7 @@ std::string  GetStringFromLineExprReg
 
 
 
-// class pour memoriser le Nomn, centre et orientation d'un fichier de trajecto
+// class pour memoriser le Nom, centre et orientation d'un fichier de trajecto
 class  cLine_N_XYZ_WPK
 {
     public :

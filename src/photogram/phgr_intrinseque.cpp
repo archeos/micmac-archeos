@@ -529,6 +529,32 @@ cParamIntrinsequeFormel::cParamIntrinsequeFormel
   NV_UpdateCurPIF();
 }
 
+
+void cParamIntrinsequeFormel::AddRapViscosite(double aTol)
+{
+    for (int aK=0 ; aK<NbInc() ; aK++)
+    {
+        AddRappViscosite
+        (
+             "cParamIntrinsequeFormel::AddViscosite",
+             true,
+             aK,
+             aTol,
+             true
+        );
+   }
+}
+
+void cParamIntrinsequeFormel::AddToListInterval(cIncListInterv & aLInterv)
+{
+   aLInterv.AddInterv(IncInterv());
+}
+
+void  cParamIntrinsequeFormel::PrepareEqFForPointIm
+      (const cIncListInterv &,cElCompiledFonc * anEq,const Pt2dr & aPIm,bool EqDroite,int aKCam)
+{
+}
+
 bool cParamIntrinsequeFormel::UseAFocal() const
 {
    return mProjStenF.UseAFocal();
@@ -720,6 +746,7 @@ Fonc_Num       cParamIntrinsequeFormel::FFoc()
 cMultiContEQF cParamIntrinsequeFormel::StdContraintes()
 {
     
+
     cMultiContEQF aRes;
 
     if ( mParamVar)
@@ -841,10 +868,11 @@ cCameraFormelle * cParamIntrinsequeFormel::NewCam
                       cCameraFormelle * pCAtt,
                       const std::string & aName,
 		      bool  CompEqAppui,
-		      bool GenCodeAppui
+		      bool GenCodeAppui,
+                      bool HasEqDr
                  )
 {
-   cCameraFormelle * aRes =  new cCameraFormelle(aMode,aRot,*this,pCAtt,aName,CompEqAppui,GenCodeAppui);
+   cCameraFormelle * aRes =  new cCameraFormelle(aMode,aRot,*this,pCAtt,aName,CompEqAppui,GenCodeAppui,HasEqDr);
    mSet.AddCamFormelle(aRes,aName);
    return aRes;
 }

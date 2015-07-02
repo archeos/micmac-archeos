@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
 void cAppliApero::InitPointsTerrain
      (
@@ -59,7 +57,7 @@ void cAppliApero::InitPointsTerrain
 {
    const CamStenope * aMasterCam = 0;
    if (aGBI.ImMaitresse().IsInit())
-      aMasterCam = PoseFromName(aGBI.ImMaitresse().Val())->CF()->CameraCourante();
+      aMasterCam = PoseFromName(aGBI.ImMaitresse().Val())->CurCam();
 
    std::string aNF =  DC() + aGBI.File();
    Im2D_REAL4 aMnt = Im2D_REAL4::FromFileStd(aNF);
@@ -136,8 +134,8 @@ void cAppliApero::SimuleOneLiaison
          cPoseCam & aCam2
      )
 {
-   const CamStenope * aCS1 = aCam1.CF()->CameraCourante();
-   const CamStenope * aCS2 = aCam2.CF()->CameraCourante();
+   const CamStenope * aCS1 = aCam1.CurCam();
+   const CamStenope * aCS2 = aCam2.CurCam();
 
    ElPackHomologue aPack;
 
@@ -200,7 +198,6 @@ void cAppliApero::ExportOneSimule(const cExportSimulation & anES)
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

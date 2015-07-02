@@ -227,9 +227,9 @@ bool RealImage1::loadRaw( const string &i_filename )
         return false;
     }
 
-    UINT width, height;
-    f.read( (char*)&width, sizeof( UINT ) );
-    f.read( (char*)&height, sizeof( UINT ) );
+    U_INT2 width, height;
+    f.read( (char*)&width, 2 );
+    f.read( (char*)&height, 2 );
     resize( width, height );
     f.read( (char*)m_data.data(), m_width*m_height*sizeof( PixReal ) );
 
@@ -242,8 +242,10 @@ bool RealImage1::saveRaw( const string &i_filename ) const
 
     if ( !f ) return false;
 
-    f.write( (char*)&m_width, sizeof( UINT ) );
-    f.write( (char*)&m_height, sizeof( UINT ) );
+    U_INT2 width = (U_INT2)m_width,
+	   heigth = (U_INT2)m_height;
+    f.write( (char*)&width, 2 );
+    f.write( (char*)&heigth, 2 );
     f.write( (char*)m_data.data(), m_width*m_height*sizeof( PixReal ) );
 
     return true;
@@ -380,7 +382,7 @@ bool RealImage1::loadPGM( const std::string &i_filename )
 // write file in PGM raw format
 // values are considered to be between 0 and 1
 // handles only one-channel images
-bool RealImage1::savePGM( const std::string &i_filename ) const
+bool RealImage1::savePGM( const std::string &i_filename, bool i_adaptDynamic ) const
 {
     ofstream f( i_filename.c_str(), ios::binary );
     if ( !f ) return false;
@@ -398,44 +400,76 @@ bool RealImage1::savePGM( const std::string &i_filename ) const
     sprintf( str, "%u\n", 255 );
     f.write( str, strlen(str) );
     // write data
-    unsigned int i = m_width*m_height;
+
+    if ( m_width==0 || m_height==0 ) return true;
+    unsigned int i;
+    const PixReal *itData;
+    PixReal img_min = 0, img_max=1;
+    if ( i_adaptDynamic )
+    {
+       i = m_width*m_height;
+       itData = m_data.data();
+       img_min = img_max = *itData;
+       while ( i-- )
+       {
+	   if ( *itData>img_max ) img_max=*itData;
+	   if ( *itData<img_min ) img_min=*itData;
+	   itData++;
+       }
+    }
+    
+    i = m_width*m_height;
     unsigned char *buffer   = new unsigned char[i],
                   *itBuffer = buffer;
-    const PixReal *itData   = m_data.data();
-    const PixReal maxValue = 255;
+    const PixReal maxValue = 255/(img_max-img_min);
+    itData = m_data.data();
     while ( i-- )
-        *itBuffer++ = ( unsigned char )( ( *itData++ )*maxValue );
+        *itBuffer++ = ( unsigned char )( ( ( *itData++ )-img_min )*maxValue );
+
     f.write( (char*)buffer, m_width*m_height );
     delete [] buffer;
 
     return true;
 }
 
-bool RealImage1::loadTIFF( const std::string &i_filename )
+// image is normalized between 0 and 1 using i_max as i_src's max value
+template <class tData, class tBase>
+void copyNormalized( Im2D<tData,tBase> &i_src, const PixReal i_max, RealImage1 &o_dst )
 {
-    Tiff_Im tiffHeader( i_filename.c_str() );
-    Im2DGen im2d = tiffHeader.ReadIm();
+    o_dst.resize( i_src.sz().x, i_src.sz().y );
 
-    if ( tiffHeader.nb_chan()!=1 ){
-        cerr << "RealImage1::loadTiff : invalid depth : " << tiffHeader.nb_chan() << endl;
-        return false;
-    }
-
-    if ( tiffHeader.type_el()!=GenIm::u_int1 ){
-        cerr << "RealImage1::loadTiff : unhandled image base type" << endl;
-        return false;
-    }
-
-    resize( im2d.sz().x, im2d.sz().y );
-
-    const PixReal maxValue = 255;
-    unsigned char *itSrc = (unsigned char*)im2d.data_lin();
-    PixReal *itDst = m_data.data();
-    int iPix = m_width*m_height;
+    U_INT iPix = o_dst.width()*o_dst.height();
+    tData *itSrc = i_src.data_lin();
+    PixReal *itDst = o_dst.data();
     while ( iPix-- )
-        *itDst++ = ( *itSrc++ )/maxValue;
+        *itDst++ = (*itSrc++)/i_max;
+}
 
-    return true;
+// image is normalized between 0 and 1 using i_max as i_src's max value
+template <class tData, class tBase>
+void copyNormalized( Im2D<tData,tBase> &i_src, RealImage1 &o_dst )
+{
+    o_dst.resize( i_src.sz().x, i_src.sz().y );
+
+    const U_INT nbPix = o_dst.width()*o_dst.height();
+    if ( nbPix==0 ) return;
+
+    tData *itSrc = i_src.data_lin();
+    tData minv = itSrc[0], maxv = minv;
+    U_INT iPix = nbPix;
+    while ( iPix-- )
+    {
+        tData v = *itSrc++;
+        if ( v<minv ) minv = v;
+        if ( v>maxv ) maxv = v;
+    }
+
+    PixReal *itDst = o_dst.data();
+    const PixReal scale = 1/( (PixReal)maxv-(PixReal)minv );
+    itSrc = i_src.data_lin();
+    iPix = nbPix;
+    while ( iPix-- )
+        *itDst++ = ( (*itSrc++)-minv )*scale;
 }
 
 bool RealImage1::load( const std::string &i_filename )
@@ -444,24 +478,18 @@ bool RealImage1::load( const std::string &i_filename )
     Im2DGen im2d = tiffHeader.ReadIm();
 
     if ( tiffHeader.nb_chan()!=1 ){
-        cerr << "RealImage1::loadTiff : invalid depth : " << tiffHeader.nb_chan() << endl;
+        cerr << "RealImage1::load : invalid number of channels : " << tiffHeader.nb_chan() << endl;
         return false;
     }
 
-    if ( tiffHeader.type_el()!=GenIm::u_int1 ){
-        cerr << "RealImage1::loadTiff : unhandled image base type" << endl;
+    switch ( tiffHeader.type_el() )
+    {
+    case GenIm::u_int1: copyNormalized( *(Im2D<U_INT1,INT>*)&im2d, *this ); break;
+    case GenIm::u_int2: copyNormalized( *(Im2D<U_INT2,INT>*)&im2d, *this ); break;
+    default:
+        cerr << "RealImage1::load : unhandled image base type" << endl;
         return false;
     }
-
-    resize( im2d.sz().x, im2d.sz().y );
-
-    const PixReal maxValue = 255;
-    unsigned char *itSrc = (unsigned char*)im2d.data_lin();
-    PixReal *itDst = m_data.data();
-    int iPix = m_width*m_height;
-    while ( iPix-- )
-        *itDst++ = ( *itSrc++ )/maxValue;
-
     return true;
 }
 
@@ -673,12 +701,42 @@ void RealImage1::convolution_transpose_1d_3( const std::vector<PixReal> &i_kerne
     }
 }
 
+//#define __DEBUG_OUTPUT_KERNELS
+
+#ifdef __DEBUG_OUTPUT_KERNELS
+	extern string __kernel_output_filename;
+#endif
+
 void RealImage1::gaussianFilter( Real_ i_standardDeviation, RealImage1 &o_res )
 {
     static RealImage1 tmp_img;
     static vector<PixReal> kernel;
 
     createGaussianKernel_1d( i_standardDeviation, kernel );
+
+	#ifdef __DEBUG_OUTPUT_KERNELS
+		{
+			ofstream f( __kernel_output_filename.c_str(), ios::binary|ios::app );
+			// siftpp type
+			f.put(1);
+			// type name
+			string typeName = El_CTypeTraits<PixReal>::Name();
+			U_INT4 ui4 = (U_INT4)typeName.length();
+			f.write( (char*)&ui4, 4 );
+			f.write( typeName.c_str(), ui4 );
+			// sigma
+			REAL8 r8 = (REAL8)i_standardDeviation;
+			f.write( (char*)&r8, 8 );
+			// nb coefficients
+			ui4 = (U_INT4)kernel.size();
+			f.write( (char*)&ui4, 4 );
+			// REAL8 coefficients
+			for ( size_t i=0; i<kernel.size(); i++ ){
+				double d = (double)kernel[i];
+				f.write( (char*)(&d), 8 );
+			}
+		}
+	#endif
 
     tmp_img.resize( m_width, m_height );
     convolution_transpose_1d_3( kernel, tmp_img );
@@ -957,8 +1015,6 @@ void clusterize_2d( const ImageSize &i_areaSize, const ImageSize &i_efficientSiz
     vector<RoiWindow_1d> clusterX, clusterY;
     clusterize_1d( i_areaSize.width(), i_efficientSize.width(), i_overlap.width(), clusterX );
     clusterize_1d( i_areaSize.height(), i_efficientSize.height(), i_overlap.height(), clusterY );
-
-    cout << clusterX.size() << 'x' << clusterY.size() << " = " << clusterX.size()*clusterY.size() << endl;
 
     o_cluster.resize( clusterX.size()*clusterY.size() );
     vector<RoiWindow_2d>::iterator it2d = o_cluster.begin();

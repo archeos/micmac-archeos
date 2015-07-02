@@ -54,8 +54,9 @@ void UseRequirement(const std::string & aDir,const cTplValGesInit<cBatchRequirem
         itE++
     )
     {
-       std::string aCom = g_externalToolHandler.get( "make" ).callName()+" " + itE->Exe() + " -f " + itE->Make();
-       System(aCom);
+		//std::string aCom = string("\"")+(g_externalToolHandler.get( "make" ).callName())+"\" " + itE->Exe() + " -f \"" + itE->Make() + "\"";
+		//System(aCom);
+		launchMake( itE->Make(), itE->Exe() );
     }
 
     for 
@@ -98,7 +99,6 @@ void UseRequirement(const std::string & aDir,const cTplValGesInit<cBatchRequirem
 
 }
 
-namespace NS_ParamChantierPhotogram{
 
 GenIm::type_el Xml2EL(const eTypeNumerique & aType)
 {
@@ -243,7 +243,7 @@ std::list<Appar23>  Xml2EL(const cListeAppuis1Im & aLA)
    return aRes;
 }
 
-cListeAppuis1Im  El2Xml(const std::list<Appar23> & aLAp,const std::string aNameImage)
+cListeAppuis1Im  El2Xml(const std::list<Appar23> & aLAp,const std::string &aNameImage)
 {
    cListeAppuis1Im aRes;
    aRes.NameImage().SetVal(aNameImage);
@@ -258,7 +258,7 @@ cListeAppuis1Im  El2Xml
                  (
                       const std::list<Appar23> & aLAp,
                       const std::list<int> &     aLInd,
-                      const std::string aNameImage
+                      const std::string &aNameImage
                  )
 {
     cListeAppuis1Im aRes = El2Xml(aLAp,aNameImage);
@@ -346,6 +346,12 @@ bool NameFilter(const std::string & aSubD,cInterfChantierNameManipulateur * aICN
          return false;
    }
 
+   if ((aFilter.Min().IsInit())&&(aFilter.Min().Val()>aName))
+      return false;
+
+   if ((aFilter.Max().IsInit())&&(aFilter.Max().Val()<aName))
+      return false;
+
 
    const std::list<Pt2drSubst> & aLFoc = aFilter.FocMm();
    if (! aLFoc.empty())
@@ -358,12 +364,6 @@ bool NameFilter(const std::string & aSubD,cInterfChantierNameManipulateur * aICN
    }
    
 
-
-   if ((aFilter.Min().IsInit())&&(aFilter.Min().Val()>aName))
-      return false;
-
-   if ((aFilter.Max().IsInit())&&(aFilter.Max().Val()<aName))
-      return false;
 
    for 
    (
@@ -466,6 +466,7 @@ cXML_LinePt3d MM2Matis(const Pt3dr & aP)
 }
 
 
+/*
 corientation MM2Matis(const cOrientationConique & anOC)
 {
    const cOrientationExterneRigide & anOER = anOC.Externe();
@@ -488,9 +489,9 @@ corientation MM2Matis(const cOrientationConique & anOC)
    aRes.altitude() = anOER.Centre().z;
 
    aRes.Image2Ground() = true;
-   aRes.l1() = MM2Matis(anOER.ParamRotation().L1());
-   aRes.l2() = MM2Matis(anOER.ParamRotation().L2());
-   aRes.l3() = MM2Matis(anOER.ParamRotation().L3());
+   aRes.l1() = MM2Matis(anOER.ParamRotation().CodageMatr().Val().L1());
+   aRes.l2() = MM2Matis(anOER.ParamRotation().CodageMatr().Val().L2());
+   aRes.l3() = MM2Matis(anOER.ParamRotation().CodageMatr().Val().L3());
 
   // intrinseque
 
@@ -533,6 +534,7 @@ cElXMLTree * ToXmlTreeWithAttr(const corientation & anOri)
 
    return aRes;
 }
+*/
 
    // = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -764,13 +766,26 @@ const std::list<std::string > * GetBestImSec(const cImSecOfMaster& anISOM,int aN
 }
 
 
+cImSecOfMaster StdGetISOM
+               (
+                    cInterfChantierNameManipulateur * anICNM,
+                    const std::string & aNameIm,
+                    const std::string & anOri
+               )
+{
+    std::string aKey = "NKS-Assoc-ImSec@-"+anOri;
+    std::string aFile = anICNM->Dir() + anICNM->Assoc1To1(aKey,aNameIm,true);
 
-};
+    return StdGetFromPCP(aFile,ImSecOfMaster);
+}
+
+
+
 
 cEl_GPAO * DoCmdExePar(const cCmdExePar & aCEP,int aNbProcess)
 {
    cEl_GPAO * aGPAO  = new cEl_GPAO;
-
+   
    int aKT=0;
    for 
    (
@@ -786,7 +801,7 @@ cEl_GPAO * DoCmdExePar(const cCmdExePar & aCEP,int aNbProcess)
             itS != itOCP->OneCmdSer().end();
             itS++
        )
-       aTask.AddBR(*itS);
+	   aTask.AddBR(*itS);
 
        aGPAO->TaskOfName("all").AddDep(aTask);
 
@@ -797,8 +812,11 @@ cEl_GPAO * DoCmdExePar(const cCmdExePar & aCEP,int aNbProcess)
    {
       aNbProcess = ElMax(1,aNbProcess);
       aGPAO->GenerateMakeFile(aNameMkF);
-      std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f "+  aNameMkF + std::string(" -j") +ToString(aNbProcess) + " -k"; 
-      VoidSystem(aCom.c_str());
+
+      //std::string aCom = string("\"")+g_externalToolHandler.get( "make" ).callName()+"\" all -f \""+  aNameMkF + std::string("\" -j") +ToString(aNbProcess) + " -k"; 
+      //::System(aCom.c_str());
+	  launchMake( aNameMkF, "all", aNbProcess, "-k" );
+
       delete aGPAO;
        ELISE_fp::RmFile(aNameMkF);
       return 0;
@@ -879,7 +897,6 @@ void AddKeySet
 {
 
     const std::vector<std::string>  * aSet = anICNM->Get(aKey);
-
     aRes.insert(aSet->begin(),aSet->end());
 }
 
@@ -900,8 +917,6 @@ void AddListKeySet
       AddKeySet(aRes,anICNM,*itS);
 }
 
-namespace NS_SuperposeImage
-{
 std::vector<std::string> GetStrFromGenStr
                          (
                               cInterfChantierNameManipulateur* anICNM,
@@ -943,7 +958,6 @@ std::vector<std::string> GetStrFromGenStrRel
 }
 
 
-};
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

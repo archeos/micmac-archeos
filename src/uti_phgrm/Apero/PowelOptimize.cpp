@@ -40,8 +40,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #define DEBUG_POWEL 0
 
-namespace NS_ParamApero
-{
 
 class cLiaisORPO
 {
@@ -439,6 +437,7 @@ int  NbDegOfLib(eTypeContraintePoseCamera aContr)
          case ePoseBaseNormee : return 5;
          case ePoseVraieBaseNormee : return 5;
          case eCentreFige : return 3;
+         default : ;
      }
      ELISE_ASSERT(false,"NbDegOfLib");
      return 0;
@@ -495,7 +494,6 @@ void cAppliApero::PowelOptimize
 }
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

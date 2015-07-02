@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -40,7 +40,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 /*
 Parametre de Tapas :
-  
+
    - calibration In : en base de donnees ou deja existantes.
 
 
@@ -50,8 +50,8 @@ int EstimFlatField_main(int argc,char ** argv)
 {
     std::string aFullDir,aDir,aPat;
     std::string aNameOut;
-    double aResol;
-    double aDilate=1;
+    double aResol=1.0;
+    double aDilate=1.0;
     int aNbMed = 1;
     int aNbMedSsRes = 3;
     bool ByMoy = false;
@@ -59,10 +59,10 @@ int EstimFlatField_main(int argc,char ** argv)
 
     ElInitArgMain
     (
-	argc,argv,
-	LArgMain()  << EAMC(aFullDir,"Images = Dir + Pat")
+    argc,argv,
+    LArgMain()  << EAMC(aFullDir,"Images = Dir + Pat", eSAM_IsPatFile)
                     << EAMC(aResol,"Resolution "),
-	LArgMain()  << EAM(aNbMed,"NbMed",true)	
+    LArgMain()  << EAM(aNbMed,"NbMed",true)
                     << EAM(aNameOut,"Out",true,"Name of result")
                     << EAM(aDilate,"SousResAdd",true)
                     << EAM(aNbMedSsRes,"NbMedSsRes",true)
@@ -70,16 +70,25 @@ int EstimFlatField_main(int argc,char ** argv)
                     << EAM(ByMoy,"ByMoy",true,"Average or median (def=false")
     );
 
+    if (!MMVisualMode)
+    {
     SplitDirAndFile(aDir,aPat,aFullDir);
 
-    if (aNameOut=="") 
+    if (aNameOut=="")
        aNameOut = "FlatField.tif";
     aNameOut = aDir + aNameOut;
 
     cTplValGesInit<std::string> aTplN;
     cInterfChantierNameManipulateur * aICNM = cInterfChantierNameManipulateur::StdAlloc(0,0,aDir,aTplN);
 
+    MakeXmlXifInfo(aFullDir,aICNM);
+
+
     std::list<std::string> aLName = aICNM->StdGetListOfFile(aPat);
+    Paral_Tiff_Dev(aDir,std::vector<std::string> (aLName.begin(),aLName.end()),1,false);
+
+
+
     Pt2di aSzIm(-1,-1);
     double aNbPix=-1;
     Im2D_REAL4  aImIn(1,1);
@@ -98,8 +107,10 @@ int EstimFlatField_main(int argc,char ** argv)
      {
          std::cout << "To Do " << aCpt << *itN << "\n";
          Tiff_Im  aTIn = Tiff_Im::StdConvGen(aDir+*itN,1,true);
+         std::string aImRefSz;
          if (aSzIm.x<0)
          {
+            aImRefSz = *itN;
             aSzIm = aTIn.sz();
             aImIn = Im2D_REAL4(aSzIm.x,aSzIm.y,0.0);
             if (ByMoy)
@@ -111,7 +122,7 @@ int EstimFlatField_main(int argc,char ** argv)
          {
              if (aSzIm!=aTIn.sz())
              {
-                 std::cout << "For Image " << *itN << "\n";
+                 std::cout << "For Image " << *itN <<  " sz=" << aTIn.sz()  << " Ref=" << aImRefSz << " Sz=" << aSzIm << "\n";
                  ELISE_ASSERT(false,"Different size");
              }
          }
@@ -206,8 +217,9 @@ int EstimFlatField_main(int argc,char ** argv)
          aTOut.out()
     );
 
-   
-    return 0;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 
@@ -216,13 +228,13 @@ int EstimFlatField_main(int argc,char ** argv)
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -232,17 +244,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

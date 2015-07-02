@@ -38,7 +38,7 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 // Pour des tests
 #include "cOrientationRTO.h"
 
@@ -48,8 +48,6 @@ double aSeuilGlobSupInf = 0.5;
 double aSeuilComSupRect  = 1-1e-5;
 double aSeuilGlobSupRect = 1-1e-5;
 
-namespace NS_ParamMICMAC
-{
 
 template <class TypeEl>
 class cTplLoadedImage : public cLoadedImage
@@ -148,11 +146,11 @@ class cTplLoadedImage : public cLoadedImage
           return mIm.in_proj();
       }  
 
-      static const eTypeNumerique theTypeEl;
+      static const eIFImL_TypeNumerique theTypeEl;
 
 };
 
-template<> const  eTypeNumerique cTplLoadedImage<REAL4>::theTypeEl=eFloat;
+template<> const  eIFImL_TypeNumerique cTplLoadedImage<REAL4>::theTypeEl=eFloat;
 
 template <class TypeEl>
 cTplLoadedImage<TypeEl>::~cTplLoadedImage()
@@ -282,6 +280,8 @@ cTplLoadedImage<TypeEl>::cTplLoadedImage
      mEpsC         (anAppli.EpsilonCorrelation().Val()),
      mWPC          (0)
 {
+
+
    LoadAllImCorrel(mIm,aIMIL,aDZ,aBox._p0);
 
    const cEtapeMEC & anEt = anAppli.CurEtape()->EtapeMEC();
@@ -369,6 +369,7 @@ cTplLoadedImage<TypeEl>::cTplLoadedImage
        erod_d8(mMasqIm.in(0),mInterpol->SzKernel()),
        mMasqIm.out()
    );
+
 }
 
 template <class TypeEl>
@@ -491,6 +492,7 @@ void cTplLoadedImage<TypeEl>::LoadImInGeomTerr
       "Pas de gestion de CurSurEchWCor dans LoadImInGeomTerr "
    );
    cLineariseProj aLP;
+
 
    for (int anY0 = mP0TerCorMarge.y; anY0<mP1TerCorMarge.y ; anY0+=aSzBloc)
    {
@@ -1025,18 +1027,6 @@ void cTplLoadedImage<TypeEl>::AddToStat
     Pt2di aPTerInit = aPTer;
     aPTer = QuickTer2Cor(aPTer);
 
-/*
-    if (0  && mUsePC)
-    {
-       if (mWPC==0)
-       {
-          mWPC = Video_Win::PtrWStd(mImPC.sz());
-          mWPC->set_title(mPDV.Name().c_str());
-       }
-       int aCoul = IsVisible(aPTerInit) ? P8COL::green : P8COL::red;
-       mWPC->draw_circle_loc(aPTerInit,1.0,mWPC->pdisc()(aCoul));
-    }
-*/
 
     if (! mTMasqImTer.get(aPTer))
        return;
@@ -1589,7 +1579,16 @@ cMSLoadedIm::cMSLoadedIm(const cOneParamCMS& aParam ,Im2D_REAL4 * anI,bool First
 
    if (aParam.Sigma() > 0)
    {
-       FilterGauss(mIm,aParam.Sigma(),2);
+       if (aParam.SquareW().Val())
+       {
+           int aNb = round_ni(aParam.Sigma());
+           if (aNb>0)
+              SelfQMoyenne(mIm,Pt2di(aNb,aNb));
+       }
+       else
+       {
+          FilterGauss(mIm,aParam.Sigma(),2);
+       }
    }
 }
 
@@ -1629,7 +1628,7 @@ cLoadedImage::cLoadedImage
     int                        aDZ,
     Fonc_Num                   aFMasq,
     bool                       IsFirstLoaded,
-    eTypeNumerique             aTypeNum
+    eIFImL_TypeNumerique             aTypeNum
 ) :
    mPDV             (aPDV),
    mGeomI           (aGeomI),
@@ -1639,6 +1638,10 @@ cLoadedImage::cLoadedImage
    mSzIm            (aBoxIm.sz()),
    mMasqIm          (mSzIm.x,mSzIm.y,1),
    mTMasqIm         (mMasqIm),
+
+   mDoneMasqErod    (false),
+   mMasqImErod      (1,1,0),
+   mTMasqImErod     (mMasqImErod),
 
    mSzPtWFixe       ( mAppli.PtSzWFixe()),
    mSzPtWMarge      ( mAppli.PtSzWMarge()),
@@ -1747,6 +1750,7 @@ void cLoadedImage::PostInit()
          Im2D_REAL4 * anIm = mMSLI[aK].Im();
 
          mVIm.push_back(anIm);
+         mVNpIm.push_back(*anIm);
          mVDataIm.push_back(anIm->data());
          mVDataLin.push_back(anIm->data_lin());
     }
@@ -1758,6 +1762,10 @@ const std::vector<cMSLoadedIm>&  cLoadedImage::MSLI()
     return mMSLI;
 }
 
+std::vector<Im2D_REAL4>  cLoadedImage::VNpIm()
+{
+   return mVNpIm;
+}
 
 
 cLoadedImage * cLoadedImage::Alloc
@@ -1959,7 +1967,7 @@ Pt2di cLoadedImage::DiscTerAppli2DiscTerCorr(const Pt2di  &aPt)
 Im2D_Bits<1> cLoadedImage::MasqImTer()     {return mMasqImTer;}
 const cAppliMICMAC & cLoadedImage::Appli() {return mAppli;}
 
-eTypeNumerique cLoadedImage::TypeOfElem() const {return mTypeEl;}
+eIFImL_TypeNumerique cLoadedImage::TypeOfElem() const {return mTypeEl;}
 
 const Pt2di & cLoadedImage::SzPtWMarge() const {return mSzPtWMarge;}
 const Pt2di & cLoadedImage::SzPtWFixe() const {return mSzPtWFixe;}
@@ -1971,13 +1979,44 @@ U_INT1** cLoadedImage::DataImPC() const  {return mImPC.data();}
 int      cLoadedImage::SeuilPC() const {return mSeuilPC;}
 
 U_INT1** cLoadedImage::DataMasqIm() const  {return mMasqIm.data();}
+U_INT1** cLoadedImage::DataMasqImErod() const  
+{
+   return  mDoneMasqErod ? mMasqImErod.data() : 0 ;
+}
+
+void cLoadedImage::DoMasqErod(const Box2di & aBox)
+{
+    ElTimer aChrono;
+    ELISE_ASSERT(!mDoneMasqErod,"Mulriple void cLoadedImage::DoMasqErod");
+    mDoneMasqErod = true;
+    Pt2di aSz = mMasqIm.sz();
+    mMasqImErod = Im2D_Bits<1>(aSz.x,aSz.y,0);
+    mTMasqImErod = TIm2DBits<1>(mMasqImErod);
+
+    Pt2di aP0 = aBox._p0;
+    Pt2di aP1 = aBox._p1;
+    int aNb = (aP1.x-aP0.x + 1) *  (aP1.y-aP0.y + 1);
+    ELISE_COPY
+    (
+         mMasqIm.all_pts(),
+         rect_som(mMasqIm.in(0),aBox) == aNb,
+         mMasqImErod.out()
+    );
+
+    if (0)
+    {
+        std::cout << "cLoadedImage::DoMasqErod " << aSz << " " << aChrono.uval() << "\n";
+        std::string aName = "MASQ-ERRRR.tif";
+        Tiff_Im::Create8BFromFonc(aName,aSz,mMasqIm.in()+2*mMasqImErod.in());
+        getchar();
+    }
+}
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1993,17 +2032,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

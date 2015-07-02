@@ -40,8 +40,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #define BDDL_FIRST 0
 
-namespace NS_ParamApero
-{
 
 // Pt2dr BugIM(2591.0926,483.7226);
 // Pt3dr BugTER(921804.4349,3212619.4133,889.2173);
@@ -53,6 +51,7 @@ namespace NS_ParamApero
 cAppliApero::cAppliApero (cResultSubstAndStdGetFile<cParamApero> aParam) : 
    mParam             (*(aParam.mObj)),
    mDC                (aParam.mDC),
+   mOutputDirectory   ( isUsingSeparateDirectories()?MMOutputDirectory():mDC ),
    mICNM              (aParam.mICNM),
    mSetEq             (ToNS_EqF(mParam.ModeResolution()),1),
    mAMD               (0),
@@ -87,8 +86,30 @@ cAppliApero::cAppliApero (cResultSubstAndStdGetFile<cParamApero> aParam) :
    mCurSLMIter        (0),
    mMulSLMIter        (1.0),
    mNumSauvAuto       (0),
-   mFpRT              (0)
+   mFpRT              (0),
+   mFileDebug         (0),
+   mMajChck           (),
+   mCptIterCompens    (0),
+   mHasEqDr           (false),
+   mStatLastIter      (false),
+   mSqueezeDOCOAC     (0)
 {
+     setInputDirectory( mDC );
+     std::string aNameFileDebug;
+     if (mParam.FileDebug().IsInit())
+     {
+          aNameFileDebug = mParam.FileDebug().Val();
+     }
+     else if (TheMajickFile)
+     {
+         aNameFileDebug=  MMDir() + "DbgTrackApero.txt";
+     }
+
+     if (aNameFileDebug != "")
+     {
+        ::OpenFileDebug(aNameFileDebug);
+        mFileDebug = TheFileDebug();
+     }
      // ::DebugPbCondFaisceau = mParam.DebugPbCondFaisceau().Val(); => Apero.cpp
      // ::aSeuilMaxCondSubstFaiseau =  mParam.SeuilMaxCondSubstFaiseau().Val();
 
@@ -104,6 +125,13 @@ cAppliApero::cAppliApero (cResultSubstAndStdGetFile<cParamApero> aParam) :
           mLogName = mDC + mParam.ShowSection().Val().LogFile().Val();
           mHasLogF = true;
           mLogFile.open(mLogName.c_str(),ios::out|ios::ate|ios::app);
+     }
+
+     if (mParam.IsAperiCloud().Val()) 
+     {
+         AcceptFalseRot = true;
+         if (mParam.IsAperiCloud().Val())
+            SetSqueezeDOCOAC();
      }
 
 
@@ -140,7 +168,16 @@ cAppliApero::cAppliApero (cResultSubstAndStdGetFile<cParamApero> aParam) :
         }
     }
     InitLVM(mCurSLMGlob,mParam.SLMGlob(),mMulSLMGlob,mParam.MultSLMGlob());
+
+
+    std::cout << "APPLI APERO, NbUnknown = " << mSetEq.Sys()->NbVar() << "\n";
 }
+
+
+
+
+
+
 
 FILE *  cAppliApero::FpRT() 
 {
@@ -183,7 +220,8 @@ void cAppliApero::DoAMD()
       return;
 
  
-   std::cout << "BEGIN AMD \n";
+   if (ShowMes())
+      std::cout << "BEGIN AMD \n";
 
    int aNbBl = mSetEq.NbBloc();
    mAMD = new cAMD_Interf (aNbBl);
@@ -203,6 +241,8 @@ void cAppliApero::DoAMD()
         it->second->DoAMD(mAMD);
    }
 
+   AMD_AddBlockCam();
+
    for 
    (
        std::set<std::pair<cPoseCam *,cPoseCam *> >::const_iterator it=mSetLinkedCam.begin();
@@ -210,27 +250,40 @@ void cAppliApero::DoAMD()
        it++
    )
    {
-       int aNums[4];
+       // int aNums[4];
+       std::vector<int> aNums;
        cPoseCam * aPC1 = it->first;
        cCalibCam * aCal1 = aPC1->Calib();
        cParamIntrinsequeFormel &  aPIF1 = aCal1->PIF();
-       aNums[0] = aPIF1.IncInterv().NumBlocAlloc();
-       aNums[1] = aPC1->RF().IncInterv().NumBlocAlloc();
+       aNums.push_back(aPIF1.IncInterv().NumBlocAlloc());
+       aNums.push_back(aPC1->RF().IncInterv().NumBlocAlloc());
 
 
        cPoseCam * aPC2 = it->second;
        cCalibCam * aCal2 = aPC2->Calib();
        cParamIntrinsequeFormel &  aPIF2 = aCal2->PIF();
-       aNums[2] = aPIF2.IncInterv().NumBlocAlloc();
-       aNums[3] = aPC2->RF().IncInterv().NumBlocAlloc();
+       aNums.push_back(aPIF2.IncInterv().NumBlocAlloc());
+       aNums.push_back(aPC2->RF().IncInterv().NumBlocAlloc());
 
 
-       for (int aK1=0 ; aK1 <4 ; aK1++)
-           for (int aK2=aK1 ; aK2 <4 ; aK2++)
+       for (int aK1=0 ; aK1 <int(aNums.size()) ; aK1++)
+           for (int aK2=aK1 ; aK2 <int(aNums.size()) ; aK2++)
                 mAMD->AddArc(aNums[aK1],aNums[aK2],true);
 
 
    }
+   for (int aKP=0 ; aKP<int(mVecPose.size()) ; aKP++)
+   {
+       cPoseCam * aPose = mVecPose[aKP];
+       cEqOffsetGPS * anEqOffs = aPose->EqOffsetGPS();
+       if (anEqOffs)
+       {
+            cBaseGPS * aBase =  anEqOffs->Base();
+            cRotationFormelle *  aRF = anEqOffs->RF();
+            mAMD->AddArc(aBase->IncInterv().NumBlocAlloc(),aRF->IncInterv().NumBlocAlloc(),true);
+       }
+   }
+
 
 /*
    for (int aKP=0 ; aKP<int(mVecPose.size()) ; aKP++)
@@ -278,8 +331,12 @@ void cAppliApero::DoAMD()
 */
 
    
-   std::cout << "END AMD \n";
+   if (ShowMes())
+      std::cout << "END AMD \n";
    
+
+  
+
 }
 
 void cAppliApero::AddLinkCam(cPoseCam * aC1,cPoseCam * aC2)
@@ -416,6 +473,7 @@ Im2D_Bits<1> * cAppliApero::MasqHom(const std::string & aName)
       return 0;
 
   Tiff_Im aFile = Tiff_Im::StdConvGen(mDC+aNamMasq,1,true,false);
+
   Pt2di aSz = aFile.sz();
   Im2D_Bits<1> aRes(aSz.x,aSz.y);
   ELISE_COPY(aRes.all_pts(),aFile.in_bool(),aRes.out());
@@ -442,7 +500,11 @@ void cAppliApero::InitLayers()
 
 void cAppliApero::PreCompile()
 {
+    InitHasEqDr();
+
     InitLayers();
+    InitOffsGps();
+
     InitCalibCam();
 
     PreCompilePose();
@@ -450,7 +512,6 @@ void cAppliApero::PreCompile()
     PreCompileAppuisFlottants();
 
 {
-  std::cout << "TEST-COMPILE-NOW-InitAndCompileBDDObsFlottant \n";
   InitAndCompileBDDObsFlottant();
   // getchar();
 }
@@ -471,7 +532,7 @@ void  cAppliApero::CompileObsersvations()
   CompileAppuis();
   CompileOsbOr();
   CompileObsCentre();
-
+  InitObsRelGPS();
 }
 
 void cAppliApero::Verifs()
@@ -693,6 +754,16 @@ cSurfParam * cAppliApero::AddPlan
 }
 
 
+cAperoOffsetGPS *  cAppliApero::OffsetNNOfName(const std::string & aName)
+{
+   std::map<std::string,cAperoOffsetGPS *>::iterator anIt = mDicoOffGPS.find(aName);
+
+   ELISE_ASSERT (anIt!= mDicoOffGPS.end(),"cAperoOffsetGPS::OffsetNNOfName");
+
+   return anIt->second;
+   
+}
+
 cBdAppuisFlottant *  cAppliApero::BAF_FromName(const std::string & aName,bool CanCreate,bool SVP)
 {
    cBdAppuisFlottant * &  aRes =  mDicPF[aName];
@@ -752,6 +823,8 @@ const cParamApero & cAppliApero::Param() const {return mParam;}
 cSetEqFormelles &   cAppliApero::SetEq()       {return mSetEq;}
 
 const std::string &   cAppliApero::DC() const {return mDC;}
+const std::string &   cAppliApero::OutputDirectory() const { return mOutputDirectory; }
+bool  cAppliApero::HasEqDr() const { return mHasEqDr; }
 
 cInterfChantierNameManipulateur * cAppliApero::ICNM()
 {
@@ -776,10 +849,114 @@ void cAppliApero::CheckInit(const cLiaisonsInit * aLI,cPoseCam * aPC)
 
 }
 
+const std::vector<cPoseCam*> & cAppliApero::VecAllPose()
+{
+   return mVecPose;
+}
+
+///   FILE DEBUG
+
+FILE * cAppliApero::FileDebug()
+{
+   return mFileDebug;
+}
+void   cAppliApero::MessageDebug(const std::string & aMes)
+{
+   if (mFileDebug)
+   {
+        static int aCpt=0;
+        std::string aMj = MagickStr();
+        fprintf(mFileDebug,"%3d [%s] : %s\n",aCpt,aMj.c_str(),aMes.c_str());
+        aCpt++;
+   }
+}
+
+///   MAJICK
+
+void cAppliApero::PosesAddMajick()
+{
+  if (mFileDebug)
+  {
+      for (int aKP=0 ; aKP<int(mVecPose.size()); aKP++)
+         mVecPose[aKP]->AddMajick(mMajChck);
+  }
+}
+
+void  cAppliApero::AddAllMajick(int aLine,const std::string & aFile,const std::string & aMes)
+{
+    if (mFileDebug)
+    {
+       PosesAddMajick();
+       MessageDebug
+       (
+           aMes + " at line " + ToString(aLine) + " of " +aFile
+       );
+    }
+}
+
+void cAppliApero::AddMajick(double aVal)
+{
+    if (mFileDebug)
+    {
+       mMajChck.AddDouble(aVal);
+    }
+}
+std::string cAppliApero::MagickStr()
+{
+   return  mMajChck.MajId();
+}
 
 
+void  cAppliApero::MajAddCoeffMatrix()
+{
+    if (mFileDebug)
+    {
+       mMajChck.Add(mSetEq);
+    }
+}
 
-};
+bool cAppliApero::NumIterDebug() const
+{
+   return true;
+   // return mCptIterCompens==0;
+}
+
+
+void ShowSpectrSys(cSetEqFormelles & aSetEq)
+{
+   if (!MPD_MM()) return;
+   int aNbV = aSetEq.Sys()->NbVar();
+
+    ElMatrix<tSysCho>  aMat = aSetEq.Sys()->MatQuad();
+
+    ElMatrix<tSysCho>  aVP(aNbV,1);
+    ElMatrix<tSysCho>  aVecP(aNbV,aNbV);
+
+    std::vector<int>  aIndVP = jacobi(aMat,aVP,aVecP);
+
+    tSysCho aDet = 1.0;
+    tSysCho aVPMin = 1e50;
+    tSysCho aVPMax = -1e50;
+    for (int aK=0 ; aK< aNbV; aK++)
+    {
+        int aIVp = aIndVP[aK];
+        tSysCho aValP = aVP(aIVp,0);
+        aDet *= aValP;
+        aVPMin = ElMin(aVPMin,aValP);
+        aVPMax = ElMax(aVPMax,aValP);
+
+        std::cout << "Valp "  << aValP << "\n";
+    }
+
+    std::cout << "Det=" << aDet  << " VPMin=" << aVPMin << " VPMax=" << aVPMax << "\n";
+    getchar();
+}
+
+void cAppliApero::DebugPbConvAppui()
+{
+    ShowSpectrSys(mSetEq);
+}
+
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

@@ -56,6 +56,9 @@ icste : with this method, a Fonc_Num_Computed indicate id it is an integer const
 
 *************************************************************************************/
 
+
+std::vector<double> MakeVec1(const double & aD);
+
 class Arg_Fonc_Num_Comp;
 
 class Fonc_Num_Computed : public Mcheck
@@ -112,6 +115,7 @@ class cElCompiledFonc
 */
 
 
+         std::string & NameAlloc();
           static cElCompiledFonc * AllocFromName(const std::string &);
          // Renvoie 0 si pas un des champs de la structure
 	 
@@ -119,6 +123,7 @@ class cElCompiledFonc
          double * RequireAdrVarLocFromString(const std::string &);
 
          void SetMappingCur(const cIncListInterv &,cSetEqFormelles *);
+         const cIncListInterv &  MapRef() const;
          void SetCoordCur(double * aRealCoord);
 
          void ComputeValAndSetIVC();
@@ -142,10 +147,32 @@ class cElCompiledFonc
                    cSetEqFormelles & aSet,
                    bool EnPtsCur
               );
+	 void SVD_And_AddEqSysSurResol
+              (
+                   bool isCstr,
+                   const std::vector<INT> & aVInd,
+                   const std::vector<double> & aVPds,
+                   REAL *       Pts,
+                   cGenSysSurResol & aSys,
+                   cSetEqFormelles & aSet,
+                   bool EnPtsCur
+              );
+
+
+
 	 void Std_AddEqSysSurResol
               (
                    bool   isCstr,
                    REAL aPds,
+                   REAL *       Pts,
+                   cGenSysSurResol & aSys,
+                   cSetEqFormelles & aSet,
+                   bool EnPtsCur
+              );
+	 void Std_AddEqSysSurResol
+              (
+                   bool   isCstr,
+                   const std::vector<double> & aVPds,
                    REAL *       Pts,
                    cGenSysSurResol & aSys,
                    cSetEqFormelles & aSet,
@@ -272,6 +299,7 @@ class cElCompiledFonc
 
           cIncListInterv                   mMapRef;
           std::vector<cSsBloc>     mBlocs;
+          std::string              mNameAlloc;
           // std::vector<double>     mBufLin;
            
 };
@@ -302,7 +330,10 @@ class cElCompileFN
                             const std::string           &   aDir,
                             const std::string           &   aNameCl,
 			    std::vector<Fonc_Num>           aVar,
-                            const cIncListInterv &          aList
+                            const cIncListInterv &          aList,
+                           // si true il y a d'abord les fonction pour la valeur ensuite
+                           // celle pour les derivee
+                            bool  SpecFnumCoorUseCsteVal = false
 
                          );
 
@@ -331,9 +362,9 @@ class cElCompileFN
              void SetFile(const std::string & aPostFixe,const char * incl);
              void CloseFile();
 	     std::string  NameVarLoc(const std::string &);
-             void MakeFileCpp(std::vector<Fonc_Num> );
-             void MakeFonc(std::vector<Fonc_Num> f,INT DegDeriv);
-             void MakeFileH();
+             void MakeFileCpp(std::vector<Fonc_Num>,bool  SpecFnumCoorUseCsteVal = false  );
+             void MakeFonc(std::vector<Fonc_Num> f,INT DegDeriv,bool  SpecFnumCoorUseCsteVal = false);
+             void MakeFileH(bool  SpecFnumCoorUseCsteVal = false);
 
              cElCompileFN(const cElCompileFN &);      // Unimplemanted
              void operator = (const cElCompileFN &);  // Unimplemanted
@@ -363,6 +394,7 @@ class Fonc_Num_Not_Comp : public RC_Object
          virtual INT dimf_out() const = 0;
 
          virtual bool  is0() const;
+         virtual void   inspect() const;
          virtual bool  is1() const;
          virtual bool  IsCsteRealDim1(REAL &) const;
 
@@ -374,6 +406,9 @@ class Fonc_Num_Not_Comp : public RC_Object
 	 virtual INT  NumCoord() const;
          virtual void VarDerNN(ElGrowingSetInd &) const = 0;
          virtual INT DegrePoly() const;
+
+         virtual   Fonc_Num Simplify() ;
+
 
 
          virtual Fonc_Num::tKindOfExpr  KindOfExpr();
@@ -394,6 +429,10 @@ class Fonc_Num_Not_Comp : public RC_Object
 class Op_Bin_Not_Comp : public Fonc_Num_Not_Comp
 {
       public :
+
+         Fonc_Num Simplify() ;
+
+         
          typedef double   (* TyVal)  (double,double);
          typedef Fonc_Num (* TyDeriv)(Fonc_Num,Fonc_Num,INT k);
          typedef double   (* TyValDeriv)(Fonc_Num,Fonc_Num,const  PtsKD &,INT k);
@@ -447,6 +486,7 @@ class Op_Bin_Not_Comp : public Fonc_Num_Not_Comp
 class Op_Un_Not_Comp : public Fonc_Num_Not_Comp
 {
       public :
+         Fonc_Num Simplify() ;
          virtual  Fonc_Num_Computed * compute(const Arg_Fonc_Num_Comp &);
          virtual  Fonc_Num_Computed * op_un_comp
                                       (const Arg_Fonc_Num_Comp &,

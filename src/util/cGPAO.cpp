@@ -39,6 +39,39 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 
 #include "StdAfx.h"
+//#include <process.h>
+
+#ifdef __USE_EL_COMMAND__
+/*********************************************************/
+/*                                                       */
+/*                  cElCommand                           */
+/*                                                       */
+/*********************************************************/
+
+cElCommand::cElCommand( const char *i_command ){ push_back(string(i_command)); }
+cElCommand::cElCommand( const string &i_command ){ push_back(i_command); }
+#endif
+
+const string temporarySubdirectory = "Tmp-MM-Dir/";
+
+int Round(double aV,double aSup,double aInf)
+{
+  double aVal = aV / aSup;
+  aVal = aVal - floor(aVal);
+  return round_ni((aSup*aVal)/aInf);
+}
+
+std::string GetUnikId()
+{
+   double aTSec = ElTimeOfDay();
+
+   return         ToString(mm_getpid())
+          + "_" + ToString(Round(aTSec,1e3,1.0))
+          + "_" + ToString(Round(aTSec,1,1e-3))
+          + "_" + ToString(Round(aTSec,1e-3,1e-6));
+}
+const std::string & mm_getstrpid();
+
 
 /*********************************************************/
 /*                                                       */
@@ -46,14 +79,103 @@ Header-MicMac-eLiSe-25/06/2007*/
 /*                                                       */
 /*********************************************************/
 
+void cEl_GPAO::DoComInSerie(const std::list<std::string> & aL)
+{
+    for 
+    (
+        std::list<std::string>::const_iterator itS=aL.begin();
+        itS!=aL.end();
+        itS++
+    )
+    {
+         System(*itS);
+    }
+}
+
+bool TestFileOpen(const std::string & aFile)
+{
+    for (int aK=0 ; aK<5 ; aK++)
+    {
+       FILE *  aFP = fopen(aFile.c_str(),"w");
+       if (aFP)
+       {
+          fclose(aFP);
+          ELISE_fp::RmFile(aFile);
+          return true;
+       }
+    }
+    return false;
+}
+
+//  les directory par defaut d'ecriture (install de MicMac) ne permettent pas toujours un acces en erciture
+// pour les fichiers temporaires
+//
+//  Modif MPD met en priorite les directories locales suite a demande de Telecom pour clusterisation des commandes
+// afin que des process concurent ne s'ecrasent pas
+//
+
+std::string Dir2Write(const std::string  DirChantier)
+{
+    static bool First = true;
+    static std::string aRes;
+    if (First)
+    {
+        First = false;
+
+        aRes =  DirChantier + "Tmp-MM-Dir/TestOpenMMmmmm" + mm_getstrpid();
+        if (TestFileOpen(aRes))
+           return  DirChantier + "Tmp-MM-Dir/";
+
+        aRes = DirChantier +  "TestOpenMMmmmm" + mm_getstrpid();
+        if (TestFileOpen(aRes))
+           return  DirChantier;
+
+        for (int aK=0 ; aK<MemoArgc; aK++)
+        {
+            std::string aDir,aName;
+            SplitDirAndFile(aDir,aName,MemoArgv[aK]);
+            aRes = aDir + "TestOpenMMmmmm" + mm_getstrpid();
+            if (TestFileOpen(aRes))
+               return aDir;
+        }
+
+
+        aRes = MMDir() + "TestOpenMMmmmm"+mm_getstrpid();
+        if (TestFileOpen(aRes))
+           return MMDir();
+
+
+        ELISE_ASSERT(false,"Cannot find any directoruy to write tmp files");
+        
+    }
+   
+    return aRes;
+}
 
 void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileMk , int   aNbProc ,bool Exe,bool MoinsK)
 {
     if (aNbProc<=0)  
        aNbProc = NbProcSys();
 
-    if (FileMk=="") 
-       FileMk = MMDir() + "MkStdMM";
+   // Modif MPD, certain process plantent apres qq heures en finissant sur 
+   // FAIL IN :
+   // "/usr/bin/make" all -f "/home/mpd/MMM/culture3d/TestOpenMMmmmmMkStdMM" -j8
+   // Suspecte que c'est du a un "ecrasement" entre les Makefile lance par des process concurents;
+   // tente un unique Id sur ces makefiles ...
+
+
+    if (FileMk==""){
+       if ( isUsingSeparateDirectories() )
+          FileMk = MMTemporaryDirectory() + "MkStdMM" +GetUnikId();
+       else
+          FileMk = Dir2Write() + "MkStdMM" +GetUnikId();
+    }
+    else  if (Exe)
+    {
+       FileMk = FileMk + GetUnikId();
+    }
+
+    
 
     cEl_GPAO aGPAO;
     int aK=0;
@@ -72,7 +194,8 @@ void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileM
 
     aGPAO.GenerateMakeFile(FileMk);
 
-    std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc) + " ";
+	/*
+    //std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc) + " ";
     if (MoinsK) aCom = aCom + " -k ";
     if (Exe)
     {
@@ -83,6 +206,18 @@ void cEl_GPAO::DoComInParal(const std::list<std::string> & aL,std::string  FileM
     {
         std::cout << aCom << "\n";
     }
+	*/
+
+    std::string aSilent = " -s ";
+    std::string aContinueOnError  =  (MoinsK?"-k":"");
+	if ( Exe )
+	{
+	     // launchMake( FileMk, "all", aNbProc, (MoinsK?"-k":"") );
+	     launchMake( FileMk, "all", aNbProc, aSilent + aContinueOnError);
+             ELISE_fp::RmFile(FileMk);
+	}
+	else
+		cout << g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc) + " " << endl;
 }
 
 
@@ -95,7 +230,7 @@ void MkFMapCmd
           const std::string & anAfterTarget,
           const std::string & aBeforeCom,
           const std::string & anAfterCom,
-          const std::vector<std::string > aSet ,
+          const std::vector<std::string > &aSet ,
           std::string  FileMk = "",  //
           int   aNbProc = 0  // Def = MM Proc
      )
@@ -104,13 +239,15 @@ void MkFMapCmd
        aNbProc = NbProcSys();
 
     if (FileMk=="") 
-       FileMk = MMDir() + "MkStdMM";
+       FileMk = ( isUsingSeparateDirectories()?MMTemporaryDirectory():Dir2Write() ) + "MkStdMM" + GetUnikId();
+       // FileMk = MMDir() + "MkStdMM" + GetUnikId();
 
 
     cEl_GPAO aGPAO;
+    string targetPath = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+aBeforeTarget );
     for (int aK=0 ; aK<int(aSet.size())  ; aK++)
     {
-        std::string aTarget = aDir + aBeforeTarget + aSet[aK] + anAfterTarget;
+        std::string aTarget = targetPath + aSet[aK] + anAfterTarget;
         std::string aCom = aBeforeCom +  aDir+ aSet[aK] + anAfterCom;
         aGPAO.GetOrCreate(aTarget,aCom);
         aGPAO.TaskOfName("all").AddDep(aTarget);
@@ -118,14 +255,15 @@ void MkFMapCmd
 
     aGPAO.GenerateMakeFile(FileMk);
 
-    std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc);
-    VoidSystem(aCom.c_str());
+    //std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + FileMk + " -j" + ToString(aNbProc);
+    //VoidSystem(aCom.c_str());
+	launchMake( FileMk, "all", aNbProc );
 }
 
 void MkFMapCmdFileCoul8B
      (
           const std::string & aDir,
-          const std::vector<std::string > aSet 
+          const std::vector<std::string > &aSet 
      )
 {
     MkFMapCmd
@@ -133,7 +271,7 @@ void MkFMapCmdFileCoul8B
         aDir,
         "Tmp-MM-Dir/",
         "_Ch3.tif",
-         MMBin() + "PastDevlop ",
+         MM3dBinFile_quotes("PastDevlop")+" ",
          " Coul8B=true",
          aSet
     );
@@ -148,7 +286,8 @@ void cEl_GPAO::ExeParal(std::string aFileMk,int aNbProc,bool Supr)
     // aFileMk = MMDir() + aFileMk;
     GenerateMakeFile(aFileMk);
 
-    std::string aCom = g_externalToolHandler.get( "make" ).callName()+" all -f " + aFileMk + " -j" + ToString(aNbProc);
+	/*
+    //std::string aCom = string("\"")+g_externalToolHandler.get( "make" ).callName()+"\" all -f \"" + aFileMk + "\" -j" + ToString(aNbProc);
     if (false)
     {
        std::cout << "CCCC = " << aCom << "\n";
@@ -156,12 +295,15 @@ void cEl_GPAO::ExeParal(std::string aFileMk,int aNbProc,bool Supr)
     }
     else
     {
-       VoidSystem(aCom.c_str());
+       ::System(aCom.c_str());
        if (Supr)
        {
            ELISE_fp::RmFile(aFileMk);
        }
     }
+	*/
+	launchMake( aFileMk, "all", aNbProc );
+	if (Supr) ELISE_fp::RmFile(aFileMk);
 }
 
 
@@ -180,11 +322,19 @@ cEl_GPAO::~cEl_GPAO()
 {
 }
 
-cElTask   & cEl_GPAO::NewTask
-            (
-                 const std::string &aName,
-                 const std::string & aBuildingRule
-            ) 
+#ifdef __USE_EL_COMMAND__
+	cElTask   & cEl_GPAO::NewTask
+				(
+					 const std::string &aName,
+					 const cElCommand & aBuildingRule
+				) 
+#else
+	cElTask   & cEl_GPAO::NewTask
+				(
+					 const std::string &aName,
+					 const std::string & aBuildingRule
+				) 
+#endif
 {
     cElTask * aTask = mDico[aName];
 
@@ -214,11 +364,19 @@ cElTask & cEl_GPAO::TaskOfName(const std::string &aName)
     return *aTask;
 }
 
-cElTask   & cEl_GPAO::GetOrCreate
-            (
-                 const std::string &aName,
-                 const std::string & aBuildingRule
-            ) 
+#ifdef __USE_EL_COMMAND__
+	cElTask   & cEl_GPAO::GetOrCreate
+				(
+					 const std::string &aName,
+					 const cElCommand & aBuildingRule
+				)
+#else
+	cElTask   & cEl_GPAO::GetOrCreate
+				(
+					 const std::string &aName,
+					 const std::string & aBuildingRule
+				)
+#endif
 {
     cElTask * aTask = mDico[aName];
     return aTask ? *aTask : NewTask(aName,aBuildingRule);
@@ -228,6 +386,7 @@ cElTask   & cEl_GPAO::GetOrCreate
 
 void  cEl_GPAO::GenerateMakeFile(const std::string & aNameFile,bool ModeAdditif)  const
 {
+	//dump();
    // FILE * aFp = ElFopen(aNameFile.c_str(),ModeAdditif ? "a" : "w");
    FILE * aFp = FopenNN(aNameFile.c_str(),ModeAdditif ? "a" : "w","cEl_GPAO::GenerateMakeFile");
    for
@@ -247,7 +406,28 @@ void  cEl_GPAO::GenerateMakeFile(const std::string & aNameFile)  const
      GenerateMakeFile(aNameFile,false);
 }
 
-
+void cEl_GPAO::dump( std::ostream &io_ostream ) const
+{
+	map<string,cElTask*>::const_iterator itMap = mDico.begin();
+	while ( itMap!=mDico.end() ){
+		const cElTask &task = *(itMap->second);
+		// print name from map
+		io_ostream << "task [" << itMap->first << "] " << &task << endl;
+		// print name from task's internal data
+		io_ostream << "\tname = [" << task.mName << ']' << endl;
+		// print rules
+		io_ostream << "\trules" << endl;
+		list<string>::const_iterator itRule = task.mBR.begin();
+		while ( itRule!=task.mBR.end() )
+			io_ostream << "\t\t[" << *itRule++ << ']' << endl;
+		// print dependencies
+		io_ostream << "\tdependencies" << endl;
+		vector<cElTask*>::const_iterator itDep = task.mDeps.begin();
+		while ( itDep!=task.mDeps.end() )
+			io_ostream << "\t\t[" << (*itDep++)->mName << ']' << endl;
+		itMap++;
+	}
+}
 
 
 
@@ -268,12 +448,21 @@ void cElTask::AddDep(const std::string & aName)
     AddDep(mGPAO.TaskOfName(aName));
 }
 
-cElTask::cElTask
-(
-               const std::string & aName,
-               cEl_GPAO & aGPA0,
-               const std::string & aBuildingRule
-)  :
+#ifdef __USE_EL_COMMAND__
+	cElTask::cElTask
+	(
+				   const std::string & aName,
+				   cEl_GPAO & aGPA0,
+				   const cElCommand & aBuildingRule
+	)  :
+#else
+	cElTask::cElTask
+	(
+				   const std::string & aName,
+				   cEl_GPAO & aGPA0,
+				   const std::string & aBuildingRule
+	)  :
+#endif
    mGPAO  (aGPA0),
    mName  ( aName)
 {
@@ -292,32 +481,85 @@ void cElTask::GenerateMakeFile(FILE * aFP) const
        fprintf(aFP,"%s ", mDeps[aK]->mName.c_str());
     fprintf(aFP,"\n");
 	
-    for 
-    (
-       std::list<std::string>::const_iterator itBR=mBR.begin();
-       itBR!=mBR.end() ;
-       itBR++
-    )
-    {
-		#if (ELISE_windows)
-			// avoid a '\' at the end of a line in a makefile
-			if ( *(itBR->rbegin())=='\\' )
-			{
-					string str = *itBR+' ';
-					fprintf(aFP,"\t %s\n",str.c_str());
-			}
-			else
-		#endif
-        fprintf(aFP,"\t %s\n",itBR->c_str());
-    }
+    #ifdef __USE_EL_COMMAND__
+		list<string>::const_iterator itToken;
+		for 
+		(
+		   std::list<cElCommand>::const_iterator itBR=mBR.begin();
+		   itBR!=mBR.end() ;
+		   itBR++
+		)
+		{
+			fprintf( aFP,"\t" );
+			int iToken = itBR->size()-1;
+			itToken=itBR->begin();
+			while ( iToken-- )
+				fprintf( aFP,"%s ", protect_spaces(*itToken++).c_str() );
+
+			#if (ELISE_windows)
+				// avoid a '\' at the end of a line in a makefile
+				if ( *(itToken->rbegin())=='\\' )
+					//fprintf(aFP,"%s \n", protect_spaces(*itToken).c_str());
+					fprintf(aFP,"%s \n", itToken->c_str());
+				else
+			#endif
+			//fprintf(aFP,"%s\n", protect_spaces(*itToken).c_str());
+			fprintf(aFP,"%s\n", itToken->c_str());
+		}
+	#else
+		for 
+		(
+		   std::list<std::string>::const_iterator itBR=mBR.begin();
+		   itBR!=mBR.end() ;
+		   itBR++
+		)
+		{
+			#if (ELISE_windows)
+				// avoid a '\' at the end of a line in a makefile
+				string rule = *itBR;
+				if ( !rule.empty() && *(itBR->rbegin())=='\\' ) rule.append(" ");
+				fprintf( aFP, "\t %s\n", rule.c_str() );
+			#else
+				fprintf(aFP,"\t %s\n",itBR->c_str());
+			#endif
+		}
+	#endif
 }
 
 
+bool launchMake( const string &i_makefile, const string &i_rule, unsigned int i_nbJobs, const string &i_options, bool i_stopCurrentProgramOnFail )
+{
+	#ifdef __TRACE_SYSTEM__
+		static int iMakefile = 0;
+		string makefileCopyName;
+		// look for a filename that is not already used
+		do{
+			if ( iMakefile>999 ) cerr << "WARNING: there is a lot of makefile copies already" << endl;
+			stringstream ss;
+			ss << "Makefile" << setw(3) << setfill('0') << iMakefile++;
+			makefileCopyName = ss.str();
+		}
+		while ( ELISE_fp::exist_file( makefileCopyName ) );
+		cout << "###copying [" << i_makefile << "] to [" << makefileCopyName << "]" << endl;
+		ELISE_fp::copy_file( i_makefile, makefileCopyName, true );
+		i_nbJobs = __TRACE_SYSTEM__; // no multithreading in trace_system mode
+	#endif
+
+	string nbJobsStr( "-j" );
+	if ( i_nbJobs!=0 )
+	{	
+		stringstream ss;
+		ss << i_nbJobs;
+		nbJobsStr.append( ss.str() );
+	}
+	std::string aCom = string("\"")+(g_externalToolHandler.get( "make" ).callName())+"\" " + i_rule + " -f \"" + i_makefile + "\" " + nbJobsStr + " " + i_options;
+	return ( System(aCom,!i_stopCurrentProgramOnFail)==EXIT_SUCCESS );
+}
 
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -333,17 +575,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

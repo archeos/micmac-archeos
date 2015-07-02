@@ -230,11 +230,21 @@ void cRotationFormelle::SetGL(bool aModeGL)
     SetCurRot(CurRot());
     mModeGL = aModeGL;
 }
-const ElMatrix<Fonc_Num> & cRotationFormelle::MatFGL()
+const ElMatrix<Fonc_Num> & cRotationFormelle::MatFGL(int aKForceGL)
 {
+   if (aKForceGL>=0)
+   {
+       static std::vector<cMatr_Etat_PhgrF *> aVM;
+       // for (int aK=0 ; aK<=aKForceGL ; aK++)
+       for (int aK=int(aVM.size()) ; aK<=aKForceGL ; aK++)  // MPD : sinon on augment a chaque fois
+           aVM.push_back(new cMatr_Etat_PhgrF("GL_MK"+ToString(aKForceGL),3,3));
+
+       return aVM[aKForceGL]->Mat();
+   }
+
    if (mModeGL)
    {
-       static cMatr_Etat_PhgrF aM("GL",3,3);
+      static cMatr_Etat_PhgrF aM("GL",3,3);
       return aM.Mat();
    }
    static ElMatrix<Fonc_Num> aMatId(3,true);
@@ -436,9 +446,14 @@ void  cRotationFormelle::SetRotPseudoBaseU (cRotationFormelle * aRF)
 
 cMultiContEQF    cRotationFormelle::StdContraintes()
 {
+
   cMultiContEQF  aRes;
   if (mModeContr == eRotLibre)
   {
+  }
+  else if (mModeContr == eRotAngleFige)
+  {
+     AddFoncRappInit(aRes,0,3,mTolAng);
   }
   else if (mModeContr == eRotFigee)
   {
@@ -497,34 +512,41 @@ cMultiContEQF    cRotationFormelle::StdContraintes()
    return aRes;
 }
 
+
+
+ElMatrix<Fonc_Num>  cRotationFormelle::MatFGLComplete(int aKForceGL)
+{
+   return  MatFGL(aKForceGL)* mFMatr;
+}
+
 Pt3d<Fonc_Num> cRotationFormelle::COpt()
 {
     return mFCOpt;
 }
 
-Pt3d<Fonc_Num> cRotationFormelle::ImVect(Pt3d<Fonc_Num> aP)
+Pt3d<Fonc_Num> cRotationFormelle::ImVect(Pt3d<Fonc_Num> aP,int aKForceGL)
 {
-    return MatFGL()* mFMatr * aP;
+    return MatFGL(aKForceGL)* mFMatr * aP;
 }
 
-Pt3d<Fonc_Num> cRotationFormelle::C2M(Pt3d<Fonc_Num> aP)
+Pt3d<Fonc_Num> cRotationFormelle::C2M(Pt3d<Fonc_Num> aP,int aKForceGL)
 {
-    return MatFGL()* mFMatr * aP + mFCOpt;
+    return MatFGL(aKForceGL)* mFMatr * aP + mFCOpt;
 }
 
-Pt3d<Fonc_Num> cRotationFormelle::M2C(Pt3d<Fonc_Num> aP)
+Pt3d<Fonc_Num> cRotationFormelle::M2C(Pt3d<Fonc_Num> aP,int aKForceGL)
 {
-    return  mFMatrInv * MatFGL().transpose() * (aP - mFCOpt);
+    return  mFMatrInv * MatFGL(aKForceGL).transpose() * (aP - mFCOpt);
 }
 
-Pt3d<Fonc_Num> cRotationFormelle::VectM2C(Pt3d<Fonc_Num> aP)
+Pt3d<Fonc_Num> cRotationFormelle::VectM2C(Pt3d<Fonc_Num> aP,int aKForceGL)
 {
-    return mFMatrInv * MatFGL().transpose()  * aP ;
+    return mFMatrInv * MatFGL(aKForceGL).transpose()  * aP ;
 }
 
-Pt3d<Fonc_Num> cRotationFormelle::VectC2M(Pt3d<Fonc_Num> aP)
+Pt3d<Fonc_Num> cRotationFormelle::VectC2M(Pt3d<Fonc_Num> aP,int aKForceGL)
 {
-    return ImVect(aP);
+    return ImVect(aP,aKForceGL);
 }
 
 void cRotationFormelle::AssertDegre0() const
@@ -613,13 +635,15 @@ cCameraFormelle::cEqAppui::cEqAppui
      bool isPTerrainFixe,
      bool Comp,
      cCameraFormelle & aCam,
-     bool Code2Gen
+     bool Code2Gen,
+     bool IsEqDroite
 )  :
     mCam            (aCam),
     mUseEqNoVar     ((! wDist) && (!UseTjsDist) && (! Code2Gen)),
     mIsPTerrainFixe (isPTerrainFixe),
     mNameType       (
                         std::string("cEqAppui") 
+                      + std::string(IsEqDroite ? "_Droite" : "")
                       + std::string(mCam.mIntr.UseAFocal() ? "_AFocal" : "")
                       +std::string(wDist ? "" : "_NoDist_" )
                       +std::string(isGL ? "_GL_" : "")
@@ -654,9 +678,9 @@ cCameraFormelle::cEqAppui::cEqAppui
     mMatriceGL      (isGL ? new cMatr_Etat_PhgrF("GL",3,3) : 0),
     mNDP0           (wDist ? 0 : new cP2d_Etat_PhgrF("NDP0")),
     mNDdx           (wDist ? 0 : new cP2d_Etat_PhgrF("NDdx")),
-    mNDdy           (wDist ? 0 : new cP2d_Etat_PhgrF("NDdy"))
+    mNDdy           (wDist ? 0 : new cP2d_Etat_PhgrF("NDdy")),
+    mEqDroite       (IsEqDroite)
 {
-// std::cout <<"DEBUG33 " << mNameType << "\n";
    if (Code2Gen)  // En mode normal, on ne modifie pas la camera
    {
        mCam.SetGL(isGL);
@@ -703,10 +727,21 @@ cCameraFormelle::cEqAppui::cEqAppui
           aP2 = mPIm;
     }
 
-     Pt2d<Fonc_Num> fEcart = (aP1-aP2) * mFScN;
-     // Les ecarts sont des radians !
-     mEcarts.push_back(fEcart.x);
-     mEcarts.push_back(fEcart.y);
+     if (IsEqDroite)
+     {
+        // Pour reutiliser au max "l'infrastructure" existante on prend la convention que
+        // aP2.x -> rho aP2.y -> Theta et que cela code l'equation normale de la droite 
+        // rho = cos(Teta) X + sin(Theta) Y
+        Fonc_Num fEcart = (aP2.x -cos(aP2.y)*aP1.x - sin(aP2.y)* aP1.y) * mFScN;
+        mEcarts.push_back(fEcart);
+     }
+     else
+     {
+         Pt2d<Fonc_Num> fEcart = (aP1-aP2) * mFScN;
+         // Les ecarts sont des radians !
+         mEcarts.push_back(fEcart.x);
+         mEcarts.push_back(fEcart.y);
+     }
 
 
     if (Comp || Code2Gen)
@@ -716,7 +751,10 @@ cCameraFormelle::cEqAppui::cEqAppui
 
        mLInterv.AddInterv(mCam.RF().IncInterv());
        if (! mUseEqNoVar)
-          mLInterv.AddInterv(mCam.PIF().IncInterv());
+       {
+          mCam.PIF().AddToListInterval(mLInterv);
+          // mLInterv.AddInterv(mCam.PIF().IncInterv());
+       }
 
        if (!isPTerrainFixe)
        {
@@ -787,6 +825,10 @@ cCameraFormelle::cEqAppui::cEqAppui
     }
 }
 
+void  cCameraFormelle::cEqAppui::PrepareEqFForPointIm(const Pt2dr & aPIm)
+{
+     mCam.PrepareEqFForPointIm(mLInterv,mFoncEqResidu,aPIm,mEqDroite,0);
+}
 
 Pt2dr cCameraFormelle::cEqAppui::Residu(Pt3dr aPTer,Pt2dr aPIm,REAL aPds)
 {
@@ -807,6 +849,7 @@ Pt2dr cCameraFormelle::cEqAppui::Residu(Pt3dr aPTer,Pt2dr aPIm,REAL aPds)
     {
        mMatriceGL->SetEtat(mCam.RF().MGL());
     }
+    PrepareEqFForPointIm(aPIm);
 
     // std::cout <<  "cEA::RES " <<  mNameType << "\n";
 
@@ -823,12 +866,13 @@ Pt2dr cCameraFormelle::cEqAppui::Residu(Pt3dr aPTer,Pt2dr aPIm,REAL aPds)
 
     // std::cout << pAdrScN  << " " <<  mCam.PIF().StdScaleN() << "\n";;
    // std::cout << "wdfqhtt  " << mNameType << " " << aRes << "\n";
-   return Pt2dr(aRes.at(0),aRes.at(1));
+   return Pt2dr(aRes.at(0), mEqDroite ? 0.0  : aRes.at(1));
 }
 
 
 Pt2dr cCameraFormelle::cEqAppui::ResiduPInc(Pt2dr aPIm,REAL aPds,const cParamPtProj & aPPP)
 {
+  // std::cout <<"DEBUG33 " << mNameType << "\n";
   // std::cout <<  "WWWW : " << mNameType << "\n";
     ELISE_ASSERT(mFoncEqResidu!=0,"cCameraFormelle::cEqAppui::Residu");
     ELISE_ASSERT(!mIsPTerrainFixe,"cCameraFormelle::cEqAppui::Residu");
@@ -854,12 +898,14 @@ Pt2dr cCameraFormelle::cEqAppui::ResiduPInc(Pt2dr aPIm,REAL aPds,const cParamPtP
     *pAdrXIm =  aPIm.x;
     *pAdrYIm =  aPIm.y;
     *pAdrScN = mCam.PIF().StdScaleN();
+    PrepareEqFForPointIm(aPIm);
 
     const std::vector<REAL> & aVals = 
                   (aPds > 0)                                             ?
                   mCam.mSet.VAddEqFonctToSys(mFoncEqResidu,aPds,false)   :
 		  mCam.mSet.VResiduSigne(mFoncEqResidu)                  ;
-    Pt2dr aRes(aVals[0],aVals[1]);
+
+    Pt2dr aRes(aVals[0], mEqDroite ? 0.0 : aVals[1]);
 
     // std::cout << aPPP.wDist << " " <<  mCam.PIF().StdScaleN() << "wdfqhtt  " << mNameType << " " << aRes << "\n";
     return aRes;
@@ -894,7 +940,8 @@ cCameraFormelle::cCameraFormelle
      cCameraFormelle *         aCamAtt,
      const std::string & aName,
      bool  CompEqAppui,
-     bool  GenCodeAppui
+     bool  GenCodeAppui,
+     bool  HasEqDroite
 )  :
    pCamAttach  (aCamAtt),
    mIntr       (anIntr),
@@ -915,22 +962,27 @@ cCameraFormelle::cCameraFormelle
    mEqAppuiSDistProjIncXY (0),
    mEqAppuiSDistGLIncXY (0),
    mEqAppuiSDistGLProjIncXY (0),
-   mCameraCourante(NULL)
+   mCameraCourante(NULL),
+   mHasEqDroite   (HasEqDroite)
 {
+        for (int aKEqDr=0 ; aKEqDr<TheNbEqDr; aKEqDr++)
+        {
+            mEqAppuiDroite[aKEqDr] = 0;
+        }
 	// NO_WARN
-	mEqAppuiTerNoGL = new cEqAppui(true,false,false,true,CompEqAppui,*this,GenCodeAppui);
-	mEqAppuiTerGL	 = new cEqAppui(true,true ,false,true,CompEqAppui,*this,GenCodeAppui);
+	mEqAppuiTerNoGL = new cEqAppui(true,false,false,true,CompEqAppui,*this,GenCodeAppui,false);
+	mEqAppuiTerGL	 = new cEqAppui(true,true ,false,true,CompEqAppui,*this,GenCodeAppui,false);
 	mCameraCourante	 = CalcCameraCourante();
 }
 
 cCameraFormelle::~cCameraFormelle(){
 	// we should delete mEqAppuiTerNoGL and mEqAppuiTerGL but it makes apero crash
-	// something is probably using them after their natural lifetime
+	// something is probably Using them after their natural lifetime
 	//if ( mEqAppuiTerNoGL_II!=NULL ) delete mEqAppuiTerNoGL;
 	//if ( mEqAppuiTerGL_II!=NULL ) delete mEqAppuiTerNoGL;
 }
 
-Pt2dr cCameraFormelle::AddEqAppuisInc(const Pt2dr & aPIm,double aPds,cParamPtProj & aPPP)
+Pt2dr cCameraFormelle::AddEqAppuisInc(const Pt2dr & aPIm,double aPds,cParamPtProj & aPPP,bool IsEqDroite)
 {
      cCamStenopeGrid * aCSG = mIntr.CamGrid();
      if ( aCSG)
@@ -939,6 +991,7 @@ Pt2dr cCameraFormelle::AddEqAppuisInc(const Pt2dr & aPIm,double aPds,cParamPtPro
         Pt2dr aPLoc  = ProjStenope(mCameraCourante->R3toL3(aPPP.mTer));
 
         aPPP.mNDP0 =aCSG->L2toF2AndDer(aPLoc,aPPP.mNDdx,aPPP.mNDdy);
+        // Si on remonte jusqu'a PtImGrid::ValueAndDer, on voit que GradX est la derive de X selon x et y (et non la derive selon x de X et Y)
         ElSwap(aPPP.mNDdx.y,aPPP.mNDdy.x);
         aPPP.mNDP0 = aPPP.mNDP0 - aPPP.mNDdx * aPLoc.x - aPPP.mNDdy * aPLoc.y;
 
@@ -948,13 +1001,11 @@ Pt2dr cCameraFormelle::AddEqAppuisInc(const Pt2dr & aPIm,double aPds,cParamPtPro
      else
         aPPP.wDist = true;
 
-     cEqAppui*  anEq = AddForUseFctrEqAppuisInc ( false, aPPP.mProjIsInit, aPPP.wDist);
-     Pt2dr aRes = anEq->ResiduPInc(CorrigePFromDAdd(aPIm,true),aPds,aPPP);
-
-// std::cout << "RES " << aRes << " " << aPIm << " " << CorrigePFromDAdd(aPIm,true) << "\n";
+     cEqAppui*  anEq = AddForUseFctrEqAppuisInc ( false, aPPP.mProjIsInit, aPPP.wDist,IsEqDroite);
+     Pt2dr aRes = anEq->ResiduPInc(CorrigePFromDAdd(aPIm,true,IsEqDroite),aPds,aPPP);
 
 
-     if ( isnan(aRes.x) || isnan(aRes.y))
+     if ( std_isnan(aRes.x) || std_isnan(aRes.y))
      {
          std::cout << anEq->mNameType;
          std::cout << "Im "<<  aPIm 
@@ -977,15 +1028,20 @@ ElAffin2D & cCameraFormelle::ResiduM2C()
 
 cIncListInterv & cCameraFormelle::IntervAppuisPtsInc()
 {
-   for (int aKDist=0 ; aKDist<2 ; aKDist++)
+   int aNbEqDr =(mHasEqDroite  ? 2  : 1);
+   for (int aKEqDr=0 ; aKEqDr<aNbEqDr ; aKEqDr++)
    {
-       bool wDist = (aKDist==0);
-        if (wDist || (!mIntr.UseAFocal())  ||   ( AFocalAcceptNoDist))
+       bool WithEqDr = (aKEqDr==1);
+       for (int aKDist=0 ; aKDist<2 ; aKDist++)
        {
-           AddFctrEqAppuisInc(false,false,false,wDist);
-           AddFctrEqAppuisInc(false,true,false,wDist);
-           AddFctrEqAppuisInc(false,false,true,wDist);
-           AddFctrEqAppuisInc(false,true,true,wDist);
+           bool wDist = (aKDist==0);
+           if (wDist || (!mIntr.UseAFocal())  ||   ( AFocalAcceptNoDist))
+           {
+               AddFctrEqAppuisInc(false,false,false,wDist,WithEqDr);
+               AddFctrEqAppuisInc(false,true,false,wDist,WithEqDr);
+               AddFctrEqAppuisInc(false,false,true,wDist,WithEqDr);
+               AddFctrEqAppuisInc(false,true,true,wDist,WithEqDr);
+           }
        }
    }
 // std::cout << "GLglgl " << IsGL() << "\n";getchar();
@@ -1019,13 +1075,28 @@ cIncListInterv & cCameraFormelle::IntervAppuisPtsInc()
 }
 
 
-cCameraFormelle::cEqAppui * cCameraFormelle::AddForUseFctrEqAppuisInc(bool aGenCode,bool isProj,bool wDist)
+cCameraFormelle::cEqAppui * cCameraFormelle::AddForUseFctrEqAppuisInc(bool aGenCode,bool isProj,bool wDist,bool IsEqDroite)
 {
-   return AddFctrEqAppuisInc(aGenCode,isProj,IsGL(),wDist);
+   return AddFctrEqAppuisInc(aGenCode,isProj,IsGL(),wDist,IsEqDroite);
 }
 
-cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bool isProj,bool isGL,bool wDist)
+cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bool isProj,bool isGL,bool wDist,bool IsEqDroite)
 {
+  if (IsEqDroite)
+  {
+       ELISE_ASSERT(!mIntr.UseAFocal(),"EqDroite incompatible with AFocal\n");
+       int aK = (isProj==true) + 2 * (isGL==true) + 4 * (wDist==true);
+
+       if (mEqAppuiDroite[aK] == 0)
+           mEqAppuiDroite[aK] =  new cEqAppui(wDist,isGL,isProj,false,true,*this,aGenCode,true);
+
+      return mEqAppuiDroite[aK];
+       // Avec ss dist
+       // Avec ss Proj
+       // Avec ss GL 
+  }
+
+
   if (wDist  || (mIntr.UseAFocal() && (!AFocalAcceptNoDist)))
   {
       if (isProj)
@@ -1034,7 +1105,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
             if (mEqAppuiGLProjIncXY==0)
             {
-                mEqAppuiGLProjIncXY = new cEqAppui(wDist,true,true,false,true,*this,aGenCode);
+                mEqAppuiGLProjIncXY = new cEqAppui(wDist,true,true,false,true,*this,aGenCode,false);
             }
             return mEqAppuiGLProjIncXY;
          }
@@ -1042,7 +1113,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
             if (mEqAppuiProjIncXY==0)
             {
-                mEqAppuiProjIncXY = new cEqAppui(wDist,false,true,false,true,*this,aGenCode);
+                mEqAppuiProjIncXY = new cEqAppui(wDist,false,true,false,true,*this,aGenCode,false);
             }
             return mEqAppuiProjIncXY;
          }
@@ -1053,7 +1124,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
              if (mEqAppuiGLIncXY==0) 
              {
-                mEqAppuiGLIncXY = new cEqAppui(wDist,true,false,false,true,*this,aGenCode);
+                mEqAppuiGLIncXY = new cEqAppui(wDist,true,false,false,true,*this,aGenCode,false);
              }
              return mEqAppuiGLIncXY;
          }
@@ -1061,7 +1132,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
              if (mEqAppuiIncXY==0) 
              {
-                mEqAppuiIncXY = new cEqAppui(wDist,false,false,false,true,*this,aGenCode);
+                mEqAppuiIncXY = new cEqAppui(wDist,false,false,false,true,*this,aGenCode,false);
              }
              return mEqAppuiIncXY;
          }
@@ -1075,7 +1146,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
             if (mEqAppuiSDistGLProjIncXY==0)
             {
-                mEqAppuiSDistGLProjIncXY = new cEqAppui(wDist,true,true,false,true,*this,aGenCode);
+                mEqAppuiSDistGLProjIncXY = new cEqAppui(wDist,true,true,false,true,*this,aGenCode,false);
             }
             return mEqAppuiSDistGLProjIncXY;
          }
@@ -1083,7 +1154,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
             if (mEqAppuiSDistProjIncXY==0)
             {
-                mEqAppuiSDistProjIncXY = new cEqAppui(wDist,false,true,false,true,*this,aGenCode);
+                mEqAppuiSDistProjIncXY = new cEqAppui(wDist,false,true,false,true,*this,aGenCode,false);
             }
             return mEqAppuiSDistProjIncXY;
          }
@@ -1094,7 +1165,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
              if (mEqAppuiSDistGLIncXY==0) 
              {
-                mEqAppuiSDistGLIncXY = new cEqAppui(wDist,true,false,false,true,*this,aGenCode);
+                mEqAppuiSDistGLIncXY = new cEqAppui(wDist,true,false,false,true,*this,aGenCode,false);
              }
              return mEqAppuiSDistGLIncXY;
          }
@@ -1102,7 +1173,7 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
          {
              if (mEqAppuiSDistIncXY==0) 
              {
-                mEqAppuiSDistIncXY = new cEqAppui(wDist,false,false,false,true,*this,aGenCode);
+                mEqAppuiSDistIncXY = new cEqAppui(wDist,false,false,false,true,*this,aGenCode,false);
              }
              return mEqAppuiSDistIncXY;
          }
@@ -1110,12 +1181,15 @@ cCameraFormelle::cEqAppui * cCameraFormelle::AddFctrEqAppuisInc(bool aGenCode,bo
   }
 
 
-
-
   ELISE_ASSERT(false,"cCameraFormelle::AddFctrEqAppuisInc");
   return 0;
 }
 
+
+void  cCameraFormelle::PrepareEqFForPointIm(const cIncListInterv & anII,cElCompiledFonc * anEq,const Pt2dr & aPIm,bool EqDroite,int aKCam)
+{
+   mIntr.PrepareEqFForPointIm(anII,anEq,aPIm,EqDroite,aKCam);
+}
 
 void cCameraFormelle::TestVB10(const std::string& aMes) const
 {
@@ -1128,15 +1202,26 @@ void cCameraFormelle::TestVB10(const std::string& aMes) const
 }
 
 
-Pt2dr  cCameraFormelle::CorrigePFromDAdd(const Pt2dr & aP,bool UseGrid)
+Pt2dr  cCameraFormelle::CorrigePFromDAdd(const Pt2dr & aP,bool UseGrid,bool ModeDr)
 {
-    return mIntr.CorrigePFromDAdd(aP,UseGrid);
+    if (ModeDr)
+    {
+        SegComp aSeg = SegComp::FromRhoTeta(aP);
+        Pt2dr aP0 = mIntr.CorrigePFromDAdd(aSeg.p0(),UseGrid);
+        Pt2dr aP1 = mIntr.CorrigePFromDAdd(aSeg.p1(),UseGrid);
+
+        return SegComp(aP0,aP1).ToRhoTeta();
+    }
+    else
+    {
+        return mIntr.CorrigePFromDAdd(aP,UseGrid);
+    }
 }
 
 Pt2dr  cCameraFormelle::AddAppui(Pt3dr aP,Pt2dr aPIm,REAL aPds)
 {
    // ELISE_ASSERT(! mRot->IsGL(),"Do not handle cCameraFormelle::ResiduAppui in mode GL");
-   aPIm = CorrigePFromDAdd(aPIm,false);
+   aPIm = CorrigePFromDAdd(aPIm,false,false);
    cEqAppui * anEq = mRot->IsGL() ? mEqAppuiTerGL : mEqAppuiTerNoGL ;
    return anEq->Residu(aP,aPIm,aPds);
 }
@@ -1395,8 +1480,8 @@ void cCpleCamFormelle::GenCode()
 
 void cCpleCamFormelle::CorrigeP1P2FromDAdd(Pt2dr & aP1,Pt2dr & aP2)
 {
-   aP1 = mCam1.CorrigePFromDAdd(aP1,false);
-   aP2 = mCam2.CorrigePFromDAdd(aP2,false);
+   aP1 = mCam1.CorrigePFromDAdd(aP1,false,false);
+   aP2 = mCam2.CorrigePFromDAdd(aP2,false,false);
 }
 
 
@@ -1764,7 +1849,7 @@ cAppuiGridEq::cAppuiGridEq
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1780,17 +1865,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

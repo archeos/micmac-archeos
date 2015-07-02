@@ -37,14 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 
-#include    "GpGpu/GpGpu.h"
 #include    "GpGpu/GBV2_ProgDynOptimiseur.h"
-
-#define     MAT_TO_STREAM true
-#define     STREAM_TO_MAT false
-
-namespace NS_ParamMICMAC
-{
 
 Pt2di Px2Point(int * aPx) { return Pt2di(aPx[0],0); }
 bool IsPTest(const Pt2di & aP) {return aP == Pt2di(40,40);}
@@ -73,7 +66,7 @@ bool IsPTest(const Pt2di & aP) {return aP == Pt2di(40,40);}
 */
 
 /// brief Calcul le Z min et max.
-static inline void ComputeIntervaleDelta
+static inline void LocComputeIntervaleDelta
 (
         INT & aDzMin,
         INT & aDzMax,
@@ -115,7 +108,7 @@ cGBV2_ProgDynOptimiseur::cGBV2_ProgDynOptimiseur
         Im2D_INT2       aPxMin,
         Im2D_INT2       aPxMax
 ) :
-    cSurfaceOptimiseur ( mAppli,mLT,1e4,anEqX,anEqY,false,false),
+	cSurfaceOptimiseur ( mAppli,mLT,1e4,anEqX,anEqY,false,false),
     mXMin       (aPxMin),
     mXMax       (aPxMax),
     mSz         (mXMin.sz()),
@@ -128,15 +121,71 @@ cGBV2_ProgDynOptimiseur::cGBV2_ProgDynOptimiseur
                     mYMin.data(),
                     mXMax.data(),
                     mYMax.data(),
-                    aCelForInit),
+                    aCelForInit
+#if CUDA_ENABLED
+                    ,IGpuOpt._poInitCost
+#endif
+        ),
+
     mLMR        (mSz)
 {
+ #if CUDA_ENABLED
+    IGpuOpt._preFinalCost1D.ReallocIf(IGpuOpt._poInitCost.Size());
+    IGpuOpt._FinalDefCor.ReallocIf(IGpuOpt._poInitCost._dZ.GetDimension());
+    IGpuOpt._poInitCost.ReallocData();
+	IGpuOpt._poInitCost.fillCostInit(10123);//TODO PEUT ETRE VIRER
+#endif
+}
+
+cGBV2_ProgDynOptimiseur::~cGBV2_ProgDynOptimiseur()
+{
+#if CUDA_ENABLED
+    IGpuOpt.Dealloc();
+#endif
 }
 
 void cGBV2_ProgDynOptimiseur::Local_SetCout(Pt2di aPTer,int *aPX,REAL aCost,int aLabel)
 {
+
+#if CUDA_ENABLED
+    Pt2di z     = Px2Point(aPX);
+	int3 pt = make_int3(aPTer.x,aPTer.y,z.x);
+	IGpuOpt._poInitCost[pt] = cGBV2_TabulCost::CostR2I(aCost);
+#else
     mMatrCel[aPTer][Px2Point(aPX)].SetCostInit(cGBV2_TabulCost::CostR2I(aCost));
+#endif
 }
+
+#if CUDA_ENABLED
+void cGBV2_ProgDynOptimiseur::gLocal_SetCout(Pt2di aPTer, int aPX, ushort aCost,pixel pix)
+{
+	Pt2di z     = Px2Point(&aPX);
+	int3 pt = make_int3(aPTer.x,aPTer.y,z.x);
+	IGpuOpt._poInitCost[pt] = aCost;
+	(*mMemoCorrel)[aPTer][z]= pix;
+
+}
+
+void cGBV2_ProgDynOptimiseur::gLocal_SetCout(Pt2di aPTer, ushort* aCost, pixel* pix)
+{
+	ushort	size		= IGpuOpt._poInitCost.DZ(aPTer);
+	ushort* costDest	= IGpuOpt._poInitCost[aPTer];
+
+	memcpy(costDest,aCost,sizeof(ushort)*size);
+
+	pixel * pixDest	= (*mMemoCorrel)[aPTer][0] + (*mMemoCorrel)[aPTer].Box()._p0.x;
+
+	memcpy(pixDest,pix,sizeof(pixel)*size);
+}
+
+void cGBV2_ProgDynOptimiseur::gLocal_SetCout(Pt2di aPTer, ushort* aCost)
+{
+	ushort	size		= IGpuOpt._poInitCost.DZ(aPTer);
+	ushort* costDest	= IGpuOpt._poInitCost[aPTer];
+
+	memcpy(costDest,aCost,sizeof(ushort)*size);
+}
+#endif
 
 void cGBV2_ProgDynOptimiseur::BalayageOneSens
 (
@@ -196,7 +245,7 @@ void cGBV2_ProgDynOptimiseur::BalayageOneSens
         {
             int aDyMin,aDyMax;
             // Calcul du delta sur Y
-            ComputeIntervaleDelta
+            LocComputeIntervaleDelta
                     (
                         aDyMin,
                         aDyMax,
@@ -211,7 +260,7 @@ void cGBV2_ProgDynOptimiseur::BalayageOneSens
             {
                 int aDxMin,aDxMax;
                 // Calcul du delta sur X
-                ComputeIntervaleDelta
+                LocComputeIntervaleDelta
                         (
                             aDxMin,
                             aDxMax,
@@ -284,7 +333,7 @@ void cGBV2_ProgDynOptimiseur::BalayageOneSensGpu(const std::vector<Pt2di> &aVPt,
         {
             int aDxMin,aDxMax;
             // Calcul du delta sur X
-            ComputeIntervaleDelta(aDxMin,aDxMax,aP0.x, mMaxEc[0],aBox0._p0.x, aBox0._p1.x, aBox1._p0.x,aBox1._p1.x);
+            LocComputeIntervaleDelta(aDxMin,aDxMax,aP0.x, mMaxEc[0],aBox0._p0.x, aBox0._p1.x, aBox1._p0.x,aBox1._p1.x);
 
             // Cellule courante
             cGBV2_CelOptimProgDyn & aCel0 = aMat0[aP0];
@@ -330,8 +379,8 @@ void cGBV2_ProgDynOptimiseur::BalayageOneLine(const std::vector<Pt2di> & aVPt)
         tCost aCoutMin = tCost(1e9);
 
         //recherche du cout minimum dans le le rectangle
-        for (aP.y = aBox._p0.y ; aP.y<aBox._p1.y; aP.y++)        
-            for (aP.x = aBox._p0.x ; aP.x<aBox._p1.x ; aP.x++)          
+        for (aP.y = aBox._p0.y ; aP.y<aBox._p1.y; aP.y++)
+            for (aP.x = aBox._p0.x ; aP.x<aBox._p1.x ; aP.x++)
                 ElSetMin(aCoutMin,aMat[aP].CostPassageForce());
 
 
@@ -431,181 +480,317 @@ void cGBV2_ProgDynOptimiseur::SolveOneEtape(int aNbDir)
         mTabCost[aKP].Reset(0,0);
     }
 
-#ifdef CUDA_ENABLED
-    SolveAllDirectionGpu(aNbDir);
-#else
-    // Parcours dans toutes les directions
-    for (int aKDir=0 ; aKDir<mNbDir ; aKDir++)
-    {
-        mPdsProgr = (1.0+aKDir) / mNbDir;
-        double aTeta =   (aKDir*PI)/mNbDir;
+#if CUDA_ENABLED
+        SolveAllDirectionGpu(aNbDir);
 
-        Pt2dr aP = Pt2dr::FromPolar(100.0,aTeta);
-        // On le met la parce que en toute rigueur ca depend de la
-        // direction, mais pour l'instant on ne gere pas cette dependance
-        // Tabulation des couts de transition
-        for (int aKP=0 ; aKP<mNbPx ; aKP++)
-        {
-            mTabCost[aKP].Reset
-                    (
-                        mCostRegul[aKP],
-                        mCostRegul_Quad[aKP]
-                        );
-        }
-        // Balayage dans une direction aP
-        BalayageOneDirection(aP);
-    }
 #endif
-
-    {
-        Pt2di aPTer;
-        for (aPTer.y=0 ; aPTer.y<mSz.y ; aPTer.y++)
-        {
-            for (aPTer.x=0 ; aPTer.x<mSz.x ; aPTer.x++)
-            {
-                tCGBV2_tMatrCelPDyn &  aMat = mMatrCel[aPTer];
-                const Box2di &  aBox = aMat.Box();
-                Pt2di aPRX;
-                for (aPRX.y=aBox._p0.y ;aPRX.y<aBox._p1.y; aPRX.y++)
-                {
-                    for (aPRX.x=aBox._p0.x ;aPRX.x<aBox._p1.x; aPRX.x++)
-                    {
-                        tCost & aCF = aMat[aPRX].CostFinal();
-                        if (mModeAgr==ePrgDAgrSomme) // Mode somme
-                        {
-                            aCF /= mNbDir;
-                        }
-                        aMat[aPRX].SetCostInit(aCF);
-                        aCF = 0;
-                    }
-                }
-            }
-        }
-    }
 }
-#ifdef CUDA_ENABLED
 
-template<bool dirCopy>
-void cGBV2_ProgDynOptimiseur::copyCells(Pt2di aDirI, Data2Optimiz<CuHostData3D,2> &d2Opt, uint idBuf)
+#if CUDA_ENABLED
+void cGBV2_ProgDynOptimiseur::copyCells_Mat2Stream(Pt2di aDirI, Data2Optimiz<CuHostData3D,2>  &d2Opt, sMatrixCellCost<ushort> &mCellCost, uint idBuf)
 {
+
+    GpGpuTools::NvtxR_Push(__FUNCTION__,0xFFAAFF33);
+
     mLMR.Init(aDirI,Pt2di(0,0),mSz);
     const std::vector<Pt2di>* aVPt;
     uint idLine = 0;
     while ((aVPt = mLMR.Next()))
-    {
-        uint    pitStrm = 0;
-        uint    lLine   = aVPt->size();
+    {		
+		const uint	lLine    = aVPt->size();
+		short3*		index    = d2Opt.s_Index().pData()		 + d2Opt.param(idBuf)[idLine].y;
+		ushort* destCostInit = d2Opt.s_InitCostVol().pData() + d2Opt.param(idBuf)[idLine].x;
 
         for (uint aK= 0 ; aK < lLine; aK++)
         {
+            Pt2di ptTer = (Pt2di)(*aVPt)[aK];
+            ushort dZ   = mCellCost.DZ(ptTer);
+			index[aK]   = mCellCost.PtZ(ptTer);
 
-            tCGBV2_tMatrCelPDyn &  aMat = mMatrCel[(*aVPt)[aK]];
+			memcpy(destCostInit,mCellCost[ptTer],dZ * sizeof(ushort));
 
-            short2 dZ = make_short2(aMat.Box()._p0.x,aMat.Box()._p1.x);
-
-            if(dirCopy == MAT_TO_STREAM)
-                d2Opt._s_Index[d2Opt._param[idBuf][idLine].y + aK] = dZ;
-
-            uint idStrm = d2Opt._param[idBuf][idLine].x + pitStrm - dZ.x;
-
-            for ( int aPx = dZ.x ; aPx < dZ.y ; aPx++)
-                if (dirCopy == MAT_TO_STREAM)
-                    d2Opt._s_InitCostVol[idStrm + aPx]  = aMat[Pt2di(aPx,0)].GetCostInit();
-                else
-                    aMat[Pt2di(aPx,0)].AddToCostFinal(d2Opt._s_ForceCostVol[idBuf][idStrm + aPx]);
-
-            pitStrm += count(dZ);
+			destCostInit += dZ;
         }
 
         idLine++;
-
     }
+
+    GpGpuTools::Nvtx_RangePop();
+}
+
+template<bool final> inline
+void cGBV2_ProgDynOptimiseur::agregation(uint& finalCost,uint& forceCost,cGBV2_CelOptimProgDyn *  cell,int apx,tCost & aCostMin,Pt2di &aPRXMin,const int& z)
+{
+
+}
+
+template<> inline
+void cGBV2_ProgDynOptimiseur::agregation<false>(uint& finalCost,uint& forceCost,cGBV2_CelOptimProgDyn *  cell,int apx,tCost & aCostMin,Pt2di &aPRXMin,const int& z)
+{
+	finalCost += forceCost;
+}
+
+template<> inline
+void cGBV2_ProgDynOptimiseur::agregation<true>(uint& finalCost,uint& forceCost,cGBV2_CelOptimProgDyn *  cell,int apx,tCost & aCostMin,Pt2di &aPRXMin,const int& z)
+{
+	//const uint aCost = (finalCost  + forceCost)/mNbDir;
+
+	finalCost   = (finalCost  + forceCost)/mNbDir;
+
+	//cell[apx].SetCostInit(aCost);
+
+//	if (aCost<aCostMin)
+//	{
+//		aCostMin = aCost;
+//		aPRXMin = Pt2di(z + apx,0);
+//	}
+}
+
+template<bool final> inline
+void cGBV2_ProgDynOptimiseur::maskAuto(const Pt2di& ptTer, tCost& aCostMin,Pt2di	&aPRXMin)
+{
+
+}
+
+template<> inline
+void cGBV2_ProgDynOptimiseur::maskAuto<false>(const Pt2di& ptTer, tCost& aCostMin,Pt2di	&aPRXMin)
+{
+
+}
+
+
+template<> inline
+void cGBV2_ProgDynOptimiseur::maskAuto<true>(const Pt2di& ptTer, tCost& aCostMin,Pt2di	&aPRXMin)
+{
+	if(mHasMaskAuto)
+	{
+		/* CUDA_DEFCOR Officiel*/
+		IGpuOpt._FinalDefCor[make_uint2(ptTer.x,ptTer.y)] /= mNbDir;
+		tCost defCOf = IGpuOpt._FinalDefCor[make_uint2(ptTer.x,ptTer.y)];
+		bool NoVal   = defCOf <  aCostMin; // verifier que je n'ajoute pas 2 fois cost init def cor!!!!!
+		mTMask->oset(ptTer,(!NoVal)  && ( mLTCur->IsInMasq(ptTer)));
+
+
+		int aCorI = CostI2CorExport(aCostMin);
+		if(!mLTCur->IsInMasq(ptTer))
+		{
+			aCorI = 0;
+		}
+
+		if(mImCor->Im2D<U_INT1,INT>::Inside(ptTer))
+			mImCor->SetI(ptTer,aCorI);
+
+	}
+
+	mDataImRes[0][ptTer.y][ptTer.x] = aPRXMin.x;
+}
+
+
+void dump32 (__m128i m, const string & prefix = string ())
+{
+	int *i = (int *) &m;
+	cout << prefix << i[0] << ' ' << i[1] << ' ' << i[2] << ' ' << i[3] << endl;
+}
+
+template<bool final>
+void cGBV2_ProgDynOptimiseur::copyCells_Stream2Mat(Pt2di aDirI, Data2Optimiz<CuHostData3D,2>  &d2Opt, sMatrixCellCost<ushort> &mCellCost, CuHostData3D<uint> &costFinal1D,CuHostData3D<uint> &FinalDefCor, uint idBuf)
+{
+    GpGpuTools::NvtxR_Push(__FUNCTION__,0xFFAA0033);
+
+    mLMR.Init(aDirI,Pt2di(0,0),mSz);
+
+    const std::vector<Pt2di>* aVPt;
+    uint idLine = 0;
+
+    while ((aVPt = mLMR.Next()))
+    {
+
+		const uint  lenghtLine		= aVPt->size();
+		const uint3 param			= d2Opt.param(idBuf)[idLine];
+		const uint  piTStream_Alti	= param.y;											// Position dans le stream des altitudes/defCor
+		const uint*	forCo			= d2Opt.s_ForceCostVol(idBuf).pData() + param.x ;
+
+        for (uint aK= 0 ; aK < lenghtLine; aK++)
+        {
+
+			const Pt2di		ptTer	= (Pt2di)(*aVPt)[aK];
+			const ushort	dZ		= mCellCost.DZ(ptTer);
+			uint*			finCo	= costFinal1D.pData() + mCellCost.Pit(ptTer);
+			const uint		defCor	= (d2Opt.s_DefCor(idBuf).pData()[piTStream_Alti + aK]);
+
+			FinalDefCor[make_uint2(ptTer.x,ptTer.y)] += defCor;
+
+//			const int z		= mCellCost.PtZ(ptTer).x;
+//			cGBV2_CelOptimProgDyn *  cell = mMatrCel[ptTer][0] + z;
+//			tCost   aCostMin = tCost(1e9);
+//			Pt2di	aPRXMin;
+//			for ( int aPx = 0 ; aPx < dZ ; aPx++)
+//				agregation<final>(finCo[aPx],forCo[aPx],cell,aPx,aCostMin,aPRXMin,z);
+
+			for ( int aPx = 0 ; aPx < dZ ; aPx++,forCo++,finCo++)
+				*finCo += *forCo;
+
+//			for ( int aPx = 0 ; aPx < dZ ; aPx+=4)
+//			{
+//						__m128i a = _mm_load_si128( (const __m128i *)(finCo + aPx) );
+//						__m128i b = _mm_load_si128( (const __m128i *)(forCo + aPx) );
+//						__m128i  resultAD = _mm_add_epi32 (a, b);
+//						__m128i  *dest = (__m128i*)(finCo + aPx);
+//						_mm_store_si128(dest,resultAD);
+//			}
+
+			//maskAuto<final>(ptTer,aCostMin,aPRXMin);
+
+//			forCo += dZ;
+
+        }
+
+        idLine++;
+    }
+
+    GpGpuTools::Nvtx_RangePop();
+
 }
 
 Pt2di cGBV2_ProgDynOptimiseur::direction(int aNbDir, int aKDir)
 {
-    return Pt2di(vunit(Pt2dr::FromPolar(100.0,(aKDir*PI)/aNbDir)) * 20.0);
+    double teta = (double)((double)aKDir*PI)/(double)aNbDir;
+
+//    BUG cos double retourne NaN en Jp2 avec GCC pas avec Clang!!!!!!!!!!!!!!!!
+//    double c    = std::cos(teta);
+//    double s    = std::sin(teta);
+    double c    = std::cos((float)teta);
+    double s    = std::sin((float)teta);
+    Pt2dr d2    = Pt2dr(ElStdTypeScal<double>::RtoT(c*100.f),ElStdTypeScal<double>::RtoT(s*100.f));
+
+    return Pt2di( vunit(d2) * 20.0);
 }
 
 void cGBV2_ProgDynOptimiseur::SolveAllDirectionGpu(int aNbDir)
 {
-
     const std::vector<Pt2di> * aVPt;
-    uint sizeMaxLine = (uint)(1.5f*sqrt((float)mSz.x * mSz.x + mSz.y * mSz.y));
 
-    //IGpuOpt.createThreadOptGpGpu();
-    IGpuOpt.ReallocParam(sizeMaxLine);
-    IGpuOpt.SetPreCompNextDir(true);
-    int aKDir = 0, aKPreDir = 0;
-    bool idPreCo = false, idCo = false;
+    ushort aPenteMax = (ushort)mEtape.EtapeMEC().ModulationProgDyn().Val().Px1PenteMax().Val();
+
+    float penteMax = (float) aPenteMax/mEtape.KPx(0).ComputedPas();
+    IGpuOpt.Prepare(mSz.x,mSz.y,aPenteMax,aNbDir,mCostRegul[0],mCostRegul[1],mCostDefMasked,mCostTransMaskNoMask,mHasMaskAuto);
+
+    TIm2DBits<1> aTMask(mLTCur->ImMasqTer());
+
+    Pt2di aPTer;
+    sMatrixCellCost<ushort> &mCellCost = IGpuOpt._poInitCost;
+
+    for (aPTer.y=0 ; aPTer.y<mSz.y ; aPTer.y++)
+        for (aPTer.x=0 ; aPTer.x<mSz.x ; aPTer.x++)
+            if(aTMask.get(aPTer))
+                mCellCost.setDefCor(make_uint2(aPTer.x,aPTer.y),mCostDefMasked);
+
+    int     aKDir       = 0;
+    int     aKPreDir    = 0;
+    bool    idPreCo     = false;
+
+	if(mHasMaskAuto)
+	{
+		mMaskCalcDone = true;
+		mMaskCalc = Im2D_Bits<1>(mSz.x,mSz.y);
+	}
+//	mTMask			= new TIm2DBits<1>(mMaskCalc);
+
+	IGpuOpt.SetCompute(true);
+
     while (aKDir < aNbDir)
     {
 
-        if(  aKPreDir < aNbDir && aKPreDir <= aKDir + 1 && IGpuOpt.GetPreCompNextDir() )
+        if( aKPreDir <= aKDir + 1 && aKPreDir < aNbDir &&  IGpuOpt.GetPreComp() )
         {
-            //printf("Precompute[%d]  : %d\n",idPreCo,aKPreDir);
 
             Pt2di aDirI = direction(aNbDir, aKPreDir);
 
-            uint nbLine = 0, sizeStreamLine, pitStream = 0, pitIdStream = 0 ;
+            uint idLine = 0, sizeStreamLine, pitStream = IGpuOpt._poInitCost._maxDz, pitIdStream = WARPSIZE ;
 
             mLMR.Init(aDirI,Pt2di(0,0),mSz);
+
+            //GpGpuTools::NvtxR_Push("Prepa",0xFF0000FF);
 
             while ((aVPt = mLMR.Next()))
             {
                 uint lenghtLine = (uint)(aVPt->size());
 
-                IGpuOpt.Data2Opt().SetParamLine(nbLine,pitStream,pitIdStream,lenghtLine,idPreCo);
+                IGpuOpt.HData2Opt().SetParamLine(idLine,pitStream,pitIdStream,lenghtLine,idPreCo);
 
                 sizeStreamLine = 0;
 
                 for (uint aK = 0 ; aK < lenghtLine; aK++)
-                    sizeStreamLine += abs(mMatrCel[(*aVPt)[aK]].Box()._p1.x-mMatrCel[(*aVPt)[aK]].Box()._p0.x) + 1;
+                {
+					 sizeStreamLine += IGpuOpt._poInitCost.DZ((Pt2di)(*aVPt)[aK]);
+                }
 
-                pitIdStream += iDivUp(lenghtLine,       WARPSIZE) * WARPSIZE;
-                pitStream   += iDivUp(sizeStreamLine,   WARPSIZE) * WARPSIZE;
+                // PREDEFCOR
+				pitIdStream += sgpu::__multipleSup<32>(lenghtLine);
+				pitStream   += sgpu::__multipleSup<32>(sizeStreamLine);
 
-                nbLine++;
+                idLine++;
             }
 
-            IGpuOpt.Data2Opt().SetNbLine(nbLine);
+            //nvtxRangePop();
 
-            IGpuOpt.Data2Opt().ReallocInputIf(pitStream,pitIdStream);
+            IGpuOpt.HData2Opt().SetNbLine(idLine);
 
-            copyCells<MAT_TO_STREAM>( aDirI, IGpuOpt.Data2Opt(),idPreCo);
+            double  mDMoyDir = average_euclid_line_seed(aDirI);
 
-            IGpuOpt.SetCompute(true);
-            IGpuOpt.SetPreCompNextDir(false);
+            int aJump    = round_ni(penteMax*mDMoyDir);
+            int mMaxJumpDir  = ElMax(1,aJump);
+
+            IGpuOpt.HData2Opt().setPenteMax(mMaxJumpDir);
+
+            IGpuOpt.HData2Opt().ReallocInputIf(pitStream + IGpuOpt._poInitCost._maxDz,pitIdStream + WARPSIZE);
+
+            copyCells_Mat2Stream(aDirI, IGpuOpt.HData2Opt(),IGpuOpt._poInitCost,idPreCo);
+
+            //IGpuOpt.SetCompute(true);
+            IGpuOpt.SetPreComp(false);
+            IGpuOpt.simpleJob();
 
             aKPreDir++;
             idPreCo = !idPreCo;
         }
 
-        //IGpuOpt.oneDirOptGpGpu();
-
-        if(IGpuOpt.GetDirToCopy() && aKDir < aNbDir)
+        if(IGpuOpt.GetDataToCopy())
         {
 
-            //printf("Copy[%d]         : %d\n",idCo,aKDir);
-            copyCells<STREAM_TO_MAT>( direction(aNbDir,aKDir), IGpuOpt.Data2Opt(),idCo);
-
-            IGpuOpt.SetDirToCopy(false);
-            aKDir++;
-            idCo = !idCo;
+//			if(aNbDir == aKDir+1)
+//				copyCells_Stream2Mat<true>(direction(aNbDir,aKDir),IGpuOpt.HData2Opt(),IGpuOpt._poInitCost,IGpuOpt._preFinalCost1D,IGpuOpt._FinalDefCor,!IGpuOpt.GetIdBuf());
+//			else
+				copyCells_Stream2Mat<false>(direction(aNbDir,aKDir),IGpuOpt.HData2Opt(),IGpuOpt._poInitCost,IGpuOpt._preFinalCost1D,IGpuOpt._FinalDefCor,!IGpuOpt.GetIdBuf());
+			IGpuOpt.SetDataToCopy(false);
+			aKDir++;
         }
     }
-    IGpuOpt.SetCompute(false);
-    IGpuOpt.SetPreCompNextDir(false);
-    IGpuOpt.SetDirToCopy(false);
-    IGpuOpt.Dealloc();
-    //IGpuOpt.deleteThreadOptGpGpu();
+
+    IGpuOpt.freezeCompute();
+
 }
 #endif
+
+void cGBV2_ProgDynOptimiseur::writePoint(FILE* aFP,  Pt3dr            aP,Pt3di           aW)
+{
+    WriteType(aFP,float(aP.x));
+    WriteType(aFP,float(aP.y));
+    WriteType(aFP,float(aP.z));
+
+    WriteType(aFP,(U_INT1)(aW.x));
+    WriteType(aFP,(U_INT1)(aW.y));
+    WriteType(aFP,(U_INT1)(aW.z));
+}
+
 
 
 void cGBV2_ProgDynOptimiseur::Local_SolveOpt(Im2D_U_INT1 aImCor)
 {
 
+	// TODO ATTENTION BUG QUAND PAS DE param AUTOMASK DANS LE FICHIER XML (voir revision 4858)
+
+	mImCor = &aImCor;
     // double aVPentes[theDimPxMax];
     const cModulationProgDyn &  aModul = mEtape.EtapeMEC().ModulationProgDyn().Val();
 
@@ -614,6 +799,21 @@ void cGBV2_ProgDynOptimiseur::Local_SolveOpt(Im2D_U_INT1 aImCor)
    double aPenteMax = aModul.Px1PenteMax().Val();
    double aRegul    =  mCostRegul[0];
    double aRegul_Quad = 0.0;
+
+   mHasMaskAuto = aModul.ArgMaskAuto().IsInit();
+
+   if(mHasMaskAuto)
+   {
+       const cArgMaskAuto & anAMA  = aModul.ArgMaskAuto().Val();
+       mCostDefMasked = CostR2I(mAppli.CurCorrelToCout(anAMA.ValDefCorrel()));
+       mCostTransMaskNoMask = CostR2I(anAMA.CostTrans());
+   }
+   else
+   {
+       mCostTransMaskNoMask = 20000;
+       mCostDefMasked       = 8000;
+   }
+
     //=================
     double aVPentes[theDimPxMax];
 
@@ -626,68 +826,116 @@ void cGBV2_ProgDynOptimiseur::Local_SolveOpt(Im2D_U_INT1 aImCor)
     aVPentes[0] = aPenteMax;
     aVPentes[1] = 10;
 
-
     for (int aKP=0 ; aKP<mNbPx ; aKP++)
     {
         double aPente = aVPentes[aKP]; // MODIF  / mEtape.KPx(aKP).Pas();
         mMaxEc[aKP] = ElMax(1,round_ni(aPente));
     }
 
-
-     
-    for 
+    for
     (
         std::list<cEtapeProgDyn>::const_iterator itE=aModul.EtapeProgDyn().begin();
         itE!=aModul.EtapeProgDyn().end();
-        itE++
+		++itE
     )
     {
-        SolveOneEtape(itE->NbDir().Val());
+		const int nbDirection = itE->NbDir().Val();
+        SolveOneEtape(nbDirection);
     }
 
-Im2D_INT4 aDupRes(mSz.x,mSz.y);
+	Pt2di aPTer;
 
-    {
-        Pt2di aPTer;
-        for (aPTer.y=0 ; aPTer.y<mSz.y ; aPTer.y++)
-        {
-            for (aPTer.x=0 ; aPTer.x<mSz.x ; aPTer.x++)
-            {
-                tCGBV2_tMatrCelPDyn &  aMat = mMatrCel[aPTer];
-                const Box2di &  aBox = aMat.Box();
-                Pt2di aPRX;
-                Pt2di aPRXMin;
-                tCost   aCostMin = tCost(1e9);
-                for (aPRX.y=aBox._p0.y ;aPRX.y<aBox._p1.y; aPRX.y++)
-                {
-                    for (aPRX.x=aBox._p0.x ;aPRX.x<aBox._p1.x; aPRX.x++)
-                    {
-                        tCost aCost = aMat[aPRX].GetCostInit();
-                        if (aCost<aCostMin)
-                        {
-                            aCostMin = aCost;
-                            aPRXMin = aPRX;
-                        }
-                    }
-                }
-                // MODIF
-                mDataImRes[0][aPTer.y][aPTer.x] = aPRXMin.x ;
-aDupRes.data()[aPTer.y][aPTer.x] = aPRXMin.x ;
+	if(mHasMaskAuto)
+	{
+		mMaskCalcDone = true;
+		mMaskCalc = Im2D_Bits<1>(mSz.x,mSz.y);
+	}
+
+	TIm2DBits<1>    aTMask(mMaskCalc);
+#ifdef CUDA_ENABLED
+	GpGpuTools::NvtxR_Push("Recolt",0xFF8833FF);
+#endif
+	for (aPTer.y=0 ; aPTer.y<mSz.y ; aPTer.y++)
+	{
+		for (aPTer.x=0 ; aPTer.x<mSz.x ; aPTer.x++)
+		{
+#ifdef CUDA_ENABLED
+
+			tCGBV2_tMatrCelPDyn &  aMat = mMatrCel[aPTer];
+			const Box2di &  aBox = aMat.Box();
+			Pt2di aPRX;
+			Pt2di aPRXMin;
+			tCost   aCostMin = tCost(1e9);
+			uint* finalCost = IGpuOpt._preFinalCost1D.pData() + IGpuOpt._poInitCost.Pit(aPTer) - aBox._p0.x ;
+
+			for (aPRX.x=aBox._p0.x ;aPRX.x<aBox._p1.x; aPRX.x++)
+			{
+
+				//					aMat[Pt2di(aPRX.x,0)].SetCostFinal(finalCost[aPRX.x]);
+				//					tCost & aCF = aMat[aPRX].CostFinal();
+				//					aCF /= mNbDir;
+
+				aMat[aPRX].SetCostInit(finalCost[aPRX.x]/mNbDir);
+
+				//
+				tCost aCost = aMat[aPRX].GetCostInit();
+
+				if (aCost<aCostMin)
+				{
+					aCostMin = aCost;
+					aPRXMin = aPRX;
+				}
+			}
+
+			if(mHasMaskAuto)
+			{
+				// CUDA_DEFCOR Officiel
+				IGpuOpt._FinalDefCor[make_uint2(aPTer.x,aPTer.y)] /= mNbDir;
+				tCost defCOf = IGpuOpt._FinalDefCor[make_uint2(aPTer.x,aPTer.y)];
+				bool NoVal   = defCOf <  aCostMin; // verifier que je n'ajoute pas 2 fois cost init def cor!!!!!
+				aTMask.oset(aPTer,(!NoVal)  && ( mLTCur->IsInMasq(aPTer)));
 
 
-            }
-        }
+				int aCorI = CostI2CorExport(aCostMin);
+				if(!mLTCur->IsInMasq(aPTer))
+				{
+					aCorI = 0;
+				}
 
-    }
+				if(aImCor.Im2D<U_INT1,INT>::Inside(aPTer))
+					aImCor.SetI(aPTer,aCorI);
+
+			}
+
+			mDataImRes[0][aPTer.y][aPTer.x] = aPRXMin.x;
+
+#endif
+
+		}
+	}
+
+#ifdef CUDA_ENABLED
+	GpGpuTools::Nvtx_RangePop();
+#endif
+
+#ifdef CUDA_ENABLED
+		GpGpuTools::NvtxR_Push("Comble Trou",0xFF883300);
+
+		/* officiel COMBLE TROU */
+        if (mHasMaskAuto)
+            CombleTrouPrgDyn(aModul,mMaskCalc,mLTCur->ImMasqTer(),mImRes[0]);
 
 
-if (0)
-{
-    
-   Video_Win aW = Video_Win::WStd(mSz,5.0);
-   ELISE_COPY(aW.all_pts(),aDupRes.in()*10,aW.ocirc());
-getchar();
-}
+		GpGpuTools::Nvtx_RangePop();
+#endif
+
+//    if (0)
+//    {
+
+//        Video_Win aW = Video_Win::WStd(mSz,5.0);
+//        ELISE_COPY(aW.all_pts(),aDupRes.in()*10,aW.ocirc());
+//        getchar();
+//    }
 }
 
 cSurfaceOptimiseur * cSurfaceOptimiseur::AllocAlgoTestGPU
@@ -715,7 +963,6 @@ cSurfaceOptimiseur * cSurfaceOptimiseur::AllocAlgoTestGPU
 /**************************************************/
 
 
-}
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
@@ -725,27 +972,27 @@ correspondances d'images pour la reconstruction du relief.
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
 de modification et de redistribution accordés par cette licence, il n'est
 offert aux utilisateurs qu'une garantie limitée.  Pour les mêmes raisons,
-seule une responsabilité restreinte pèse sur l'auteur du programme,  le
+seule une responsabilité restreinte p�?se sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
 manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
 logiciel �  leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs syst�?mes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

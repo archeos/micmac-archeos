@@ -49,6 +49,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include <iterator>
 
 
+extern bool DebugCamBil;
 
 /************************************************************/
 /*                                                          */
@@ -159,7 +160,13 @@ void cSetEqFormelles::SetPhaseEquation()
 
 }
 
-cSetEqFormelles * cElemEqFormelle::Set() {return &mSet;}
+cSetEqFormelles * cElemEqFormelle::Set() 
+{
+    return &mSet;
+}
+
+
+
 const  cIncIntervale & cElemEqFormelle::IncInterv() const
 {
     return mIncInterv;
@@ -189,7 +196,7 @@ void cElemEqFormelle::CloseEEF(bool asIntervBlock)
    if (asIntervBlock)
       mSet.AddABlocAlloc(&mIncInterv);
 
-   if (false) // (false && asIntervBlock)
+   if (DebugCamBil) // (false && asIntervBlock)
    {
       std::cout << asIntervBlock << " CLOSE-EEF " << mNumInc0 << " " << mNumIncN <<  " " << mIncInterv.Id() << "\n";
       getchar();
@@ -326,7 +333,7 @@ void cElemEqFormelle::AssertSameSet(const cElemEqFormelle & anEl2)
 /*                                                          */
 /************************************************************/
 
-cSetEqFormelles::cSetEqFormelles(eTypeSysResol aType,int aNbEq) :
+cSetEqFormelles::cSetEqFormelles(eTypeSysResol aType,int aNbEq,bool CanUseCstr) :
    mSys          (0),
    mFQC          (0),
    mClosed       (false),
@@ -340,7 +347,8 @@ cSetEqFormelles::cSetEqFormelles(eTypeSysResol aType,int aNbEq) :
    mTmpBegun     (false),
    mIndIncTmp    (-1),
    mSolQuad      (1),
-   mCurSol       (1)
+   mCurSol       (1),
+   mCanUseCstr   (CanUseCstr)
 {
 }
 
@@ -461,7 +469,7 @@ cSetEqFormelles::~cSetEqFormelles()
     delete &mDicRot;
 }
 
-void cSetEqFormelles:: AddObj2Kill(cObjFormel2Destroy * anObj)
+void cSetEqFormelles::AddObj2Kill(cObjFormel2Destroy * anObj)
 {
      mLobj2Kill.push_back(anObj);
 }
@@ -530,7 +538,7 @@ const std::vector<cIncIntervale *> &   cSetEqFormelles::BlocsIncAlloc() const
 
 
 
-void cManipOrdInc::Init(const std::vector<cIncIntervale *> aBlocsIncAlloc) 
+void cManipOrdInc::Init(const std::vector<cIncIntervale *> &aBlocsIncAlloc) 
 {
    mBlocsIncSolve = aBlocsIncAlloc;
    for (int aK=0 ; aK<int(mBlocsIncSolve.size()); aK++)
@@ -744,7 +752,8 @@ void cSetEqFormelles::SetClosed()
    }
    else if (mTypeSys ==eSysPlein)
    {
-      mSys = new L2SysSurResol(mNbVar);
+      // mSys = new L2SysSurResol(mNbVar);
+      mSys = new L2SysSurResol(mNbVar,!mCanUseCstr);
    }
    else if (mTypeSys == eSysCreuxFixe)
    {
@@ -866,6 +875,11 @@ int   cSetEqFormelles::GetNumBlocInclusIAlloc(int anI0) const
 
 void cSetEqFormelles::AddABlocAlloc(cIncIntervale * anII)
 {
+if (DebugCamBil)
+{
+   std::cout << "AAA cSetEqFormelles::AddABlocAlloc \n"; 
+   getchar();
+}
    AssertUnClosed();
    if (mBlocsIncAlloc.empty())
    {
@@ -940,7 +954,7 @@ const std::vector<REAL> & cSetEqFormelles::AddEqIndexeToSys
 const std::vector<REAL> & cSetEqFormelles::VAddEqFonctToSys
      (
                   cElCompiledFonc * aFonct,
-                  REAL aPds,
+                  const std::vector<double> & aVPds,
                   bool WithDerSec
      )
 {
@@ -951,7 +965,7 @@ if (1)
    aFonct->Std_AddEqSysSurResol
    (
         false,
-        aPds,
+        aVPds,
         mAlloc.ValsVar(),
         *mSys,
         *this,
@@ -961,6 +975,16 @@ if (1)
      const std::vector<REAL> & aRes = aFonct->Vals();
 
      return aRes;
+}
+
+const std::vector<REAL> & cSetEqFormelles::VAddEqFonctToSys
+     (
+                  cElCompiledFonc * aFonct,
+                  REAL aPds,
+                  bool WithDerSec
+     )
+{
+    return VAddEqFonctToSys(aFonct,MakeVec1(aPds),WithDerSec);
 }
 
 REAL cSetEqFormelles::AddEqFonctToSys
@@ -1017,6 +1041,7 @@ void cSetEqFormelles::SolveResetUpdate(double ExpectResidu,bool *OK)
 
 bool DoCheckResiduPhgrm=false;
 
+
 void cSetEqFormelles::Solve(double ExpectResidu,bool *OK)
 {
     AssertClosed();
@@ -1032,9 +1057,19 @@ void cSetEqFormelles::Solve(double ExpectResidu,bool *OK)
         int I0 = (*itB)->IncInterv().I0Solve();
         int I1 = (*itB)->IncInterv().I1Solve();
         for (int aK=I0; aK<I1 ; aK++)
+        {
 	    mSys->SetElemQuad(aK,aK,1);
+        }
     }
 
+    
+
+    if (false)
+    {
+        ShowSpectrSys(*this);
+        std::cout << "SetEqFormelles::Solve:DoneIntervvvvvvvvvvvvv \n";
+        getchar();
+    }
 
     if (::DebugPbCondFaisceau)
     {
@@ -1241,6 +1276,19 @@ cEqHomogFormelle * cSetEqFormelles::NewEqHomog
 {
      AssertUnClosed();
      cEqHomogFormelle * aRes = new cEqHomogFormelle(InSpaceInit,aHF1,aHF2,aDRF,Code2Gen);
+
+     AddObj2Kill(aRes);
+     return aRes;
+}
+
+cEqOneHomogFormelle *    cSetEqFormelles::NewOneEqHomog
+                         (
+                             cHomogFormelle & aHF,
+                             bool Code2Gen 
+                         )
+{
+     AssertUnClosed();
+     cEqOneHomogFormelle * aRes = new cEqOneHomogFormelle(aHF,Code2Gen);
      AddObj2Kill(aRes);
      return aRes;
 }

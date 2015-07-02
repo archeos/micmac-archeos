@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -42,7 +42,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
-using namespace NS_ParamChantierPhotogram;
 
 
 /*************************************************/
@@ -147,11 +146,11 @@ void ElDistortion22_Gen::ErrorInvert() const
    ELISE_ASSERT
    (
        false,
-       "Distortion Inversion  by finite differnce do not converge (probably ill conditonned canvas)"
+       "Distortion Inversion  by finite difference do not converge (probably ill-conditioned canvas)"
    );
 }
 
-const bool &   ElDistortion22_Gen::Dist22Gen_UsePreConditionner() const 
+const bool &   ElDistortion22_Gen::Dist22Gen_UsePreConditionner() const
 {
     return mDist22Gen_UsePreConditionner;
 }
@@ -161,7 +160,7 @@ void    ElDistortion22_Gen::SetDist22Gen_UsePreConditionner(bool aUPC) const
 }
 
 
-const bool &   ElDistortion22_Gen::Dist22Gen_SupressPreCondInInverse() const 
+const bool &   ElDistortion22_Gen::Dist22Gen_SupressPreCondInInverse() const
 {
     return mDist22Gen_SupressPreCondInInverse;
 }
@@ -190,7 +189,7 @@ Pt2dr  ElDistortion22_Gen::DirectAndDer(Pt2dr aP,Pt2dr & aGradX,Pt2dr & aGradY) 
 }
 
 
-ElDistortion22_Gen::~ElDistortion22_Gen() 
+ElDistortion22_Gen::~ElDistortion22_Gen()
 {
    delete mPolynInv;
 }
@@ -212,8 +211,16 @@ REPERE-222222
 */
 
     Pt2dr aP00 = anEstim0;
+
 static int aCpt=0 ; aCpt++;
-// bool BugNanFE = (aCpt==65508);
+/*
+std::cout << "CPT " << aCpt << "\n";
+ bool BugGravillon = (aCpt==146282);
+ if (BugGravillon)
+ {
+     std::cout << "ENTRE : Estim0 " << anEstim0 << "\n";
+ }
+*/
 
      int aNbRee = 0;
      ElMatrix<REAL> aDiff = Diff(anEstim0);
@@ -227,19 +234,12 @@ static int aCpt=0 ; aCpt++;
 
      for (bool cont= true; cont; )
      {
-         if (isnan(anEstim0.x) || isnan(anEstim0.y))
+         if (std_isnan(anEstim0.x) || std_isnan(anEstim0.y))
          {
                std::cout << "NAN Values in inversion,  target " << aPt << " ; guess " << aP00  << " Cpt= " << aCpt<< "\n";
                ErrorInvert();
          }
          Pt2dr DisEst    = Direct(anEstim0);
-if (BugNanFE)
-{
- std::cout <<  aPt << "\n";
- std::cout << "ECART " << euclid(DisEst,aPt) << " REE " << Reestim << "\n";
- std::cout << euclid(DisEst,aPt) << aPt << anEstim0 << "\n"; 
- getchar();
-}
          if (
                    (euclid(DisEst,aPt)<Epsilon)
                 || (NbStep > mNbIterMaxInvDiff)
@@ -248,10 +248,10 @@ if (BugNanFE)
             if (NbStep > mNbIterMaxInvDiff)
             {
                std::cout << "Slow convergence Values in inversion\n";
-               std::cout <<  "Nb Step = " << NbStep << " Cur " << anEstim0 
+               std::cout <<  "Nb Step = " << NbStep << " Cur " << anEstim0
                          << "  RESIDU " << euclid(DisEst,aPt)
-                         << " Dist " << DisEst << " Cible " << aPt << "\n";
-              
+                         << " Dist " << DisEst << " Cible " << aPt  << " ESTIM0 " << aP00 << "\n";
+
                ErrorInvert();
             }
             cont = false;
@@ -273,8 +273,10 @@ if (BugNanFE)
      {
           aNbStepMax  = NbStep;
 
-          if (aNbStepMax > 5) 
-            std::cout  << "NB-STEP-MAX " << aNbStepMax  << " P=" << aPt << "Inv=" << anEstim0<< "\n";
+          if ((aNbStepMax > 5) && MPD_MM())
+          {
+               std::cout  << "NB-STEP-MAX " << aNbStepMax  << " P=" << aPt << "Inv=" << anEstim0<< "\n";
+          }
      }
 
      return anEstim0;
@@ -306,21 +308,16 @@ void ElDistortion22_Gen::DiffByDiffFinies
      (ElMatrix<REAL> & aMat,Pt2dr aP,Pt2dr Eps) const
 {
      Eps = Eps/mScN;
-
-// std::cout << aCpt << "\n";
-if (BugFE)
-{
-   std::cout << "----EPS " << this << " " << Eps << " " << mScN << "\n";
-}
      Pt2dr dx(Eps.x,0);
-     SetCol(aMat,0,(Direct(aP+dx)-Direct(aP-dx))/(2.0*Eps.x));
      Pt2dr dy(0,Eps.y);
+
+     SetCol(aMat,0,(Direct(aP+dx)-Direct(aP-dx))/(2.0*Eps.x));
      SetCol(aMat,1,(Direct(aP+dy)-Direct(aP-dy))/(2.0*Eps.y));
 }
 void ElDistortion22_Gen::DiffByDiffFinies
      (ElMatrix<REAL> & aMat,Pt2dr aP,REAL Eps) const
 {
-	DiffByDiffFinies(aMat,aP,Pt2dr(Eps,Eps));
+    DiffByDiffFinies(aMat,aP,Pt2dr(Eps,Eps));
 }
 
 
@@ -353,7 +350,7 @@ void  ElDistortion22_Gen::SetScalingTranslate(const double & aS,const Pt2dr &aTr
    {
       ELISE_ASSERT(aS==1,"No Scale for this dist");
    }
-   
+
 
    if (AcceptTranslate())
    {
@@ -374,7 +371,7 @@ void  ElDistortion22_Gen::SetScalingTranslate(const double & aS,const Pt2dr &aTr
 
 
 
-Pt2dr ElDistortion22_Gen::Inverse(Pt2dr aP) const 
+Pt2dr ElDistortion22_Gen::Inverse(Pt2dr aP) const
 {
     if (OwnInverse(aP))
        return aP;
@@ -409,7 +406,7 @@ Pt2dr ElDistortion22_Gen::GuessInv(const Pt2dr & aP) const
 Polynome2dReal  ElDistortion22_Gen::NewPolynLeastSquareInverse_OneCoord
                 (
                         bool XCoord ,
-                        Box2dr aDom, 
+                        Box2dr aDom,
                         INT  aDegre,
                         INT  aNbPts
                 )
@@ -426,7 +423,7 @@ Polynome2dReal  ElDistortion22_Gen::NewPolynLeastSquareInverse_OneCoord
    SystLinSurResolu aSys(aNbM,ElSquare(1+aNbD1));
    Im1D_REAL8 aFLin(aNbM);
    REAL * aDataFL = aFLin.data();
-     
+
 
    for (INT aKx =0 ; aKx <= aNbD1 ; aKx++)
        for (INT aKy =0 ; aKy <= aNbD1 ; aKy++)
@@ -450,7 +447,7 @@ ElDistortionPolynomiale ElDistortion22_Gen::NewPolynLeastSquareInverse
                         (
                              Box2dr aDom,
                              INT  aDegre,
-                             INT  aNbPts 
+                             INT  aNbPts
                         )
 {
    if (aNbPts == -1)
@@ -479,12 +476,12 @@ void ElDistortion22_Gen::SaveAsGrid
 
 class cElDG_ChScale : public ElDistortion22_Gen
 {
-	public :
+    public :
           cElDG_ChScale(REAL aChSc,const ElDistortion22_Gen * aDist) :
              mChSc (aChSc),
              mDist (aDist)
           {
-          } 	      
+          }
 
           Pt2dr Direct(Pt2dr aP) const
           {
@@ -496,13 +493,13 @@ class cElDG_ChScale : public ElDistortion22_Gen
                aP = mDist->Inverse(aP/mChSc) * mChSc;
                return true;
           }
-	  void  Diff(ElMatrix<REAL> & aMat,Pt2dr aP) const
-	  {
+      void  Diff(ElMatrix<REAL> & aMat,Pt2dr aP) const
+      {
                 Diff(aMat,aP/mChSc);
-	  }
+      }
 
 
-	private:
+    private:
 
              REAL                           mChSc;
              const ElDistortion22_Gen *     mDist;
@@ -510,16 +507,16 @@ class cElDG_ChScale : public ElDistortion22_Gen
 
 ElDistortion22_Gen  * ElDistortion22_Gen::D22G_ChScale(REAL aS) const
 {
-	return new cElDG_ChScale(aS,this);
+    return new cElDG_ChScale(aS,this);
 }
 
 class cElDG_Inverse : public ElDistortion22_Gen
 {
-	public :
+    public :
           cElDG_Inverse(const ElDistortion22_Gen * aDist) :
              mDist (aDist)
           {
-          } 	      
+          }
 
           Pt2dr Direct(Pt2dr aP) const
           {
@@ -531,26 +528,26 @@ class cElDG_Inverse : public ElDistortion22_Gen
                aP = mDist->Direct(aP);
                return true;
           }
-	  void  Diff(ElMatrix<REAL> & aMat,Pt2dr aP) const
-	  {
+      void  Diff(ElMatrix<REAL> & aMat,Pt2dr aP) const
+      {
                 Diff(aMat,aP);
                 self_gaussj(aMat);
-	  }
+      }
 
-	private:
+    private:
              const ElDistortion22_Gen *     mDist;
 };
 
 ElDistortion22_Gen  * ElDistortion22_Gen::CalcInverse() const
 {
-	return new cElDG_Inverse(this);
+    return new cElDG_Inverse(this);
 }
 
 bool ElDistortion22_Gen::IsId() const {return false;}
 
 ElDistRadiale_PolynImpair *ElDistortion22_Gen::DRADPol(bool strict)
 {
-	return 0;
+    return 0;
 }
 
 
@@ -576,7 +573,7 @@ Box2dr ElDistortion22_Gen::ImageRecOfBox(Box2dr aBox,INT aNbPtsDisc)
    return aInv.ImageOfBox(aBox,aNbPtsDisc);
 }
 
-void  ElDistortion22_Gen::Diff(ElMatrix<REAL> &,Pt2dr) const 
+void  ElDistortion22_Gen::Diff(ElMatrix<REAL> &,Pt2dr) const
 {
    ELISE_ASSERT(false,"No ElDistortion22_Gen::Diff");
 }
@@ -600,6 +597,7 @@ cCalibDistortion GlobXmlDistNoVal()
    aRes.ModRad().SetNoInit();
    aRes.ModPhgrStd().SetNoInit();
    aRes.ModUnif().SetNoInit();
+   aRes.ModGridDef().SetNoInit();
 
    return aRes;
 }
@@ -929,32 +927,32 @@ ElDistRadiale_PolynImpair   ElDistRadiale_PolynImpair::DistRadialeInverse
     for (INT aK = -NbPts ; aK <= NbPts ; aK++)
     {
          Coeffs.clear();
-	 REAL R = aK *  RhoApp/NbPts;
-	 REAL R2 = ElSquare(R);
+     REAL R = aK *  RhoApp/NbPts;
+     REAL R2 = ElSquare(R);
 
-	 REAL ImR = R * (1+DistDirecteR2NoSeuil(R2));
-	 REAL Pds = ElAbs(R);
+     REAL ImR = R * (1+DistDirecteR2NoSeuil(R2));
+     REAL Pds = ElAbs(R);
 
-	 REAL ImR2 = ImR*ImR;
-	 REAL ImR2N = 1;
+     REAL ImR2 = ImR*ImR;
+     REAL ImR2N = 1;
 
-	 for (INT aK=0 ; aK<aDeg ; aK++)
-	 {
+     for (INT aK=0 ; aK<aDeg ; aK++)
+     {
                ImR2N *= ImR2;
                Coeffs.push_back(ImR2N);
-	 }
-	 aSys.GSSR_AddNewEquation(Pds,&(Coeffs[0]),R/ImR-1.0,0);
+     }
+     aSys.GSSR_AddNewEquation(Pds,&(Coeffs[0]),R/ImR-1.0,0);
     }
     Im1D_REAL8  aSol = aSys.Solve(0);
 
     ElDistRadiale_PolynImpair aRes(mRMax * (1+DistInverse(mRMax)),Centre());
     for (INT aK=0 ; aK<aDeg ; aK++)
-	    aRes.PushCoeff(aSol.data()[aK]);
+        aRes.PushCoeff(aSol.data()[aK]);
 
     return aRes;
 }
 
-ElDistRadiale_PolynImpair 
+ElDistRadiale_PolynImpair
 ElDistRadiale_PolynImpair::MapingChScale(REAL aSc) const
 {
    ElDistRadiale_PolynImpair aRes(mRMax*aSc,Centre()*aSc);
@@ -977,7 +975,7 @@ ElDistRadiale_PolynImpair ElDistRadiale_PolynImpair::DistId(REAL aRMax,Pt2dr aCe
       {
           aDist.PushCoeff(0);
       }
- 
+
       return aDist;
 }
 
@@ -1000,13 +998,13 @@ ElDistRadiale_PolynImpair ElDistRadiale_PolynImpair::read(ELISE_fp & aFile)
      return aRes;
 }
 
-ElDistRadiale_PolynImpair 
+ElDistRadiale_PolynImpair
    ElDistRadiale_PolynImpair::read(const std::string & aName)
 {
-	ELISE_fp  aFile(aName.c_str(),ELISE_fp::READ);
-	ElDistRadiale_PolynImpair aRes = read(aFile);
-	aFile.close();
-	return aRes;
+    ELISE_fp  aFile(aName.c_str(),ELISE_fp::READ);
+    ElDistRadiale_PolynImpair aRes = read(aFile);
+    aFile.close();
+    return aRes;
 }
 
 ElDistRadiale_PolynImpair * ElDistRadiale_PolynImpair::DRADPol(bool strict)
@@ -1038,8 +1036,8 @@ void ElDistRadiale_PolynImpair::V_SetScalingTranslate
 }
 
 
- 
-// Rayon max a l'interieur duquel la fonction de 
+
+// Rayon max a l'interieur duquel la fonction de
 // distortion est bijective croissante
 
 ElPolynome<REAL> ElDistRadiale_PolynImpair::PolynOfR()
@@ -1047,7 +1045,7 @@ ElPolynome<REAL> ElDistRadiale_PolynImpair::PolynOfR()
     ElPolynome<REAL> aPol((char *)0, 1+2*((int) mCoeffs.size()));
     aPol[1] = 1.0;
     for (INT aK=0 ; aK<INT(mCoeffs.size()) ; aK++)
-	    aPol[3+2*aK] = mCoeffs[aK];
+        aPol[3+2*aK] = mCoeffs[aK];
     return aPol;
 
 }
@@ -1118,7 +1116,7 @@ REAL & cDistModStdPhpgr::b2() {return mb2;}
 ElDistRadiale_PolynImpair & cDistModStdPhpgr::DRad() {return *this;}
 const ElDistRadiale_PolynImpair & cDistModStdPhpgr::DRad() const {return *this;}
 
-Pt2dr cDistModStdPhpgr::Direct(Pt2dr aP) const 
+Pt2dr cDistModStdPhpgr::Direct(Pt2dr aP) const
 {
     Pt2dr aPRad = ElDistRadiale_PolynImpair::Direct(aP);
 // std::cout << "PHGR " << aP << euclid(aP-aPRad) << "\n";
@@ -1153,11 +1151,11 @@ bool cDistModStdPhpgr::OwnInverse(Pt2dr & p ) const
    return false;
 }
 
-Pt2dr cDistModStdPhpgr::GuessInv(const Pt2dr & aP) const 
+Pt2dr cDistModStdPhpgr::GuessInv(const Pt2dr & aP) const
 {
    Pt2dr aQ = aP;
    ElDistRadiale_PolynImpair::OwnInverse(aQ);
-   
+
    return aQ;
 }
 
@@ -1199,7 +1197,7 @@ void cDistModStdPhpgr::V_SetScalingTranslate(const double & aScale,const Pt2dr &
    mP1  *=  aScale;
    mP2  *=  aScale;
 
-   
+
    // std::cout << "PHGRSTD-ps : " << mP1 << " " << mP2 << " " << mb1  << " " << mb2 << "\n";
 }
 
@@ -1233,7 +1231,7 @@ ElDistRadiale_Pol357::ElDistRadiale_Pol357
 /***************************************************************/
 
 
-       // PolyDegre2XY  
+       // PolyDegre2XY
 
 PolyDegre2XY::PolyDegre2XY(REAL a,REAL aX,REAL aY,REAL aXX,REAL aXY,REAL aYY) :
     m    (a),
@@ -1248,9 +1246,9 @@ PolyDegre2XY::PolyDegre2XY(REAL a,REAL aX,REAL aY,REAL aXX,REAL aXY,REAL aYY) :
 REAL PolyDegre2XY::Val(Pt2dr aPt) const
 {
 
-    return   m 
-           + mX  * aPt.x 
-           + mY  * aPt.y 
+    return   m
+           + mX  * aPt.x
+           + mY  * aPt.y
            + mXX * ElSquare(aPt.x)
            + mXY * aPt.x * aPt.y
            + mYY * ElSquare(aPt.y);
@@ -1261,11 +1259,11 @@ Pt2dr PolyDegre2XY::Grad(Pt2dr aPt) const
      return Pt2dr
             (
                mX + 2*mXX*aPt.x + mXY * aPt.y ,
-               mY + 2*mYY*aPt.y + mXY * aPt.x 
+               mY + 2*mYY*aPt.y + mXY * aPt.x
             );
 }
 
-          // ElDistPolyDegre2 
+          // ElDistPolyDegre2
 
 Pt2dr ElDistPolyDegre2::Direct(Pt2dr aPt) const
 {
@@ -1284,7 +1282,7 @@ ElDistPolyDegre2::ElDistPolyDegre2
 (
     const PolyDegre2XY & aPolX,
     const PolyDegre2XY & aPolY,
-    REAL EpsilonInv         
+    REAL EpsilonInv
 )  :
     mPolX    (aPolX),
     mPolY    (aPolY)//,
@@ -1324,7 +1322,7 @@ ElDistortionPolynomiale::ElDistortionPolynomiale
 }
 
 
-ElDistortionPolynomiale   
+ElDistortionPolynomiale
    ElDistortionPolynomiale::DistId(int aDegre,double anAmpl)
 {
    Polynome2dReal  aPX(aDegre,anAmpl);
@@ -1346,9 +1344,9 @@ void  ElDistortionPolynomiale::Diff(ElMatrix<REAL> & aMat,Pt2dr aPt) const
      SetLig(aMat,1,mDistY.grad(aPt));
 }
 
-Pt2dr ElDistortionPolynomiale::Direct(Pt2dr aPt) const 
+Pt2dr ElDistortionPolynomiale::Direct(Pt2dr aPt) const
 {
-    return Pt2dr(mDistX(aPt),mDistY(aPt));   
+    return Pt2dr(mDistX(aPt),mDistY(aPt));
 }
 
 
@@ -1367,7 +1365,7 @@ ElDistortionPolynomiale ElDistortionPolynomiale::MapingChScale(REAL aChSacle) co
 const Polynome2dReal & ElDistortionPolynomiale::DistX()  const {return mDistX;}
 const Polynome2dReal & ElDistortionPolynomiale::DistY()  const {return mDistY;}
 
-Fonc_Num ElDistortionPolynomiale::FNum() const 
+Fonc_Num ElDistortionPolynomiale::FNum() const
 {
     return Virgule
            (
@@ -1543,7 +1541,7 @@ ElDistortion22_Gen * ElDistortion22_Gen::AllocPreC
   );
   return 0;
 }
- 
+
 
 /*************************************************/
 /*                                               */
@@ -1618,7 +1616,7 @@ Pt2dr cDistCorrPC::Direct(Pt2dr aP) const
       if (aR>mRayInv)
       {
          double aEps=1e-3;
-         //PC = projection sur le cercle 
+         //PC = projection sur le cercle
          Pt2dr aPC = mMil + vunit(aMP) * mRayInv;
          Pt2dr aDPC = DirSsRay(aPC);
          Pt2dr aDx =( DirSsRay(aPC+Pt2dr(aEps,0))-aDPC) /aEps;
@@ -1662,13 +1660,13 @@ cDistCamStenopeGrid::cDistCamStenopeGrid
    mGrid (aGrid)
 {
 }
-   
+
 Pt2dr cDistCamStenopeGrid::DirectAndDer(Pt2dr aP,Pt2dr & aGradX,Pt2dr & aGradY)  const
 {
     Pt2dr aGPCx(1,0);
     Pt2dr aGPCy(0,1);
 
-    if (mPreC) 
+    if (mPreC)
        aP = mPreC->DirectAndDer(aP,aGPCx,aGPCy);
 
     Pt2dr aGGx,aGGy;
@@ -1679,22 +1677,22 @@ Pt2dr cDistCamStenopeGrid::DirectAndDer(Pt2dr aP,Pt2dr & aGradX,Pt2dr & aGradY) 
     aGradY =  aGPCx * aGGy.x + aGPCy * aGGy.y;
 
    return aP;
-    
+
 }
 
 Pt2dr cDistCamStenopeGrid::Direct(Pt2dr aP) const
 {
-   if (mPreC) 
+   if (mPreC)
      aP = mPreC->Direct(aP);
 
    return mGrid->Direct(aP);
 }
 
-bool cDistCamStenopeGrid::OwnInverse(Pt2dr & aP) const 
+bool cDistCamStenopeGrid::OwnInverse(Pt2dr & aP) const
 {
    aP = mGrid->Inverse(aP);
 
-   if (mPreC) 
+   if (mPreC)
      aP = mPreC->Inverse(aP);
 
    return true;
@@ -1750,12 +1748,12 @@ cDistCamStenopeGrid * cDistCamStenopeGrid::Alloc
                                "toto",
                                doDir,
                                doInv
-                           ); 
+                           );
 // std::cout << "wwwBBBB\n";
 
 
    aCS.Dist().SetDist22Gen_UsePreConditionner(aVUPC);
-   aCS.Dist().SetDist22Gen_SupressPreCondInInverse(aSUPCI); 
+   aCS.Dist().SetDist22Gen_SupressPreCondInInverse(aSUPCI);
    const_cast<CamStenope &>(aCS).RestoreScaneOri(aScaneOri);
 
    cDistCamStenopeGrid* aRes2 =   new cDistCamStenopeGrid(aPreCond,aGrid2);
@@ -1796,7 +1794,7 @@ cDistCamStenopeGrid * cDistCamStenopeGrid::Alloc
 
                 Pt2dr aR0 = aCS.DistDirecte(aQ2);
                 Pt2dr aR2 = aRes2->Direct(aQ2);
-    
+
                 double aDist = euclid(aR0,aR2);
                 aDMax = ElMax(aDMax,aDist);
                 if (aDist<1e-2)
@@ -1807,7 +1805,7 @@ cDistCamStenopeGrid * cDistCamStenopeGrid::Alloc
           }
       }
      // std::cout << "DD-Ggridswxxxxxxxx : " << aDMax << " " << aRMax << " \n";
-      if (aDMax>0.1) 
+      if (aDMax>0.1)
       {
          std::cout << "DD-Ggridswxxxxxxxx : " << aDMax << " \n";
          ELISE_ASSERT(aDMax<0.1,"Bad grid inverse in cDistCamStenopeGrid::Alloc");
@@ -1841,7 +1839,7 @@ void   cDistCamStenopeGrid::Test(double aRayInv,const CamStenope & aCS,Pt2dr aSt
        for (int anY = 0; anY<aSzT.y ; anY++)
        {
            Pt2dr aPIm0(anX*aStepTest,anY*aStepTest);
-           
+
 
 //if (Test)  std::cout << "aPIm0 " << aPIm0 << "\n";
            Pt2dr aPMonde = aDist->Inverse(aPIm0);
@@ -1857,13 +1855,15 @@ void   cDistCamStenopeGrid::Test(double aRayInv,const CamStenope & aCS,Pt2dr aSt
        }
        // getchar();
    }
+
    Tiff_Im::Create8BFromFonc("ECART.tif",aSzT,aIm.in()*100);
 
+   if(aDist) delete aDist;
 }
 
 NS_ParamChantierPhotogram::cCalibDistortion cDistCamStenopeGrid::ToXmlStruct(const ElCamera * ) const
 {
-   cCalibrationInterneGrid aGr;   
+   cCalibrationInterneGrid aGr;
    aGr.Grid() = ToXMLExp(*mGrid);
 
    if (mPreC)
@@ -1896,7 +1896,7 @@ correspondances d'images pour la reconstruction du relief.
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -1907,16 +1907,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
 manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
 logiciel �  leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

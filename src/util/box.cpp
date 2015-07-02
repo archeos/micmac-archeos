@@ -846,7 +846,8 @@ void Box2d<Type>::PtsDisc(std::vector<Pt2dr> & aV,INT aNbPts)
    {
        Pt2dr aC0 = ToPt2dr(aVCorn[aKC]);
        Pt2dr aC1 = ToPt2dr(aVCorn[(aKC+1)%4]);
-       for (INT aKP=0 ; aKP<= aNbPts ; aKP++)
+       // for (INT aKP=0 ; aKP<= aNbPts ; aKP++)
+       for (INT aKP=0 ; aKP< aNbPts ; aKP++)  // Modif MPD
        {
             REAL aPds = (aNbPts-aKP) /REAL(aNbPts);
             aV.push_back(barry(aPds,aC0,aC1));
@@ -989,6 +990,63 @@ Box2di R2ISup(const Box2dr & aB)
 {
    return Box2di(round_down(aB._p0),round_up(aB._p1));
 }
+
+template<class Type> std::istream & InputStrem (std::istream & ifs,Box2d<Type>  &aBox)
+{
+
+   std::vector<Type> aV;
+   VElStdRead(ifs,aV,ElGramArgMain::StdGram);
+
+   ELISE_ASSERT(aV.size()==4,"std::istream >> Box2dr  &");
+
+   aBox = Box2d<Type>(Pt2d<Type>(aV[0],aV[1]),Pt2d<Type>(aV[2],aV[3]));
+
+   return ifs;
+}
+
+std::istream & operator >> (std::istream & ifs,Box2dr  &aBox)
+{
+   return InputStrem(ifs,aBox);
+}
+std::istream & operator >> (std::istream & ifs,Box2di  &aBox)
+{
+   return InputStrem(ifs,aBox);
+}
+
+template<class Type> std::string  BoxToSring(const Box2d<Type>  &aBox)
+{
+   return    "[" + ToString(aBox._p0.x) + std::string(",")
+                 + ToString(aBox._p0.y) + std::string(",")
+                 + ToString(aBox._p1.x) + std::string(",")
+                 + ToString(aBox._p1.y)
+            + "]";
+}
+
+template <> std::string ToString<Box2di> (const Box2di & aBox) {return BoxToSring(aBox);}
+template <> std::string ToString<Box2dr> (const Box2dr & aBox) {return BoxToSring(aBox);}
+
+
+Pt2di BoxPClipedIntervC(const Box2di & aB,const Pt2di & aP)
+{
+   return  Pt2di
+           (
+               ElMax(aB._p0.x,ElMin(aP.x,aB._p1.x-1)),
+               ElMax(aB._p0.y,ElMin(aP.y,aB._p1.y-1))
+           );
+
+}
+
+ostream & operator << (ostream & ofs,const Box2di  &aBox)
+{
+      ofs << "[" << aBox._p0 << ";" << aBox._p1 <<"]";
+      return ofs;
+}
+ostream & operator << (ostream & ofs,const Box2dr  &aBox)
+{
+      ofs << "[" << aBox._p0 << ";" << aBox._p1 <<"]";
+      return ofs;
+}
+
 
 
 

@@ -42,6 +42,75 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef _ELISE_EXT_STL_NUMERICS_H
 #define _ELISE_EXT_STL_NUMERICS_H
 
+
+
+
+template <class Type> void  Rank3(int * aRnk, const Type & aN0,const Type & aN1,const Type & aN2)
+{
+     int Inf10 = (aN1<aN0);
+     int Inf20 = (aN2<aN0);
+     int Inf21 = (aN2<aN1);
+     aRnk[0] = Inf10 + Inf20;
+     aRnk[1] = (1-Inf10) +  Inf21;
+     aRnk[2] = (1-Inf20) + (1-Inf21);
+/*
+     aRnk[0] = (aN0>aN1)  +  (aN0>aN2);
+     aRnk[1] = (aN0<=aN1) +  (aN1>aN2);
+     aRnk[2] = (aN0<=aN2)  +  (aN1<=aN2);
+*/
+}
+
+template <class Type> class cTplTriplet
+{
+     public :
+            cTplTriplet(const Type & aV0,const Type & aV1,const Type &aV2) :
+                 mV0 (aV0),
+                 mV1 (aV1),
+                 mV2 (aV2)
+            {
+                  if (mV1<mV0) ElSwap(mV0,mV1);
+                  if (mV2<mV0) ElSwap(mV0,mV2);
+                  if (mV2<mV1) ElSwap(mV1,mV2);
+            }
+
+            bool operator < (const cTplTriplet<Type> & aT2) const
+            {
+                if (mV0 < aT2.mV0) return true;
+                if (aT2.mV0 < mV0) return false;
+                if (mV1 < aT2.mV1) return true;
+                if (aT2.mV1 < mV1) return false;
+                return mV2 < aT2.mV2;
+            }
+
+            bool operator == (const cTplTriplet<Type> & aT2) const
+            {
+                  return  (mV0==aT2.mV0) &&  (mV1==aT2.mV1) && (mV2==aT2.mV2);
+            }
+
+            Type  mV0;
+            Type  mV1;
+            Type  mV2;
+};
+//  !!!  NE PEUX PAS ETRE COPIEE .....
+template <class Type> class cTplTripletByRef
+{
+     public :
+            cTplTripletByRef(const Type & aV0,const Type & aV1,const Type &aV2) :
+                 mV0 (&aV0),
+                 mV1 (&aV1),
+                 mV2 (&aV2)
+            {
+                  if (*mV1<*mV0) ElSwap(mV0,mV1);
+                  if (*mV2<*mV0) ElSwap(mV0,mV2);
+                  if (*mV2<*mV1) ElSwap(mV1,mV2);
+            }
+
+            const Type * mV0;
+            const Type * mV1;
+            const Type * mV2;
+};
+
+
 // ElMedian directement pompes sur __median de G++-stl,
 // car je ne suis pas sur que ce soit standard
 
@@ -184,24 +253,51 @@ typename tGetVal::tValue     GenValPdsPercentile
 
    return aGetV(aVec[aNBV-1]);
 
-
-/*
-
-   double aPercLast = ((aNBV-0.5)/aNBV) * 100;
-
-   double aRang =  ((aPerc-aPerc0)/(aPercLast-aPerc0)) * (aNBV-1);
-
-   if (aRang<0)
-      return aGetV(aVec[0]);
-   else if (aRang>=aNBV-1)
-       return aGetV(aVec[aNBV-1]);
-
-   int aR0 = round_down(aRang);
-   double aP1 = aRang-aR0;
-   double aP0 = 1-aP1;
-   return aGetV(aVec[aR0])*aP0+ aGetV(aVec[aR0+1])*aP1 ;
-*/
 }
+
+template <class TVal> class  cOperator2Double
+{
+    public :
+      double operator ()(const TVal & aVal) const{ return aVal;}
+      typedef double tValue;
+};
+
+
+template <class Type> class cVectorFoncteur
+{
+    public:
+       const std::vector<Type> &  mVH;
+       const Type  & operator()(const int & anInd) const {return mVH[anInd];}
+       cVectorFoncteur(const std::vector<Type> & aVH) : mVH(aVH) {}
+};
+template <class Type> double GetValPercOfHisto
+                      (
+                            const std::vector<Type> & aVH,
+                            double aPerc
+                      )
+{
+    //cOperatorIdentite<int> anOI;
+    std::vector<double> aVInd;
+    int aNbV= aVH.size();
+    for (int aK=0 ; aK<aNbV ; aK++)
+       aVInd.push_back(aK);
+
+    cVectorFoncteur<Type> aVF(aVH);
+
+    return GenValPdsPercentile
+    (
+         aVInd,
+         aPerc,
+         // cOperatorIdentite<int>(),
+         cOperator2Double<int>(),
+         aVF,
+         SomPerc(aVH,cOperatorIdentite<Type>())
+    );
+
+}
+
+
+
 /*
 */
 
@@ -298,6 +394,38 @@ template <class TVal> TVal KthValGen(TVal * Data,int aNb,int aKth,const TVal & a
     if (aKth >= (aNb-1)) return  MaxTab(Data,aNb);
     return KthVal(Data,aNb,aKth);
 }
+
+
+
+template <class TVal> void SplitArrounKthValue(std::vector<TVal> & aV,int aKth)
+{
+   SplitArrounKthValue(VData(aV),aV.size(),aKth);
+}
+
+template <class TVal> TVal MoyKPPVal(std::vector<TVal> & aV,int aKth)
+{
+   SplitArrounKthValue(aV,aKth);
+   return Moy(VData(aV),aKth);
+}
+
+template <class TVal> TVal KthVal(std::vector<TVal> & aV,int aKth)
+{
+    return KthVal(VData(aV),aV.size(),aKth);
+}
+
+template <class TVal> TVal MedianeSup(std::vector<TVal> & aV)
+{
+    return KthVal(aV,aV.size()/2);
+}
+
+template <class TVal> TVal KthValProp(std::vector<TVal> & aV,double aProp)
+{
+    return KthVal(VData(aV),aV.size(),ElMax(0,ElMin(int(aV.size()-1),round_ni(aV.size()*aProp))));
+}
+
+double MedianPond(std::vector<Pt2df> &  aV);
+
+
 
 #endif  // _ELISE_EXT_STL_NUMERICS_H
 

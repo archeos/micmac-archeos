@@ -109,7 +109,7 @@ double cDecimal::Arrondi(double aV0) const
     long double aV = aV0;
     aV *= aD10;
     long int aLMant = Mul10() * (long int) mMant;
-    return (lround_ni(aV/aLMant) * aLMant) / (long double) aD10;
+    return (lround_ni(aV/aLMant)/(long double)aD10)*(long double)aLMant;
 }
 
 
@@ -471,6 +471,12 @@ double arrondi_sup(double aVal,double aPer)
 double arrondi_ni(double aVal,double aPer)
 {
    return ((long double)aPer) * lround_ni(aVal/aPer);
+}
+
+
+Pt2dr arrondi_ni(const Pt2dr & aP,double aPer)
+{
+    return Pt2dr(arrondi_ni(aP.x,aPer),arrondi_ni(aP.y,aPer));
 }
 
 
@@ -913,7 +919,21 @@ Fonc_Num Tg2AsRxS2SRx(Fonc_Num aF)
    return 0;
 }
 
+//  Operateur utile au devt en four des fonction radiale
 
+double CosRx(double anX)
+{
+   return cos(sqrt(ElAbs(anX)));
+}
+
+double SinCardRx(double anX)
+{
+   anX =  ElAbs(anX);
+   if (anX <1e-5) return 1 - anX/6.0 + (anX*anX)/120.0;
+
+   anX = sqrt(anX);
+   return sin(anX) / anX;
+}
 
      //  PRECOND EN ATAN
 double AtRxSRx(double x)
@@ -1044,6 +1064,41 @@ double FromSzW2FactExp(double aSzW,double mCurNbIterFenSpec)
    // std::cout << "FromSzW2FactExp : " << aRes << "\n"; getchar();
    return aRes;
 }
+
+double MoyHarmonik(const double & aV1,const double & aV2)
+{
+    return  1.0 /  (  ((1.0/aV1) + (1.0/aV2)) / 2.0) ;
+}
+
+double MoyHarmonik(const double & aV1,const double & aV2,const double & aV3)
+{
+    return  1.0 /  (  ((1.0/aV1) + (1.0/aV2) + (1.0/aV3)) / 2.0) ;
+}
+
+
+
+bool CmpPtsX(const Pt2df & aP1,const Pt2df & aP2) {return aP1.x < aP2.x;}
+
+double MedianPond(std::vector<Pt2df> &  aV)
+{
+     std::sort(aV.begin(),aV.end(),CmpPtsX);
+     double aSomP = 0;
+     for (int aK=0 ; aK<int(aV.size()) ; aK++)
+     {
+          aSomP += aV[aK].y;
+     }
+     aSomP /= 2.0;
+
+     int aK=0;
+     for ( ; (aK<int(aV.size()-1)) && (aSomP>0)  ; aK++)
+     {
+          aSomP -= aV[aK].y;
+     }
+
+     return aV[aK].x;
+}
+
+
 
 
 

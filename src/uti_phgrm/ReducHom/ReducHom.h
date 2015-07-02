@@ -66,8 +66,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 */
 
-using namespace NS_ParamChantierPhotogram;
-
 
 
 #define TEST 1
@@ -80,8 +78,6 @@ using namespace NS_ParamChantierPhotogram;
 
 void WarnTest();
 
-namespace NS_ReducHoms
-{
 class cPtHom;    // Point final multiple
 class cLink2Img; // "arc" du graphe de visibilite
 class cImagH;    // Une image
@@ -106,25 +102,38 @@ class cPtHom
 {
     public :
          cPtHom();
-         void  Recycle();
-         // Renvoie un germe a partir d'un premier point de liaison
-         static cPtHom * NewGerm(cImagH * aI1,const Pt2dr & aP1,cImagH* aI2,const Pt2dr & aP2);
-         void IncrCptArc();
-         bool OkAddI2(cImagH * aI2,const Pt2dr & aP2);
 
+         //  Free the objet, and put it in the list of free objtc "mReserve" for future allocation
+         void  Recycle();
+
+         // static constructor, create an object from a single tie point
+         static cPtHom * NewGerm(cImagH * aI1,const Pt2dr & aP1,cImagH* aI2,const Pt2dr & aP2);
+
+         // Used for udate mCptArc, which apparently is only used for tuning in ShowAll
+         void IncrCptArc();
+         // Update the Pt Hom to take into account that in I2, it was observed at P2
+         // Detect an incoherence as soons as several mesures are done in I2
+         // Memorize all the measurment ddOnePtUnique
+         void AddMesureInImage(cImagH * aI2,const Pt2dr & aP2);
+
+         // Number of image where the PtHom is observed
          int NbIm() const;
 
-         bool OkAbsorb(cPtHom *);
+         // Merge this and H2, Recycle H2, memorize if the merge is coherent
+         bool OkAbsorb(cPtHom * H2);
 
          static void ShowAll();
     private :
 
+         // Allocate by searcchinh in mReserve or new
          static cPtHom * Alloc();
+
+
          cPtHom(const cPtHom &); // N.I.
          void  Clear();
 
          static std::list<cPtHom  *> mReserve;
-         static std::list<cPtHom  *> mAllExist;
+         static std::list<cPtHom  *> mAllExist;  // Used for tuning (Show All)
 
          std::map<cImagH*,std::vector<Pt2dr> >  mMesures;
          bool                     mCoherent;
@@ -132,11 +141,45 @@ class cPtHom
 };
 
 
+/*
+    HOMOGRAPHY :
+
+     The objective of the homography computation is to compute for each image,
+   a homography from the image to a common ground. It is named :
+ 
+         *  mHi2t  (i2t = Image to Terrain, Terrain=ground in french)
+
+
+      This homography for each images has to be computed from the 
+   homograohy between pair of images :
+    
+      Let HA2T et HB2T  be the homgraphy from images A,B to Ground
+      Let  HA2B be the homgraphy from A to B (computed from Tie point, the mHom12 from
+      cLink2Img),
+  We have :
+
+           HA2T (P)  =  HB2T (HA2B(P))   or     HA2T = HB2T o  HA2B  (1)
+
+      Equation (1) has to be solved globally, there is N unknown and N (N-1)/2 equation.
+
+      However, it obviouly undertermined up to a global homography
+
+*/
+
+
 
   //======================================
   //           cLink2Img      
   //           cImagH      
   //======================================
+
+/*
+  Represent the link between two images :
+    - homologous point
+    - homographie (posssibly)
+    - distribution of point
+
+*/
 
 class cLink2Img  // dans cImagH.cpp
 {
@@ -154,6 +197,10 @@ class cLink2Img  // dans cImagH.cpp
 
          cElHomographie CalcSrceFromDest();
          const ElPackHomologue & Pack() const;
+
+        // Obtained by GetDistribRepresentative from util/pt2di.cpp
+        // simply by averaging points on a regular grid
+        // list of   Pt2dr+weight , represent the distribution of the points
          const std::vector<Pt3dr> & EchantP1() const;
 
         cEqHomogFormelle * &  EqHF();
@@ -167,10 +214,13 @@ class cLink2Img  // dans cImagH.cpp
         cImagH * mDest;
         std::string mNameH;
         double      mQual;
+        //
         cElHomographie mHom12;
         bool            mPckLoaded;
         ElPackHomologue mPack;
-        std::vector<Pt3dr> mEchantP1; // suite de Pt2dr+poids, representative de la distrib
+        
+        std::vector<Pt3dr> mEchantP1; 
+        Pt3dr              mCdg1;
         cEqHomogFormelle * mEqHF;
 };
 
@@ -345,7 +395,6 @@ class cParamMerge
 };
 
 std::string NameNode(tNodIm * aN);
-};
 
 
 

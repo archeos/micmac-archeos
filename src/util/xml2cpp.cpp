@@ -70,6 +70,8 @@ int CurPrec()
 /*                                                         */
 /***********************************************************/
 
+static std::map<std::string,std::string> TheMapMangl;
+
 bool TagFilsIsClass(const std::string & aNameTag)
 {
    return (aNameTag != "Verbatim") && (aNameTag!="Herit");
@@ -184,8 +186,8 @@ void cElXMLTree::GenOneCppNameSpace
    aNameSpace = ValAttr("NameSpace",aNameSpace);
    if (aNameSpace != "")
    {
-      fprintf(aFileH,"namespace %s{\n\n",aNameSpace.c_str());
-      fprintf(aFileCpp,"namespace %s{\n\n",aNameSpace.c_str());
+      // fprintf(aFileH,"XXXXX nAmespace %s{\n\n",aNameSpace.c_str());
+      // fprintf(aFileCpp,"XXXXX nAmespace %s{\n\n",aNameSpace.c_str());
    }
    std::list<std::string> aLTypeLoc;
    for
@@ -230,6 +232,8 @@ void cElXMLTree::GenEnum
            FILE * aFileH
      )
 {
+    cMajickChek aMj;
+    aMj.Add("enum");
     std::string aName = ValAttr("Name");
     fprintf
     (
@@ -251,10 +255,18 @@ void cElXMLTree::GenEnum
           fprintf (aFileH, ",\n");
        std::string aValue = (*itF)->ValAttr("Value","");
        if (aValue=="")
+       {
           fprintf (aFileH, "  %s", (*itF)->mValTag.c_str());
+          aMj.Add((*itF)->mValTag);
+       }
        else
+       {
           fprintf (aFileH, "  %s = %s", (*itF)->mValTag.c_str(),aValue.c_str());
+          aMj.Add((*itF)->mValTag);
+          aMj.Add(aValue);
+       }
    }
+   aMj.Add(aName);
 
     fprintf
     (
@@ -289,6 +301,25 @@ void cElXMLTree::GenEnum
 	"cElXMLTree * ToXMLTree(const std::string & aNameTag,const %s & anObj);\n\n",
 	aName.c_str()
     );
+    fprintf
+    (
+        aFileH,
+	"void  BinaryDumpInFile(ELISE_fp &,const %s &);\n\n",
+	aName.c_str()
+    );
+    fprintf
+    (
+        aFileH,
+	"std::string  Mangling( %s *);\n\n",
+	aName.c_str()
+    );
+    fprintf
+    (
+        aFileH,
+	"void  BinaryUnDumpFromFile(%s &,ELISE_fp &);\n\n",
+	aName.c_str()
+    );
+
 
 
 
@@ -398,7 +429,43 @@ void cElXMLTree::GenEnum
     );
 
 
+    fprintf
+    (
+         aFileCpp,
+         "void  BinaryDumpInFile(ELISE_fp & aFp,const %s & anObj)\n"
+         "{\n"
+         "   BinaryDumpInFile(aFp,int(anObj));\n"
+         "}\n\n",
+	  aName.c_str()
+    );
+
+    fprintf
+    (
+         aFileCpp,
+         "void  BinaryUnDumpFromFile(%s & anObj,ELISE_fp & aFp)\n"
+         "{\n"
+         "   int aIVal;\n"
+         "   BinaryUnDumpFromFile(aIVal,aFp);\n"
+         "   anObj=(%s) aIVal;\n"
+         "}\n\n",
+	  aName.c_str(),
+	  aName.c_str()
+    );
+    fprintf
+    (
+        aFileCpp,
+	"std::string  Mangling( %s *) {return \"%s\";};\n\n",
+	aName.c_str(),
+	aMj.ShortMajId().c_str()
+    );
+/*
+*/
+
+     TheMapMangl[aName] =  aMj.ShortMajId();
+
+	// "void  BinaryUnDumpFromFile(%s &,ELISE_fp &);\n\n",
 }
+
 
 
 
@@ -530,6 +597,28 @@ bool cElXMLTree::HasFilsPorteeGlob(const std::string & aName)
 }
 
 
+void  cElXMLTree::ModifMangling(cMajickChek & aMj)
+{
+    aMj.Add(NameOfClass());
+    for
+    (
+       std::list<cElXMLTree *>::iterator itF=mFils.begin();
+       itF != mFils.end();
+       itF++
+    )
+    {
+       if (TagFilsIsClass((*itF)->mValTag))  // Cas speciaux Herit/ Verbatim ....
+       {
+           const std::string & aPat = (*itF)->ValAttr("Nb");
+           aMj.Add(aPat);
+           aMj.Add((*itF)->mValTag);
+           aMj.Add((*itF)->NameImplemOfClass());
+           aMj.Add((*itF)->NameOfClass());
+           aMj.Add(TheMapMangl[(*itF)->NameOfClass()]);
+       }
+    }
+}
+
 
 void cElXMLTree::GenCppClass
      (
@@ -561,6 +650,10 @@ void cElXMLTree::GenCppClass
    }
 
    std::string aNOC = NameOfClass();
+   cMajickChek aMj;
+   ModifMangling(aMj);
+   TheMapMangl[aNOC]=aMj.ShortMajId();
+    
 
    //  Generation du .h 
 
@@ -662,6 +755,25 @@ void cElXMLTree::GenCppClass
         aNOC.c_str()
      );
 
+    fprintf
+    (
+        aFileH,
+	"void  BinaryDumpInFile(ELISE_fp &,const %s &);\n\n",
+	aNOC.c_str()
+    );
+    fprintf
+    (
+        aFileH,
+	"void  BinaryUnDumpFromFile(%s &,ELISE_fp &);\n\n",
+	aNOC.c_str()
+    );
+    fprintf
+    (
+        aFileH,
+	"std::string  Mangling( %s *);\n\n",
+	aNOC.c_str()
+    );
+
 
    for
    (
@@ -676,7 +788,150 @@ void cElXMLTree::GenCppClass
       }
    }
 
+   //============================================================
+   //  Generation de BinaryDumpInFile  / BinaryUnDumpFromFile
+   //============================================================
+
+            // ========== BinaryUnDumpFromFile ==========
+    fprintf
+    (
+        aFileCpp,
+	"void  BinaryUnDumpFromFile(%s & anObj,ELISE_fp & aFp)\n"
+	"{\n ",
+	aNOC.c_str()
+    );
+    for
+    (
+       std::list<cElXMLTree *>::iterator itF=mFils.begin();
+       itF != mFils.end();
+       itF++
+    )
+    {
+       if (TagFilsIsClass((*itF)->mValTag))  // Cas speciaux Herit/ Verbatim ....
+       {
+           const std::string & aPat = (*itF)->ValAttr("Nb");
+           if (aPat=="1")
+           {
+               fprintf(aFileCpp,"    BinaryUnDumpFromFile(anObj.%s(),aFp);\n",(*itF)->mValTag.c_str());
+           }
+           else if (aPat=="?")
+           {
+               fprintf(aFileCpp,"  { bool IsInit;\n");
+               fprintf(aFileCpp,"       BinaryUnDumpFromFile(IsInit,aFp);\n");
+               fprintf
+               (
+                     aFileCpp,
+                     "        if (IsInit) {\n"
+                     "             anObj.%s().SetInitForUnUmp();\n"
+                     "             BinaryUnDumpFromFile(anObj.%s().ValForcedForUnUmp(),aFp);\n"
+                     "        }\n"
+                     "        else  anObj.%s().SetNoInit();\n"
+                    ,(*itF)->mValTag.c_str()
+                    ,(*itF)->mValTag.c_str()
+                    ,(*itF)->mValTag.c_str()
+               );
+               fprintf(aFileCpp,"  } ;\n");
+           }
+           else if ((aPat=="*") || (aPat=="+"))
+           {
+               std::string aContainer = (*itF)->ValAttr("Container","std::list");
+               bool IsOk = (aContainer=="std::list") || (aContainer=="std::vector");
+               if (IsOk)
+               {
+                    fprintf(aFileCpp,"  { int aNb;\n");
+                    fprintf(aFileCpp,"    BinaryUnDumpFromFile(aNb,aFp);\n");
+                    fprintf
+                    (
+                           aFileCpp,
+                           "        for(  int aK=0 ; aK<aNb ; aK++)\n"
+                           "        {\n"
+                           "             %s aVal;\n"
+                           "              BinaryUnDumpFromFile(aVal,aFp);\n"
+                           "              anObj.%s().push_back(aVal);\n"
+                           "        }\n"
+                           ,(*itF)->NameOfClass().c_str()
+                           ,(*itF)->mValTag.c_str()
+                     );
+                     fprintf(aFileCpp,"  } ;\n");
+               }
+               else
+               {
+                     fprintf(aFileCpp,"    ELISE_ASSERT(false,\"No Support for this conainer in bin dump\");\n");
+               }
+           }
+       }
+       // std::cout << " XXX " << aNOC << " " << (*itF)->mValTag << " " << TagFilsIsClass((*itF)->mValTag) << "\n";
+    }
+
+    fprintf ( aFileCpp, "}\n\n");
+
+            // ========== BinaryDumpInFile ==========
+
+    fprintf
+    (
+        aFileCpp,
+	"void  BinaryDumpInFile(ELISE_fp & aFp,const %s & anObj)\n"
+	"{\n",
+	aNOC.c_str()
+    );
+    for
+    (
+       std::list<cElXMLTree *>::iterator itF=mFils.begin();
+       itF != mFils.end();
+       itF++
+    )
+    {
+       if (TagFilsIsClass((*itF)->mValTag))  // Cas speciaux Herit/ Verbatim ....
+       {
+           const std::string & aPat = (*itF)->ValAttr("Nb");
+           if (aPat=="1")
+           {
+               fprintf(aFileCpp,"    BinaryDumpInFile(aFp,anObj.%s());\n",(*itF)->mValTag.c_str());
+           }
+           else if (aPat=="?")
+           {
+               fprintf(aFileCpp,"    BinaryDumpInFile(aFp,anObj.%s().IsInit());\n",(*itF)->mValTag.c_str());
+               fprintf
+               (
+                     aFileCpp
+                    ,"    if (anObj.%s().IsInit()) BinaryDumpInFile(aFp,anObj.%s().Val());\n"
+                    ,(*itF)->mValTag.c_str()
+                    ,(*itF)->mValTag.c_str()
+               );
+           }
+           else if ((aPat=="*") || (aPat=="+"))
+           {
+               std::string aContainer = (*itF)->ValAttr("Container","std::list");
+               bool IsOk = (aContainer=="std::list") || (aContainer=="std::vector");
+               if (IsOk)
+               {
+                    fprintf(aFileCpp,"    BinaryDumpInFile(aFp,(int)anObj.%s().size());\n",(*itF)->mValTag.c_str());
+                    fprintf
+                    (
+                           aFileCpp,
+                           "    for(  %s::const_iterator iT=anObj.%s().begin();\n"
+                           "         iT!=anObj.%s().end();\n"
+                           "          iT++\n"
+                           "    )\n"
+                           "        BinaryDumpInFile(aFp,*iT);\n"
+                           ,(*itF)->NameImplemOfClass().c_str()
+                           ,(*itF)->mValTag.c_str()
+                           ,(*itF)->mValTag.c_str()
+                     );
+               }
+               else
+               {
+                     fprintf(aFileCpp,"    ELISE_ASSERT(false,\"No Support for this conainer in bin dump\");\n");
+               }
+           }
+       }
+       // std::cout << " XXX " << aNOC << " " << (*itF)->mValTag << " " << TagFilsIsClass((*itF)->mValTag) << "\n";
+    }
+
+    fprintf ( aFileCpp, "}\n\n");
    //  Generation de xml_write 
+
+   
 
    fprintf
    (
@@ -783,8 +1038,10 @@ void cElXMLTree::GenCppClass
 
    fprintf(aFileCpp,"void xml_init(%s & anObj,cElXMLTree * aTree)\n",aNOC.c_str());
    fprintf(aFileCpp,"{\n");
-   fprintf(aFileCpp,"   anObj.mGXml = aTree->mGXml;\n");
+// Modif MPD, intervertion des deux ligne precedente, ne buggait pas immediatement (comme devrait !)
+// mais la correction semble resoudre un bug differe dans la lecture des xml ????
    fprintf(aFileCpp,"   if (aTree==0) return;\n");
+   fprintf(aFileCpp,"   anObj.mGXml = aTree->mGXml;\n");
 
    for
    (
@@ -856,6 +1113,13 @@ void cElXMLTree::GenCppClass
    }
    fprintf(aFileCpp,"}\n\n");
 
+    fprintf
+    (
+        aFileCpp,
+	"std::string  Mangling( %s *) {return \"%s\";};\n\n",
+	aNOC.c_str(),
+	aMj.ShortMajId().c_str()
+    );
 
    if (aProf <= 1 )
    {
@@ -1009,14 +1273,26 @@ void xml_init(bool  & aVal,cElXMLTree * aTree)
     else
 */
     {
-       std::cout << "VAL=" << aVal << " Tag " << aTree->ValTag() << "\n";
+       std::cout << "VAL=" << aVal << " Tag " << aTree->ValTag() << " Cont " << aTree->Contenu() << "\n";
        ELISE_ASSERT(false,"Unexpected value for xml::bool");
     }
 }
 
+void FuckQTReadFloat()
+{
+     setlocale(LC_ALL,"C");
+}
+
 void xml_init(double         & aVal,cElXMLTree * aTree)
 {
+    FuckQTReadFloat();
+
    int aNb = sscanf(aTree->Contenu().c_str(),"%lf %s",&aVal,aBuf);
+   if (aNb!=1)
+   {
+        FuckQTReadFloat();
+        aNb = sscanf(aTree->Contenu().c_str(),"%lf %s",&aVal,aBuf);
+   }
    if (aNb!=1)
    {
       std::cout << "TAG = "<< aTree->ValTag()
@@ -1041,17 +1317,15 @@ void xml_init(int            & aVal,cElXMLTree * aTree)
 }
 void xml_init(Box2dr & aVal,cElXMLTree * aTree)
 {
-   int aNb = sscanf
-             (
-                aTree->Contenu().c_str(),
-                "%lf %lf %lf %lf %s",
-                &aVal._p0.x, &aVal._p0.y,
-                &aVal._p1.x, &aVal._p1.y,
-                aBuf
-             );
+   int aNb = sscanf ( aTree->Contenu().c_str(), "%lf %lf %lf %lf %s", &aVal._p0.x, &aVal._p0.y, &aVal._p1.x, &aVal._p1.y, aBuf);
 
-   aVal = Box2dr(aVal._p0,aVal._p1);
+   if (aNb!=4)
+   {
+       FuckQTReadFloat();
+       aNb = sscanf ( aTree->Contenu().c_str(), "%lf %lf %lf %lf %s", &aVal._p0.x, &aVal._p0.y, &aVal._p1.x, &aVal._p1.y, aBuf);
+   }
    ELISE_ASSERT(aNb==4,"Bad Nb Value in xml_init (double)");
+   aVal = Box2dr(aVal._p0,aVal._p1);
 }
 
 void xml_init(Box2di & aVal,cElXMLTree * aTree)
@@ -1072,7 +1346,18 @@ void xml_init(Box2di & aVal,cElXMLTree * aTree)
 
 void xml_init(Pt3dr & aP,cElXMLTree * aTree)
 {
+/*
+std::cout << "AAAAAAAAAaa\n";
+std::cout << "AAAAAAAAAaa " << aTree << "\n";
+std::cout << "AAAAAAAAAaa " << aTree->Contenu() << "\n";
+*/
    int aNb = sscanf(aTree->Contenu().c_str(),"%lf %lf %lf %s",&aP.x,&aP.y,&aP.z,aBuf);
+
+   if (aNb!=3)
+   {
+       FuckQTReadFloat();
+       aNb = sscanf(aTree->Contenu().c_str(),"%lf %lf %lf %s",&aP.x,&aP.y,&aP.z,aBuf);
+   }
    if (aNb!=3)
    {
        std::cout << "CONTENU=" << aTree->Contenu() << "\n";
@@ -1084,6 +1369,13 @@ void xml_init(Pt3dr & aP,cElXMLTree * aTree)
 void xml_init(Pt2dr & aP,cElXMLTree * aTree)
 {
    int aNb = sscanf(aTree->Contenu().c_str(),"%lf %lf %s",&aP.x,&aP.y,aBuf);
+
+   if (aNb!=2)
+   {
+       FuckQTReadFloat();
+       aNb = sscanf(aTree->Contenu().c_str(),"%lf %lf %s",&aP.x,&aP.y,aBuf);
+   }
+
    if (aNb!=2)
    {
       std::cout << "xml_init(Pt2dr..),"
@@ -1131,6 +1423,7 @@ void xml_init(cCpleString & aCple,cElXMLTree * aTree)
 
 void  xml_init(std::vector<double> & aV,cElXMLTree * aTree)
 {
+   FuckQTReadFloat();
    ElArgMain<std::vector<double> > anArg(aV,"toto",true);
    anArg.InitEAM(aTree->Contenu(),ElGramArgMain::StdGram);
 }
@@ -1446,6 +1739,7 @@ template <class Type> void TypeSubst<Type>::TenteInit()
 }
 
 
+template class TypeSubst<bool>;
 
 template class TypeSubst<int>;
 template class TypeSubst<double>;
@@ -1456,13 +1750,51 @@ void xml_init(IntSubst & anIS,cElXMLTree * aTree) { anIS.SetStr(aTree); }
 void xml_init(DoubleSubst & anIS,cElXMLTree * aTree) { anIS.SetStr(aTree); }
 void xml_init(Pt2diSubst & anIS,cElXMLTree * aTree) { anIS.SetStr(aTree); }
 void xml_init(Pt2drSubst & anIS,cElXMLTree * aTree) { anIS.SetStr(aTree); }
+void xml_init(BoolSubst & anIS,cElXMLTree * aTree) { anIS.SetStr(aTree); }
 
 
 
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const IntSubst   &      anObj) { return ToXMLTree(aNameTag,anObj.Val()); }
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const BoolSubst   &      anObj)   { return ToXMLTree(aNameTag,anObj.Val()); }
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const IntSubst   &      anObj)    { return ToXMLTree(aNameTag,anObj.Val()); }
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const DoubleSubst   &      anObj) { return ToXMLTree(aNameTag,anObj.Val()); }
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2diSubst   &      anObj) { return ToXMLTree(aNameTag,anObj.Val()); }
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2drSubst   &      anObj) { return ToXMLTree(aNameTag,anObj.Val()); }
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2diSubst   &      anObj)  { return ToXMLTree(aNameTag,anObj.Val()); }
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2drSubst   &      anObj)  { return ToXMLTree(aNameTag,anObj.Val()); }
+
+
+
+XmlXml::XmlXml()
+{
+     mTree = cElXMLTree::ValueNode("XmlXml","");
+}
+
+void xml_init(XmlXml    & aXX,cElXMLTree * aTree)
+{
+   aXX.mTree = aTree->Clone();
+}
+
+cElXMLTree * cElXMLTree::Clone()
+{
+    mKind = eXMLClone;
+    cElXMLTree * aRes = new  cElXMLTree(*this);
+    aRes->mKind = eXMLClone;
+    return aRes;
+}
+
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const XmlXml &      anObj)
+{
+   return anObj.mTree->ReTagThis(aNameTag);
+}
+
+void BinaryDumpInFile(ELISE_fp &,const XmlXml &)
+{
+   ELISE_ASSERT(false,"No BinaryDumpInFilecfor XmlXml");
+}
+
+void BinaryUnDumpFromFile(XmlXml &,ELISE_fp &)
+{
+   ELISE_ASSERT(false,"No BinaryUnDumpFromFile XmlXml");
+}
 
 
 

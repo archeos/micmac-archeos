@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -45,13 +45,14 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 /***********************************************************************/
 /***********************************************************************/
-/***                                                                 ***/ 
-/***                                                                 ***/ 
-/***              DATA_tiff_header                                   ***/ 
-/***                                                                 ***/ 
-/***                                                                 ***/ 
+/***                                                                 ***/
+/***                                                                 ***/
+/***              DATA_tiff_header                                   ***/
+/***                                                                 ***/
+/***                                                                 ***/
 /***********************************************************************/
 /***********************************************************************/
+
 
 bool IsKnownTifPost(const std::string & aPost)
 {
@@ -96,15 +97,15 @@ std::string NameInDicoGeom(const std::string & aDir,const std::string & aName,co
 {
 
    std::string aFullRes = aDir+aName;
-   if (ELISE_fp::exist_file(aFullRes) ) 
+   if (ELISE_fp::exist_file(aFullRes) )
       return aFullRes;
 
    aFullRes = MMDir() + "include"+ELISE_CAR_DIR+"XML_User"+ELISE_CAR_DIR+"DicoCalibGeom"+ELISE_CAR_DIR + aName;
-   if (ELISE_fp::exist_file(aFullRes) ) 
+   if (ELISE_fp::exist_file(aFullRes) )
       return aFullRes;
 
    aFullRes = MMDir() + "include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+"DicoCalibGeom"+ELISE_CAR_DIR + aName;
-   if (ELISE_fp::exist_file(aFullRes) ) 
+   if (ELISE_fp::exist_file(aFullRes) )
       return aFullRes;
 
 
@@ -128,7 +129,7 @@ std::string StdFileCalibOfImage
    if (aCE==0)
       return aDef;
 
-   std::string aRes =    aPrefix  
+   std::string aRes =    aPrefix
                      + "-Calib-"
                      + aCE->ShortName() +  "-"
                      + ToString(round_ni(10*aMDP.FocMm())) + ".xml";
@@ -151,7 +152,7 @@ std::string StdNameBayerCalib(const std::string & aFullName)
 std::string StdNameGeomCalib(const std::string & aFullName)
 {
    std::string aPost = "Raw";
-   if (IsPostfixedJPG(aFullName)) 
+   if (IsPostfixedJPG(aFullName))
        aPost = "Jpg";
 
    if (Tiff_Im::IsTiff(aFullName.c_str(),true))
@@ -233,15 +234,15 @@ DATA_tiff_header::DATA_tiff_header(const char * name)
          break;
 
          default :
-
+              BasicErrorHandler();
               printf("XX=%x\n",byte_order_flag);
               Tjs_El_User.ElAssert
               (  0,
                  EEM0 <<  "Incoherent byte order flag for tiff file \n"
                       << "|    file : "  <<  _name  << "\n"
-                      << "|   got following byte_order_flag : " 
+                      << "|   got following byte_order_flag : "
                       << byte_order_flag
-    
+
               );
     };
 
@@ -255,7 +256,7 @@ DATA_tiff_header::DATA_tiff_header(const char * name)
          version == Tiff_Im::THE_VERSION,
          EEM0 <<  "Incoherent version number for tiff file \n"
               << "|    file : "  <<  _name  << "\n"
-              << "|   got following version number : " 
+              << "|   got following version number : "
               << version
     );
     fp.close();
@@ -291,17 +292,17 @@ ELISE_fp DATA_tiff_header::kth_file(INT & nb,bool read)
           fp.seek_cur(nb_tag*Tiff_Im::SZ_TAG);
           offs = fp.read_INT4();
     }
-    
+
     if (offs.BasicLLO())
     {
        fp.seek_begin(offs);
-      
+
     }
     else
     {
        i--;
     }
-    
+
     nb = i;
     return fp;
 }
@@ -349,11 +350,11 @@ Tiff_Im DATA_tiff_header::kth_im(INT kth)
 
 /***********************************************************************/
 /***********************************************************************/
-/***                                                                 ***/ 
-/***                                                                 ***/ 
-/***              Tiff_File                                          ***/ 
-/***                                                                 ***/ 
-/***                                                                 ***/ 
+/***                                                                 ***/
+/***                                                                 ***/
+/***              Tiff_File                                          ***/
+/***                                                                 ***/
+/***                                                                 ***/
 /***********************************************************************/
 /***********************************************************************/
 
@@ -386,11 +387,11 @@ Tiff_Im Tiff_File::kth_im(INT kth)
 
 /***********************************************************************/
 /***********************************************************************/
-/***                                                                 ***/ 
-/***                                                                 ***/ 
-/***              DATA_Tiff_Ifd                                      ***/ 
-/***                                                                 ***/ 
-/***                                                                 ***/ 
+/***                                                                 ***/
+/***                                                                 ***/
+/***              DATA_Tiff_Ifd                                      ***/
+/***                                                                 ***/
+/***                                                                 ***/
 /***********************************************************************/
 /***********************************************************************/
 
@@ -425,7 +426,7 @@ DATA_Tiff_Ifd::vmodif::vmodif() :
 {
 }
 
-void DATA_Tiff_Ifd::vmodif::init(INT v0,INT nb) 
+void DATA_Tiff_Ifd::vmodif::init(INT v0,INT nb)
 {
     flush();
     _nb = nb;
@@ -434,14 +435,14 @@ void DATA_Tiff_Ifd::vmodif::init(INT v0,INT nb)
         _vals[i] = v0;
 }
 
-void DATA_Tiff_Ifd::vmodif::init(INT *v,INT nb) 
+void DATA_Tiff_Ifd::vmodif::init(INT *v,INT nb)
 {
     flush();
     _nb = nb;
     _vals =  v;
 }
 
-void DATA_Tiff_Ifd::vmodif::init_if_0(INT v0,INT nb) 
+void DATA_Tiff_Ifd::vmodif::init_if_0(INT v0,INT nb)
 {
     if (! _vals)
         init(v0,nb);
@@ -534,20 +535,43 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
     }
     else
        df0 = Tiff_Im::IEEE_float;
+    double  aNbOctetTot = 0;
     for (INT ch =0; ch < _nb_chanel ; ch++)
     {
          _bits_p_chanel[ch] = _nbb_ch0;
-         _data_format[ch] = df0;  
+         _data_format[ch] = df0;
+         aNbOctetTot +=  _bits_p_chanel[ch];
     }
+    aNbOctetTot /= 8;
+
+    {
+         double aMaxSzFile = 4e9;
+         Pt2di aSzFT = args_opt.mSzFileTile;
+         int aMaxTile = round_ni(sqrt((aMaxSzFile /aNbOctetTot)) *0.9);
+
+         if ((aSzFT.x ==-1) || (aSzFT.x>5e4))
+         {
+              double  aSzNCompr = double(_sz.x) * double(_sz.y) * aNbOctetTot;
+              if (aSzNCompr >aMaxSzFile)
+                args_opt.mSzFileTile = Pt2di(aMaxTile,aMaxTile);
+         }
+         else if (aSzFT.x >0)
+         {
+              double aSzTile = double(aSzFT.x) * double(aSzFT.y) * aNbOctetTot;
+              if (aSzTile > aMaxSzFile)
+                args_opt.mSzFileTile = Pt2di(aMaxTile,aMaxTile);
+         }
+    }
+
 
     _mode_compr   = compr;
     // many tiff reader do not handle prediction for nbbits < 8
     _predict      =  ((compr==Tiff_Im::LZW_Compr) && (_nbb_ch0>=8))  ?
                      Tiff_Im::Hor_Diff               :
                      Tiff_Im::No_Predic              ;
-                     
+
     _msbit_first  = (_nbb_ch0>=8) || msbf_type_num(type);
-    _plan_conf    = Tiff_Im::Chunky_conf; 
+    _plan_conf    = Tiff_Im::Chunky_conf;
     _res_unit     = Tiff_Im::No_Unit;
     _orientation  = 1;
     _resol        = Pt2dr(1,1);
@@ -573,7 +597,7 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
           _mode_compr =  Tiff_Im::Group_4FAX_Compr;
 
     }
-    
+
 
            // Use  args_opt
 
@@ -587,12 +611,12 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
        _sz_tile = Pt2di(_sz.x,args_opt._row_per_strip);
     else if (args_opt._no_strip)
        _sz_tile = _sz;
-       
+
    _orientation = args_opt._orientation;
 
    if (args_opt._plan_conf != -1)
        _plan_conf = args_opt._plan_conf;
-     
+
 
     if (args_opt._init_min_maxs)
     {
@@ -649,11 +673,12 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
 
     bool CreateSubTile = false;
     mUseFileTile = false;
+
     if ((args_opt.mSzFileTile.x != -1 )  &&  (_nbb_ch0>=8))
     {
        mSzFileTile =  Pt2di(ElAbs(args_opt.mSzFileTile.x),ElAbs(args_opt.mSzFileTile.y));
        CreateSubTile = args_opt.mSzFileTile.x > 0;
-    
+
        if (CreateSubTile)
        {
             // Doivent etre pas superieur a taille du fichier
@@ -667,7 +692,8 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
        mUseFileTile =  (mSzFileTile.x<_sz.x) || (mSzFileTile.y<_sz.y) || (! CreateSubTile);
 
     }
-  
+
+
     // GESTION du dallage interne
 
     if (mUseFileTile)
@@ -678,35 +704,35 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
               ELISE_ASSERT
               (
                  false,
-	         "TileFile incompatible avec les modes compresses\n"
+             "TileFile incompatible avec les modes compresses\n"
               );
          }
         _tiles_offset = 0;
         _tiles_byte_count = 0;
-	ElList<Arg_Tiff> aLNoTF = 
-		            l_arg_opt
-		          + Arg_Tiff(Tiff_Im::AFileTiling(Pt2di(-1,1)))
+    ElList<Arg_Tiff> aLNoTF =
+                    l_arg_opt
+                  + Arg_Tiff(Tiff_Im::AFileTiling(Pt2di(-1,1)))
                           + Arg_Tiff(Tiff_Im::ATiles(_sz_tile));
-	                          
+
 
        if (CreateSubTile)
        {
-	  for (int aX0 = 0,iX=0; aX0<_sz.x ; aX0+= mSzFileTile.x,iX++)
+      for (int aX0 = 0,iX=0; aX0<_sz.x ; aX0+= mSzFileTile.x,iX++)
           {
-	     for (int aY0 = 0,iY=0; aY0<_sz.y ; aY0+= mSzFileTile.y,iY++)
-	     {
+         for (int aY0 = 0,iY=0; aY0<_sz.y ; aY0+= mSzFileTile.y,iY++)
+         {
                 std::string aName = NameTileFile(Pt2di(iX,iY));
-		Pt2di aSzTF = Inf(mSzFileTile,_sz-Pt2di(aX0,aY0));
-		
-		if (aPal)
-		{
+        Pt2di aSzTF = Inf(mSzFileTile,_sz-Pt2di(aX0,aY0));
+
+        if (aPal)
+        {
                    Tiff_Im(aName.c_str(),aSzTF,type,compr,*aPal,aLNoTF);
-		}
-		else
-		{
+        }
+        else
+        {
                    Tiff_Im(aName.c_str(),aSzTF,type,compr,phot_interp,aLNoTF);
-		}
-	     }
+        }
+         }
           }
         }
         fp.write_INT4(8);
@@ -745,8 +771,8 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
 }
 
 
- 
-extern INT aEliseCptFileOpen; 
+
+extern INT aEliseCptFileOpen;
 
 
 
@@ -763,7 +789,10 @@ cMetaDataPhoto  DATA_Tiff_Ifd::MDP()
                 mExifTiff_ShutterSpeed,
                 mExifTiff_Aperture,
                 mExifTiff_IsoSpeed,
-                ""
+                "",
+                "",
+                "",
+                _bits_p_chanel[0]
            );
 }
 
@@ -781,7 +810,7 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
     mSzFileTile = Pt2di(-10000,-10000);
     _byte_ordered = byte_ordered;
 
-    if (! pta._bidon) 
+    if (! pta._bidon)
     {
        if ((pta._create) && (!ELISE_fp::exist_file(name)))
        {
@@ -818,14 +847,14 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
 
 
        // Tags with, therotically no def values, but I am tolerant ....
-    _resol     = Pt2dr(1,1);  
+    _resol     = Pt2dr(1,1);
 
        // Tags with def values computable now
 
     _res_unit     = Tiff_Im::Inch_Unit;
     _orientation = 1;
     _nb_chanel = 1;
-    _mode_compr = Tiff_Im::No_Compr;   
+    _mode_compr = Tiff_Im::No_Compr;
     _predict  = Tiff_Im::No_Predic;
     _msbit_first = true;
     _plan_conf = Tiff_Im::Chunky_conf;
@@ -842,7 +871,7 @@ DATA_Tiff_Ifd::DATA_Tiff_Ifd
   //   Read tags values from file
   //===================================
 
-   if (pta._bidon) 
+   if (pta._bidon)
    {
        lire_all_tiff_tag(this,fp);
    }
@@ -876,7 +905,7 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
     {
         _data_format = STD_NEW_TAB_USER(_nb_chanel,INT);
         for (INT ch =0; ch < _nb_chanel ; ch++)
-             _data_format[ch] = Tiff_Im::Unsigned_int;  
+             _data_format[ch] = Tiff_Im::Unsigned_int;
     }
 
 
@@ -892,10 +921,10 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
           )
        )
     {
-         std::cout << "Sz " << _sz 
+         std::cout << "Sz " << _sz
                     << " TileOffset " << _tiles_offset
-                    << " Resol " <<   _resol 
-                    << " Ph Interp " << _phot_interp 
+                    << " Resol " <<   _resol
+                    << " Ph Interp " << _phot_interp
                     << "\n";
           // Les tags vraiment necessaires
           if (!(  (_sz.x != -1) && (_sz.y != -1)
@@ -911,9 +940,9 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
 /*
     Tjs_El_User.ElAssert
     (
-                (_sz.x != -1) && (_sz.y != -1)  
+                (_sz.x != -1) && (_sz.y != -1)
              && ((_tiles_offset != 0) || mUseFileTile)
-             && (_resol.x != -1) && (_resol.y != -1)  
+             && (_resol.x != -1) && (_resol.y != -1)
           // && (_tiles_byte_count != 0)
           && (_phot_interp != (Tiff_Im::PH_INTER_TYPE) -1),
           EEM0 << "uncomplete TIFF Information File Directory"
@@ -926,8 +955,8 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
         Tjs_El_User.ElAssert
         (
              _palette !=0,
-             EEM0 << "Missing palette for Indexed Color Tiff file " 
-                  << name 
+             EEM0 << "Missing palette for Indexed Color Tiff file "
+                  << name
         );
         Tjs_El_User.ElAssert
         (
@@ -941,7 +970,7 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
     post_init(name);
 
 
-    if (! pta._bidon) 
+    if (! pta._bidon)
     {
        fp.close();
     }
@@ -949,12 +978,12 @@ std::cout << "XIFtif:APRES Date " << ToString(mExifTiff_Date) << "\n";
 
 std::string DATA_Tiff_Ifd::NameTileFile(Pt2di aITF)
 {
-	return    StdPrefix(_name) 
-		+ "_Tile_"
-		+ ToString(aITF.x)
-		+ "_"
-		+ ToString(aITF.y)
-		+ ".tif";
+    return    StdPrefix(_name)
+        + "_Tile_"
+        + ToString(aITF.x)
+        + "_"
+        + ToString(aITF.y)
+        + ".tif";
 }
 
 void DATA_Tiff_Ifd::post_init(const char * name)
@@ -1002,13 +1031,13 @@ void DATA_Tiff_Ifd::post_init(const char * name)
     _unpacked_type_el = (_nbb_ch0 < 8) ? GenIm::u_int1 : _type_el;
     _padding_constr   = (_nbb_ch0 < 8) ? (8/_nbb_ch0) : 1;
 
-    _sz_byte_pel_unpacked = 
+    _sz_byte_pel_unpacked =
                (nbb_type_num(_unpacked_type_el)/8)
              * (_plan_conf == Tiff_Im::Chunky_conf ? _nb_chanel : 1);
-    _nb_chan_per_tile = 
+    _nb_chan_per_tile =
           (_plan_conf == Tiff_Im::Chunky_conf ? _nb_chanel : 1);
 
-    _line_el_sz_tiles  = _nb_chan_per_tile * _sz_tile.x; 
+    _line_el_sz_tiles  = _nb_chan_per_tile * _sz_tile.x;
     _padded_line_el_sz_tiles  = (_line_byte_sz_tiles * 8) / _nbb_ch0;
 
 
@@ -1052,10 +1081,10 @@ void DATA_Tiff_Ifd::post_init(const char * name)
 
 
    mNbTTByTF = Pt2di
-	       (
+           (
                   mSzFileTile.x/_sz_tile.x  ,
                   mSzFileTile.y/_sz_tile.y
-	       );
+           );
    // std::cout << "ghgjYujg " << mSzFileTile << _sz_tile << mNbTTByTF <<  name << "\n";
 }
 
@@ -1096,7 +1125,7 @@ void DATA_Tiff_Ifd::show()
 
      cout << "Compression [" << Tiff_Im::name_compr(_mode_compr) <<"]"
           << "; Predictor [" <<Tiff_Im::name_predictor(_predict) << "]"
-          << "; Photometric Interp [" 
+          << "; Photometric Interp ["
           << Tiff_Im::name_phot_interp(_phot_interp) << "]";
      cout << ";  Bits Order [" << (_msbit_first ? "MSBF" : "LSBF");
      cout << "]\n";
@@ -1113,22 +1142,22 @@ void DATA_Tiff_Ifd::show()
      if (_tiles_offset)
      {
        cout << "TILES : ";
-	 {
-	     for (int  i =0 ; i<ElMin(6,_nb_tile_tot.IntBasicLLO()) ; i++)
-		 {
-			 cout << "(" << _tiles_offset[i].BasicLLO() << "," ;
-			if   (_tiles_byte_count)
-				  cout << _tiles_byte_count[i].BasicLLO();
-			else
-				  cout << "?";
-			cout     << ")";
-		}
-	 }
+     {
+         for (int  i =0 ; i<ElMin(6,_nb_tile_tot.IntBasicLLO()) ; i++)
+         {
+             cout << "(" << _tiles_offset[i].BasicLLO() << "," ;
+            if   (_tiles_byte_count)
+                  cout << _tiles_byte_count[i].BasicLLO();
+            else
+                  cout << "?";
+            cout     << ")";
+        }
+     }
        if (_nb_tile_tot.IntBasicLLO()>5) cout << "...";
        cout << "\n";
      }
      else
-	     cout << "TileFiles\n";
+         cout << "TileFiles\n";
 
      std::cout << "FocMm " << mExifTiff_FocalLength << ", FEquiv35 " << mExifTiff_FocalLength << "\n";
 }
@@ -1168,7 +1197,7 @@ const char * DATA_Tiff_Ifd::why_elise_cant_use()
 bool DATA_Tiff_Ifd::refuse_for_ever()
 {
 
-      // Refuse to handle variable depth 
+      // Refuse to handle variable depth
       for (INT ch =1;  ch<_nb_chanel ; ch++)
           if (_nbb_ch0 != _bits_p_chanel[ch])
              return true;
@@ -1177,12 +1206,12 @@ bool DATA_Tiff_Ifd::refuse_for_ever()
       if (! is_pow_of_2(_nbb_ch0))
          return true;
 
-      // Refuse to handle variable data format 
-	  {
-		 for (INT ch =1;  ch<_nb_chanel ; ch++)
-			  if (_data_format[0] != _data_format[ch])
-				 return true;
-	  }
+      // Refuse to handle variable data format
+      {
+         for (INT ch =1;  ch<_nb_chanel ; ch++)
+              if (_data_format[0] != _data_format[ch])
+                 return true;
+      }
 
       switch(_data_format[0])
       {
@@ -1223,18 +1252,18 @@ GenIm::type_el  DATA_Tiff_Ifd::type_el()
     {
          switch (_nbb_ch0)
          {
-               case 1 : return (    _msbit_first       ?  
-                                    GenIm::bits1_msbf  : 
+               case 1 : return (    _msbit_first       ?
+                                    GenIm::bits1_msbf  :
                                     GenIm::bits1_lsbf
                                );
 
-               case 2 : return (    _msbit_first       ?  
-                                    GenIm::bits2_msbf  : 
+               case 2 : return (    _msbit_first       ?
+                                    GenIm::bits2_msbf  :
                                     GenIm::bits2_lsbf
                                );
 
-               case 4 : return (    _msbit_first       ?  
-                                    GenIm::bits4_msbf  : 
+               case 4 : return (    _msbit_first       ?
+                                    GenIm::bits4_msbf  :
                                     GenIm::bits4_lsbf
                                );
 
@@ -1370,11 +1399,11 @@ Disc_Pal   DATA_Tiff_Ifd::pal()
 
 /***********************************************************************/
 /***********************************************************************/
-/***                                                                 ***/ 
-/***                                                                 ***/ 
-/***              Tiff_Im                                            ***/ 
-/***                                                                 ***/ 
-/***                                                                 ***/ 
+/***                                                                 ***/
+/***                                                                 ***/
+/***              Tiff_Im                                            ***/
+/***                                                                 ***/
+/***                                                                 ***/
 /***********************************************************************/
 /***********************************************************************/
 
@@ -1397,11 +1426,11 @@ Tiff_Im::Tiff_Im
       GenIm::type_el              type,
       Tiff_Im::COMPR_TYPE      compr,
       Tiff_Im::PH_INTER_TYPE   Phot_interp,
-      L_Arg_Opt_Tiff              l 
+      L_Arg_Opt_Tiff              l
 )     :
 
       ElGenFileIm
-      ( 
+      (
               new DATA_Tiff_Ifd
              (name,sz,type,compr,Phot_interp,0,0,0,l)
       )
@@ -1416,7 +1445,7 @@ Tiff_Im::Tiff_Im
       GenIm::type_el              type,
       Tiff_Im::COMPR_TYPE      compr,
       Disc_Pal                 The_Pal,
-      L_Arg_Opt_Tiff              l 
+      L_Arg_Opt_Tiff              l
 )     :
       ElGenFileIm
       (  new DATA_Tiff_Ifd
@@ -1426,7 +1455,7 @@ Tiff_Im::Tiff_Im
                  type,
                  compr,
                  RGBPalette,
-		 &The_Pal,
+         &The_Pal,
                  The_Pal.create_tab_c(),
                  The_Pal.nb_col(),
                  l
@@ -1445,7 +1474,7 @@ Tiff_Im Tiff_Im::CreateIfNeeded
              GenIm::type_el              aType,
              COMPR_TYPE                  aCompr,
              PH_INTER_TYPE               aPhotInterp,
-             L_Arg_Opt_Tiff              aListArgOpt 
+             L_Arg_Opt_Tiff              aListArgOpt
         )
 {
     if (ELISE_fp::exist_file(aName))
@@ -1457,10 +1486,10 @@ Tiff_Im Tiff_Im::CreateIfNeeded
           && (aType == aFile.type_el())
           && (aCompr ==  aFile.mode_compr())
           && (aPhotInterp == aFile.phot_interp())
-	  )
+      )
        {
-	       IsModified = false;
-	       return aFile;
+           IsModified = false;
+           return aFile;
        }
 
     }
@@ -1504,7 +1533,7 @@ void Tiff_Im::verif_usable(bool)
 
 
 
-cMetaDataPhoto Tiff_Im::MDP() 
+cMetaDataPhoto Tiff_Im::MDP()
 {
      return dtifd()->MDP();
 }
@@ -1565,35 +1594,35 @@ tFileOffset  Tiff_Im::offset_tile(INT x,INT y,INT kth_ch)
     return dtifd()->offset_tile(x,y,kth_ch);
 }
 
-tFileOffset  Tiff_Im::byte_count_tile(INT x,INT y,INT kth_ch)   
+tFileOffset  Tiff_Im::byte_count_tile(INT x,INT y,INT kth_ch)
 {
     return dtifd()->byte_count_tile(x,y,kth_ch);
 }
 
 
-Pt2di Tiff_Im::nb_tile() 
+Pt2di Tiff_Im::nb_tile()
 {
-	return  dtifd()->_nb_tile;
+    return  dtifd()->_nb_tile;
 }
 
-Pt2di Tiff_Im::sz_tile() 
+Pt2di Tiff_Im::sz_tile()
 {
-	return  dtifd()->_sz_tile;
+    return  dtifd()->_sz_tile;
 }
 
 Tiff_Im::PLANAR_CONFIG  Tiff_Im::plan_conf()
 {
-	return (Tiff_Im::PLANAR_CONFIG) dtifd()->_plan_conf;
+    return (Tiff_Im::PLANAR_CONFIG) dtifd()->_plan_conf;
 }
 
 const char * Tiff_Im::name()
 {
-	return dtifd()->name();
+    return dtifd()->name();
 }
 
 bool  Tiff_Im::byte_ordered()
 {
-	return dtifd()->_byte_ordered;
+    return dtifd()->_byte_ordered;
 }
 
 
@@ -1602,29 +1631,30 @@ const L_Arg_Opt_Tiff Tiff_Im::Empty_ARG;
 
 Elise_Palette  Tiff_Im::std_pal(Video_Win W)
 {
-	switch(phot_interp())
-	{
-		case  RGB :	
-				return W.prgb();
 
-		case  RGBPalette :	
-				return pal();
+    switch(phot_interp())
+    {
+        case  RGB :
+                return W.prgb();
 
-		
-		case  WhiteIsZero :	
-		case  BlackIsZero :	
-				return W.pgray();
+        case  RGBPalette :
+                return pal();
 
-		default :
-    		Tjs_El_User.ElAssert
-			(
-				false,
-				EEM0 << "Un Handled kind of palette in Tiff_Im::std_pal "
-					 << "; file = " << name()
-			);
-	
-	}
-	return W.pgray();
+
+        case  WhiteIsZero :
+        case  BlackIsZero :
+                return W.pgray();
+
+        default :
+            Tjs_El_User.ElAssert
+            (
+                false,
+                EEM0 << "Un Handled kind of palette in Tiff_Im::std_pal "
+                     << "; file = " << name()
+            );
+
+    }
+    return W.pgray();
 }
 
 Tiff_Im  Tiff_Im::StdConv(const ElSTDNS string & aName)
@@ -1639,34 +1669,36 @@ Tiff_Im  Tiff_Im::UnivConvStd(const ElSTDNS string & aName)
    return StdConvGen(aName,-1,true,false);
 }
 
+
+
 Tiff_Im  Tiff_Im::BasicConvStd(const ElSTDNS string & Name)
 {
     if (IsPostfixed(Name))
     {
-	   ElSTDNS string post = StdPostfix(Name);
+       ElSTDNS string post = StdPostfix(Name);
 
-	   if ((post=="tif") || (post=="tiff") || (post=="TIF") || (post=="TIFF") || (post=="Tif"))
-		   return Tiff_Im(Name.c_str());
+       if ((post=="tif") || (post=="tiff") || (post=="TIF") || (post=="TIFF") || (post=="Tif"))
+           return Tiff_Im(Name.c_str());
 
-	   if ((post=="RS") || (post=="rs") )
-		   return Elise_Tiled_File_Im_2D::sun_raster(Name.c_str()).to_tiff();
+       if ((post=="RS") || (post=="rs") )
+           return Elise_Tiled_File_Im_2D::sun_raster(Name.c_str()).to_tiff();
 
-	   if (     (post=="pbm") || (post=="PBM") 
-                ||  (post=="pgm") || (post=="PGM") 
-                ||  (post=="ppm") || (post=="PPM") 
+       if (     (post=="pbm") || (post=="PBM")
+                ||  (post=="pgm") || (post=="PGM")
+                ||  (post=="ppm") || (post=="PPM")
               )
               return Elise_File_Im::pnm(Name.c_str()).to_tiff();
 
    }
 
-   if (IsPostfixed(Name) && (StdPostfix(Name)=="xml"))
+   cSpecifFormatRaw *   aSFR = GetSFRFromString(Name);
+   if (aSFR && (! aSFR->BayPat().IsInit()))
    {
         return Elise_Tiled_File_Im_2D::XML(Name).to_tiff();
    }
 
     if (IsPostfixed(Name) && (StdPostfix(Name)=="HDR"))
     {
-        ElSTDNS string post = StdPostfix(Name);
         return Elise_Tiled_File_Im_2D::HDR(Name).to_tiff();
     }
 
@@ -1681,6 +1713,7 @@ Tiff_Im  Tiff_Im::BasicConvStd(const ElSTDNS string & Name)
    }
 
 
+
  // cout << Name.c_str() << "Is Thom File = " << IsThomFile(Name) << "\n";
 
    if (IsThomFile(Name))
@@ -1692,53 +1725,54 @@ Tiff_Im  Tiff_Im::BasicConvStd(const ElSTDNS string & Name)
    }
 
 
+
     if (IsPostfixed(Name))
     {
-	   ElSTDNS string post = StdPostfix(Name);
+       ElSTDNS string post = StdPostfix(Name);
        Tjs_El_User.ElAssert
-	   (
-		  false,
-          EEM0 << "Tiff_Im::StdConv, do not Handle postfix : [" 
+       (
+          false,
+          EEM0 << "Tiff_Im::StdConv, do not Handle postfix : ["
              << post.c_str() <<"]" <<"\n"
              <<"(Full Name  = " << Name.c_str() <<")"
-	   );
+       );
     }
     else
     {
        Tjs_El_User.ElAssert
-	   (
-		  false,
+       (
+          false,
           EEM0 << "Not Postifxed/Not Spahir "
                <<"(Full Name  = " << Name.c_str() <<")"
-	   );
+       );
     }
 
 
-	return Tiff_Im(Name.c_str());
+    return Tiff_Im(Name.c_str());
 }
 
 
 std::string Tiff_Im::GetNameOfFileExist(const std::string & aName)
 {
    std::string aTest = aName+ ".tif";
-   if (ELISE_fp::exist_file(aTest)) 
+   if (ELISE_fp::exist_file(aTest))
       return aTest;
 
    aTest =  aName;
-   if (ELISE_fp::exist_file(aTest)) 
+   if (ELISE_fp::exist_file(aTest))
       return aTest;
 
    aTest =  aName+ ".TIF";
-   if (ELISE_fp::exist_file(aTest)) 
+   if (ELISE_fp::exist_file(aTest))
       return aTest;
 
 
    aTest =  aName+ ".tiff";
-   if (ELISE_fp::exist_file(aTest)) 
+   if (ELISE_fp::exist_file(aTest))
       return aTest;
 
    aTest =  aName+ ".TIFF";
-   if (ELISE_fp::exist_file(aTest)) 
+   if (ELISE_fp::exist_file(aTest))
       return aTest;
 
    cout << "FOR NAME = [" << aName << "]\n";
@@ -1749,11 +1783,11 @@ std::string Tiff_Im::GetNameOfFileExist(const std::string & aName)
 
 /***********************************************************************/
 /***********************************************************************/
-/***                                                                 ***/ 
-/***                                                                 ***/ 
-/***              Elise_Tiled_File_Im_2D                             ***/ 
-/***                                                                 ***/ 
-/***                                                                 ***/ 
+/***                                                                 ***/
+/***                                                                 ***/
+/***              Elise_Tiled_File_Im_2D                             ***/
+/***                                                                 ***/
+/***                                                                 ***/
 /***********************************************************************/
 /***********************************************************************/
 
@@ -1827,7 +1861,7 @@ Output Elise_Tiled_File_Im_2D::out()
 
 Tiff_Im  Elise_Tiled_File_Im_2D::to_tiff()
 {
-	return Tiff_Im(dtifd());
+    return Tiff_Im(dtifd());
 }
 
 
@@ -1882,10 +1916,10 @@ Tiff_Im Tiff_Im::CreateFromFonc
             (
                  aName.c_str(),
                  aSz,
-		 aTEl,
+         aTEl,
                  aModeCompr,
-		 (aFonc.dimf_out() == 1) ? BlackIsZero : RGB
-	    );
+         (aFonc.dimf_out() == 1) ? BlackIsZero : RGB
+        );
     ELISE_COPY(aRes.all_pts(),aFonc,aRes.out());
     return aRes;
 }
@@ -2012,7 +2046,7 @@ Tiff_Im MMIcone(const std::string & aName)
 {
 // std::cout << "IIIICOne" << MMDir() << "\n";
     return Tiff_Im::BasicConvStd(MMDir()+"data"+ELISE_CAR_DIR+aName +".tif");
-       
+
 }
 
 Fonc_Num Tiff_Im::in_bool()
@@ -2060,6 +2094,8 @@ Fonc_Num Tiff_Im::in_bool(Fonc_Num aFonc)
        return 0;
 }
 
+
+
 Tiff_Im  Tiff_Im::StdConvGen(const ElSTDNS string & Name,int aNbChan,bool Bits16,bool ExigNoCompr)
 {
    return Tiff_Im::BasicConvStd(NameFileStd(Name,aNbChan,Bits16,ExigNoCompr));
@@ -2074,10 +2110,17 @@ Tiff_Im  Tiff_Im::StdConvGen(const ElSTDNS string & Name,int aNbChan,bool Bits16
 static std::string NameAdapt(const std::string  &aFullName, const std::string & aPost,bool toMkDir)
 {
    static std::string aDirAdd = std::string("Tmp-MM-Dir")+ELISE_CAR_DIR;
+
    std::string aDir,aNameOri;
    SplitDirAndFile(aDir,aNameOri,aFullName);
    if (toMkDir)
       ELISE_fp::MkDir(aDir+aDirAdd);
+
+   if ( isUsingSeparateDirectories() ){
+      aDir = MMTemporaryDirectory();
+      aDirAdd = "";
+   }
+
    return aDir+aDirAdd+aNameOri + aPost + ".tif";
 }
 
@@ -2093,6 +2136,25 @@ void TestDate(const std::string & aF1,const std::string & aF2)
 #endif
 }
 
+bool   Tiff_Im::IsNameInternalTile(const std::string & aNameTiled,cInterfChantierNameManipulateur * anICNM)
+{
+    std::string aNameNoTiled = anICNM->Assoc1To1("NKS-Assoc-Tile2File",aNameTiled,true);
+
+    return aNameNoTiled != "NONE";
+}
+
+Tiff_Im  Tiff_Im::Dupl(const std::string& aName)
+{
+   return Tiff_Im
+          (
+              aName.c_str(),
+              sz(),
+              type_el(),
+              mode_compr(),
+              phot_interp()
+          );
+}
+
 
 
 std::string NameFileStd
@@ -2101,9 +2163,16 @@ std::string NameFileStd
                 int aNbChanSpec,
                 bool RequireBits16,
                 bool ExigNoCompr,
-                bool Create
+                bool Create,
+                bool ExigB8
             )
 {
+   cInterfChantierNameManipulateur * aICNM = cInterfChantierNameManipulateur::Glob();
+   cSpecifFormatRaw *   aSFR = GetSFRFromString(aFullNameOri);
+
+
+   bool aRawTiff = aSFR && (!aSFR->BayPat().IsInit());
+
    if (IsPostfixed(aFullNameOri))
    {
         ElSTDNS string post = StdPostfix(aFullNameOri);
@@ -2117,15 +2186,32 @@ std::string NameFileStd
           return aFullNameOri;
    }
 
+   std::string Post8B= "";
 
    Tiff_Im *aTif = 0;
    bool isTiff = Tiff_Im::IsTiff(aFullNameOri.c_str(),true);
    int aNbChanIn = -1;
    bool Bits16 = RequireBits16 && (!IsPostfixedJPG(aFullNameOri));
 
-   if (isTiff)
+   if (isTiff)  // Si fichier tiff , le Bits16 sera calcule plus tard
    {
-       aTif = new Tiff_Im (aFullNameOri.c_str());
+   }
+   else
+   {
+       cMetaDataPhoto aMDP = cMetaDataPhoto::CreateExiv2(aFullNameOri);
+       int aNbbMDP = aMDP.NbBits(true);
+       if ((aNbbMDP>0) && (aNbbMDP<=8))
+       {
+           Bits16 = false;
+       }
+   }
+   bool Conv16to8=false;
+
+   if (isTiff || aRawTiff )
+   {
+       aTif =   aRawTiff                                                           ?
+                new Tiff_Im (Elise_Tiled_File_Im_2D::XML(aFullNameOri).to_tiff() ) :
+                new Tiff_Im (aFullNameOri.c_str())                                 ;
        if ((aTif->phot_interp()==Tiff_Im::RGBPalette) && (aNbChanSpec>=0))
        {
              std::cout << "WARRRRRNNNNNNNNNNN   Color Palette Tiff im may be wrongly interpreted\n";
@@ -2139,7 +2225,12 @@ std::string NameFileStd
        {
             Bits16 = false;
        }
-       if (((aTif->mode_compr() == Tiff_Im::No_Compr)|| (!ExigNoCompr)) && (aNbChanIn==aNbChanSpec))
+       if ((ExigB8) && (aTif->bitpp() > 8))
+       {
+                 Post8B= "_8B";
+                 Conv16to8 = true;
+       }
+       else if (((aTif->mode_compr() == Tiff_Im::No_Compr)|| (!ExigNoCompr)) && (aNbChanIn==aNbChanSpec))
        {
            delete aTif;
            return aFullNameOri;
@@ -2147,14 +2238,16 @@ std::string NameFileStd
    }
    else
    {
-       if (aNbChanSpec<=0) 
+       if (aNbChanSpec<=0)
        {
           aNbChanSpec=3;
        }
    }
 
+
    // std::string aNewName =  aDir+aDirAdd+StdPrefixGen(aNameOri) + ".tif";
-   std::string aPost ="_Ch" + ToString(aNbChanSpec) + (Bits16 ? "_16B" : "") ;
+
+   std::string aPost ="_Ch" + ToString(aNbChanSpec) + (Bits16 ? "_16B" :  Post8B) ;
    std::string aNewName =  NameAdapt(aFullNameOri,aPost,false);
 
 
@@ -2174,19 +2267,58 @@ std::string NameFileStd
        Fonc_Num aFin = aTif->in();
        if (aNbChanSpec==1)
        {
+           if (aICNM==0)  aICNM = cInterfChantierNameManipulateur::Glob();
+           if (aICNM==0)  aICNM = cInterfChantierNameManipulateur::BasicAlloc(DirOfFile(aFullNameOri));
+           std::vector<double> aVPds;
+           ElArgMain<std::vector<double> > anArg(aVPds,"toto",true);
+           std::string aNamePds = aICNM->Assoc1To1("NKS-Assoc-Pds-Channel",NameWithoutDir(aFullNameOri),true);
+           anArg.InitEAM(aNamePds,ElGramArgMain::StdGram);
+           ELISE_ASSERT(int(aVPds.size()) >= aNbChanIn,"Channel > nb of pds in tiff => Gray");
+
+           double aSomPds = 0;
+           aFin = 0.0;
+           bool AllP1 = true;
+           for (int aKC=0 ; aKC<aNbChanIn ; aKC++)
+           {
+               double aPds = aVPds[aKC];
+               // FromString(aPds,aICNM->Assoc1To2("NKS-Assoc-Pds-Channel",aFullNameOri,ToString(aKC),true));
+               aFin  =  aFin + aPds * aSIn.kth_proj(aKC);
+               aSomPds  += aPds;
+               AllP1 = AllP1 && (aPds==1);
+           }
+           if (! AllP1) 
+              std::cout << "PDS " << aVPds << " for " <<  aFullNameOri << "\n";
+           aFin  = aFin / aSomPds;
            aPhOut = Tiff_Im::BlackIsZero;
-           if (aNbChanIn==3)
+
+/*
+
+           if (aNbChanIn==4) // Maybe RGB+IR ? ToDo !
+           {
+               aFin  = (aSIn.v0() + aSIn.v1()+ aSIn.v2()+ aSIn.kth_proj(3)) / 4;
+           }
+           else if (aNbChanIn==3)
            {
                aFin  = (aSIn.v0() + aSIn.v1()+ aSIn.v2()) / 3;
            }
            else if (aNbChanIn==1)
            {
            }
-           else 
+           else  if (true)
+           {
+               aFin = 0;
+               for (int aKC=0 ; aKC<aNbChanIn; aKC++)
+               {
+                  aFin = aFin + aSIn.kth_proj(aKC);
+               }
+               aFin = aFin / aNbChanIn;
+           }
+           else
            {
               std::cout  << "For Name " << aFullNameOri << "\n";
-              ELISE_ASSERT(false,"Unexpected color comnibaison");
+              ELISE_ASSERT(false,"Unexpected color combinaison");
            }
+*/
        }
        else if (aNbChanSpec==3)
        {
@@ -2195,13 +2327,21 @@ std::string NameFileStd
            {
                 aFin = Virgule(aSIn.v0(),aSIn.v0(),aSIn.v0());
            }
+           else if (aNbChanIn==2)
+           {
+                aFin = Virgule(aSIn.v0(),(aSIn.v0()+aSIn.v1())/2,aSIn.v1());
+           }
            else if (aNbChanIn==3)
            {
            }
-           else 
+           else  if (true)  // Classique "shift" des fauses couleurs : V B PIR
+           {
+               aFin = Virgule(aSIn.kth_proj(aNbChanIn-3),aSIn.kth_proj(aNbChanIn-2),aSIn.kth_proj(aNbChanIn-1));
+           }
+           else
            {
               std::cout  << "For Name " << aFullNameOri << "\n";
-              ELISE_ASSERT(false,"Unexpected color comnibaison");
+              ELISE_ASSERT(false,"Unexpected color combinaison");
            }
        }
        else
@@ -2222,7 +2362,7 @@ std::string NameFileStd
                             (
                                 aNewName.c_str(),
                                 aTif->sz(),
-                                aTif->type_el(),
+                                Conv16to8 ?  GenIm::u_int1 : aTif->type_el(),
                                 Tiff_Im::No_Compr,
                                 aPhOut,
                                 ArgOpTiffMDP(aFullNameOri)
@@ -2235,27 +2375,29 @@ std::string NameFileStd
 
        std::string aNameCal = StdNameBayerCalib(aFullNameOri);
 
-         
-      bool DoReech = aNameCal!= "" ;
+
+      bool DoReech = (aNameCal!= "") ;
       std::string  aNameCoul = (aNbChanSpec==1) ? "G" : "C";
       std::string  aNameReech =  DoReech ? "R" : "B";
 
-	   std::string aStr =    MMDir()+ "bin"+ELISE_CAR_DIR+"MpDcraw "
-                           + aFullNameOri + " "
+       //std::string aStr =    MMDir()+ "bin"+ELISE_CAR_DIR+"MpDcraw "
+       std::string aStr =  MM3dBinFile_quotes("MpDcraw")
+                           + ToStrBlkCorr(aFullNameOri) + " "
                            + std::string(" Add16B8B=0 ")
-                           + std::string(" ConsCol=0 ") 
+                           + std::string(" ConsCol=0 ")
                            + std::string(" ExtensionAbs=None ")
                            + std::string(" 16B=") + (Bits16?"1 ":"0 ")
                            // + ((aNbChanSpec==1)? " GB=1 "  : " CB=1 ")
                            + std::string(" " + aNameCoul + aNameReech + "=1 ")
                            + (DoReech ?  std::string(" Cal=" + aNameCal + " ") : "")
                            + " NameOut=" + aNewName
-                           + " UseFF="  + (  (Bits16||(aNbChanSpec==3)) ? "0" : "1")  // Flat Field en Gray-8Bits
+                           // MPD : je ne comprend plus pourquoi il faut anihiler le flat field dans ces conditions
+                           // + " UseFF="  + (  (Bits16||(aNbChanSpec==3)) ? "0" : "1")  // Flat Field en Gray-8Bits
                          ;
 
        if (! Bits16)
        {
-             cInterfChantierNameManipulateur * aICNM = cInterfChantierNameManipulateur::BasicAlloc(DirOfFile(aFullNameOri));
+             if (aICNM==0)  aICNM = cInterfChantierNameManipulateur::BasicAlloc(DirOfFile(aFullNameOri));
              aStr = aStr + " Gamma=" + aICNM->Assoc1To1("NKS-Assoc-STD-Gama8Bits",NameWithoutDir(aFullNameOri),true);
              aStr = aStr + " EpsLog=" +  aICNM->Assoc1To1("NKS-Assoc-STD-EpsLog8Bits",NameWithoutDir(aFullNameOri),true);
        }
@@ -2263,7 +2405,7 @@ std::string NameFileStd
 
 
        std::cout << "nnnnnnnn " << aStr << "\n";
-        VoidSystem(aStr.c_str());
+        System(aStr.c_str());
    }
 
    delete aTif;
@@ -2282,13 +2424,13 @@ std::string NameFileStd
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -2298,17 +2440,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

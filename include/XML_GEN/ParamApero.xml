@@ -13,12 +13,10 @@
 
 <Verbatim File=".h">
 // #include "XML_GEN/all.h"
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
 </Verbatim>
 
 <Verbatim File=".h.cpp">
-namespace NS_ParamApero{
+// NO MORE ... 
 </Verbatim>
 
 
@@ -104,7 +102,11 @@ namespace NS_ParamApero{
 <!--  PPa=PPs for eCalibAutomRadialBasic and eCalibAutomPhgrStdBasic -->
     <eCalibAutomRadialBasic>          </eCalibAutomRadialBasic>
     <eCalibAutomPhgrStdBasic>         </eCalibAutomPhgrStdBasic>
-    <eCalibAutomNone>                </eCalibAutomNone>
+    <eCalibAutomFour7x2>                 </eCalibAutomFour7x2>
+    <eCalibAutomFour11x2>                 </eCalibAutomFour11x2>
+    <eCalibAutomFour15x2>                 </eCalibAutomFour15x2>
+    <eCalibAutomFour19x2>                 </eCalibAutomFour19x2>
+    <eCalibAutomNone>                 </eCalibAutomNone>
 </enum>
 
    
@@ -113,7 +115,8 @@ namespace NS_ParamApero{
     <ePoseFigee>         </ePoseFigee>
     <ePoseBaseNormee>    </ePoseBaseNormee>
     <ePoseVraieBaseNormee>    </ePoseVraieBaseNormee>
-    <eCentreFige>        </eCentreFige>
+    <eCentreFige>             </eCentreFige>
+    <eAnglesFiges>            </eAnglesFiges>
 </enum>
 
 <enum Name="eTypeVerif">
@@ -232,6 +235,22 @@ namespace NS_ParamApero{
       <LimBSurH Nb="?" Type="double" Def="1e-2"> </LimBSurH>
 </ParamEstimPlan>
 
+<RigidBlockWeighting Nb="1" Class="true" ToReference="true">
+    <PondOnTr Nb="1" Type="double"> </PondOnTr>
+    <PondOnRot Nb="1" Type="double"> </PondOnRot>
+</RigidBlockWeighting>
+
+<GpsRelativeWeighting Nb="1" Class="true" ToReference="true">
+<!--  le sigma0 sera egal a SigmaPerSec*Time + SigmaMin,
+      le poids sera 1/ Sigma0 ^ 2
+-->
+    <SigmaPerSec  Nb="1" Type="double" >          </SigmaPerSec>
+    <SigmaMin     Nb="1" Type="double" >          </SigmaMin>
+    <MaxResidu Nb="?" Type="double">             </MaxResidu>
+</GpsRelativeWeighting>
+
+
+
 <AperoPointeStereo Nb="1" Class="true" ToReference="true">
       <P1 Nb="1" Type="Pt2dr"> </P1>
       <Im1 Nb="1" Type="std::string"> </Im1>
@@ -270,6 +289,9 @@ namespace NS_ParamApero{
           <!-- A priori idiot de mettre de la viscosite si deja force de rappel en GPS -->
           <OnlyWhenNoCentreInit Nb="?" Type="bool" Def="true"> </OnlyWhenNoCentreInit>
     </RappelOnCentres>
+    <RappelOnIntrinseque Nb="*">
+          <ParamF Nb="1" RefType="ParamForceRappel" AccessorFils="false"> </ParamF> 
+    </RappelOnIntrinseque>
 </SectionLevenbergMarkard>
 
 
@@ -298,6 +320,9 @@ namespace NS_ParamApero{
                          RefFile="ParamChantierPhotogram.xml"
 	> 
 	</DicoLoc>
+
+
+         <FileDebug Nb="?" Type="std::string"> </FileDebug>
 
         <ShowSection  Nb="?"> 
             <ShowMes Nb="?" Type="bool" Def="true"> </ShowMes>
@@ -379,18 +404,26 @@ namespace NS_ParamApero{
 
             <!--  Observations des appuis "flottants"
 	    -->
-
             <BDD_ObsAppuisFlottant Nb="*">
                   <!-- A rejouter au mesure images si par exemple saisi su Jpg de taille diff -->
                   <OffsetIm Nb="?" Type="Pt2dr" Def="Pt2dr(0,0)"> </OffsetIm>
 	          <Id Nb="1" Type="std::string"> </Id>
-		  <KeySetOrPat Nb="1" Type="std::string"> </KeySetOrPat>
+                  <!-- Ceci est pour les mesures de points -->
+		  <KeySetOrPat Nb="?" Type="std::string"> </KeySetOrPat>
                   <NameAppuiSelector Nb="?" Type="std::string"> </NameAppuiSelector>
 
                   <!-- If true : no error will appear when no ground data base exist;
-                       default is false for full compatibility -->
-                  <AcceptNoGround Nb="?" Type="bool" Def="false"> </AcceptNoGround>
+                       OLD : default is false for full compatibility 
+                       NEW : default is true, do not see any draw back
+                   -->
+                  <AcceptNoGround Nb="?" Type="bool" Def="true"> </AcceptNoGround>
+		  <KeySetSegDroite Nb="?" Type="std::string"> </KeySetSegDroite>
             </BDD_ObsAppuisFlottant>
+
+            <!--  Observations des appuis "flottants"
+	    -->
+
+
 
              <BDD_Orient Nb="*">
 	          <Id Nb="1" Type="std::string" > </Id>
@@ -476,8 +509,14 @@ namespace NS_ParamApero{
               </LayerImageToPose>
 
 
-               <LimInfBSurHPMoy Nb="?" Def="1e-2" Type="double"> </LimInfBSurHPMoy>
-               <LimSupBSurHPMoy Nb="?" Def="2e-1" Type="double"> </LimSupBSurHPMoy>
+              <LimInfBSurHPMoy Nb="?" Def="1e-2" Type="double"> </LimInfBSurHPMoy>
+              <LimSupBSurHPMoy Nb="?" Def="2e-1" Type="double"> </LimSupBSurHPMoy>
+
+              <DeclareObsRelGPS  Nb="*">
+                  <PatternSel Nb="1" Type="std::string"> </PatternSel>
+                  <Id  Nb="1"  Type="std::string"> </Id>
+              </DeclareObsRelGPS>
+
 
 	</SectionBDD_Observation>
 
@@ -522,11 +561,17 @@ namespace NS_ParamApero{
               
 
 
+              <GpsOffset Nb="*">
+                  <ValInit Nb="1" Type="Pt3dr"> </ValInit>
+                  <Id Nb="1" Type="std::string"> </Id>
+              </GpsOffset>
+
               <CalibrationCameraInc Nb="*">
 	           <Name Nb="1" Type="std::string"> </Name>
                    <ConvCal Nb="?"  Type="eConventionsOrientation" Def="eConvApero_DistM2C" > </ConvCal>
                     
 	           <Directory Nb="?" Type="std::string" Def="">        </Directory>
+                   <AddDirCur Nb="?" Type="bool" Def="true">           </AddDirCur>
 		   <CalValueInit Nb="1">
 			 <CalFromValues  Nb="?"     
 			     RefType="CalibrationInternConique" 
@@ -577,6 +622,15 @@ namespace NS_ParamApero{
 
               <SeuilL1EstimMatrEss Nb="?" Type="int" Def="150"> </SeuilL1EstimMatrEss>
 
+              <BlockCamera Nb="*">
+                    <NameFile Nb="1" Type="std::string"> </NameFile>
+                    <Id   Nb="?" Type="std::string"> </Id>
+                    <UseForBundle Nb="?">
+                        <GlobalBundle Nb="1" Type="bool">      </GlobalBundle>
+                        <RelTimeBundle Nb="1" Type="bool">     </RelTimeBundle>
+                    </UseForBundle>
+              </BlockCamera>
+
 
                <!-- A priori obsolete, remplacee par valeur dans calib -->
               <GlobOrInterne Nb="?" RefType="SetOrientationInterne"></GlobOrInterne>
@@ -593,6 +647,7 @@ namespace NS_ParamApero{
                     <!-- S'il existe une base de donnees de centre de rattachement, typiquement
                          du GPS embarque -->
                    <IdBDCentre Nb="?" Type="std::string"> </IdBDCentre>
+                   <IdOffsetGPS  Nb="?" Type="std::string"> </IdOffsetGPS>
 
                    <!-- Si on veut avoir une initialisation progressive, mettre a false -->
                    <InitNow Nb="?" Type="bool" Def="true"> </InitNow>
@@ -685,7 +740,23 @@ namespace NS_ParamApero{
 		   pour "monter" les aeros
 		   -->
 		   <ReverseOrderName Nb="?" Type="bool" Def="false"> </ReverseOrderName>
-	           <CalcNameCalib  Nb="1" Type="std::string">   </CalcNameCalib>
+                   <!-- Si on utilise CalcNameCalib , ne pas utiliser CalcNameCalibAux -->
+	           <CalcNameCalib  Nb="?" Type="std::string">   </CalcNameCalib>
+                   <!-- Pour s'adapter dynamiquement a , par exemple, le cas avec et sans CalPerIm, il faut
+                        pouvoir calculer la cle de calibration avec des critere complexe   -->
+                   <CalcNameCalibAux Nb="*"  UnionType="true">
+                        <CalcNameOnExistingTag Nb="?">
+                               <KeyCalcFileOriExt Nb="1" Type="std::string"> </KeyCalcFileOriExt>
+                               <KeyCalcName Nb="1" Type="std::string">       </KeyCalcName>
+                               <TagExist Nb="1" Type="std::string">          </TagExist>
+                               <TagNotExist Nb="1" Type="std::string">       </TagNotExist>
+                               <ExigCohTags Nb="?" Type="bool" Def="true">   </ExigCohTags>
+                        </CalcNameOnExistingTag>
+                        <KeyCalcNameDef Nb="?" Type="std::string">       </KeyCalcNameDef>
+                   </CalcNameCalibAux>
+
+
+
 		   <!-- A cause d'un "erreur historique" dans la lib elise, l'eventuelle rotation
 		   de rattachement doit etre connue a l'avance.
 		        Si necessaire, on doit pouvoir facilement donner une liste de rattachements
@@ -820,6 +891,8 @@ se limite a tester les 2 algo et a selectionner le meilleur. A priori peut pas f
 
 
         <SectionChantier Nb="1">
+              <IsAperiCloud Type="bool" Nb="?" Def="false"> </IsAperiCloud>  <!-- Dans ce cas, court-circuite +sieur meca -->
+              <IsChoixImSec Type="bool" Nb="?" Def="false"> </IsChoixImSec>  <!-- Dans ce cas, court-circuite +sieur meca -->
               <FileSauvParam Nb="?" Type="std::string"> </FileSauvParam>
               <GenereErreurOnContraineCam Nb="?" Type="bool" Def="true"> </GenereErreurOnContraineCam>
 	      <!--  Juste pour fixer les ordres de grandeur dans le cas d'une aero 
@@ -905,6 +978,18 @@ normalises en echelle et/ou en translation -->
       donc que les objets modifies
 -->
 		 <IterationsCompensation Nb="*" Container="std::vector">
+
+                     <CtrlTimeCompens Nb="?">
+                           <NbMin Nb="?" Type="int" Def="0"> </NbMin>
+                           <NbMax Nb="1" Type="int">         </NbMax>
+                           <SeuilEvolMoy Nb="1" Type="double">  </SeuilEvolMoy>
+                           <SeuilEvolMax Nb="?" Type="double">  </SeuilEvolMax>  <!-- Default 2*SeuilEvolMoy -->
+                           <AutoAdaptLVM Nb="?">
+                                <Mult Nb="1" Type="double">  </Mult>  <!-- MultSLMEtape sera egal a Mult * EvolMoy -->
+                                <ModeMin Nb="?" Type="bool" Def="true"> </ModeMin>
+                           </AutoAdaptLVM>
+                     </CtrlTimeCompens>
+                     <DoIt Nb="?" Type="bool" Def="true"> </DoIt> <!-- Add to make easier the control with symbol -->
 		     <SLMIter  Nb="?" RefType="SectionLevenbergMarkard"> </SLMIter>
 		     <SLMEtape  Nb="?" RefType="SectionLevenbergMarkard"> </SLMEtape>
 		     <SLMGlob   Nb="?" RefType="SectionLevenbergMarkard"> </SLMGlob>
@@ -949,6 +1034,19 @@ normalises en echelle et/ou en translation -->
                                         <NameRef Nb="1" Type="std::string"> </NameRef>   
                                    </BascOnAppuis>
                                    <ModeL2 Nb="?" Type="bool" Def="true"> </ModeL2>
+                                   <AerialDeformNonLin Nb="?" AccessorFils="false">
+                                         <!-- Notation X gd Axe, Y Petit Axe -->
+                                         <!-- Flag des polynome actif: Par ex pour Z
+                                              Z = a0 + a1 X + a2 Y + a3 XX + a4 XY + a5 YY
+                                              Si Z= F(X), a0a1a3 actif donc FlagZ= 11= 1 | 2 |8 
+                                         -->
+                                         <FlagX Nb="?" Type="int" Def="63"> </FlagX>
+                                         <FlagY Nb="?" Type="int" Def="63"> </FlagY>
+                                         <FlagZ Nb="?" Type="int" Def="63"> </FlagZ>
+                                         <ForceTrueRot Nb="?" Type="bool" Def="true"> </ForceTrueRot>
+                                         <PattEstim Nb="?" Type="std::string" Def=".*"> </PattEstim>
+                                         <Show Nb="?" Type="bool" Def="false"> </Show>
+                                   </AerialDeformNonLin>
                                </BasculeOnPoints>
 
                                <BasculeLiaisonOnPlan Nb="?">
@@ -997,6 +1095,11 @@ normalises en echelle et/ou en translation -->
                            <IdBdl Nb="1"  Type="std::string"> </IdBdl>
                      </BlocBascule>
 
+
+                     <EstimateOrientationInitBlockCamera Nb="*">
+                         <Id Nb="1" Type="std::string"> </Id>
+                         <Show Type="bool" Nb="?" Def="false"> </Show>
+                     </EstimateOrientationInitBlockCamera>
 
                      <MesureErreurTournante Nb="?">
                           <Periode Nb="1" Type="int"> </Periode>
@@ -1135,6 +1238,14 @@ normalises en echelle et/ou en translation -->
                  <SectionObservations Nb="1">
 
                       <!-- Ici il s'agit de point d'appuis "sur", -->
+                     <ObsBlockCamRig Nb="*">
+                         <Id Nb="1" Type="std::string"> </Id>
+                         <Show Type="bool" Nb="?" Def="false"> </Show>
+                         <GlobalPond Nb="?" RefType="RigidBlockWeighting"> </GlobalPond>
+                         <RelTimePond Nb="?" RefType="RigidBlockWeighting"> </RelTimePond>
+                     </ObsBlockCamRig>
+
+                      <!-- Ici il s'agit de point d'appuis "sur", -->
 		      <ObsAppuis Nb="*">
 		             <!-- Mesure "naturelle" = Terrain -->
 	                     <NameRef Nb="1" Type="std::string"> </NameRef>
@@ -1163,6 +1274,7 @@ normalises en echelle et/ou en translation -->
                              <NivAlerteDetail Nb="?" Type="double" Def="1e9"> </NivAlerteDetail>
 			     <ShowMax    Nb="?" Type="bool" Def="false"> </ShowMax>
 			     <ShowSom    Nb="?" Type="bool" Def="false"> </ShowSom>
+			     <ShowUnused    Nb="?" Type="bool" Def="true"> </ShowUnused>
 
 		      </ObsAppuisFlottant>
 
@@ -1174,7 +1286,7 @@ normalises en echelle et/ou en translation -->
 		             <!--  PondPlan Ssi la liaison a ete declaree plane -->
 			     <PondSurf Nb="?" RefType="PonderationPackMesure"> </PondSurf>
                              <!-- TRI VALEUR Si on le donne : x =Z, y = Poids compens z=seuil -->
-                             <RappelOnZ Nb="?" Type="Pt3dr"> 
+                             <RappelOnZ Nb="?">  
                                    <Z Nb="1" Type="double"> </Z>
                                    <!-- Incertitude pour l'estimation et la compensation -->
                                    <IncC Nb="1" Type="double"> </IncC>
@@ -1206,6 +1318,11 @@ normalises en echelle et/ou en translation -->
                            <NameFile Nb="1" Type="std::string"> </NameFile>
                      </TxtRapDetaille>
 
+                     <ObsRelGPS Nb="*">
+                          <Id Nb="1" Type="std::string"> </Id>
+                          <Pond Nb="1" RefType="GpsRelativeWeighting"> </Pond>
+                     </ObsRelGPS>
+
                  </SectionObservations>
 
 		 <SectionExport Nb="?" >
@@ -1229,6 +1346,9 @@ normalises en echelle et/ou en translation -->
                          <!-- Points de verifications -->
 		     </ExportCalib>
 		     <ExportPose Nb="*" AccessorFils="false" >
+                          <Force2ObsOnC Nb="?">
+                              <WhenExist Nb="?" Type="bool" Def="false"> </WhenExist> <!-- Si false et pas => erreur -->
+                          </Force2ObsOnC>
                           <ChC Nb="?" Type="std::string"> </ChC>
                           <ChCForceRot Nb="?" Type="bool" Def="false"> </ChCForceRot>
                           <KeyAssoc  Nb="1" Type="std::string"> </KeyAssoc>
@@ -1281,6 +1401,8 @@ normalises en echelle et/ou en translation -->
                           <AxeDef Nb="?" Type="Pt2dr" Def="Pt2dr(1,0)"> </AxeDef>
                           <Origine Nb="?" Type="Pt2dr"> </Origine> <!-- Def P1 , pas vraiment utile en correl -->
                           <NameImOri Nb="?" Type="std::string"> </NameImOri>
+                          <!-- Si true P1P2 est la direction du plan qui est horizontale-->
+                          <P1P2Hor Nb="?" Type="bool" Def="false"> </P1P2Hor>
                           <ExportOrthoCyl Nb="?">
                                <UseIt Nb="?" Type="bool" Def="true"></UseIt>
                                <PatternEstimAxe Nb="?" Type="std::string"> </PatternEstimAxe>
@@ -1288,6 +1410,11 @@ normalises en echelle et/ou en translation -->
                                <L2EstimAxe Nb="?" Type="bool" Def="true">  </L2EstimAxe>
                           </ExportOrthoCyl>
                      </ExportRepereLoc>
+
+                     <ExportBlockCamera Nb="*">
+                         <Id Nb="1" Type="std::string"> </Id>
+                         <NameFile Nb="1" Type="std::string"> </NameFile>
+                     </ExportBlockCamera>
 
 
                      <ExportMesuresFromCarteProf Nb="*">
@@ -1412,9 +1539,13 @@ normalises en echelle et/ou en translation -->
 
                      <ChoixImMM Nb="?">
                           <ChoixImSec Nb="1">
+                               <KeyExistingFile Nb="?" Type="std::string"> </KeyExistingFile>
+                               <FileImSel Nb="?" Type="std::string"> </FileImSel>
                                <KeyAssoc Nb="1" Type="std::string"> </KeyAssoc>
                                <PatternSel Nb="?" Type="std::string" Def=".*"> </PatternSel>
                                <CardMaxSub Nb="?" Type="int" Def="6"> </CardMaxSub>
+                 <!-- Pls c'est faible plus il y aura d'image dans la best sol,  Score=Cover - NbIm *PenalNbIm -->
+                               <PenalNbIm Nb="?" Type="double" Def="0.3"> </PenalNbIm>
                                <NbMin Nb="1" Type="int"> </NbMin>
                                <IdBdl Nb="1" Type="std::string"> </IdBdl>
                                <NbMinPtsHom  Nb="?" Type="int" Def="15"> </NbMinPtsHom>
@@ -1422,14 +1553,25 @@ normalises en echelle et/ou en translation -->
                                <TetaMinPreSel Nb="?" Type="double" Def="0.025"> </TetaMinPreSel>
                                <TetaOpt Nb="?" Type="double" Def="0.25"> </TetaOpt>
                                <TetaMaxPreSel Nb="?" Type="double" Def="0.80"> </TetaMaxPreSel>
+
+                               <RatioDistMin Nb="?" Type="double" Def="0.50"> </RatioDistMin>
+                               <!-- En cas d'epipolaire pour eviter les stereo verticale -->
+                               <RatioStereoVertMax Nb="?" Type="double" Def="100.0"> </RatioStereoVertMax>
                             
                                <Teta2Min Nb="?" Type="double" Def="0.65"> </Teta2Min>
                                <Teta2Max Nb="?" Type="double" Def="1.1"> </Teta2Max>
                             
                                <NbMaxPresel Nb="?" Type="int" Def="10"> </NbMaxPresel>
-                               <NbSetPreSelAng Nb="?" Type="int" Def="5"> </NbSetPreSelAng>
+                               <NbTestPrecis Nb="?" Type="int" Def="10"> </NbTestPrecis>
+                               <!-- <NbSetPreSelAng Nb="?" Type="int" Def="5"> </NbSetPreSelAng> -->
+
+                               <NbCellOccAng Nb="?" Type="int" Def="50"> </NbCellOccAng>
+                               <NbCaseIm Nb="?" Type="int" Def="10"> </NbCaseIm>
+                               <Masq3D Nb="?" Type="std::string"> </Masq3D>
                           </ChoixImSec>
                      </ChoixImMM>
+
+                     <ExportResiduXml Nb="?" Type="std::string"> </ExportResiduXml>
 
 
 		 </SectionExport>
@@ -1449,10 +1591,30 @@ normalises en echelle et/ou en translation -->
      PIFRP : 
 -->
 
+<XmlSauvExportAperoOneIm Nb="1" Class="true" ToReference="true">
+     <Name Nb="1" Type="std::string"> </Name>
+     <Residual  Nb="1" Type="double"> </Residual>
+     <PercOk Nb="1" Type="double"> </PercOk>
+     <NbPts  Nb="1" Type="int">    </NbPts>
+     <NbPtsMul  Nb="1" Type="int">    </NbPtsMul>
+</XmlSauvExportAperoOneIm>
+
+<XmlSauvExportAperoOneIter Nb="1" Class="true" ToReference="true">
+    <OneIm Nb="*" RefType="XmlSauvExportAperoOneIm"> </OneIm>
+    <AverageResidual Nb="1" Type="double">  </AverageResidual>
+    <NumIter Nb="1" Type="int"> </NumIter>
+    <NumEtape Nb="1" Type="int"> </NumEtape>
+    <EvolMax Nb="?" Type="double"> </EvolMax>
+    <EvolMoy Nb="?" Type="double"> </EvolMoy>
+</XmlSauvExportAperoOneIter>
+
+<XmlSauvExportAperoGlob Nb="1" Class="true" ToReference="true">
+    <Iters Nb="*" RefType="XmlSauvExportAperoOneIter"> </Iters>
+</XmlSauvExportAperoGlob>
 
 
 <Verbatim File=".h.cpp">
-};
+// };
 </Verbatim>
 <Verbatim File=".h">
 #endif // Define_NotApero

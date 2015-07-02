@@ -38,8 +38,6 @@ English :
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
-namespace NS_ParamApero
-{
 
     /************************************************/
     /*                                              */
@@ -76,7 +74,7 @@ void cAppliApero::AddRappelOnAngle(const cRappelOnAngles & aRAO,double aMult,cSt
     }
 }
 
-void cAppliApero::AddRappelOnCentre(const cRappelOnCentres & aRAC,double aMult,cStatObs & aSO)
+void cAppliApero::AddRappelOnCentre(const cRappelOnCentres & aRAC,double aMultInit,cStatObs & aSO)
 {
     const cParamForceRappel & aPFR = aRAC.ParamF();
      // std::cout << "---------LVM::INC---- " << aPFR.Incertitude() / aMult << "\n";
@@ -84,16 +82,42 @@ void cAppliApero::AddRappelOnCentre(const cRappelOnCentres & aRAC,double aMult,c
     {
         cPoseCam & aPC = *(mVecPose[aKP]);
         if (    (aRAC.ParamF().PatternNameApply()->Match(aPC.Name()))
-             && ((! aRAC.OnlyWhenNoCentreInit().Val()) || (!aPC.HasObsOnCentre()))
+             && ((! aRAC.OnlyWhenNoCentreInit().Val()) || (!aPC.LastItereHasUsedObsOnCentre()))
            )
         {
             const std::vector<double>&  aVI = aPFR.Incertitude();
             ELISE_ASSERT(aVI.size()<=3,"Bas size Incertitude in cAppliApero::AddRappelOnCentre");
             Pt3dr anI;
             if (aVI.size()==1) anI = Pt3dr(aVI[0],aVI[0],aVI[0]);
-            if (aVI.size()==2) anI = Pt3dr(aVI[0],aVI[0],aVI[1]);
-            if (aVI.size()==3) anI = Pt3dr(aVI[0],aVI[1],aVI[2]);
+            else if (aVI.size()==2) anI = Pt3dr(aVI[0],aVI[0],aVI[1]);
+            else if (aVI.size()==3) anI = Pt3dr(aVI[0],aVI[1],aVI[2]);
+            else
+            {
+                ELISE_ASSERT(false,"Size in cAppliApero::AddRappelOnCentre");
+            }
+
+            double  aMult = aMultInit;
+            double aProf;
+            int OkProf;
+            aProf = aPC.GetProfDyn(OkProf);
+            if (OkProf)
+            {
+               aMult *= (10 / aProf);
+            }
+
+
             aPC.RF().AddRappelOnCentre(aPFR.OnCur().ValWithDef(true),anI/aMult,aSO.AddEq());
+        }
+    }
+}
+
+void cAppliApero::AddRappelOnIntrinseque(const cRappelOnIntrinseque & aROI,double aMultInit,cStatObs & aSO)
+{
+    for (tDiCal::iterator itC=mDicoCalib.begin(); itC!=mDicoCalib.end() ; itC++)
+    {
+        if (  aROI.ParamF().PatternNameApply()->Match(itC->first))
+        {
+             itC->second->AddViscosite(aROI.ParamF().Incertitude());
         }
     }
 }
@@ -107,6 +131,8 @@ void cAppliApero::AddOneLevenbergMarkard
 {
    if (! aSLM) return;
    if (aMult<=0 ) return;
+
+
    for 
    (
         std::list<cRappelOnAngles>::const_iterator itR=aSLM->RappelOnAngles().begin();
@@ -126,6 +152,18 @@ void cAppliApero::AddOneLevenbergMarkard
    {
          AddRappelOnCentre(*itR,aMult,aSO);
    }
+
+   for 
+   (
+        std::list<cRappelOnIntrinseque>::const_iterator itR=aSLM->RappelOnIntrinseque().begin();
+        itR!=aSLM->RappelOnIntrinseque().end();
+        itR++
+   )
+   {
+         AddRappelOnIntrinseque(*itR,aMult,aSO);
+   }
+
+
 
 }
 void cAppliApero::AddLevenbergMarkard(cStatObs & aSO)
@@ -152,9 +190,16 @@ void  cAppliApero::InitLVM
 }
 
 
+void cAppliApero:: UpdateMul(double & aMult,double aNewV,bool aModeMin)
+{
+   if (aModeMin) 
+      ElSetMin(aMult,aNewV);
+   else
+       aMult = aNewV;
+}
 
 
-};
+
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

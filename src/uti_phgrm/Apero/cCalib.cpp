@@ -40,8 +40,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 Pt2dr aDebugPIm(915.982,2820.98);
 Pt2dr aDebugPL3(-0.339882,0.170243);
-namespace NS_ParamApero
-{
 
 
 void VerifTolNonPos(double aTol,eTypeContrainteCalibCamera aVal)
@@ -656,8 +654,121 @@ bool cCalibCam_ModeleUnif::InstSetContrainte
 }
 
 
+/**************************************************/
+/*                                                */
+/*          cCalibCam_BiLin                       */
+/*                                                */
+/**************************************************/
+
+/*
+class cCalibCam_BiLin : public  cCalibCam
+{
+     public :
+         ~cCalibCam_BiLin() {}
+
+         cCalibCam_BiLin
+	 (
+              const         std::string & aKeyId,
+*/
+
+class cCalibCam_BiLin : public  cCalibCam
+{
+     public :
+
+//          void Inspect();
+         ~cCalibCam_BiLin() {}
+
+         cCalibCam_BiLin
+	 (
+              const         std::string & aKeyId,
+	      cAppliApero & anAppli,
+	      const cCalibrationCameraInc & aCCI,
+	      const cCalibrationInternConique & aCIR,
+	      cPIF_Bilin &              aPIF,
+	      cCamStenopeBilin &            aCamInit
+	 );
+	 bool InstSetContrainte
+              (
+                     double aTol,
+                     const eTypeContrainteCalibCamera &
+              );
+     private :
+
+        cPIF_Bilin &             mPIF;
+	//cCamera_Param_Unif_Gen &    mCamInit;
+};
+
+cCalibCam_BiLin::cCalibCam_BiLin
+(
+       const         std::string & aKeyId,
+       cAppliApero & anAppli,
+       const cCalibrationCameraInc & aCCI,
+       const cCalibrationInternConique & aCIC,
+       cPIF_Bilin &              aPIF,
+       cCamStenopeBilin &            aCamInit
+) :
+   cCalibCam (aCIC,false,aKeyId,anAppli,aCCI,aPIF,aCamInit,aCIC.SzIm()),
+   mPIF      (aPIF)//,
+   //mCamInit  (aCamInit)
+{
+}
+
+bool cCalibCam_BiLin::InstSetContrainte
+     (
+            double aTol,
+            const eTypeContrainteCalibCamera & aCstr
+     )
+{
+   switch (aCstr)
+   {
+
+       case eAllParamLibres :
+	     mPIF.SetPPFree(true);
+	     mPIF.SetDistFree(100);
+       break;
+       case  eAllParamFiges :
+	     mPIF.SetPPFree(false);
+	     mPIF.SetDistFigee();
+       break;
+
+       case eLiberteParamDeg_0 :
+       break;
+
+       case eLiberteParamDeg_1 :
+           mPIF.SetDistFree(1);
+       break;
+
+       case eLiberteParamDeg_2 :
+           mPIF.SetDistFree(2);
+       break;
+
+       case eLiberteParamDeg_3 :
+           mPIF.SetDistFree(3);
+       break;
+
+       case eLiberteParamDeg_4 :
+           mPIF.SetDistFree(4);
+       break;
+
+       case eLiberteParamDeg_5 :
+           mPIF.SetDistFree(5);
+       break;
+
+       case eLiberteParamDeg_6 :
+           mPIF.SetDistFree(6);
+       break;
+       case eLiberteParamDeg_7 :
+           mPIF.SetDistFree(7);
+       break;
 
 
+       default :
+           return false;
+       break;
+
+   }
+   return true;
+}
 
 /**************************************************/
 /*                                                */
@@ -852,6 +963,25 @@ cCalibrationInternConique   CalibInternAutom
         
        aDist.ModUnif().SetVal(aCIU);
    }
+   else if (
+                  (aType==eCalibAutomFour7x2)
+              ||  (aType==eCalibAutomFour11x2)
+              ||  (aType==eCalibAutomFour15x2)
+              ||  (aType==eCalibAutomFour19x2)
+           )
+   {
+       cCalibrationInterneUnif aCIU;
+       if  (aType==eCalibAutomFour7x2)
+           aCIU.TypeModele() = eModeleRadFour7x2;
+       else if  (aType==eCalibAutomFour11x2)
+           aCIU.TypeModele() = eModeleRadFour11x2;
+       else if  (aType==eCalibAutomFour15x2)
+           aCIU.TypeModele() = eModeleRadFour15x2;
+       else if  (aType==eCalibAutomFour19x2)
+           aCIU.TypeModele() = eModeleRadFour19x2;
+
+       aDist.ModUnif().SetVal(aCIU);
+   }
    else
    {
        ELISE_ASSERT(false,"Internal error unknown eTypeCalibAutom");
@@ -869,9 +999,80 @@ cCalibrationInternConique   CalibInternAutom
 /*                                                */
 /**************************************************/
 
+
+class cNameFileWithExistigChangeVersionNameCam
+{
+    public :
+        cNameFileWithExistigChangeVersionNameCam
+        (
+            const std::string & aDirGlob,
+            cInterfChantierNameManipulateur * anICNM,
+            const std::string & aKey,
+            const std::string & aNamePose
+        ) :
+          mDirG     (aDirGlob),
+          mICNM     (anICNM),
+          mKey      (aKey),
+          mNamePose (aNamePose),
+          mMMU      (const_cast<cMMUserEnvironment&> (MMUserEnv())),
+          mCurNumC  (mMMU.VersionNameCam().Val())
+       {
+       }
+
+       std::string GetName()
+       {
+            std::string aRes0 = TestOnFile(mCurNumC);
+
+            if (ELISE_fp::exist_file(aRes0)) return aRes0;
+
+            for (int aNum=0 ; aNum<2 ; aNum++)
+            {
+                if (aNum!=mCurNumC)
+                {
+                    std::string aRes = TestOnFile(aNum);
+                    if (ELISE_fp::exist_file(aRes)) return aRes;
+                }
+            }
+
+            return aRes0;
+       }
+
+    private :
+
+          std::string TestOnFile(int aNum)
+          {
+               mMMU.VersionNameCam().SetVal(aNum);
+               std::string aRes = mDirG + mICNM->Assoc1To1(mKey,mNamePose,true);
+               mMMU.VersionNameCam().SetVal(mCurNumC);
+               return aRes;
+          }
+          std::string mDirG;
+          cInterfChantierNameManipulateur *mICNM;
+          std::string mKey;
+          std::string mNamePose;
+          cMMUserEnvironment & mMMU;
+          int                  mCurNumC;
+};
+
+
+std::string cInterfChantierNameManipulateur::StdNameCalib(const std::string & anOri,const std::string & aNameIm)
+{
+     std::string aKey = "NKS-Assoc-FromFocMm@Ori-"+ anOri + "/AutoCal@.xml";
+     cNameFileWithExistigChangeVersionNameCam     aCNFW(Dir(),this,aKey,aNameIm);
+     return aCNFW.GetName();
+}
+
+
+
 void cAppliApero::NormaliseScTr(CamStenope & aCam)
 {
    aCam.StdNormalise(mParam.NormaliseEqSc().Val(),mParam.NormaliseEqTr().Val());
+}
+
+
+void cCalibCam::AddViscosite(const std::vector<double> & aTol)
+{
+    mPIF.AddRapViscosite(aTol[0]);
 }
 
 cCalibCam *  cCalibCam::Alloc(const std::string & aKeyId,cAppliApero & anAppli,const cCalibrationCameraInc & aCCI,cPoseCam * aPC)
@@ -889,6 +1090,13 @@ cCalibCam *  cCalibCam::Alloc(const std::string & aKeyId,cAppliApero & anAppli,c
 
     if ((!Done) && (aCCI.CalFromFileExtern().IsInit()))
     {
+
+        std::string aDirAdd =  aCCI.Directory().Val();
+        if ( isUsingSeparateDirectories() )
+            aDirAdd = MMOutputDirectory() + aDirAdd;
+        else if (aCCI.AddDirCur().Val())
+            aDirAdd = anAppli.DC() + aDirAdd;
+
         cSpecExtractFromFile aSEF = aCCI.CalFromFileExtern().Val();
         if (aPC)
         {
@@ -896,11 +1104,16 @@ cCalibCam *  cCalibCam::Alloc(const std::string & aKeyId,cAppliApero & anAppli,c
             cCalibPerPose aCPP = aCCI.CalibPerPose().Val();
             if (aCPP.KeyInitFromPose().IsInit())
             {
-                  aSEF.NameFile() = anAppli.ICNM()->Assoc1To1(aCPP.KeyInitFromPose().Val(),aPC->Name(),true);
+               cNameFileWithExistigChangeVersionNameCam aNWECV(aDirAdd,anAppli.ICNM(),aCPP.KeyInitFromPose().Val(),aPC->Name());
+
+
+               aSEF.NameFile() = aNWECV.GetName();
+               // aSEF.NameFile() = anAppli.ICNM()->Assoc1To1(aCPP.KeyInitFromPose().Val(),aPC->Name(),true);
             }
         }
 
-        std::string aFullName = anAppli.DC()+aCCI.Directory().Val()+ aSEF.NameFile();
+        //std::string aFullName = aDirAdd + aSEF.NameFile(); 
+        std::string aFullName = aSEF.NameFile();
         aTestFullName = aFullName;
 
 
@@ -1035,8 +1248,7 @@ cCalibCam *  cCalibCam::Alloc(const std::string & aKeyId,cAppliApero & anAppli,c
         return  aRes;
         
     }
-
-    if (aCD.ModPhgrStd().IsInit())
+    else if (aCD.ModPhgrStd().IsInit())
     {
         cCamStenopeModStdPhpgr * aCam =  Std_Cal_PS_C2M(aCIC,aConv);
 
@@ -1045,24 +1257,35 @@ cCalibCam *  cCalibCam::Alloc(const std::string & aKeyId,cAppliApero & anAppli,c
 
         return  new cCalibCam_PhgrStd(aKeyId,anAppli,aCCI,aCIC,*aPIF,*aCam);
     }
-
-    if (aCD.ModUnif().IsInit())
+    else if (aCD.ModUnif().IsInit())
     {
        cCamera_Param_Unif_Gen * aCam = Std_Cal_Unif(aCIC,aConv);
+// std::cout << "CCaaaam "<< aCam << "\n";
        anAppli.NormaliseScTr(*aCam);
 
        cPIF_Unif_Gen * aPIF = aCam->PIF_Gen(aCam->DistIsC2M(),anAppli.SetEq());
 
        return new cCalibCam_ModeleUnif(aCam->IsFE(),aKeyId,anAppli,aCCI,aCIC,*aPIF,*aCam);
     }
+    else if (aCD.ModGridDef().IsInit())
+    {
+        cCamStenopeBilin * aCBL =  Std_Cal_Bilin(aCIC,aConv);
+        anAppli.NormaliseScTr(*aCBL);
 
-    ELISE_ASSERT(false,"Use a (still) unsuported init of calibration");
+        cPIF_Bilin *  aPIF = anAppli.SetEq().NewPIFBilin(aCBL);
+
+        return new cCalibCam_BiLin(aKeyId,anAppli,aCCI,aCIC,*aPIF,*aCBL);
+        // ELISE_ASSERT(false,"aCD.ModGridDef : to finish");
+    }
+    else
+    {
+        ELISE_ASSERT(false,"Use a (still) unsuported init of calibration");
+    }
     return 0;
 }
 
 
 
-};
 
 
 

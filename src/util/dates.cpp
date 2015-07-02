@@ -41,6 +41,191 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
+int NumHgRev()
+{
+   static int aRes=-1;
+   if (aRes<0) FromString(aRes,__HG_REV__);
+
+   return aRes;
+}
+
+static const std::string HRevXif = "4227";
+
+const std::string & DefXifOrientation() 
+{
+   static std::string aRes="";
+   return aRes;
+}
+
+/**************************************************************/
+/*                                                            */
+/*                                                            */
+/*                                                            */
+/**************************************************************/
+
+void SetIfPos(cTplValGesInit<double> & aTpl,double aVal)
+{
+    if ( (aVal>0)  && (! BadNumber(aVal)) && (aVal <= (InfRegex/2.0)))
+       aTpl.SetVal(aVal);
+    else
+       aTpl.SetNoInit();
+}
+
+cXmlXifInfo MDT2Xml(const cMetaDataPhoto & aMTD)
+{
+
+   cXmlXifInfo aRes;
+
+   aRes.HGRev() = NumHgRev();
+
+   SetIfPos(aRes.FocMM(),aMTD.FocMm(true));
+   SetIfPos(aRes.Foc35(),aMTD.Foc35(true));
+   SetIfPos(aRes.ExpTime(),aMTD.ExpTime(true));
+   SetIfPos(aRes.Diaph(),aMTD.Diaph(true));
+   SetIfPos(aRes.IsoSpeed(),aMTD.IsoSpeed(true));
+
+   Pt2di aSz = aMTD.SzImTifOrXif(true);
+   if (aSz.x>0) aRes.Sz().SetVal(aSz);
+
+   if (aMTD.HasGPSLatLon())
+   {
+      aRes.GPSLat().SetVal(aMTD.GPSLat());
+      aRes.GPSLon().SetVal(aMTD.GPSLon());
+   }
+
+   if (aMTD.HasGPSAlt())
+      aRes.GPSAlt().SetVal(aMTD.GPSAlt());
+
+   cElDate aDate = aMTD.Date(true);
+   if (! aDate.IsNoDate())
+       aRes.Date().SetVal(aDate.ToXml());
+
+   std::string aCam = aMTD.Cam(true);
+   if (aCam != "" )
+      aRes.Cam().SetVal(aCam);
+
+   aRes.BayPat().SetVal(aMTD.BayPat());
+
+   if (aMTD.NbBits(true) >0) 
+      aRes.NbBits().SetVal(aMTD.NbBits());
+
+    if (aMTD.Orientation() != DefXifOrientation()) aRes.Orientation().SetVal(aMTD.Orientation());
+    if (aMTD.CameraOrientation() != DefXifOrientation()) aRes.CameraOrientation().SetVal(aMTD.CameraOrientation());
+
+   return aRes;
+}
+
+
+int MakeOneXmlXifInfo_main(int argc,char ** argv)
+{
+    std::string aNameIm,aNameXml,toto;
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  << EAMC(aNameIm,"Name Image")
+                    << EAMC(aNameXml,"NameXml"),
+        LArgMain()  << EAM(toto,"toto",true)
+    );
+
+    ELISE_fp::MkDirSvp(DirOfFile(aNameXml));
+    cMetaDataPhoto aMTD = cMetaDataPhoto::CreateExiv2(aNameIm);
+    
+
+    cXmlXifInfo aXML =  MDT2Xml(aMTD);
+
+    MakeFileXML(aXML,aNameXml);
+
+    return 1;
+}
+
+
+
+
+void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur * aICNM)
+{
+   std::string aDir,aPat;
+   SplitDirAndFile(aDir,aPat,aFullPat);
+
+   const std::vector<std::string> * aVS =  0 ;
+
+   if (IsPostfixed(aPat) && (StdPostfix(aPat)=="xml") && ELISE_fp::exist_file(aFullPat))
+   {
+      cSauvegardeNamedRel * aSNR =  OptionalGetObjFromFile_WithLC<cSauvegardeNamedRel>
+                                    (
+                                        0,0,
+                                        aFullPat,StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
+                                        "SauvegardeNamedRel","SauvegardeNamedRel"
+                                    );
+
+      if (aSNR)
+      {
+         std::set<std::string> aSS;
+         for (int aKC=0 ; aKC<int(aSNR->Cple().size()) ; aKC++)
+         {
+              aSS.insert(aSNR->Cple()[aKC].N1());
+              aSS.insert(aSNR->Cple()[aKC].N2());
+         }
+         std::vector<std::string> aV0;
+         std::copy(aSS.begin(),aSS.end(),std::back_inserter(aV0));
+
+          aVS = new std::vector<std::string>(aV0);
+      }
+   }
+
+   if (aVS == 0)
+   {
+      if (aICNM==0)
+         aICNM = cInterfChantierNameManipulateur::BasicAlloc(aDir);
+      aVS = aICNM->Get(aPat);
+   }
+
+
+   std::list<std::string> aLCom;
+
+   for (int aK=0 ; aK<int(aVS->size()) ; aK++)
+   {
+       std::string aNameIm = (*aVS)[aK];
+       //std::string aNameXml = aDir + "/Tmp-MM-Dir/" + aNameIm + "-MDT-"+ HRevXif + ".xml";
+       std::string aNameXml = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+"Tmp-MM-Dir/" );
+       aNameXml.append( aNameIm+"-MDT-"+HRevXif+".xml" );
+       if (! ELISE_fp::exist_file(aNameXml))
+       {
+           std::string aCom = MM3dBinFile("TestLib") +  " XmlXif " + aDir+aNameIm + " " + aNameXml;
+           aLCom.push_back(aCom);
+
+           std::cout << aCom << "\n";
+       }
+   }
+
+   if (!aLCom.empty())
+      cEl_GPAO::DoComInParal(aLCom);
+
+}
+
+
+int MakeMultipleXmlXifInfo_main(int argc,char ** argv)
+{
+    std::string aPatt,toto;
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  << EAMC(aPatt,"Full Pat"),
+        LArgMain()  << EAM(toto,"toto",true)
+    );
+
+    MakeXmlXifInfo(aPatt,0);
+
+    return 1;
+}
+
+
+/*
+    std::string aDir,aNameIm;
+    SplitDirAndFile(aDir,aNameIm,aFullNameIm);
+    if (! EAMIsInit(aNameXml))
+       aNameXml  = aDir + "/Tmp-MM-Dir/" + aNameIm + "-MDT.xml";
+*/
+
 
 /**************************************************************/
 /*                                                            */
@@ -121,7 +306,7 @@ cCameraEntry *  CamOfName(const std::string & aName)
 }
 
 
-void WarnNo35(const std::string aName)
+void WarnNo35(const std::string &aName)
 {
 	static std::set<std::string> aSetDeja;
 
@@ -132,6 +317,7 @@ void WarnNo35(const std::string aName)
 
 	std::cout << "WARN  !! , for camera "  << aName << " cannot determine focale equiv-35mm\n";
 	std::cout << "          add it in include/XML_User/DicoCamera.xml\n";
+
 }
 
 
@@ -148,7 +334,7 @@ cElHour::cElHour
 	int aNbMin,
 	double aNbSec
 	) :
-mH  (aNbHour),
+       mH  (aNbHour),
 	mM  (aNbMin),
 	mS  (aNbSec)
 {
@@ -157,6 +343,24 @@ mH  (aNbHour),
 int cElHour::H() const {return mH;}
 int cElHour::M() const {return mM;}
 double cElHour::S() const {return mS;}
+
+
+cXmlHour cElHour::ToXml()
+{
+   cXmlHour aRes;
+   aRes.H() = mH;
+   aRes.M() = mM;
+   aRes.S() = mS;
+
+   return aRes;
+}
+
+cElHour cElHour::FromXml(const cXmlHour & aXml)
+{
+   return cElHour(aXml.H(),aXml.M(),aXml.S());
+}
+      // static cElHour FromXml(const cXmlHour &);
+
 
 double cElHour::InSec() const
 {
@@ -181,6 +385,99 @@ template <>  std::string ToString(const cElHour & aH)
 
 }
 
+unsigned int cElHour::raw_size(){ return 2*4+8; }
+
+// read/write in raw format
+void cElHour::from_raw_data( const char *&io_rawData, bool i_reverseByteOrder )
+{
+   INT4 *ints = (INT4 *)io_rawData;
+   memcpy( &mS, io_rawData+8, 8 );
+
+   if ( i_reverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_8( &mS );
+   }
+
+   mH = (int)ints[0];
+   mM = (int)ints[1];
+   io_rawData += 2*4+8;
+}
+
+void cElHour::to_raw_data( bool i_reverseByteOrder, char *&o_rawData ) const
+{
+   INT4 ints[2] = { (INT4)H(), (INT4)M() };
+   REAL8 sec = S();
+   
+   if ( i_reverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_8( &sec );
+   }
+   
+   memcpy( o_rawData, ints, 2*4 );
+   o_rawData += 2*4;
+   memcpy( o_rawData, &sec, 8 );
+   o_rawData += 8;
+}
+
+void cElHour::getCurrentHour_local( cElHour &o_localHour )
+{
+   time_t t;
+   struct tm *pstm;
+   time( &t );
+   pstm = localtime( &t );
+   o_localHour.mH = pstm->tm_hour;
+   o_localHour.mM = pstm->tm_min;
+   o_localHour.mS = (double)pstm->tm_sec;
+}
+
+void cElHour::getCurrentHour_UTC( cElHour &o_utcHour )
+{
+   time_t t;
+   struct tm *pstm;
+   time( &t );
+   pstm = gmtime( &t );
+   o_utcHour.mH = pstm->tm_hour;
+   o_utcHour.mM = pstm->tm_min;
+   o_utcHour.mS = (double)pstm->tm_sec;
+}
+
+void cElHour::read_raw( istream &io_istream, bool i_inverseByteOrder )
+{
+   INT4 ints[2];
+   io_istream.read( (char*)ints, 2*4 );
+   io_istream.read( (char*)&mS, sizeof(double) );
+  
+   if ( i_inverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_8( &mS );
+   }
+  
+   mH = (int)ints[0];
+   mM = (int)ints[1];
+}
+
+void cElHour::write_raw( ostream &io_ostream, bool i_inverseByteOrder ) const
+{
+   INT4 ints[2] = { (INT4)H(), (INT4)M() };
+   double sec = S();
+   
+   if ( i_inverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_8( &sec );
+   }
+   
+   io_ostream.write( (char*)ints, 2*4 );
+   io_ostream.write( (char*)&sec, sizeof(double) );
+}
+
 
 /**************************************************************/
 /*                                                            */
@@ -195,11 +492,28 @@ cElDate::cElDate
 	int aY,
 	const cElHour &  aH
 	) :
-mD  (aD),
+        mD  (aD),
 	mM  (aM),
 	mY  (aY),
 	mH  (aH)
 {
+}
+
+cXmlDate cElDate::ToXml()
+{
+    cXmlDate aRes;
+    aRes.D() = mD;
+    aRes.M() = mM;
+    aRes.Y() = mY;
+    aRes.Hour() = mH.ToXml();
+
+    return aRes;
+    
+}
+
+cElDate cElDate::FromXml(const cXmlDate & aXml)
+{
+   return cElDate(aXml.D(),aXml.M(),aXml.Y(),cElHour::FromXml(aXml.Hour()));
 }
 
 
@@ -339,6 +653,100 @@ double  cElDate::DifInSec(const cElDate& aD2) const
 		+  (mH.InSec() - aD2.mH.InSec());
 }
 
+// read/write in raw format
+void cElDate::from_raw_data( const char *&io_rawData, bool i_reverseByteOrder )
+{
+   INT4 *ints = (INT4 *)io_rawData;
+  
+   if ( i_reverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_4( ints+2 );
+   }
+  
+   mY = (int)ints[0];
+   mM = (int)ints[1];
+   mD = (int)ints[2];
+   io_rawData += 3*4;
+   mH.from_raw_data( io_rawData, i_reverseByteOrder );
+}
+
+void cElDate::to_raw_data( bool i_reverseByteOrder, char *&o_rawData ) const
+{
+   INT4 ints[3] = { (INT4)Y(), (INT4)M(), (INT4)D() };
+   
+   if ( i_reverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_4( ints+2 );
+   }
+   
+   memcpy( o_rawData, ints, 3*4 );
+   o_rawData += 3*4;
+   mH.to_raw_data( i_reverseByteOrder, o_rawData );
+}
+
+unsigned int cElDate::raw_size(){ return cElHour::raw_size()+3*4; }
+
+void cElDate::getCurrentDate_local( cElDate &o_localHour )
+{
+   time_t t;
+   struct tm *pstm;
+   time( &t );
+   pstm = gmtime( &t );
+   o_localHour.mY = pstm->tm_year+1900;
+   o_localHour.mM = pstm->tm_mon+1;
+   o_localHour.mD = pstm->tm_mday;
+   cElHour::getCurrentHour_local(o_localHour.mH);
+}
+
+void cElDate::getCurrentDate_UTC( cElDate &o_utcHour )
+{
+   time_t t;
+   struct tm *pstm;
+   time( &t );
+   pstm = gmtime( &t );
+   o_utcHour.mY = pstm->tm_year+1900;
+   o_utcHour.mM = pstm->tm_mon+1;
+   o_utcHour.mD = pstm->tm_mday;
+   cElHour::getCurrentHour_UTC(o_utcHour.mH);
+}
+
+void cElDate::read_raw( istream &io_istream, bool i_inverseByteOrder )
+{
+   INT4 ints[3];
+   io_istream.read( (char*)ints, 3*4 );
+  
+   if ( i_inverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_4( ints+2 );
+   }
+  
+   mY = (int)ints[0];
+   mM = (int)ints[1];
+   mD = (int)ints[2];
+   mH.read_raw( io_istream, i_inverseByteOrder );
+}
+
+void cElDate::write_raw( ostream &io_ostream, bool i_inverseByteOrder ) const
+{
+   INT4 ints[3] = { (INT4)Y(), (INT4)M(), (INT4)D() };
+   
+   if ( i_inverseByteOrder )
+   {
+      byte_inv_4( ints );
+      byte_inv_4( ints+1 );
+      byte_inv_4( ints+2 );
+   }
+   
+   io_ostream.write( (char*)ints, 3*4 );
+   mH.write_raw( io_ostream, i_inverseByteOrder );
+}
+
 
 /************************************************************/
 /*                                                          */
@@ -408,9 +816,12 @@ cMetaDataPhoto::cMetaDataPhoto
 	double aExpTime,
 	double aDiaph,
 	double anIsoSpeed,
-	const std::string & aBayPat
+	const std::string & aBayPat,
+        const std::string & anOrientation, 
+        const std::string & aCameraOrientation,
+        int aNbBits
 	) :
-mNameIm    (aNameIm),
+        mNameIm    (aNameIm),
 	mTifSzIm   (-1,-1),
 	mXifSzIm   (aXifSzIm),
 	mCam       (aCam),
@@ -423,7 +834,15 @@ mNameIm    (aNameIm),
 	mIsoSpeed  (anIsoSpeed),
 	mXYZ_Init  (false),
 	mTeta_Init (false),
-	mBayPat    (aBayPat)
+	mBayPat    (aBayPat),
+        mHasGPSLatLon  (false),
+        mGPSLat        (0.0),
+        mGPSLon        (0.0),
+        mHasGPSAlt     (false),
+        mGPSAlt        (0.0),
+        mOrientation   (anOrientation),
+        mCameraOrientation   (aCameraOrientation),
+        mNbBits              (aNbBits)
 {
 	if (mBayPat=="") 
 		mBayPat = DEFBayPatt;
@@ -443,6 +862,8 @@ mNameIm    (aNameIm),
 	}
 }
 
+const std::string & cMetaDataPhoto::Orientation() const {return mOrientation;}
+const std::string & cMetaDataPhoto::CameraOrientation() const {return mCameraOrientation;}
 const std::string & cMetaDataPhoto::BayPat() const {return mBayPat;}
 
 // template <class Type> void GccUse(const Type & ) {}
@@ -477,6 +898,47 @@ double cMetaDataPhoto::MultiplierEqual(const cMetaDataPhoto & aRef,bool * aPtrAl
 }
 
 
+const bool   &  cMetaDataPhoto::HasGPSLatLon() const
+{
+   return mHasGPSLatLon;
+}
+const double &  cMetaDataPhoto::GPSLat() const
+{
+   ELISE_ASSERT(mHasGPSLatLon,"No cMetaDataPhoto::GPSLat");
+   return mGPSLat;
+}
+const double &  cMetaDataPhoto::GPSLon() const
+{
+   ELISE_ASSERT(mHasGPSLatLon,"No cMetaDataPhoto::GPSLon");
+   return mGPSLon;
+}
+
+const bool   &  cMetaDataPhoto::HasGPSAlt() const
+{
+   return mHasGPSAlt;
+}
+const double &  cMetaDataPhoto::GPSAlt() const
+{
+   ELISE_ASSERT(mHasGPSAlt,"No cMetaDataPhoto::GPSLon");
+   return mGPSAlt;
+}
+
+
+void cMetaDataPhoto::SetGPSLatLon(const double & aLat,const double & aLon)
+{
+   mHasGPSLatLon = true;
+   mGPSLat = aLat;
+   mGPSLon = aLon;
+}
+void cMetaDataPhoto::SetGPSAlt(const double & anAlt)
+{
+   mHasGPSAlt = true;
+   mGPSAlt = anAlt;
+}
+
+
+
+
 bool &  cMetaDataPhoto::FocForced(){return mFocForced;}
 
 const std::string & cMetaDataPhoto::Cam(bool Svp) const 
@@ -494,6 +956,14 @@ double  cMetaDataPhoto::FocMm(bool Svp) const
 	ELISE_ASSERT(Svp || (mFocMm>0) ,"cMetaDataPhoto::Foc");
 	return mFocMm; 
 }
+
+int cMetaDataPhoto::NbBits(bool Svp) const
+{
+	ELISE_ASSERT(Svp || (mNbBits>0) ,"cMetaDataPhoto::Foc");
+	return mNbBits; 
+}
+
+
 double  cMetaDataPhoto::Foc35(bool Svp) const 
 { 
 	ELISE_ASSERT(Svp || (mFoc35>0) ,"cMetaDataPhoto::Foc35 UnInit");
@@ -549,7 +1019,6 @@ Pt2di  cMetaDataPhoto::SzImTifOrXif(bool Svp) const
 
 
 /*
-std::cout << "AAAAAAkklMMMmpp \n"; getchar();
 */
 
 
@@ -575,6 +1044,7 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 		// std::string aStrF = aGICNM->Assoc1To1("NKS-Assoc-STD-FOC",aNameFile,true);
 		double aF; 
 		FromString(aF,aStrF);
+
 
 		/// std::cout << "JJJJJJJJJj " << aF << "\n";
 		if (aF>0)
@@ -617,9 +1087,10 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 
 
 
-
 	double aF35 = aMDP->Foc35(true);
 	bool  aFForced  = aMDP->FocForced();
+
+
 
 	if ((aF35<=0) || (aFForced))
 	{
@@ -689,9 +1160,9 @@ std::string GenerateId()
 	return aStr0 + BasicGenerateId();
 }
 
-std::string GenerateNameUnique(const std::string & aNF,const std::string Post)
+std::string GenerateNameUnique(const std::string & aNF,const std::string &Post)
 {
-	return "XXXX_" +  NameWithoutDir(aNF) + "_" + GenerateId()  + "_" + Post;
+	return "XXXX_" +  NameWithoutDir(aNF) + "_" + ToString(mm_getpid()) + '_' + GenerateId()  + "_" + Post;
 }
 
 
@@ -707,7 +1178,7 @@ public :
 	static const std::vector<cXifDecoder *>  &  TheVect();
 	static cMetaDataPhoto GetMTDIm(const std::string & aNameIm);
 private  :
-	void GenerateTxtFile(const std::string & aNameIm);
+	bool GenerateTxtFile(const std::string & aNameIm);
 	void  GetOneDouble(cElRegex * & anAutom,bool & aGot,double & aVal);
 
 	void  GetOneAngle(cElRegex * & anAutom,bool & aGot,double & aVal);
@@ -728,7 +1199,11 @@ private  :
 		const std::string & aStrGPSLat,
 		const std::string & aStrGPSLong,
 		const std::string & aStrGPSAlt,
-		const std::string & aStrBayPattern
+		const std::string & aStrBayPattern,
+		const std::string & aStrOrientation,
+		const std::string & aStrCameraOrientation,
+		const std::string & aStrNbBits
+               
 		) :
 	mStrExe             (aStrExe + " "),
 		mStrLangE           (STRLANG+ mStrExe),
@@ -748,10 +1223,16 @@ private  :
 		mAutomGPSAlt        (new cElRegex(aStrGPSAlt,15)),
 		mHasGPS             ((aStrGPSLat!="") && (aStrGPSLong!="") && (aStrGPSAlt!="")),
 		mAutomBayerPattern   (new cElRegex(aStrBayPattern,15)),
-		mHasBayPattern       (aStrBayPattern!="")
+		mHasBayPattern       (aStrBayPattern!=""),
+                mOrientation            (new cElRegex(aStrOrientation,15)),
+                mCameraOrientation      (new cElRegex(aStrCameraOrientation,15)),
+                mHasOrientation         ((aStrOrientation!="") && (aStrCameraOrientation!="")),
+                mNbBits                  (new cElRegex(aStrNbBits,15)),
+                mHasNbBits               (aStrNbBits!="")
 	{
 	}
 
+           // std::cout << "  XXXXXxxxxXX  " << aNameXml << aXml.Foc35().Val() << "\n";
 	std::string         mStrExe;
 	std::string         mStrLangE;
 	std::string         mStrTmp;
@@ -772,6 +1253,11 @@ private  :
 	bool                mHasGPS;
 	cElRegex *          mAutomBayerPattern;
 	bool                mHasBayPattern;
+        cElRegex *          mOrientation;
+        cElRegex *          mCameraOrientation;
+        bool                mHasOrientation;
+        cElRegex *          mNbBits;
+        bool                mHasNbBits;
 
 };
 
@@ -781,7 +1267,7 @@ int SigneOfSize(const std::string & aSz)
 	if ((aSz=="N") || (aSz=="E"))
 		return 1;
 
-	if ((aSz=="N") || (aSz=="E"))
+	if ((aSz=="S") || (aSz=="W"))
 		return -1;
 
 	ELISE_ASSERT(false,"Bas size inaMincXifDecoder::GetOneAngle");
@@ -819,7 +1305,7 @@ void  cXifDecoder::GetOneAngle(cElRegex * & anAutom,bool & aGot,double & aVal)
 	// std::cout << "AAANgle" <<  int (aRes) << " " << aRes - int (aRes) << "\n";
 }
 
-void cXifDecoder::GenerateTxtFile(const std::string & aFullName)
+bool cXifDecoder::GenerateTxtFile(const std::string & aFullName)
 {
 	std::string aDir,aNSsDir;
 
@@ -827,26 +1313,8 @@ void cXifDecoder::GenerateTxtFile(const std::string & aFullName)
 
 	mFileTxt = aDir + GenerateNameUnique(aNSsDir,mStrTmp);
 	std::string aCom = mStrLangE + QUOTE(aFullName) + " > " + mFileTxt;
-	int aRes = system_call(aCom.c_str());
-
-
-
-	//GERALD
-#if (ELISE_windows)
-
-#else
-	//const std::string STRLANG="LANG=C LANGUAGE=C ";
-	if ((aRes%256) !=0)  // ?? En fait convetion ElDcraw
-	{
-		std::cout << "COM="<< aCom << " RES = " << aRes << "\n";
-		ELISE_ASSERT
-			(
-			aRes==0,
-			"Cannot exec cXifDecoder::GenerateTxtFile"
-			);
-	}
-#endif
 	
+	return ( System(aCom,true)%256 )==0;
 }
 
 void  cXifDecoder::GetOneDouble(cElRegex * & anAutom,bool & aGot,double & aVal)
@@ -869,6 +1337,27 @@ void  cXifDecoder::GetOneDouble(cElRegex * & anAutom,bool & aGot,double & aVal)
 
 cMetaDataPhoto cXifDecoder::GetMTDIm(const std::string & aNameIm)
 {
+
+        cSpecifFormatRaw * aSFR = GetSFRFromString(aNameIm);
+        if (aSFR)
+        {
+            return   cMetaDataPhoto
+                     (
+                           aNameIm,
+                           aSFR->Sz(),
+                           aSFR->Camera().ValWithDef(""),
+                           cElDate::NoDate,
+                           aSFR->Focalmm().ValWithDef(-1),
+                           aSFR->FocalEqui35().ValWithDef(-1),
+                           -1,-1,-1,
+                           aSFR->BayPat().ValWithDef(""),
+                           "",
+                           "",
+                           aSFR->NbBitsParPixel()
+                      );
+
+        }
+       
 	const std::vector<cXifDecoder *>  &  aV =  TheVect();
 
 	bool  GotDate = false;
@@ -902,13 +1391,20 @@ cMetaDataPhoto cXifDecoder::GetMTDIm(const std::string & aNameIm)
 	bool GotSz = false;
 	Pt2di aSz(-1,-1);
 
+        double aNbBits=-1;
+        bool aGotNbBits=false;
+
 	bool GotBayPattern = false;
 	std::string  BayPatt = DEFBayPatt;
+
+        std::string aOrientation = DefXifOrientation();
+        std::string aCameraOrientation = DefXifOrientation();
 
 	for (int aKX=0 ; aKX<int(aV.size()) ; aKX++)
 	{
 		cXifDecoder & aXifDec = *(aV[aKX]);
 		aXifDec.GenerateTxtFile(aNameIm);
+
 		int aNbMatch;
 
 		if (! GotDate)
@@ -970,6 +1466,8 @@ cMetaDataPhoto cXifDecoder::GetMTDIm(const std::string & aNameIm)
 				aXifDec.GetOneAngle(aXifDec.mAutomGPSLong,GotGPSLong,aLong);
 			if (!GotGPSAlt)
 				aXifDec.GetOneDouble(aXifDec.mAutomGPSAlt,GotGPSAlt,anAlt);
+
+                        // std::cout << "LAT " << aLat << " LON " << aLong << " Alt " << anAlt << "\n";
 		}
 
 		if (!GotBayPattern)
@@ -987,6 +1485,21 @@ cMetaDataPhoto cXifDecoder::GetMTDIm(const std::string & aNameIm)
 		}
 
 
+                if (aXifDec.mHasOrientation)
+                {
+                      std::string aOri = GetStringFromLineExprReg(aXifDec.mOrientation, aXifDec.mFileTxt,"","$1",&aNbMatch);
+                      if (aNbMatch == 1)
+                         aOrientation = aOri;
+                      aOri = GetStringFromLineExprReg(aXifDec.mCameraOrientation, aXifDec.mFileTxt,"","$1",&aNbMatch);
+                      if (aNbMatch == 1)
+                         aCameraOrientation = aOri;
+                }
+
+                if (aXifDec.mHasNbBits && (!aGotNbBits))
+                {
+		     aXifDec.GetOneDouble(aXifDec.mNbBits, aGotNbBits,aNbBits);
+                }
+
 
 		if (1)
 		{
@@ -994,7 +1507,13 @@ cMetaDataPhoto cXifDecoder::GetMTDIm(const std::string & aNameIm)
 		}
 	}
 
-	return cMetaDataPhoto  (aNameIm,aSz,aCam,aDate,aFocal,aF35,anExpo,anOuv,anISO,BayPatt);
+	cMetaDataPhoto  aRes (aNameIm,aSz,aCam,aDate,aFocal,aF35,anExpo,anOuv,anISO,BayPatt,aOrientation,aCameraOrientation,aNbBits);
+
+        if (GotGPSLat && GotGPSLong)
+           aRes.SetGPSLatLon(aLat,aLong);
+        if (GotGPSAlt)
+           aRes.SetGPSAlt(anAlt);
+	return aRes;
 
 }
 
@@ -1016,7 +1535,7 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			(
 			new cXifDecoder
 			(
-              MM3dBinFile("ElDcraw")+" -i -v ",
+              MM3dBinFile_quotes("ElDcraw")+" -i -v ",
 			"ELDCRAW.txt",
 			"Timestamp: .* (...)  ?([0-9]{1,2})  ?([0-9]{1,2}):([0-9]{2}):([0-9]{2}) ([0-9]{4})",
 			"612345" ,
@@ -1030,7 +1549,10 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			"",
 			"",
 			"",
-			"Filter pattern: ([RGB])([RGB])([RGB])([RGB]).*"
+			"Filter pattern: ([RGB])([RGB])([RGB])([RGB]).*",
+                        "",
+                        "",
+                        ""
 			)
 			);
 		
@@ -1053,7 +1575,10 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			"",
 			"",
 			"",
-			""
+			"",
+                        "",
+                        "",
+                        ""
 			)
 			);
 
@@ -1076,7 +1601,10 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			"GPS Latitude *: ([0-9]*\\.?[0-9]*) deg ([0-9]*\\.?[0-9]*)\' ([0-9]*\\.?[0-9]*)\" ([SN])",
 			"GPS Longitude *: ([0-9]*\\.?[0-9]*) deg ([0-9]*\\.?[0-9]*)\' ([0-9]*\\.?[0-9]*)\" ([EW])",
 			"GPS Altitude *: ([0-9]*\\.?[0-9]*).*",
-			"CFA Pattern                     : \\[([RGB]).*\\,([RGB]).*\\]\\[([RGB]).*\\,([RGB]).*\\]"
+			"CFA Pattern                     : \\[([RGB]).*\\,([RGB]).*\\]\\[([RGB]).*\\,([RGB]).*\\]",
+                        "Orientation [ ]+:[ ]+([HR].*)",
+                        "Camera Orientation [ ]+:[ ]+([HR].*)",
+                        "Bit Depth   *: *([0-9]*)"
 			)
 			);
 	}
@@ -1089,198 +1617,58 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 
 cMetaDataPhoto cMetaDataPhoto::CreateNewExiv2(const std::string & aNameFile) // ,const char *  aNameTest)
 {
+       std::string aDir,aNameSsDir;
+       SplitDirAndFile(aDir,aNameSsDir,aNameFile);
+       //std::string aNameXml = aDir + "/Tmp-MM-Dir/" + aNameSsDir + "-MDT-"+ HRevXif + ".xml";
+       std::string aNameXml = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+"/Tmp-MM-Dir/" );
+       aNameXml.append( aNameSsDir+"-MDT-"+HRevXif+".xml" );
+       if ( ELISE_fp::exist_file(aNameXml))
+       {
+           cXmlXifInfo aXml = StdGetFromPCP(aNameXml,XmlXifInfo);
+           cElDate aDate = cElDate::NoDate;
+           if (aXml.Date().IsInit())
+             aDate = cElDate::FromXml(aXml.Date().Val());
+          
+           cMetaDataPhoto aMTD
+                          (
+                              aNameFile,                               // const std::string & aNameIm,
+                              aXml.Sz().ValWithDef(Pt2di(-1,-1)),      // Pt2di aXifSzIm,
+	                      aXml.Cam().ValWithDef(""),               // const std::string & aCam,
+                              aDate,                                   //  cElDate aDate,
+                              aXml.FocMM().ValWithDef(-1),             // double aFocMm,
+                              aXml.Foc35().ValWithDef(-1),             // double aFoc35,
+                              aXml.ExpTime().ValWithDef(-1),           // double aExpTime,
+                              aXml.Diaph().ValWithDef(-1),             // double aDiaph,
+                              aXml.IsoSpeed().ValWithDef(-1),          // double anIsoSpeed,
+                              aXml.BayPat().ValWithDef(DEFBayPatt),    // const std::string & aBayPat  DEFBayPatt
+                              aXml.Orientation().ValWithDef(DefXifOrientation()),
+                              aXml.CameraOrientation().ValWithDef(DefXifOrientation()),
+                              aXml.NbBits().ValWithDef(-1)
+                          );
 
-	return cXifDecoder::GetMTDIm(aNameFile);
+
+           ELISE_ASSERT(aXml.GPSLat().IsInit()==aXml.GPSLon().IsInit(),"Incoherence inr cMetaDataPhoto::CreateNewExiv2");
+           if (aXml.GPSLat().IsInit())
+           {
+               aMTD.mGPSLat = aXml.GPSLat().Val();
+               aMTD.mGPSLon = aXml.GPSLon().Val();
+               aMTD.mHasGPSLatLon = true;
+           }
+
+           if (aXml.GPSAlt().IsInit())
+           {
+               aMTD.mGPSAlt = aXml.GPSAlt().Val();
+               aMTD.mHasGPSAlt = true;
+           }
+
+            return aMTD;
+
+       }
+
+       return cXifDecoder::GetMTDIm(aNameFile);
 }
 
 #if (0)
-{
-	bool aModeDCRaw = true;
-
-
-	const char * aNameFileTMP;
-	std::string aStrTMP;
-
-	/*
-	if (aNameTest)
-	{
-	aNameFileTMP = aNameTest;
-	if (sizeofile(aNameTest)==0)
-	{
-	return TheNoMTD;
-	}
-	}
-	else
-	*/
-	{
-		// std::string aStrCom = aModeDCRaw ? "LANG=C dcraw -i -v " : "exiv2 ";
-		bool OK = false;
-		for (int aKTest=0 ; (aKTest<2) && (! OK)  ; aKTest++)
-		{
-			aModeDCRaw  = (aKTest==0);
-          std::string aStrCom = aModeDCRaw ? (STRLANG+MMDir()+"bin"+ELISE_CAR_DIR+"ElDcraw -i -v ") : (STRLANG+ " exiv2 ");
-			aStrTMP = ExeCom(aStrCom,aNameFile);
-			aNameFileTMP = aStrTMP.c_str();
-			if (sizeofile(aNameFileTMP ) != 0)
-			{
-				OK = true;
-			}
-			else
-			{
-				if ( ELISE_fp::exist_file(aNameFileTMP))
-					ELISE_fp::RmFile(aNameFileTMP);
-			}
-		}
-		if (!OK)
-		{
-			if (Tiff_Im::IsTiff(aNameFile.c_str()))
-			{
-				cMetaDataPhoto  aMDP = Tiff_Im(aNameFile.c_str()).MDP();
-
-				if (aMDP.FocMm() >=0)
-					return aMDP;
-			}
-
-			std::cout << "For file " << aNameFile << " Cannot get xif data\n";
-			ELISE_ASSERT(false,"Nor dcraw nor exiv2 can create xif data");
-		}
-	}
-
-	std::string aStrDate = aModeDCRaw ?
-		"Timestamp: .* (...)  ?([0-9]{1,2})  ?([0-9]{1,2}):([0-9]{2}):([0-9]{2}) ([0-9]{4})"            :
-	"Image timestamp : ([0-9]{4}):([0-9]{2}):([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})";
-
-	std::string aOrdreDate = aModeDCRaw ? "612345" : "123456";
-
-	std::string aStrFoc = aModeDCRaw ? "Focal length: ([0-9]*\\.?[0-9]*) mm" : "Focal length    : ([0-9]*\\.?[0-9]*) mm";
-
-	std::string aStrTime = aModeDCRaw ? "Shutter: ((1/)?[0-9]*\\.?[0-9]*) sec" : "Exposure time   : ((1/)?[0-9]*\\.?[0-9]*) s";
-
-	std::string aStrOuv = aModeDCRaw ? "Aperture: f/(([0-9]*\\.?[0-9]*)|(inf))" : "Aperture        : F([0-9]*\\.?[0-9]*)";
-	std::string aStrIso = aModeDCRaw ? "ISO speed: ([0-9]*\\.?[0-9]*)" :"ISO speed       : ([0-9]*\\.?[0-9]*)";
-
-
-	std::string aStrCam = aModeDCRaw ? "Camera: (.*)" : "Camera model    : (.*)";
-
-
-	//Modif de Greg suite a des pb avec des photos 640 x 480 (on a 4 espaces plutot que 3 apres les ':', sans doute parce qu'on a 3 chiffres au lieu des 4 habituels) 
-	//std::string aStrSz = aModeDCRaw ? "Full size:   ([0-9]+) x ([0-9]+)" : "Image size      : ([0-9]+) x ([0-9]+)";
-	std::string aStrSz = aModeDCRaw ? "Full size:[ ]+([0-9]+) x ([0-9]+)" : "Image size      :[ ]+([0-9]+) x ([0-9]+)";
-
-	std::string aNameTmp = aNameFileTMP;
-
-	//   std::cout << "11111111111111111 [" << aStrIso << "]\n";
-
-	int aNbMatch;
-	std::vector<double> aVDate =
-		GetValsNumFromLineExprReg
-		(
-		mDateRegExiV2,
-		aNameTmp,
-		aStrDate,
-		aOrdreDate,
-		&aNbMatch
-		);
-
-	//   std::cout << "22222222222222 [" << aStrIso << "]\n";
-	cElDate aDate = cElDate::NoDate;
-
-	if (aNbMatch==1)
-	{
-		aDate = cElDate
-			(
-			round_ni(aVDate[2]),round_ni(aVDate[1]),round_ni(aVDate[0]),
-			cElHour(round_ni(aVDate[3]),round_ni(aVDate[4]),round_ni(aVDate[5]))
-			);
-	}
-
-	//   std::cout << "3333333333333333 [" << aStrIso << "]\n";
-
-	std::vector<double> aVFoc =
-		GetValsNumFromLineExprReg
-		(
-		mFocRegExiV2,
-		aNameTmp,
-		aStrFoc,
-		"1",
-		&aNbMatch
-		);
-	double aFoc = VAtDef(aVFoc,0,-1.0);
-
-
-	//   std::cout << "44444444444444444 [" << aStrIso << "]\n";
-	std::vector<double> aVExpTime =
-		GetValsNumFromLineExprReg
-		(
-		mExpTimeRegExiV2,
-		aNameTmp,
-		aStrTime,
-		"1",
-		&aNbMatch
-		);
-	double aExpTime = VAtDef(aVExpTime,0,-1.0);
-
-	//   std::cout << "55555555555555555 [" << aStrIso << "]\n";
-	std::vector<double> aVDiaph =
-		GetValsNumFromLineExprReg
-		(
-		mDiaphRegExiV2,
-		aNameTmp,
-		aStrOuv,
-		"1",
-		&aNbMatch
-		);
-	double aDiaph = VAtDef(aVDiaph,0,-1.0);
-
-	//   std::cout << "AAAAAAAAAA [" << aStrIso << "]\n";
-	std::vector<double> aVIsoSpeed =
-		GetValsNumFromLineExprReg
-		(
-		mIsoSpeedRegExiV2,
-		aNameTmp,
-		aStrIso,
-		"1",
-		&aNbMatch
-		);
-	//   std::cout << "BBBBBBBB\n";
-	double anIsoSpeed = VAtDef(aVIsoSpeed,0,-1.0);
-
-	std::vector<double> aVSz =
-		GetValsNumFromLineExprReg
-		(
-		mSzImExiV2,
-		aNameTmp,
-		aStrSz,
-		"12",
-		&aNbMatch
-		);
-	Pt2di  aSz(round_ni(VAtDef(aVSz,0,-1.0)),round_ni(VAtDef(aVSz,1,-1.0)));
-
-
-	std::string aCam=GetStringFromLineExprReg(mCameraExiV2,aNameTmp,aStrCam,"$1",&aNbMatch);
-
-	// std::cout << "CAM = " << 
-
-
-	double aFoc35 = -1;
-	if (aModeDCRaw)
-	{
-		std::string aStrFoc35 = "Focal Equi35: (-?[0-9]*\\.?[0-9]*) mm";
-		std::vector<double> aVFoc35 =
-			GetValsNumFromLineExprReg
-			(
-			mFoc35RegExiV2,
-			aNameTmp,
-			aStrFoc35,
-			"1"
-			);
-		aFoc35  = aVFoc35[0];
-	}
-	
-	ELISE_fp::RmFile(aNameTmp);
-
-	return cMetaDataPhoto(aSz,aCam,aDate,aFoc,aFoc35,aExpTime,aDiaph,anIsoSpeed);
-}
 #endif
 
 void cMetaDataPhoto::SetXYZTetas(const Pt3dr & aXYZ,const Pt3dr & aTetas)
@@ -1325,7 +1713,7 @@ void cMetaDataPhoto::SetFocal(const double & aF)
 	mFocMm = aF;
 }
 
-void cMetaDataPhoto::SetFoc35(const double & aF)
+void cMetaDataPhoto::SetFoc35(const double &aF)
 {
 	mFoc35 = aF;
 }
@@ -1460,7 +1848,7 @@ cMetaDataPhoto  MDP_Survey_FromString(const std::string & aCh)
 		aH
 		);
 
-	cMetaDataPhoto aMDP("Unknown Image",Pt2di(0,0),"Unknown Cam",aD,1.0,1.0,0,0,0,DEFBayPatt);
+	cMetaDataPhoto aMDP("Unknown Image",Pt2di(0,0),"Unknown Cam",aD,1.0,1.0,0,0,0,DEFBayPatt,"","",-1);
 	Pt3dr aTetas
 		(
 		cElRegex::AutomSurvey()->VNumKIemeExprPar(8),
@@ -1586,6 +1974,49 @@ std::vector<cLine_N_XYZ_WPK> cLine_N_XYZ_WPK::FromFile
 		}
 	}
 	return aRes;
+}
+
+//  MTDImCalc
+
+std::string NameMTDImCalc(const std::string & aFullName)
+{
+   std::string aDir,aName;
+   SplitDirAndFile(aDir,aName,aFullName);
+   
+   return aDir + "Tmp-MM-Dir/CalcMDT-" + aName + ".xml";
+}
+
+cMTDImCalc GetMTDImCalc(const std::string & aNameIm)
+{
+   std::string aNameXml = NameMTDImCalc(aNameIm);
+   if ( ! ELISE_fp::exist_file(aNameXml))
+   {
+        cMTDImCalc aMTD;
+        MakeFileXML(aMTD,aNameXml);
+   }
+ 
+   return StdGetFromPCP(aNameXml,MTDImCalc);
+}
+
+const cMIC_IndicAutoCorrel * GetIndicAutoCorrel(const cMTDImCalc & aMTD,int aSzW)
+{
+   for 
+   (
+        std::list<cMIC_IndicAutoCorrel>::const_iterator itIAC = aMTD.MIC_IndicAutoCorrel().begin();
+        itIAC != aMTD.MIC_IndicAutoCorrel().end();
+        itIAC++
+   )
+   {
+      if (itIAC->SzCalc() == aSzW) 
+         return &(*itIAC);
+   }
+   return 0;
+}
+double GetAutoCorrel(const cMTDImCalc & aMTD,int aSzW)
+{
+    const cMIC_IndicAutoCorrel * aIAC = GetIndicAutoCorrel(aMTD,aSzW);
+    ELISE_ASSERT(aIAC!=0,"GetAutoCorrel");
+    return aIAC->AutoC();
 }
 
 

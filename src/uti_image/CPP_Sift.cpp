@@ -38,11 +38,13 @@ public:
 		onedge_threshold( default_onedge_threshold ),
 		no_descriptors( false ),
 		no_orientations( false ),
-		chunk_size( 0 ){}
+		chunk_size( 1024 ){}
 };
 
+void print_usage();
+
 inline void verbose_func        ( const string &val, sift_parameters_t &p ){ p.verbose=true; }
-inline void help_func           ( const string &val, sift_parameters_t &p ){ /*p.print_help=true;*/ cerr << "help argument is not implemented yet" << endl; exit(EXIT_FAILURE); }
+inline void help_func           ( const string &val, sift_parameters_t &p ){ print_usage(); exit(EXIT_SUCCESS); }
 inline void prefix_func         ( const string &val, sift_parameters_t &p ){ p.prefix=val; }
 inline void output_func         ( const string &val, sift_parameters_t &p ){ p.output_filename=val; }
 inline void keypoints_func      ( const string &val, sift_parameters_t &p ){ /*p.keypoints_filename=true;*/ cerr << "keypoints argument is not implemented yet" << endl; exit(EXIT_FAILURE); }
@@ -51,7 +53,7 @@ inline void octaves_func        ( const string &val, sift_parameters_t &p ){ p.n
 inline void levels_func         ( const string &val, sift_parameters_t &p ){ p.nb_levels=atoi( val.c_str() ); }
 inline void first_octave_func   ( const string &val, sift_parameters_t &p ){ p.first_octave=atoi( val.c_str() ); }
 inline void threshold_func      ( const string &val, sift_parameters_t &p ){ p.strength_threshold=atof( val.c_str() ); }
-inline void edge_threshold_func ( const string &val, sift_parameters_t &p ){ p.nb_levels=atof( val.c_str() ); }
+inline void edge_threshold_func ( const string &val, sift_parameters_t &p ){ p.nb_levels=atoi( val.c_str() ); }
 inline void chunk_size_func     ( const string &val, sift_parameters_t &p ){ p.chunk_size=atoi( val.c_str() ); }
 inline void no_orientations_func( const string &val, sift_parameters_t &p ){ p.no_orientations=atoi( val.c_str() ); }
 inline void no_descriptors_func ( const string &val, sift_parameters_t &p ){ p.no_descriptors=true; }
@@ -60,26 +62,41 @@ typedef struct {
     const string long_name;
     char         short_name;
     bool         needValue;
+    const string description;
     void         (*func)( const string &, sift_parameters_t & );
 } parameter_t;
 
 parameter_t g_parameters_list[] = {
-    { "verbose",         'v',  false, verbose_func },
-    { "help",            'h',  false, help_func },
-    { "prefix",          'p',  true,  prefix_func },
-    { "output",          'o',  true,  output_func },
-    { "keypoints",       'k',  true,  keypoints_func },
-    { "save-gss",        's',  false, save_gss_func },
-    { "octaves",         'O',  true,  octaves_func },
-    { "levels",          'S',  true,  levels_func },
-    { "first-octave",    'f',  true,  first_octave_func },
-    { "threshold",       't',  true,  threshold_func },
-    { "edge-threshold",  'e',  true,  edge_threshold_func },
-    { "chunk-size",      'c',  true,  chunk_size_func },
-    { "no-orientations", '\0', false, no_orientations_func },
-    { "no-descriptors",  '\0', false, no_descriptors_func },
-    { "",                '\0', false, NULL },
+    { "verbose",         'v',  false, "verbose mode", verbose_func },
+    { "help",            'h',  false, "print help", help_func },
+    { "prefix",          'p',  true,  "prefix output filename", prefix_func },
+    { "output",          'o',  true,  "set output filename", output_func },
+    { "keypoints",       'k',  true,  "load a key-points set and compute their descriptors", keypoints_func },
+    { "save-gss",        's',  false, "save gausians", save_gss_func },
+    { "octaves",         'O',  true,  "set number of octaves", octaves_func },
+    { "levels",          'S',  true,  "set number of level per octave", levels_func },
+    { "first-octave",    'f',  true,  "set first octave index", first_octave_func },
+    { "threshold",       't',  true,  "set detection threshold", threshold_func },
+    { "edge-threshold",  'e',  true,  "set on-edge threshold", edge_threshold_func },
+    { "chunk-size",      'c',  true,  "set tile size", chunk_size_func },
+    { "no-orientations", '\0', false, "only detect key-points without angles and descriptors", no_orientations_func },
+    { "no-descriptors",  '\0', false, "detect key-points and compute their angles", no_descriptors_func },
+    { "",                '\0', false, "", NULL },
 };
+
+void print_usage()
+{
+	cout << "usage: mm3d Sift input_image" << endl;
+	parameter_t *itParam = g_parameters_list;
+	while ( itParam->func!=NULL )
+	{
+		cout << "--" << itParam->long_name;
+		if ( itParam->needValue ) cout << " value";
+		if ( itParam->short_name!='\0' ) cout << "(-" << itParam->short_name << ')';
+		cout << ": " << itParam->description << endl;
+		itParam++;
+	}
+}
 
 void process_image( const RealImage1 &i_image, const sift_parameters_t &i_params, const string &i_imageBasename, Siftator &i_gaussPyramid, list<SiftPoint> &o_siftPoints )
 {
@@ -95,7 +112,7 @@ void process_image( const RealImage1 &i_image, const sift_parameters_t &i_params
     list<RefinedPoint>::iterator itRefinedPoint;
     int nbAngles, iAngle;
     Real_ angles[m_maxNbAngles];
-    Real_ descriptor[m_descriptorSize];
+    Real_ descriptor[SIFT_DESCRIPTOR_SIZE];
     for ( int o=0; o<i_params.nb_octaves; o++  )
     {
 		if ( i_params.verbose ) cout << "\toctave " << o+i_params.first_octave << endl;
@@ -136,7 +153,7 @@ void process_image( const RealImage1 &i_image, const sift_parameters_t &i_params
                     siftPoint.y = itRefinedPoint->ry;
                     siftPoint.scale = itRefinedPoint->rs;
                     siftPoint.angle = angles[iAngle];
-                    memcpy( siftPoint.descriptor, descriptor, m_descriptorSize*sizeof( Real_ ) );
+                    memcpy( siftPoint.descriptor, descriptor, SIFT_DESCRIPTOR_SIZE*sizeof( Real_ ) );
 
                     o_siftPoints.push_back( siftPoint );
                 }
@@ -165,76 +182,79 @@ inline bool getJointValue( const string &i_str, string &o_value ){
     return true;
 }
 
-#define ERROR_NO_VALUE( arg ){ cerr << "ERROR: argument " << (arg) << " needs a value but none is specified" << endl; return false; }
-
 #define USE_NEXT_ARG_AS_VALUE( count, args, value )\
 {\
-    if ( (count)==0 ) ERROR_NO_VALUE( (args) );\
-    (value) = *(args)++;\
-    (count)--;\
+	if ( (count)==0 )\
+	{\
+		cerr << "ERROR: argument " << (arg) << " needs a value but none is specified" << endl;\
+		return false;\
+	}\
+	(value) = *(args)++;\
+	(count)--;\
 }
 
 // returns if all arguments could be processed or not
 bool process_arguments( int i_argc, char **i_argv, sift_parameters_t &o_parameters, list<string> &o_image_list )
 {
-    string arg, value;
-    parameter_t *itParam = NULL;
-    bool matchFound;
-    while ( i_argc-- )
-    {
-        arg = *i_argv++;
+	string arg, value;
+	parameter_t *itParam = NULL;
+	bool matchFound;
+	while ( i_argc-- )
+	{
+		arg = *i_argv++;
 
-        if ( arg.length()==0 ) continue; // should not be necessary
+		if ( arg.length()==0 ) continue; // should not be necessary
 
-        if ( arg[0]!='-' ){ // this is not an argument, then its a filename
-            o_image_list.push_back( arg );
-            continue;
-        }
+		if ( arg[0]!='-' )
+		{
+		// this is not an argument, then its a filename
+		o_image_list.push_back(arg);
+		continue;
+		}
 
-        if ( arg.length()<2 ){ cerr << "missing name parameter after '-'" << endl; return false; }
+		if ( arg.length()<2 ){ cerr << "missing name parameter after '-'" << endl; return false; }
 
-        matchFound = false;
-        value.clear();
-        if ( arg[1]=='-' ) { // this is a long-form argument
-            if ( arg.length()<3 ){ cerr << "missing parameter name after \"--\"" << endl; return false; }
-            bool foundEqualValue = getEqualValue( arg, value );
-            itParam = g_parameters_list;
-            while ( itParam->func!=NULL )
-            {
-                if ( arg==itParam->long_name )
-                {
-                    if ( itParam->needValue )
-                    {
-                        if ( !foundEqualValue )
-                            USE_NEXT_ARG_AS_VALUE( i_argc, i_argv, value );
-                    }
-                    matchFound=true; break;
-                }
-                itParam++;
-            }
-        }
-        else{ // this is a short-form argument
-            itParam = g_parameters_list;
-            char arg1 = arg[1];
-            while ( itParam->func!=NULL )
-            {
-                if ( arg1==itParam->short_name )
-                {
-                    if ( itParam->needValue )
-                    {
-                        if ( !getJointValue( arg, value ) )
-                            USE_NEXT_ARG_AS_VALUE( i_argc, i_argv, value );
-                    }
-                    matchFound=true; break;
-                }
-                itParam++;
-            }
-        }
-        if ( !matchFound ){ cerr << "ERROR: parameter " << i_argv[-1] << " does not exit" << endl; return false; }
+		matchFound = false;
+		value.clear();
+		if ( arg[1]=='-' )
+		{
+			// this is a long-form argument
+			if ( arg.length()<3 ){ cerr << "missing parameter name after \"--\"" << endl; return false; }
+			bool foundEqualValue = getEqualValue( arg, value );
+			itParam = g_parameters_list;
+			while ( itParam->func!=NULL )
+			{
+				if ( arg==itParam->long_name )
+				{
+					if ( itParam->needValue && !foundEqualValue ) USE_NEXT_ARG_AS_VALUE( i_argc, i_argv, value );
+					matchFound = true;
+					break;
+				}
+				itParam++;
+			}
+		}
+		else
+		{
+			// this is a short-form argument
+			itParam = g_parameters_list;
+			char arg1 = arg[1];
+			while ( itParam->func!=NULL )
+			{
+				if ( arg1==itParam->short_name )
+				{
+					if ( itParam->needValue && !getJointValue( arg, value ) ) USE_NEXT_ARG_AS_VALUE( i_argc, i_argv, value );
+					matchFound = true;
+					break;
+				}
+				itParam++;
+			}
+		}
+		if ( !matchFound ){ cerr << "ERROR: parameter " << i_argv[-1] << " does not exit" << endl; return false; }
 
-        itParam->func( value , o_parameters );
-    }
-    return true;
+		itParam->func( value, o_parameters );
+	}
+
+	return true;
 }
 
 inline void toupper( const string &i_str, string &o_str )
@@ -279,13 +299,12 @@ inline bool replace_prefix( string &io_str, const string &i_prefix )
 int Sift_main( int argc, char**argv )
 {
     sift_parameters_t parameters;
-    
     list<string>      image_list;
 
     if ( !process_arguments( argc-1, argv+1, parameters, image_list ) )
         return EXIT_FAILURE;
 
-    if ( image_list.size()==0 ){ cerr << "ERROR: no intput image file" << endl; exit(-1); }
+    if ( image_list.empty()){ cerr << "ERROR: no intput image file" << endl; exit(-1); }
     if ( parameters.output_filename.length()!=0 )
     {
         if ( image_list.size()>1 ){ cerr << "ERROR: an output filename is specified but there is more than one image file" << endl; exit(-1); }
@@ -365,6 +384,8 @@ int Sift_main( int argc, char**argv )
                 RealImage1 subimage;
                 image.getWindow( *itWindow, subimage );
                 siftPoints_sub.clear();
+
+                if ( parameters.verbose ) cout << "processing chunk " << itWindow->m_x0 << ',' << itWindow->m_y0 << ' ' << subimage.width() << 'x' << subimage.height() << "..." << endl;
                 process_image( subimage, parameters, outputBasename, gaussPyramid, siftPoints_sub );
 
                 int iPoint = siftPoints_sub.size();

@@ -64,6 +64,8 @@ class cVarEtat_PhgrF
          void SetEtatSVP(const double &);
          void InitAdrSVP(cElCompiledFonc & aFoncC);
 
+         double GetVal() const;
+
      private :
          std::string mName;
          double *          mAdr;
@@ -79,6 +81,7 @@ class cP2d_Etat_PhgrF
      public :
            cP2d_Etat_PhgrF (const std::string & aNamePt);
            Pt2d<Fonc_Num>  PtF() const;
+           Pt2dr GetVal() const;
 
            void InitAdr(cElCompiledFonc & aFoncC);
            void SetEtat(const Pt2dr &);
@@ -106,6 +109,7 @@ class cP3d_Etat_PhgrF
            Pt3d<Fonc_Num>  PtF() const;
            void InitAdr(cElCompiledFonc & aFoncC);
            void SetEtat(const Pt3dr &);
+           Pt3dr GetVal() const;
      private :
 
            cVarEtat_PhgrF   mVarX;
@@ -610,6 +614,7 @@ struct  cResiduP3Inc
     double             mSomPondEr;
     bool               mOKRP3I;
     double             mBSurH;
+    std::string        mMesPb;
 };
 
 
@@ -747,7 +752,8 @@ class cManipPt3TerInc
 		   const cNupletPtsHomologues & aNuple,
 	           const std::vector<double> &,
                    cParamPtProj &            aParam,
-                   std::vector<Pt3dr> *      aPAbs
+                   std::vector<Pt3dr> *      aPAbs,
+                   std::string *             mMes = 0
                );
 
 
@@ -769,6 +775,74 @@ Pt3dr CalcPTerIFC_Robuste
            const cNupletPtsHomologues & aNuple,
            const std::vector<double> &  aVPds
       );
+
+
+
+class cBaseGPS : public cElemEqFormelle,
+                 public cObjFormel2Destroy
+{
+    public :
+        friend class cSetEqFormelles;
+
+        cBaseGPS  (cSetEqFormelles & aSet,const Pt3dr & aV0);
+        Pt3d<Fonc_Num> BaseInc();
+        const Pt3dr &  ValueBase() const;
+    private  :
+        cBaseGPS(const cBaseGPS&); // N.I.
+
+        Pt3dr              mV0;
+        Pt3d<Fonc_Num>     mBaseInc;
+
+};
+
+class cEqOffsetGPS  : public cNameSpaceEqF,
+                      public cObjFormel2Destroy
+
+{
+    public :
+         cEqOffsetGPS(cRotationFormelle & aRF,cBaseGPS  &aBase,bool doGenCode);
+         void GenCode();
+         Pt3dr  AddObs(const Pt3dr & aGPS,const Pt3dr & aPds);
+         Pt3dr  Residu(const Pt3dr & aGPS);
+         cBaseGPS * Base();
+         cRotationFormelle * RF();
+
+    private :
+        cEqOffsetGPS(const cEqOffsetGPS&); // N.I.
+
+         cSetEqFormelles *    mSet;
+         cRotationFormelle *  mRot;
+         cBaseGPS          *  mBase;
+         cP3d_Etat_PhgrF      mGPS;
+// Definit le nom des fichier ou sera genere le code (et les classe generee)
+         std::string          mNameType;
+         Pt3d<Fonc_Num>       mResidu;   // Residu formel de Eq1
+         cIncListInterv       mLInterv;
+         cElCompiledFonc *    mFoncEqResidu;
+
+};
+
+class cEqRelativeGPS  : public cNameSpaceEqF,
+                        public cObjFormel2Destroy
+
+{
+   public :
+      cEqRelativeGPS(cRotationFormelle &, cRotationFormelle &,bool CodeGen);
+
+      Pt3dr  AddObs(const Pt3dr & aDif12,const Pt3dr & aPds);
+      Pt3dr  Residu(const Pt3dr & aDif12);
+   private :
+
+      cSetEqFormelles *    mSet;
+      cRotationFormelle *  mR1;
+      cRotationFormelle *  mR2;
+      cP3d_Etat_PhgrF      mDif21;
+      cIncListInterv       mLInterv;
+      cElCompiledFonc *    mFoncEqResidu;
+
+      static const std::string  mNameType;
+};
+
 
 
 /****************************************************/

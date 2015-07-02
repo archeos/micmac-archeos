@@ -39,10 +39,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 #include "MICMAC/MICMAC.h"
 
-using namespace NS_ParamMICMAC;
 
-Pt2di NS_ParamMICMAC::PBug(449,194);
 /*
+Pt2di NS_ParamMICMAC::PBug(449,194);
 Pt2di NS_ParamMICMAC::BoxP0Bug(150,115);
 bool  NS_ParamMICMAC::InBoxBug = false;
 
@@ -83,7 +82,7 @@ int MICMAC_main(int argc,char ** argv)
         itS++
      )
      {
-         std::string aCom = getCurrentProgramFullName() + std::string(" ") + *itS;
+         std::string aCom = current_program_fullname() + " " + current_program_subcommand() + " " + *itS;
          for (int aK=2; aK<argc ; aK++)
              aCom =  aCom + std::string(" ") +argv[aK] ;
          std::list<std::string> aLProc;

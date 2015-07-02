@@ -52,6 +52,61 @@
 *                                                               *
  *********************************************************** -->
 
+<!--   HOMOGRAPHY-COMPUTING
+
+    <Symb>  Tooooooo=XxX </Symb>
+-->
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  2 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)%(.*) </PatternTransform>
+                <CalcName> RHH#1/$1/#2$2.#3  </CalcName>
+                <Separateur > % </Separateur>
+             </Direct>
+	     <Inverse>
+                <PatternTransform> RHH#1/(.*)/#2(.*)\.#3 </PatternTransform>
+                <CalcName> $1  </CalcName>
+                <CalcName> $2  </CalcName>
+	     </Inverse>
+        </Calcs>
+        <Key>  NKS-Assoc-RHH-CplIm2Data </Key>
+	<SubDirAutoMake>  RHH#1</SubDirAutoMake>
+	<SubDirAutoMakeRec> true </SubDirAutoMakeRec>
+    </KeyedNamesAssociations>
+
+
+
+    <KeyedSetsOfNames >
+          <IsParametrized>  true </IsParametrized>
+          <Sets> 
+                 <PatternAccepteur> #3/HomolH(.*)\.(#2)  </PatternAccepteur>
+		 <SubDir>   RHH#1/ </SubDir>
+                 <NivSubDir> 2 </NivSubDir>
+	  </Sets>
+          <Key> NKS-Set-RHH-Homol </Key>
+    </KeyedSetsOfNames>
+
+
+        <!-- ***********************************************   -->
+        <!--                                                   -->
+        <!--                MATIS                              -->
+        <!--                                                   -->
+        <!-- ***********************************************   -->
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)\.tif </PatternTransform>
+                <CalcName>  Ori-Matis/$1.ori.xml  </CalcName>
+             </Direct>
+        </Calcs>
+        <Key>   NKS-MATIS-Assoc-Im2Orient </Key>
+    </KeyedNamesAssociations>
+
+
         <!-- ***********************************************   -->
         <!--                                                   -->
         <!--                SETS                               -->
@@ -76,7 +131,23 @@
     </KeyedSetsOfNames>
 
 
+    <KeyedSetsOfNames>
+          <IsParametrized>  true </IsParametrized>
+          <Sets> 
+                 <NamesFileLON> #1  </NamesFileLON>
+	  </Sets>
+          <Key> NKS-Set-OfFile </Key>
+    </KeyedSetsOfNames>
 
+
+    <KeyedSetsOfNames >
+          <Sets> 
+                 <PatternAccepteur> .*(Ch1|Ch1_16B|Ch3)\.tif  </PatternAccepteur>
+		 <SubDir>   Tmp-MM-Dir/ </SubDir>
+                 <NivSubDir> 2 </NivSubDir>
+	  </Sets>
+          <Key> NKS-Set-TmpTifFile </Key>
+    </KeyedSetsOfNames>
 
 
     <KeyedSetsOfNames >
@@ -88,15 +159,30 @@
 	  </Sets>
           <Key> NKS-Set-Homol </Key>
     </KeyedSetsOfNames>
+
+
+    <KeyedSetsOfNames >
+          <IsParametrized>  true </IsParametrized>
+          <Sets> 
+                 <PatternAccepteur> Pastis#3/(.*)\.(#2)  </PatternAccepteur>
+		 <SubDir>   Homol#1/ </SubDir>
+                 <NivSubDir> 2 </NivSubDir>
+	  </Sets>
+          <Key> NKS-Set-HomolOfOneImage </Key>
+    </KeyedSetsOfNames>
+
+
+
     <KeyedSetsOfNames >
           <IsParametrized>  true </IsParametrized>
           <Sets>
-                 <PatternAccepteur> Pastis#3/#3\.(#2)  </PatternAccepteur>
+                 <PatternAccepteur> Pastis#3/(.*).(#2)  </PatternAccepteur>
                  <SubDir>   Homol#1/ </SubDir>
                  <NivSubDir> 2 </NivSubDir>
           </Sets>
           <Key> NKS-Set-Homol-Filtered </Key>
     </KeyedSetsOfNames>
+
 <!--
 -->
 
@@ -143,6 +229,22 @@
           <Key> NKS-Set-OfPatternAndInterv </Key>
     </KeyedSetsOfNames>
 
+
+    <KeyedSetsOfNames>
+          <IsParametrized>  true </IsParametrized>
+          <Sets>
+               <PatternAccepteur> #1  </PatternAccepteur>
+               <Filter>
+                     <FocMm> #2 #3 </FocMm>
+                     <Min> #4 </Min>
+                     <Max> #5 </Max>
+               </Filter>
+          </Sets>
+          <Key> NKS-Set-OfPatternAndFocAndInterv </Key>
+    </KeyedSetsOfNames>
+
+
+
     <KeyedSetsOfNames>
            <IsParametrized>  true </IsParametrized>
            <Sets>
@@ -159,9 +261,107 @@
            <Key>  NKS-Set-OfExistingPlan </Key>
     </KeyedSetsOfNames>
 
+        <!-- ***********************************************   -->
+        <!--                                                   -->
+        <!--                Calib Initiale                     -->
+        <!--                                                   -->
+        <!-- ***********************************************   -->
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>  false </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-IsFishEye </Key>
+    </KeyedNamesAssociations>
 
 
 
+
+        <!-- ***********************************************   -->
+        <!--                                                   -->
+        <!--                PDS CHANNEL                        -->
+        <!--                                                   -->
+        <!-- ***********************************************   -->
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>  NONE </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-SFS </Key>
+    </KeyedNamesAssociations>
+
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)(\.ply|_polyg3d\.xml|_selectionInfo\.xml) </PatternTransform>
+                <CalcName>  $1_polyg3d.xml </CalcName>
+            </Direct>
+        </Calcs>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>  NONE </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-CorrecMasq3D </Key>
+    </KeyedNamesAssociations>
+
+
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>  [1,1,1,1,1,1,1,1,1,1,1,1] </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Pds-Channel </Key>
+    </KeyedNamesAssociations>
+
+
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .*  </PatternTransform>
+                <CalcName>  1.0  </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Pds-Channel_1 </Key>
+    </KeyedNamesAssociations>
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .*  </PatternTransform>
+                <CalcName>  1.0  </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Pds-Channel_2 </Key>
+    </KeyedNamesAssociations>
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .*  </PatternTransform>
+                <CalcName>  1.0  </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Pds-Channel_3 </Key>
+    </KeyedNamesAssociations>
 
         <!-- ***********************************************   -->
         <!--                                                   -->
@@ -169,6 +369,36 @@
         <!--                                                   -->
         <!-- ***********************************************   -->
 
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)_Tile_[0-9]+_[0-9]+.tif  </PatternTransform>
+                <CalcName>  $1.tif  </CalcName>
+            </Direct>
+        </Calcs>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)  </PatternTransform>
+                <CalcName>  NONE  </CalcName>
+            </Direct>
+        </Calcs>
+
+        <Key>   NKS-Assoc-Tile2File </Key>
+    </KeyedNamesAssociations>
+
+               <!--  ORIENTATIONS, HOMOLOGUES -->
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)\.([a-z,A-Z,0-9]{3,4})  </PatternTransform>
+                <CalcName>  $1.xml  </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-SpecifRaw </Key>
+    </KeyedNamesAssociations>
 
                <!--  ORIENTATIONS, HOMOLOGUES -->
 
@@ -211,21 +441,38 @@
 
   
 
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Direct>
+                  <PatternTransform> Orientation-(.*).xml  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
+             </Direct>
+        </Calcs>
+        <Calcs>
+            <Direct>
+                  <PatternTransform> (.*)  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
+             </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-Ori2ImGen </Key>
+    </KeyedNamesAssociations>
 
 
     <KeyedNamesAssociations>
     <IsParametrized>  true </IsParametrized>
-    <Calcs>
-        <Arrite>  1 1 </Arrite>
-        <Direct>
-            <PatternTransform> (.*) </PatternTransform>
-            <CalcName>  Ori#1/Orientation-$1.xml  </CalcName>
-    </Direct>
-    <Inverse>
-    <PatternTransform> Ori#1/Orientation-(.*).xml  </PatternTransform>
-                <CalcName>  $1  </CalcName>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  Ori#1/Orientation-$1.xml  </CalcName>
+             </Direct>
+             <Inverse>
+                  <PatternTransform> Ori#1/Orientation-(.*).xml  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
              </Inverse>
         </Calcs>
+
+
         <Key>   NKS-Assoc-Im2Orient </Key>
 	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
     </KeyedNamesAssociations>
@@ -286,8 +533,6 @@
 	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
     </KeyedNamesAssociations>
 
-
-
     <KeyedNamesAssociations>
         <IsParametrized>  true </IsParametrized>
         <Calcs>
@@ -308,29 +553,134 @@
 	<SubDirAutoMakeRec> true </SubDirAutoMakeRec>
     </KeyedNamesAssociations>
 
+
+<!--
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  2 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)%(.*) </PatternTransform>
+                <CalcName> Ori2Im#1/DirIm_$1/$2.#2  </CalcName>
+                <Separateur > % </Separateur>
+             </Direct>
+	     <Inverse>
+                <PatternTransform>  Ori2Im#1/DirIm_(.*)/(.*).#2 </PatternTransform>
+                <CalcName> $1  </CalcName>
+                <CalcName> $2  </CalcName>
+	     </Inverse>
+        </Calcs>
+        <Key>  NKS-Assoc-CplIm2OriRel </Key>
+	<SubDirAutoMake> Ori2Im#1 </SubDirAutoMake>
+	<SubDirAutoMakeRec> true </SubDirAutoMakeRec>
+    </KeyedNamesAssociations>
+
+    <KeyedSetsOfNames >
+          <IsParametrized>  true </IsParametrized>
+          <Sets> 
+                 <PatternAccepteur> DirIm_(.*)/(.*)\.(#2)  </PatternAccepteur>
+		 <SubDir>   Ori2Im#1/ </SubDir>
+                 <NivSubDir> 2 </NivSubDir>
+	  </Sets>
+          <Key> NKS-Set-CplIm2OriRel </Key>
+    </KeyedSetsOfNames>
+-->
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  2 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*)%(.*) </PatternTransform>
+                <CalcName> NewOriTmp#1/$1/OriRel-$2.#2  </CalcName>
+                <Separateur > % </Separateur>
+             </Direct>
+	     <Inverse>
+                <PatternTransform>  NewOriTmp#1/(.*)/OriRel-(.*).#2 </PatternTransform>
+                <CalcName> $1  </CalcName>
+                <CalcName> $2  </CalcName>
+	     </Inverse>
+        </Calcs>
+        <Key>  NKS-Assoc-NewOri-CplIm2OriRel </Key>
+<!--
+	<SubDirAutoMake> Ori2Im#1 </SubDirAutoMake>
+	<SubDirAutoMakeRec> true </SubDirAutoMakeRec>
+-->
+    </KeyedNamesAssociations>
+
+    <KeyedSetsOfNames >
+          <IsParametrized>  true </IsParametrized>
+          <Sets> 
+                 <PatternAccepteur> (.*)/OriRel-(.*)\.(#2)  </PatternAccepteur>
+		 <SubDir>   NewOriTmp#1/ </SubDir>
+                 <NivSubDir> 2 </NivSubDir>
+	  </Sets>
+          <Key> NKS-Set-NewOri-CplIm2OriRel </Key>
+    </KeyedSetsOfNames>
+
+
                <!--  Gestion des nom lies aux focales -->
+
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>   </CalcName>
+             </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-StdIdCam </Key>
+    </KeyedNamesAssociations>
+
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>   </CalcName>
+             </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-StdIdAdditionnelCam </Key>
+    </KeyedNamesAssociations>
+
+
 
     <KeyedNamesAssociations>
         <IsParametrized>  true </IsParametrized>
         <Calcs>
             <Direct>
-                <PatternTransform> .*%([0-9]+) </PatternTransform>
+                <PatternTransform> .*%([-,0-9,a-z,A-Z,_=:\-\.]+) </PatternTransform>
                 <CalcName>  #1$1#2  </CalcName>
                 <NameTransfo>
+                    <!-- Old Version -->
                         <AddFocMul> 10 </AddFocMul>
+                    <!-- New Version -->
+                        <NewAddNameCam>  true </NewAddNameCam>   <!--   true si V>=1 -->
+                        <NewFocMul  >  1000 </NewFocMul>        <!--  1000 si >=1, 1 sinon -->
+                        <NewKeyId>   NKS-Assoc-StdIdCam </NewKeyId>
+                        <NewKeyIdAdd> NKS-Assoc-StdIdAdditionnelCam </NewKeyIdAdd>
+
                  </NameTransfo>
              </Direct>
         </Calcs>
         <Key>   NKS-Assoc-FromFocMm </Key>
     </KeyedNamesAssociations>
+
     <KeyedNamesAssociations>
         <IsParametrized>  true </IsParametrized>
+
+        <Calcs>
+            <Direct>
+                <PatternTransform> TheKeyCalib_(.*) </PatternTransform>
+                <CalcName>  #1$1#2  </CalcName>
+             </Direct>
+        </Calcs>
+
         <Calcs>
             <Direct>
                 <PatternTransform> .*_([0-9]+) </PatternTransform>
                 <CalcName>  #1$1#2  </CalcName>
              </Direct>
         </Calcs>
+
         <Calcs>
             <Direct>
                 <PatternTransform> .* </PatternTransform>
@@ -530,6 +880,10 @@
              <Key>   NKS-Assoc-STD-FOC </Key>
     </KeyedNamesAssociations>
 
+
+
+
+
     <KeyedNamesAssociations>
             <Calcs>
                  <Arrite>  1 1 </Arrite>
@@ -668,6 +1022,7 @@
                 <KeySets>  #1   </KeySets>
                 <DeltaMax > 10000  </DeltaMax>
                 <DeltaMin > -10000 </DeltaMin>
+                <Circ>       false  </Circ>
 
                 <Filtre>
                      <FiltreByRelSsEch>
@@ -690,6 +1045,7 @@
                      <KeySets>  #1   </KeySets>
                      <DeltaMin > -10000 </DeltaMin>
                      <DeltaMax > 10000  </DeltaMax>
+                     <Circ>       false  </Circ>
                  </ByAdjacence>
             </Sets>
             <Key  > NKS-Rel-AllCpleOfPattern </Key>
@@ -703,6 +1059,7 @@
                      <KeySets>  #2   </KeySets>
                      <DeltaMin > -10000 </DeltaMin>
                      <DeltaMax > 10000  </DeltaMax>
+                     <Circ>       false  </Circ>
                  </ByAdjacence>
             </Sets>
             <Key  > NKS-Rel-AllCpleOf2Pat </Key>
@@ -716,6 +1073,7 @@
                      <KeySets>  #1   </KeySets>
                      <DeltaMin >  -#2 </DeltaMin>
                      <DeltaMax >  #2  </DeltaMax>
+                     <Circ>       false  </Circ>
                  </ByAdjacence>
             </Sets>
             <Key  > NKS-Rel-ChantierLineaire </Key>
@@ -740,6 +1098,34 @@
                  <NameFileIn> #1 </NameFileIn>
             </Sets>
             <Key  > NKS-Rel-ByFile </Key>
+    </KeyedSetsORels>
+
+    <!-- NKS-Rel-LinGen@Pat@Resol@@Sample1@Sample2 -->
+    <KeyedSetsORels>
+            <IsParametrized>  true </IsParametrized>
+            <Sets >
+                 <ByAdjacence>
+                     <KeySets>  #1   </KeySets>
+                     <DeltaMin >  -#2 </DeltaMin>
+                     <DeltaMax >  #2  </DeltaMax>
+                     <Circ>       #3  </Circ>
+                 </ByAdjacence>
+                 <ByAdjacence>
+                     <KeySets>  #1   </KeySets>
+                     <DeltaMin >  -#2 </DeltaMin>
+                     <DeltaMax >  #2  </DeltaMax>
+                     <Circ>       #3  </Circ>
+                     <Sampling> #4  </Sampling>
+                 </ByAdjacence>
+                 <ByAdjacence>
+                     <KeySets>  #1   </KeySets>
+                     <DeltaMin >  -#2 </DeltaMin>
+                     <DeltaMax >  #2  </DeltaMax>
+                     <Circ>       #3  </Circ>
+                     <Sampling> #5  </Sampling>
+                 </ByAdjacence>
+            </Sets>
+            <Key  > NKS-Rel-LinSampled </Key>
     </KeyedSetsORels>
 
 

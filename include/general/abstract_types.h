@@ -287,6 +287,8 @@ class Fonc_Num : public  PRC0
 	 INT  NumCoord() const; // En qq sorte la fonc inverse de kth_coord, 
 	                        // => Erreur si pas une fonc coord
      void show(std::ostream & os) const;
+     Fonc_Num Simplify() ;
+     void inspect() const;  // debug
      bool is0() const;
      bool is1() const;
      bool IsCsteRealDim1(REAL & aVal) const;
@@ -375,7 +377,7 @@ template <> inline Fonc_Num ElAbs   (Fonc_Num ) {ELISE_ASSERT(false,"ElMax(Fonc_
 
      // coordinates functions 
 
-extern Fonc_Num kth_coord(INT);
+extern Fonc_Num kth_coord(INT,bool HasAlwaysInitialValue=false,double InitialValue=0);
 extern const Fonc_Num FX;  // FX = kth_coord(0)
 extern const Fonc_Num FY;  // FY = kth_coord(1)
 extern const Fonc_Num FZ;  // FY = kth_coord(2)
@@ -385,6 +387,8 @@ extern Fonc_Num Identite(INT dim);  // Identite = (FX,FY, .... ,kth_coord(dim-1)
 extern Fonc_Num  inside(const INT * p0,const INT * p1,INT dim);
 extern Fonc_Num  inside(Pt2di,Pt2di);
 
+extern Fonc_Num CsteNDim(double aVal,INT dim);  // 
+extern Fonc_Num CsteNDim(int    aVal,INT dim);  // 
      // random values
 
 Fonc_Num frandr(); 
@@ -665,6 +669,10 @@ Fonc_Num rect_median
                     Histo_Kieme::mode_h=Histo_Kieme::undef
          );
 Fonc_Num MedianBySort(Fonc_Num f,INT NbMed);
+Fonc_Num OmbrageKL(Fonc_Num Prof,Fonc_Num Masq,double aPente,int aSzV);
+Fonc_Num NFoncDilatCond(Fonc_Num f2Dil,Fonc_Num fCond,bool aV4,int aNb);
+
+
 
 Fonc_Num RectKth_Pondere
           (
@@ -797,6 +805,44 @@ Fonc_Num PowI(Fonc_Num f,INT aDegre);
 
 extern   double Square(double);
 
+    // Operateur utile au devt en four des fonction radiale
+
+double CosRx(double);  // cos sqrt x
+Fonc_Num CosRx(Fonc_Num);  // cos sqrt x
+double SinCardRx(double);  // cos sqrt x
+Fonc_Num SinCardRx(Fonc_Num);  // cos sqrt x
+
+
+
+    // Operateur utile a la fonction de conversion des Fish Eye Linear
+
+double AtRxSRx(double x);      // Atan(sqrt(x)) / sqrt(x)
+Fonc_Num AtRxSRx(Fonc_Num x);     
+double DerAtRxSRx(double x);   // Derivee de  AtRxSRx
+Fonc_Num DerAtRxSRx(Fonc_Num x); 
+double At2Rx(double x);        // Atan ^2 (sqrt(x)) 
+Fonc_Num At2Rx(Fonc_Num x);       
+double DerAt2Rx(double x);     // Derivee At2Rx
+Fonc_Num DerAt2Rx(Fonc_Num x);    
+
+// Predicteur d'inversion
+double TgRxSRx(double x);      // Tang(sqrt(x)) / sqrt(x)
+Fonc_Num TgRxSRx(Fonc_Num x);      // Tang(sqrt(x)) / sqrt(x)
+
+    // Operateur utile a la fonction de conversion des Fish Eye equisolid
+    //
+    //  2 sin (At(X)/2)
+    //
+double Dl_f2SAtRxS2SRx(double x);
+double Std_f2SAtRxS2SRx(double x);
+double  f2SAtRxS2SRx(double); // 2 sin(Atan(sqrt(x))/2) / sqrt(x)
+Fonc_Num  f2SAtRxS2SRx(Fonc_Num); 
+
+double Dl_Der2SAtRxS2SRx(double x);   
+double Std_Der2SAtRxS2SRx(double x);   
+double Der2SAtRxS2SRx(double x);   // Der f2SAtRxS2SRx
+
+
     // Operateur utile a la fonction de conversion des Fish Eye Linear
 
 double AtRxSRx(double x);      // Atan(sqrt(x)) / sqrt(x)
@@ -862,7 +908,7 @@ extern   double    AtanXY(double,double);
 extern Fonc_Num FoncNormalisee_S1S2 (Flux_Pts aFl,Fonc_Num aFPds,Fonc_Num aF);
 extern Fonc_Num FoncNormalisee_S1S2 (Flux_Pts aFl,Fonc_Num aF); // FPds=1.0
 
-#if ( ELISE_windows & !ELISE_MinGW )
+#if ( ELISE_windows & !ELISE_MinGW & _MSC_VER < 1800 )
 inline double log2(const double & aD)
 {
        return log(aD) / log(2.0);

@@ -81,8 +81,11 @@ bool cElRegex::IsOk() const
 void cElRegex::AssertOk() const
 {
    if (!IsOk())
+   {
       std::cout << "EXPR=" << mNameExpr << "\n";
-   assert(IsOk());
+      ELISE_ASSERT(false,"Expression is not valide");
+   }
+   // assert(IsOk());
 }
 
 bool cElRegex::IsMatched() const
@@ -92,7 +95,8 @@ bool cElRegex::IsMatched() const
 
 void cElRegex::AssertIsMatched() const
 {
-   assert(IsMatched());
+   ELISE_ASSERT(IsMatched(),"cElRegex::AssertIsMatched");
+   // assert(IsMatched());
 }
 
 bool cElRegex::IsReplaced() const
@@ -101,7 +105,8 @@ bool cElRegex::IsReplaced() const
 }
 void cElRegex::AssertIsReplaced() const
 {
-   assert(IsReplaced());
+   ELISE_ASSERT(IsReplaced(),"cElRegex::AssertIsReplaced");
+   // assert(IsReplaced());
 }
 
 bool cElRegex::Match(const std::string & aName,int aCFlag)  
@@ -507,53 +512,6 @@ std::vector<double> GetValsNumFromLineExprReg
 
   return aRes;
 }
-
-
-
-/*
-
-int main(int argc,char ** argv)
-{
-
-   std::cout << "A-0" <<  (int)'A'-'0' <<  " " << (char) ('0'+10) << "\n";
-
-   assert(argc==4);
-   std::string aPat = argv[1];
-   std::string aRepl = argv[2];
-   std::string aName = argv[3];
-
-   std::cout << "Pat=" << aPat << "#" << "\n";
-   std::cout << "Repl=" << aRepl << "#" << "\n";
-   std::cout << "Nam=" << aName << "#" << "\n";
-   cElRegex  aRegex(aPat,10);
-   if (! aRegex.IsOk())
-   {
-      std::cout << "Automate non compilable \n";
-      exit(1);
-   } 
-   std::cout << "AUTOMATE OK \n";
-
-   if (aRegex.Match(aName))
-   {
-      std::cout << "MATCH OK \n";
-      if (aRegex.Replace(aRepl))
-      {
-          std::cout << "REPLACE=" << aRegex.LastReplaced() <<";\n";
-      }
-      else
-      {
-          std::cout << "PAS de REPLACE \n";
-      }
-   }
-   else
-   {
-      std::cout << "PAS de MATCH \n";
-   }
-
-
-   return 0;
-}
-*/
 
 
 

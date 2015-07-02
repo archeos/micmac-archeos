@@ -37,10 +37,8 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
+#include "../src/uti_phgrm/MICMAC/MICMAC.h"
 
-
-namespace NS_ParamMICMAC
-{
 
 /*************************************************/
 /*                                               */
@@ -289,7 +287,6 @@ cLoadTer::cLoadTer(int aNbPx,Pt2di aSz,const cEtapeMecComp & anEtape) :
   mSom1           (1,1),
   mMasqGlob       (1,1)
 {
-// std::cout << "ZZZZZZZZZZZ   " << mNbPx << "\n";
    if (anEtape.GenImageCorrel() && (aSz.x >0))
       mImCorrelSol.Resize(aSz);
    for (int aK=0 ; aK<aNbPx ; aK++)
@@ -581,11 +578,6 @@ cFilePx::cFilePx
    mGenFileRel     (anEtape.EtapeMEC().GenFilePxRel().ValWithDef(false)),
    mKPx            (aKPx)
 {
-     if (mPredCalc)
-     {
-        mRatioDzPrec =   mPredCalc->mEtape.DeZoomTer() / mEtape.DeZoomTer();
-        mRatioStepPrec =  (mPas / mPredCalc->mPas) / mRatioDzPrec;
-     }
 }
 
 
@@ -707,12 +699,32 @@ bool cFilePx::GenFile() const
 
 
 
+
+
          // ACCESSEURS      
 
-REAL  cFilePx::Pas() const
+REAL  cFilePx::UserPas() const
 {
-   return mPas;
+   return mUserPas;
 }
+
+REAL  cFilePx::ComputedPas() const
+{
+   ELISE_ASSERT(mComputedPas>=0,"cFilePx::ComputedPas");
+   return mComputedPas;
+}
+
+void cFilePx::InitComputedPas(double aRatio)
+{
+   mComputedPas = mUserPas * aRatio;
+
+   if (mPredCalc)
+   {
+        mRatioDzPrec =   mPredCalc->mEtape.DeZoomTer() / mEtape.DeZoomTer();
+        mRatioStepPrec =  (ComputedPas() / mPredCalc->ComputedPas()) / mRatioDzPrec;
+   }
+}
+
 /*
 int &  cFilePx::NCDilatAlti() 
 {
@@ -819,6 +831,8 @@ void cFilePx::LoadNappeEstim
             aPRed.y += aDy;
         }
     }
+
+
     if (mEtape.PxAfterModAnIsNulle())
     {
        ELISE_COPY
@@ -884,6 +898,7 @@ void cFilePx::LoadNappeEstim
 
     aFMin =   aFMasq      * (aFMin-mDilatAltiMoins-aRadDZMoins) + (1-aFMasq)  * aMaxShrt;
     aFMax =   aFMasq  * (aFMax+mDilatAltiPlus+1) + (1-aFMasq)  * (-aMaxShrt);
+
 
 
     ELISE_COPY
@@ -1079,6 +1094,7 @@ std::cout << "SUUUUUUUUUUUPPPPRESS\n";
                       aSomPx += aPx;
                       aSom1  += 1.0;
                    }
+                   // if (! isForCont) || doExportZAbs)
                    if ((! isForCont) || doExportZAbs)
                    {
                        aPx =  aNappe.FromDiscPx(aPx) ;
@@ -1229,11 +1245,10 @@ void  cFilePx::SauvResulPxRel
 
 
 
-};
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant à la mise en
+Ce logiciel est un programme informatique servant �  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1249,17 +1264,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
-manipuler et qui le réserve donc à des développeurs et des professionnels
+associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+développement et �  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
+manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
-logiciel à leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
+logiciel �  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

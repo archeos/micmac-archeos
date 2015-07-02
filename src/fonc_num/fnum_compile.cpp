@@ -42,6 +42,14 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 
+std::vector<double> MakeVec1(const double & aVal)
+{
+    std::vector<double>  aRes;
+    aRes.push_back(aVal);
+    return aRes;
+}
+
+
 // dlopen etc ....
 
 int cSsBloc::theCptGlob = 0;
@@ -57,6 +65,9 @@ cSsBloc::cSsBloc (int aI0,int aI1) :
 void cSsBloc::BlocSetInt(cIncIntervale & anInt) 
 {
    mInt = &anInt;
+/*
+getchar();
+*/
 }
 
 /*
@@ -334,13 +345,13 @@ bool cIdIntCmp::operator()(const cIncIntervale & anII1,const cIncIntervale & anI
 
 cIncListInterv::~cIncListInterv() 
 {
-   delete mMap;
+   // delete mMap;
 }
 
 
 bool cIncListInterv::Equal(const cIncListInterv& anILI) const
 {
-   return *mMap==*anILI.mMap;
+   return mMap==anILI.mMap;
    // return (std::set<cIncIntervale,cIdIntCmp>)*mMap==(std::set<cIncIntervale,cIdIntCmp>)*anILI.mMap;
 }
 
@@ -351,7 +362,7 @@ void cIncListInterv::Init()
    mI0Min    =1000000000;
    mI1Max    =-1;
    mSurf     =0;
-   mMap      =new cMapIncInterv;
+   mMap      = cMapIncInterv();
    mMayOverlap    = false;
 }
 bool cIncListInterv::MayOverlap () const {return mMayOverlap;}
@@ -372,7 +383,7 @@ void cIncListInterv::AddInterv(const cIncIntervale & anInterv,bool CanOverlap)
 {
    if (anInterv.Sz()==0 )
       return;
-   for (tCSetIII anIt =  mMap->begin() ; anIt!= mMap->end() ; anIt++)
+   for (tCSetIII anIt =  mMap.begin() ; anIt!= mMap.end() ; anIt++)
    {
        ELISE_ASSERT
        (
@@ -391,8 +402,7 @@ void cIncListInterv::AddInterv(const cIncIntervale & anInterv,bool CanOverlap)
        }
    }
 
-   mMap->insert(anInterv);
-// std::cout << "zredsdsskb " << mI0Min << " " << anInterv.I0Alloc() << "\n";
+   mMap.insert(anInterv);
    ElSetMin(mI0Min,anInterv.I0Alloc());
    ElSetMax(mI1Max,anInterv.I1Alloc());
    mSurf += anInterv.Sz();
@@ -406,10 +416,10 @@ bool cIncListInterv::IsConnexe0N() const
 
 const cIncIntervale & cIncListInterv::FindEquiv(const cIncIntervale & anInterv) const
 {
-   tCSetIII anIt = mMap->find(anInterv);
+   tCSetIII anIt = mMap.find(anInterv);
    ELISE_ASSERT
    (
-       anIt!=mMap->end(),
+       anIt!=mMap.end(),
        "Cant find required key in cIncListInterv::FindEquiv"
    );
    ELISE_ASSERT
@@ -437,7 +447,7 @@ void cIncListInterv::ResetInterv(const cIncIntervale & anInterv)
 
 const cMapIncInterv & cIncListInterv::Map() const
 {
-    return *mMap;
+    return mMap;
 }
 
 
@@ -609,6 +619,12 @@ cElCompiledFonc::cElCompiledFonc(INT aDimOut)  :
 {
 }
 
+std::string & cElCompiledFonc::NameAlloc()
+{
+   return mNameAlloc;
+}
+
+
 void cElCompiledFonc::AddIntRef(const cIncIntervale & anInterv)
 {
    mMapRef.AddInterv(anInterv);
@@ -670,12 +686,21 @@ int cElCompiledFonc::LIC(const int & i) const
 }
 
 
+extern bool AllowUnsortedVarIn_SetMappingCur;
+
+const cIncListInterv &  cElCompiledFonc::MapRef() const
+{
+   return mMapRef;
+}
+
+
 void cElCompiledFonc::SetMappingCur
      (
            const cIncListInterv & aList,
            cSetEqFormelles *      aSet
      )
 {
+
       
      if (aList.Surf() != mMapRef.Surf())
      {
@@ -706,11 +731,27 @@ void cElCompiledFonc::SetMappingCur
                 mMapComp2Real.at(I0Comp+aK) = I0Real+aK;
              }
         }
+        // Le 12/05/2014 : j'ai l'impression que la tri de mMapComp2Real est une erreur (subsiste des anciens ??)
+        // mais que jamais cree de pb car deja trie, le isSorted estfait pour verifier cela
+        bool isSorted = true;
         for (int aK=0 ; aK<int(mMapComp2Real.size()) ; aK++)
         {
             ELISE_ASSERT(mMapComp2Real[aK]>=0,"cElCompiledFonc::SetMappingCur Indexe");
+             if ((aK>=1) && (mMapComp2Real[aK] <= mMapComp2Real[aK-1]))
+                 isSorted = false;
         }
-        std::sort(mMapComp2Real.begin(),mMapComp2Real.end());
+        if (!isSorted)
+        {
+            if (! AllowUnsortedVarIn_SetMappingCur)
+            {
+                for (int aK=0 ; aK<20 ; aK++)
+                    std::cout << "INTERNAL ERROR IN MICMAC : contact devlopment team\n";
+                std::cout << "ERROR : bad assertion cElCompiledFonc::SetMappingCur\n";
+                ElEXIT(-1,"INTERNAL ERROR IN MICMAC (cElCompiledFonc::SetMappingCur) : contact devlopment team");
+            }
+        }
+        // A PRIORI CETTE LIGNE EST NEFASTE (en general INUTILE) .... a verifier a l'usage
+        // std::sort(mMapComp2Real.begin(),mMapComp2Real.end());
      }
      // std::cout <<  "  ----SetMappingCur----   "  << aSet.size() << "\n";
 
@@ -883,7 +924,6 @@ REAL TestMulMat(INT aNbTime, INT aNbVar)
     return aChrono.uval();
 }
 
-
 void cElCompiledFonc::SVD_And_AddEqSysSurResol
      (
          bool isCstr,
@@ -895,6 +935,23 @@ void cElCompiledFonc::SVD_And_AddEqSysSurResol
 	 bool EnPtsCur
      )
 {
+   SVD_And_AddEqSysSurResol(isCstr,aVIndInit,MakeVec1(aPds),Pts, aSys,aSet,EnPtsCur);
+}
+
+
+void cElCompiledFonc::SVD_And_AddEqSysSurResol
+     (
+         bool isCstr,
+         const std::vector<INT> & aVIndInit,
+	 const std::vector<double> & aVPds,
+	 REAL *       Pts,
+         cGenSysSurResol & aSys,
+         cSetEqFormelles & aSet,
+	 bool EnPtsCur
+     )
+{
+  int aSzPds = aVPds.size();
+  ELISE_ASSERT((aSzPds==1) || (aSzPds==mDimOut),"Taille Pds incohe in cElCompiledFonc::SVD_And_AddEqSysSurResol");
 
   if (INT(aVIndInit.size())!=mNbCompVar)
   {
@@ -932,6 +989,7 @@ void cElCompiledFonc::SVD_And_AddEqSysSurResol
    {
        for (INT aD= 0 ; aD < mDimOut ; aD++)
        {
+            double aPdsCur = aVPds[ElMin(aD,aSzPds-1)]; 
             aVInd.clear();
             aDer.clear();
             REAL aB = -mVal[aD];
@@ -976,18 +1034,34 @@ void cElCompiledFonc::SVD_And_AddEqSysSurResol
             }
             else
             {
-               aSys.GSSR_AddNewEquation_Indexe( &mBlocs,
-												&(mCompDer[aD][0]),
-												aVIndInit.size(),
-												aVInd,
-												aPds,
-												( ( aDer.size()==0 )?NULL:&(aDer[0]) ),
-												aB );
+               aSys.GSSR_AddNewEquation_Indexe
+               ( 
+                       &mBlocs,
+		       &(mCompDer[aD][0]),
+                       aVIndInit.size(),
+                       aVInd,
+                       aPdsCur,
+                       ( ( aDer.size()==0 )?NULL:&(aDer[0]) ),
+                       aB 
+                );
             }
        }
    }
 }
 
+void cElCompiledFonc::Std_AddEqSysSurResol
+     (
+         bool isCstr,
+	 const std::vector<double> & aVPds,
+	 REAL *       Pts,
+         cGenSysSurResol & aSys,
+         cSetEqFormelles & aSet,
+	 bool EnPtsCur
+     )
+
+{
+    SVD_And_AddEqSysSurResol(isCstr,mMapComp2Real,aVPds,Pts,aSys,aSet,EnPtsCur);
+}
 
 void cElCompiledFonc::Std_AddEqSysSurResol
      (
@@ -998,10 +1072,10 @@ void cElCompiledFonc::Std_AddEqSysSurResol
          cSetEqFormelles & aSet,
 	 bool EnPtsCur
      )
-
 {
-    SVD_And_AddEqSysSurResol(isCstr,mMapComp2Real,aPds,Pts,aSys,aSet,EnPtsCur);
+   return Std_AddEqSysSurResol(isCstr,MakeVec1(aPds),Pts,aSys,aSet,EnPtsCur);
 }
+
 
 
 void cElCompiledFonc::AddContrainteEqSSR
@@ -1048,12 +1122,14 @@ void cElCompiledFonc::AddDevLimOrd2ToSysSurRes (L2SysSurResol & aSys,REAL aPds)
 
 
 
+
+
 void cElCompileFN::SetFile(const std::string & aPostFix, const char * anInclCompl)
 {
     if (mFile)
        ElFclose(mFile);
 
-    mNameFile = mNameDir + mNameClass + "." + aPostFix;
+    mNameFile = MMDir() + mNameDir + mNameClass + "." + aPostFix;
     mFile = ElFopen(mNameFile.c_str(),"w");
     if (mFile==0)
     {
@@ -1181,16 +1257,18 @@ void  cElCompileFN::PutVarLoc(cVarSpec aVar)
 }
 
 
-void cElCompileFN::MakeFileCpp(std::vector<Fonc_Num> vFoncs)
+void cElCompileFN::MakeFileCpp(std::vector<Fonc_Num> vFoncs,bool SpecFCUV)
 {
 
    SetFile("cpp","h");
+
+   int aDimOut = vFoncs.size();
 
 
 // Constructeur : 
 
    (*this) << mNameClass << "::" << mNameClass << "():\n";
-   (*this) << "    cElCompiledFonc(" << INT(vFoncs.size()) << ")\n";
+   (*this) << "    cElCompiledFonc(" <<  aDimOut << ")\n";
    (*this) << "{\n";
 
 
@@ -1210,9 +1288,9 @@ void cElCompileFN::MakeFileCpp(std::vector<Fonc_Num> vFoncs)
    (*this) << "\n\n\n";
 
 
-   MakeFonc(vFoncs,0);
-   MakeFonc(vFoncs,1);
-   MakeFonc(vFoncs,2);
+   MakeFonc(vFoncs,0,SpecFCUV);
+   MakeFonc(vFoncs,1,SpecFCUV);
+   MakeFonc(vFoncs,2,SpecFCUV);
 
 // Calcul des Fonction SetVar
    (*this) << "\n";
@@ -1255,7 +1333,7 @@ void cElCompileFN::MakeFileCpp(std::vector<Fonc_Num> vFoncs)
 }
 
 
-void cElCompileFN::MakeFileH()
+void cElCompileFN::MakeFileH(bool SpecFCUV)
 {
    SetFile("h",0);
 
@@ -1291,10 +1369,23 @@ void cElCompileFN::MakeFileH()
    CloseFile();
 }
 
-#define MAKE_DER_SEC false
-void cElCompileFN::MakeFonc(std::vector<Fonc_Num> vFoncs,INT aDegDeriv) // 0, fonc , 1 deriv, 2 hessian
+extern bool FnumCoorUseCsteVal;
+
+Fonc_Num SimplifyFCUV(Fonc_Num aF)
 {
-std::cout << "DEGRE " << aDegDeriv << "\n";
+   if (FnumCoorUseCsteVal) return aF.Simplify();
+   return aF;
+}
+
+
+// On met d'abord les fonction pour la derivees, ensuite les fonctions pour la valeur
+
+#define MAKE_DER_SEC false
+void cElCompileFN::MakeFonc(std::vector<Fonc_Num> vFoncs,INT aDegDeriv,bool UseAccel) // 0, fonc , 1 deriv, 2 hessian
+{
+   FnumCoorUseCsteVal = UseAccel;
+   int aDimOut = vFoncs.size();
+// std::cout << "DEGRE " << aDegDeriv << "\n";
     if (! MAKE_DER_SEC && (aDegDeriv==2))
     {
         (*this) << "void " << mNameClass << "::ComputeValDerivHessian()\n";
@@ -1312,15 +1403,17 @@ std::cout << "DEGRE " << aDegDeriv << "\n";
     delete mDicSymb;
     mDicSymb     = new  cDico_SymbFN;
 
-    for (INT aK=0 ; aK<INT(vFoncs.size()) ; aK++)
+    int aK0 = 0 ;
+    for (INT aK= 0  ; aK<aDimOut ; aK++)
     {
-         (*this) << vFoncs[aK];
+         Fonc_Num aF0 =  SimplifyFCUV(vFoncs[aK]);  
+         (*this) << aF0;
 
          if (aDegDeriv >= 1)
          {
             for (INT aD=0 ; aD<mNVMax ; aD++)
             {
-	        Fonc_Num aFD = vFoncs[aK].deriv(aD);
+	        Fonc_Num aFD =  SimplifyFCUV(vFoncs[aK].deriv(aD));
                 (*this) << aFD;
             }
          }
@@ -1328,10 +1421,10 @@ std::cout << "DEGRE " << aDegDeriv << "\n";
          {
             for (INT aD1=0 ; aD1<mNVMax ; aD1++)
             {
-	        Fonc_Num aFD1 = vFoncs[aK].deriv(aD1);
+	        Fonc_Num aFD1 =  SimplifyFCUV(vFoncs[aK].deriv(aD1));
                 for (INT aD2=0 ; aD2<= aD1 ; aD2++)
                 {
-	            Fonc_Num aFD1D2 = aFD1.deriv(aD2);
+	            Fonc_Num aFD1D2 = SimplifyFCUV(aFD1.deriv(aD2));
                     (*this) << aFD1D2;
                 }
             }
@@ -1350,17 +1443,18 @@ std::cout << "DEGRE " << aDegDeriv << "\n";
    (*this) << "{\n";
    mDicSymb->PutSymbs(*this);
 
-   for (INT aK=0; aK<INT(vFoncs.size()) ; aK++)
+   for (INT aK=0; aK<aDimOut ; aK++)
    {
-       (*this) << "  mVal["<<aK<<"] = " << vFoncs[aK] << ";\n\n";
+       Fonc_Num aF0 =  SimplifyFCUV(vFoncs[aK]);
+       (*this) << "  mVal["<<aK-aK0<<"] = " << aF0 << ";\n\n";
 
         // Calcul des derivees 
        if (aDegDeriv>=1)
        {
            for (INT aD = 0 ; aD<mNVMax ; aD++)
            {
-                Fonc_Num aDer = Fonc_Num (vFoncs[aK].deriv(aD) );
-                (*this) << "  mCompDer[" <<aK << "][" << aD << "] = " << aDer << ";\n";
+                Fonc_Num aDer =  SimplifyFCUV(vFoncs[aK].deriv(aD) );
+                (*this) << "  mCompDer[" <<aK-aK0 << "][" << aD << "] = " << aDer << ";\n";
            }
        }
 
@@ -1369,10 +1463,10 @@ std::cout << "DEGRE " << aDegDeriv << "\n";
        {
            for (INT aD1 = 0 ; aD1<mNVMax ; aD1++)
            {
-                Fonc_Num aFD1 =   vFoncs[aK].deriv(aD1);
+                Fonc_Num aFD1 =   SimplifyFCUV(vFoncs[aK].deriv(aD1));
                 for (INT aD2=0 ; aD2<= aD1 ; aD2++)
                 {
-	           Fonc_Num aFD1D2 = aFD1.deriv(aD2);
+	           Fonc_Num aFD1D2 = SimplifyFCUV(aFD1.deriv(aD2));
                    (*this) 
                        << "  mCompHessian[" << aK<< "][" << aD1 << "]["<< aD2 << "]= " 
                        << "  mCompHessian[" << aK<< "][" << aD2 << "]["<< aD1 << "]= " 
@@ -1382,6 +1476,7 @@ std::cout << "DEGRE " << aDegDeriv << "\n";
        }
    }
    (*this) << "}\n\n\n";
+   FnumCoorUseCsteVal = false;
 }
 
 
@@ -1390,9 +1485,11 @@ void cElCompileFN::DoEverything
              const std::string &             aDir,
              const std::string &             aName,
 	     std::vector<Fonc_Num>           vFoncs,
-             const cIncListInterv &          aListInterv
+             const cIncListInterv &          aListInterv,
+             bool                            SpecFCUV
      )
 {
+   FnumCoorUseCsteVal = SpecFCUV;
    ELISE_ASSERT(aListInterv.IsConnexe0N(),"Bad Interv in cElCompileFN::DoEverything");
 
    cElCompileFN aECFN(aDir,aName,aListInterv);
@@ -1400,7 +1497,8 @@ void cElCompileFN::DoEverything
  // On parcourt une premiere fois  pour generer les variables, a toutes fins utiles
    for (INT aK=0; aK<INT(vFoncs.size()) ; aK++)
    {
-       aECFN << vFoncs[aK];
+       Fonc_Num aF = SimplifyFCUV( vFoncs[aK]);
+       aECFN << aF ;
        INT aNb = aListInterv.Surf();
        for (INT aD=0 ; aD<aNb ; aD++)
        {
@@ -1409,8 +1507,9 @@ void cElCompileFN::DoEverything
        }
    }
 
-   aECFN.MakeFileCpp(vFoncs);
-   aECFN.MakeFileH();
+   aECFN.MakeFileCpp(vFoncs,SpecFCUV);
+   aECFN.MakeFileH(SpecFCUV);
+   FnumCoorUseCsteVal = false;
 }
 
 void cElCompileFN::DoEverything

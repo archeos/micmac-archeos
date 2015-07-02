@@ -81,6 +81,8 @@ std::cout << "xxxxxxxxxxxxxxxxxxWWWWWW " << aCpt << "\n ";
      for (int aK=0; aK<int(aVIm.size()) ; aK++)
      {
         double aVK = aVV[aK] * mAppli.DynGlob();
+
+ // aVK *= 1 /(1+ (((unsigned long int)(this))%257)/123.0);
         //  if (mAppli.ValMasqMesure( aPLoc)) aVK= 255- aVK;
         // aVIm[aK]->SetI(aPLoc,aVV[aK]);
 
@@ -166,6 +168,16 @@ bool cLoadedIm::Init
    );
 
 
+   if ( mAppli.CO().SaturThreshold().IsInit())
+   {
+       double aThresSat = mAppli.CO().SaturThreshold().Val();
+       Fonc_Num aFSat = 0;
+       for (int aKIm=0 ; aKIm<int(mIms.size()); aKIm++)
+       {
+             aFSat = aFSat || (mIms[aKIm]->in(0)>=aThresSat);
+       }
+       ELISE_COPY (select(mImPC.all_pts(),aFSat), 255, mImPC.out());
+   }
 /*
    ELISE_COPY
    (

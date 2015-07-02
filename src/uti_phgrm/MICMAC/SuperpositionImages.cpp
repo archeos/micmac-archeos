@@ -41,7 +41,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "MICMAC.h"
 #include "im_tpl/image.h"
 
-using namespace NS_ParamMICMAC;
 
 class cSuperpMM;
 class cOneImageSup;
@@ -51,6 +50,9 @@ class cOneImageSup;
 /*          DECLARATIONS                 */
 /*                                       */
 /*****************************************/
+
+//'class cOneImageSup' does not have a copy constructor which is recommended
+// since the class contains a pointer to allocated memory.
 
 class cOneImageSup
 {

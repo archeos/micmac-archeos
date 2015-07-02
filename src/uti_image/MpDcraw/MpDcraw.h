@@ -39,8 +39,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 // #include "anag_all.h"
 #include "StdAfx.h"
 
-using namespace NS_ParamChantierPhotogram;
-using namespace NS_SuperposeImage;
 
 namespace NS_MpDcraw
 {
@@ -87,7 +85,7 @@ class cArgMpDCRaw : public cAppliBatch
        bool  PGSpec () const;
        bool  NameOriIsPrefix() const;
        bool   Add16_8B() const;
-       double Gamma() const;  // A priori Gamma applicable sur le gris
+       double Gamma(const std::string& aNameIm) const;  // A priori Gamma applicable sur le gris
        double EpsLog() const;  // A priori Gamma applicable sur le gris
        const std::string &  CamDist() const;
        const std::string &  HomolRedr()   const;
@@ -112,7 +110,7 @@ class cArgMpDCRaw : public cAppliBatch
        int                       mCons16Bits;
        int                       m8BitAdapt;
        double                    mDyn;
-       double                    mGamma;
+       double                    mGammaCorrec;
        double                    mEpsLog;
        std::string               mSplit;
        bool                      mGB;
@@ -154,7 +152,7 @@ class cArgMpDCRaw : public cAppliBatch
 
        int                           mSwapRB;
        std::string                   mNameOutSpec;
-       bool                          mUseFF;
+       bool                          mUseFF ; // Pas d'initialisation ds la declaration =true;
 
 };
 
@@ -231,7 +229,7 @@ class cNChannel
 
 	std::string NameRes(const std::string & aName,const std::string & Pref="") const;
 
-	GenIm::type_el  TypeOut(bool Signed) const;
+	GenIm::type_el  TypeOut(bool Signed,cSpecifFormatRaw * aSFR) const;
 
 
 

@@ -174,7 +174,7 @@ class DataElXim : public RC_Object
      public :
 
          void * operator new    (size_t sz);
-         void operator delete   (void * ptr) ;   
+         void operator delete   (void * ptr);
 	
          INT tx() const {return _sz.x;}
          INT ty() const {return _sz.y;}
@@ -183,7 +183,7 @@ class DataElXim : public RC_Object
 
 
 
-	Pt2di sz() const{return _sz;};
+    Pt2di sz() const{return _sz;}
 	DataElXim(Data_Elise_Video_Win *,Pt2di sz);
 	void init(Data_Elise_Video_Win *,Pt2di sz);
 
@@ -509,10 +509,12 @@ void show_mask(char * mes,INT mask,INT nb)
 
 XImage *  Data_Elise_Video_Win::AllocXim(Pt2di sz)
 {
+    
+    //std::cout << "On passe ici"<<std::endl;
        return  XGetImage
                (
                    _devd->_disp,
-                   _w,
+                /*_w*/XDefaultRootWindow(_devd->_disp),
                    0,0,
                    sz.x,sz.y,
                    AllPlanes,ZPixmap
@@ -1161,6 +1163,7 @@ Data_Elise_Video_Win::Data_Elise_Video_Win
     // lorsque l'on passe dans le if(1) ci-dessus
     // empiriquement, l'erreur ne se produit pas si on utilise
     // XDefaultRootWindow(_devd->_disp) plutot que _w
+    //std::cout << "On passe la"<<std::endl;
     _xi = XGetImage
     (
      _devd->_disp,
@@ -1738,17 +1741,36 @@ void  Video_Win::SetInteractor(EliseStdImageInteractor * anI)
       devw()->mInteractor = anI;
 }
 
-Video_Win  Video_Win::WSzMax(Pt2dr aSzTarget,Pt2dr aSzMax)
+Video_Win  Video_Win::WSzMax(Pt2dr aSzTarget,Pt2dr aSzMax,double & aZoom)
 {
-
-    REAL aZoom = aSzMax.RatioMin(aSzTarget);
-
+    aZoom = aSzMax.RatioMin(aSzTarget);
     Pt2di aSzReal = round_ni(aSzTarget*aZoom);
-
     return Video_Win::WStd(round_ni(Pt2dr(aSzReal)/aZoom),aZoom);
     
 }
 
+Video_Win  Video_Win::WSzMax(Pt2dr aSzTarget,Pt2dr aSzMax)
+{
+     double aZoom;
+     return WSzMax(aSzTarget,aSzMax,aZoom);
+}
+
+
+Video_Win  Video_Win::LoadTiffWSzMax(const std::string &aNameTiff,Pt2dr aSzMax,double & aZoom)
+{
+    Tiff_Im aTif = Tiff_Im::StdConvGen(aNameTiff,1,false);
+    Video_Win aW = Video_Win::WSzMax(Pt2dr(aTif.sz()),aSzMax,aZoom);
+    Video_Win aW0 = aW.chc(Pt2dr(0,0),Pt2dr(1,1));
+
+    ELISE_COPY
+    (
+        aW0.all_pts(),
+        StdFoncChScale(aTif.in_proj(),Pt2dr(0,0),Pt2dr(1/aZoom,1/aZoom),Pt2dr(1,1)),
+        aW0.ogray()
+    );
+
+    return aW;
+}
 
 
 Video_Win  Video_Win::chc_fit_sz(Pt2dr aSz,bool ClikCoord)

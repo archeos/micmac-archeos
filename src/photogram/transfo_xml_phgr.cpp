@@ -40,9 +40,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 
 
-using namespace NS_SuperposeImage;
 
-namespace NS_ParamChantierPhotogram{
 
 
 /**************************************************************/
@@ -439,6 +437,9 @@ eTypeProj Xml2EL(const eTypeProjectionCam & aType)
 
       case  eProjOrthographique:
             return  eProjectionOrtho ;
+
+      case  eProjGrid :
+            ;
    }
    ELISE_ASSERT(false," Xml2EL(const eTypeProjectionCam & aType)");
    return  eProjectionOrtho ;
@@ -526,9 +527,7 @@ Pt3dr  FromMnt(const cFileOriMnt & aFOM,const Pt3dr & aP)
 
 
 
-};
 
-namespace NS_SuperposeImage {
 
 cGridDeform2D   ToXMLExp(const PtImGrid & aCstPIG)
 {
@@ -724,7 +723,6 @@ Fonc_Num SafeUseLut(Im1D_INT4 aLut,Fonc_Num aF,double aCoeff)
 
 
 
-};
 
 std::list<std::string> GetListFromSetSauvInFile
                         (
@@ -742,7 +740,7 @@ std::list<std::string> GetListFromSetSauvInFile
 
 }
 
-bool RepereIsAnam(const std::string & aName,bool  &IsOrthXCSte)
+bool RepereIsAnam(const std::string & aName,bool  &IsOrthXCSte,bool & IsAnamXCsteOfCart)
 {
      cElXMLTree aTree(aName);
      cElXMLTree * aTreeSurf = aTree.Get("XmlOneSurfaceAnalytique");
@@ -755,6 +753,7 @@ bool RepereIsAnam(const std::string & aName,bool  &IsOrthXCSte)
         xml_init(aXmlSurf,aTreeSurf);
         cInterfSurfaceAnalytique * aSurf = cInterfSurfaceAnalytique::FromXml(aXmlSurf);
         IsOrthXCSte = aSurf->HasOrthoLoc() && aSurf->OrthoLocIsXCste();
+        IsAnamXCsteOfCart =  aSurf->IsAnamXCsteOfCart();
         return true;
      }
 

@@ -50,6 +50,10 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "ext_stl/numeric.h"
 
 
+bool BugZ0=false;
+
+
+extern bool DebugCamBil;
 
 bool UseProjForFaisParal = true;
 
@@ -595,8 +599,12 @@ void ReinitStatCondFaisceau()
    aVBSurH.clear();
 }
 
+bool ShowStatMatCond = true;
 void ShowStatCondFaisceau(bool aShowVect)
 {
+     if (!ShowStatMatCond) return;
+
+
      std::cout << "Cond = " << aMaxCond  
                << "  Moy = " << (aSomCond/aNbCond) 
                << "  SupS = " << (double(aNb100)/double(aNbCond))
@@ -662,6 +670,18 @@ double cBufSubstIncTmp::DoSubst
           bool                     doRaz
      )
 {
+
+if(DebugCamBil)
+{
+  std::cout << "DoSubst " << aX_SBlTmp.size() << " " << aY_SBlNonTmp.size() << " :: ";
+  for (int aK=0 ;aK<int(aY_SBlNonTmp.size()) ; aK++)
+  {
+      cSsBloc aSBY = aY_SBlNonTmp[aK];
+      std::cout << " [" << aSBY.I0AbsAlloc()  <<  " " << aSBY.I1AbsAlloc() << "]";
+  }
+  std::cout << "\n";
+  getchar();
+}
    cGenSysSurResol & aSys =  *(aSet->Sys());
 /*
 */
@@ -810,7 +830,16 @@ void cSubstitueBlocIncTmp::AddInc(const cIncListInterv & anILI)
       else
       {
           // On a besoin de connaitre l'ordre Tmp/Non Tmp pour la gestion des sym
-          ELISE_ASSERT(mVSBlTmp[0].I0AbsAlloc()>=aSB.I1AbsAlloc(),"cSubstitueBlocIncTmp::AddInc recouvrement / TMP ");
+          if (mVSBlTmp[0].I0AbsAlloc()<aSB.I1AbsAlloc())
+          {
+
+                // std::cout << " HHHHHhhhh " << mVSBlTmp[0].I0AbsAlloc() << " " << aSB.I1AbsAlloc() << "\n";
+                ELISE_ASSERT
+                (
+                     mVSBlTmp[0].I0AbsAlloc()>=aSB.I1AbsAlloc(),
+                     "cSubstitueBlocIncTmp::AddInc recouvrement / TMP "
+                );
+          }
       }
 
       for (int aK=0 ; aK<int(mSBlNonTmp.size()) ; aK++)
@@ -864,6 +893,14 @@ void cSubstitueBlocIncTmp::Close()
    cCmpSsBloc aCmp;
    std::sort(mSBlNonTmp.begin(),mSBlNonTmp.end(),aCmp);
 
+/*
+   std::cout << "CloseCSB, SIZE " << mVSBlTmp.size() << " " << mSBlNonTmp.size() << "\n";
+   for (int aK=0 ; aK< int(mSBlNonTmp.size()) ; aK++)
+   {
+      const cSsBloc &aBl = mSBlNonTmp[aK];
+      std::cout << "SSSBL " << aBl.I0AbsAlloc() << " " << aBl.I1AbsAlloc() << "\n";
+   }
+*/
 }
 
 
@@ -1106,9 +1143,11 @@ bool OkReproj
      (  
           const std::vector<CamStenope *> &  aVCam,
           const std::vector<double> &  aVPds,
-          const Pt3dr &                aPTer
+          const Pt3dr &                aPTer,
+          int & aKP
     )
 {
+   aKP = -1;
    for (int aK=0 ; aK<int(aVCam.size()) ; aK++)
    {
        if (aVPds[aK] >0)
@@ -1117,6 +1156,7 @@ bool OkReproj
            Pt2dr aProj = aCam.R3toF2(aPTer);
            if (! aCam.IsInZoneUtile(aProj))
            {
+              aKP = aK;
               return false;
            }
         }
@@ -1135,11 +1175,12 @@ Pt3dr  cManipPt3TerInc::CalcPTerInterFaisceauCams
            const cNupletPtsHomologues & aNuple,
            const std::vector<double> &  aVPds,
            cParamPtProj &            aParam,
-           std::vector<Pt3dr> *      aPAbs
+           std::vector<Pt3dr> *      aPAbs,
+           std::string *             aMesPb
        )
 {
 
-if (0) // (MPD_MM())
+if (BugZ0) 
 {
     std::cout << "====== cManipPt3TerInc::CalcPTerInterFaisceau ====\n";
     for (int aK=0 ; aK< int(aVPds.size()) ; aK++)
@@ -1165,29 +1206,36 @@ if (0) // (MPD_MM())
 
    for (int aK=0 ; aK<int(aVCC.size()) ; aK++)
    {
-        Pt2dr aPIm = aNuple.PK(aK);
-        // ElSeg3D aSeg ;
-        cCamStenopeGrid * aCSG =  mVCamVis[aK]->PIF().CamGrid();
-        if (aCSG)
+        if (aNuple.IsDr(aK))
         {
-          aSeg = ElSeg3D(aVCC[aK]->PseudoOpticalCenter(),aVCC[aK]->L3toR3(aCSG->F2toDirRayonL3(aPIm)));
         }
         else
         {
-          aSeg = aVCC[aK]->F2toRayonR3(aPIm);
-        }
+            Pt2dr aPIm = aNuple.PK(aK);
+        // ElSeg3D aSeg ;
+            cCamStenopeGrid * aCSG =  mVCamVis[aK]->PIF().CamGrid();
+            if (aCSG)
+            {
+              aSeg = ElSeg3D(aVCC[aK]->PseudoOpticalCenter(),aVCC[aK]->L3toR3(aCSG->F2toDirRayonL3(aPIm)));
+            }
+            else
+            {
+              aSeg = aVCC[aK]->F2toRayonR3(aPIm);
+            }
 
         // cCamStenopeGrid * aCSG =  mVCamVis[aK]->PIF().CamGrid();
-	if (mEqSurf)
-	{
-	    Pt3dr aIP = mEqSurf->InterSurfCur(aSeg);
-	    aSomIntPl = aSomIntPl + aIP* aVPds[aK];
-	    aSomPds +=  aVPds[aK];
-	}
-	else 
-	{
-           aVS.push_back(aSeg);
-        }
+	    if (mEqSurf)
+	    {
+	        Pt3dr aIP = mEqSurf->InterSurfCur(aSeg);
+	        aSomIntPl = aSomIntPl + aIP* aVPds[aK];
+	        aSomPds +=  aVPds[aK];
+	    }
+	    else 
+	    {
+               aVS.push_back(aSeg);
+               if (BugZ0) std::cout << "SEG " << aSeg.P0() << " " << aSeg.P1() << "\n";
+            }
+         }
    }
 
        
@@ -1234,6 +1282,10 @@ if (0) // (MPD_MM())
       if (aParam.mBsH < aParam.mSeuilBsHRefut)
       {
          OKInter = false;
+         if (aMesPb)
+         {
+              *aMesPb= std::string("BSurH Insuf : ") + ToString(aParam.mBsH);
+         }
          return Pt3dr(0,0,0);
       }
    
@@ -1278,15 +1330,29 @@ if (0) // (MPD_MM())
 
       Pt3dr aRes =  ElSeg3D::L2InterFaisceaux(aPtrVPds,aVS,&OK,aRAZ,aParam.mProjIsInit ? &aROIF : 0,aPAbs);
 
+      if (BugZ0)
+      {
+           std::cout << "RES1 " << aRes << "\n";
+      }
+
       if (OK)
       {
          for (int aK=0 ; aK< int(aVPds.size()) ; aK++)
          {
-             aPMod[aK] = aVPds[aK]/aVCC[aK]->ResolSolOfPt(aRes);
+             aPMod[aK] = aVPds[aK]/ElMax(1e-60,ElAbs(aVCC[aK]->ResolSolOfPt(aRes)));
+
+             if (BugZ0) 
+             {
+                    std::cout << "MMOD " << aPMod[aK] << " " << aVPds[aK] << " " << aVCC[aK]->ResolSolOfPt(aRes) << "\n";
+             }
          }
          aRes =  ElSeg3D::L2InterFaisceaux(&aPMod,aVS,&OK,aRAZ,aParam.mProjIsInit ? &aROIF : 0,aPAbs);
       }
 
+      if (BugZ0)
+      {
+           std::cout << "RES2 " << aRes << "\n";
+      }
 
       aParam.mTer = aRes;
       aParam.mHaut = euclid(aParam.mTer-aSomC);
@@ -1294,9 +1360,14 @@ if (0) // (MPD_MM())
       aParam.mBase = aParam.mBsH * aParam.mHaut;
 
 
-      if (! OkReproj(aVCC,aVPds,aRes))
+      int aKPb=-1;
+      if (! OkReproj(aVCC,aVPds,aRes,aKPb))
       {
          OKInter = false;
+         if (aMesPb)
+         {
+             *aMesPb = std::string("Mes Out of Im, for Im num : ") + ToString(aKPb);
+         }
 
          return Pt3dr(0,0,0);
       }
@@ -1304,6 +1375,11 @@ if (0) // (MPD_MM())
       if (!OK)
       {
          OKInter = false;
+         if (aMesPb)
+         {
+             *aMesPb = std::string("Intersection faisceau non definie ???");
+         }
+
          return Pt3dr(0,0,0);
          ELISE_ASSERT(OK,"Pb ElSeg3D::L2InterFaisceaux in cManipPt3TerInc::CalcPTerInterFaisceauCams ");
       }
@@ -1362,6 +1438,7 @@ void ShowDebugFaisceau(double aCond,double aBH,int aCpt)
     }
 }
 
+bool UPL_DCC() {return false;}
 
 const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                            (
@@ -1385,6 +1462,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                   (CptUPL==707009) || (CptUPL==707008)
               ) ;
 
+   // BugZ0 = (CptUPL==3921255);
 
 
 
@@ -1401,6 +1479,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
    mResidus.mBSurH  = cResiduP3Inc::TheDefBSurH;
 
 
+   if (UPL_DCC()) std::cout << "================== mTerIsInit " <<mTerIsInit << "\n";
 
    if (!mTerIsInit)
    {
@@ -1438,8 +1517,12 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                               aNuple,
                               aVPdsIm,
                               mPPP,
-                              (WithApp ? &aVAppui : 0)
+                              (WithApp ? &aVAppui : 0),
+                              &mResidus.mMesPb
                          );
+
+
+   if (UPL_DCC()) std::cout << "================== mResidus.mPTer " <<mResidus.mPTer  << " " << mResidus.mBSurH << "\n";
           mResidus.mBSurH  = mPPP.mBsH;
           if (BugNanFE)
           {
@@ -1448,6 +1531,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
 
           if (!mResidus.mOKRP3I) 
           {
+// std::cout << "mResidus.mOKRP3I  "  << __LINE__ <<  " " << WithApp << "\n";
                return mResidus;
           }
        }
@@ -1466,6 +1550,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
  
     Pt3dr aPTer =   mPPP.mProjIsInit ? Pt3dr(0,0,0) :  mResidus.mPTer;
     // mResidus.mPTer = aPTer;
+   if (UPL_DCC()) std::cout << "================== aPTer " << aPTer << "\n";
     mP3Inc->InitVal(aPTer);
 
 
@@ -1482,6 +1567,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
             {
 	       aNbNN++;
             }
+if (UPL_DCC())  std::cout  << "==================== Pds " << aVPdsIm[aK] << "\n";
         }
 	// if ((aNbNN<2)  && (!mEqSurf) && (! aPtApuis))
         // 	AddEq=0;
@@ -1503,9 +1589,9 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
        double aPds= (AddEq?aVPdsIm[aK]:0) * mMulGlobPds;
        if (aVPdsIm[aK]>0)
        {
-           Pt2dr anEr = mVCamVis[aK]->AddEqAppuisInc(aNuple.PK(aK),aPds,mPPP);
+           Pt2dr anEr = mVCamVis[aK]->AddEqAppuisInc(aNuple.PK(aK),aPds,mPPP,aNuple.IsDr(aK));
            mResidus.mEcIm.push_back(anEr);
-// std::cout << aNuple.PK(aK) << "\n";
+if (UPL_DCC())  std::cout << "=x=x=x=x=x=x=x=x=x=x=x=x=x " << aNuple.PK(aK) << " " << mMulGlobPds << "\n";
 
            mResidus.mSomPondEr += aVPdsIm[aK] * mMulGlobPds * square_euclid(anEr);
         }
@@ -1555,6 +1641,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
 /*
 		const std::vector<REAL> &  aV =   mSet.VAddEqFonctToSys(aFR[aK],aPds,false) ;
 */
+if (UPL_DCC())  std::cout  << "y====y===y===yyyyyy " << aPds << " " << aK <<  " " << aFR[aK]  << " " << aV[0] << "\n";
                 mResidus.mSomPondEr +=  aPds * ElSquare(aV[0]);
 //if (aPtApuis) std::cout << "UPLG-DDDDDDDDDDDD " << mResidus.mSomPondEr << "\n";
 	    }
@@ -1562,6 +1649,7 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
     }
 
 
+    if (UPL_DCC()) std::cout << "HHHHHHHHhhhhhhhhhh " << AddEq << "\n";
     if (AddEq)
     {
        mSubst.DoSubst();

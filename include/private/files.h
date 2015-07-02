@@ -40,10 +40,16 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef _ELISE_PRIVATE_FILES_H
 #define _ELISE_PRIVATE_FILES_H
 
-namespace NS_ParamChantierPhotogram {
+#ifndef S_ISREG
+	inline int S_ISREG(int v) { return v&_S_IFREG;}
+#endif
+
+#ifndef S_ISDIR
+	inline int S_ISDIR(int v){ return v&_S_IFDIR; }
+#endif
+
   class cXmlExivEntry;
   class cXmlDataBase;
-};
 
 class cGlobXmlGen
 {
@@ -131,6 +137,7 @@ class  ELISE_fp
 
        public :
 
+         FILE * FP() ; // DEBUG, sinon a eviter absolument , court-circuite tout ...
          typedef enum
          {
                READ        = 0,
@@ -160,11 +167,19 @@ class  ELISE_fp
          static void MkDirRec(const std::string &  aName );
          static bool IsDirectory(const std::string &  aName );
          static void AssertIsDirectory(const std::string &  aName );
+		 static bool copy_file( const std::string i_src, const std::string i_dst, bool i_overwrite );
+         static int  file_length( const std::string &i_filename );
          
          static bool lastModificationDate(const std::string &i_filename, cElDate &o_date ); // returns if the date could be retrieved
 
+	 static void RmFileIfExist(const std::string &);  // evite les erreurs qd fichier inexistant
 	 static void RmFile(const std::string &);
-	 static void PurgeDir(const std::string &);
+	 static void MvFile(const std::string & aFile,const std::string & aDest);
+	 static void CpFile(const std::string & aFile,const std::string & aDest);
+	 static void PurgeDir(const std::string &,bool WithRmDir=false);
+	 static void RmDir(const std::string &);
+	 static void PurgeDirGen(const std::string &,bool Recurs);
+	 static void PurgeDirRecursif(const std::string &);
       
          ~ELISE_fp();
          ELISE_fp(eModeBinTxt ModeBin=eTxtOnPremierLigne);
@@ -178,6 +193,8 @@ class  ELISE_fp
          tFileOffset read_FileOffset8();
          REAL4   read_REAL4();
          REAL8   read_REAL8();
+
+         const std::string & NameFile() const {return  mNameFile;}
 
 
          void write_FileOffset4(tFileOffset);
@@ -209,8 +226,8 @@ class  ELISE_fp
          void write(const ElCplePtsHomologues &);
          void write(const cNupletPtsHomologues &);
 
-         void write (const NS_ParamChantierPhotogram::cXmlExivEntry &);
-         void write (const NS_ParamChantierPhotogram::cXmlDataBase &);
+         void write (const cXmlExivEntry &);
+         void write (const cXmlDataBase &);
 
          void write(const Pt3df &);
          void write(const Pt3dr &);
@@ -1606,7 +1623,12 @@ class cElXMLTreeFilter
 class cElXMLTree
 {
 	public :
-
+		class Functor
+		{
+		public:
+			virtual void operator ()( cElXMLTree &i_node ) = 0;
+		};
+		
          cGlobXmlGen mGXml;
          
          std::list<cElXMLTree *>  Interprete();
@@ -1633,6 +1655,7 @@ class cElXMLTree
            static cElXMLTree * MakePereOf(const std::string & aNameTag,cElXMLTree * aFils);
 
 
+           cElXMLTree * Clone();
 	   cElXMLTree( cElXMLTree * aPere,
                        const std::string & aVal, 
                        eElXMLKindTree  aKind
@@ -1705,12 +1728,16 @@ class cElXMLTree
           std::string & NCContenu() ;
 	  bool  IsVide() const;
 
+			// walk through the tree with a breadth-first strategy and execute i_functor on all nodes
+			void breadthFirstFunction( Functor &i_functor );
+
 	private :
           void  VerifMatch (cElXMLTree* aTSpecif);
           void GenOneCppNameSpace (FILE * aFileCpp,FILE* aFileH,std::string aDefaultNameSpace);
           void Verbatim(FILE * aFileCpp,FILE * aFileH);
 
           void GenEnum(FILE * aFileCpp,FILE* aFileH);
+          void ModifMangling(cMajickChek &);
           void GenCppClass
 	      (
 	         FILE * aFileCpp,
@@ -1779,6 +1806,17 @@ class cElXMLTree
            eElXMLKindTree            mKind;
 };
 
+
+class XmlXml
+{
+    public :
+         XmlXml();
+         cElXMLTree * mTree;
+};
+
+
+void xml_init(XmlXml    &,cElXMLTree * aTree);
+
 void xml_init(bool           &,cElXMLTree * aTree);
 void xml_init(double         &,cElXMLTree * aTree);
 void xml_init(int            &,cElXMLTree * aTree);
@@ -1796,6 +1834,7 @@ void xml_init(cElRegex_Ptr &,cElXMLTree * aTree);
 
 void xml_init(cCpleString &,cElXMLTree * aTree);
 
+void xml_init(BoolSubst &,cElXMLTree * aTree);
 void xml_init(IntSubst &,cElXMLTree * aTree);
 void xml_init(DoubleSubst &,cElXMLTree * aTree);
 void xml_init(Pt2diSubst &,cElXMLTree * aTree);
@@ -1815,15 +1854,52 @@ cElXMLTree * ToXMLTree(const std::string & aNameTag,const std::vector<std::strin
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt3dr &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt3di &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const cElRegex_Ptr &      anObj);
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const XmlXml &      anObj);
 
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const cCpleString   &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const IntSubst   &      anObj);
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const BoolSubst   &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const DoubleSubst   &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2diSubst   &      anObj);
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const Pt2drSubst   &      anObj);
-
 template <class T1,class T2>
 cElXMLTree * ToXMLTree(const std::string & aNameTag,const Im2D<T1,T2> &      anObj);
+
+#define TypeForDump(aType)\
+void BinaryDumpInFile(ELISE_fp &,const aType &);\
+void BinaryUnDumpFromFile(aType &,ELISE_fp &);\
+std::string Mangling(aType *);
+
+TypeForDump(bool)
+TypeForDump(double)
+TypeForDump(int)
+TypeForDump(Box2dr)
+TypeForDump(Box2di)
+TypeForDump(Pt2dr)
+TypeForDump(Pt2di)
+TypeForDump(std::string)
+TypeForDump(std::vector<double>)
+TypeForDump(std::vector<int>)
+TypeForDump(std::vector<std::string>)
+TypeForDump(Pt3dr)
+TypeForDump(Pt3di)
+TypeForDump(cElRegex_Ptr)
+TypeForDump(cCpleString)
+TypeForDump(IntSubst)
+TypeForDump(BoolSubst)
+TypeForDump(DoubleSubst)
+TypeForDump(Pt2diSubst)
+TypeForDump(Pt2drSubst)
+TypeForDump(XmlXml)
+
+/*
+*/
+
+template <class T1,class T2> void BinaryDumpInFile(ELISE_fp &,const Im2D<T1,T2> &      anObj);
+template <class T1,class T2> void BinaryUnDumpFromFile(Im2D<T1,T2> &,ELISE_fp &);
+template <class T1,class T2> std::string Mangling(Im2D<T1,T2> *);
+
+
 
 template <class T1,class T2> void xml_init( Im2D<T1,T2>  & anIm,cElXMLTree * aTree);
 
@@ -1911,6 +1987,44 @@ void xml_init
     }
 }
 
+
+
+template <class Type> void BinDumpObj(const Type & anObj,const std::string & aFile)
+{
+    ELISE_fp aFPOut(aFile.c_str(),ELISE_fp::WRITE);
+    BinaryDumpInFile(aFPOut,NumHgRev());
+    BinaryDumpInFile(aFPOut,Mangling((Type*)0));
+    BinaryDumpInFile(aFPOut,anObj);
+    aFPOut.close();
+}
+
+template <class Type> void BinUndumpObj(Type & anObj,const std::string & aFile)
+{
+     ELISE_fp aFPIn(aFile.c_str(),ELISE_fp::READ);
+     int aNum;
+
+     BinaryUnDumpFromFile(aNum,aFPIn);
+     if (aNum!=NumHgRev())
+     {
+     }
+
+     std::string aVerifMangling;
+     BinaryUnDumpFromFile(aVerifMangling,aFPIn);
+     if (aVerifMangling!=Mangling((Type*)0))
+     {
+        std::cout << "For file " << aFile << "\n";
+        ELISE_ASSERT(false,"Type has changed between Dump/Undump")
+     }
+
+
+     BinaryUnDumpFromFile(anObj,aFPIn);
+     aFPIn.close();
+}
+
+
+bool IsFileDmp(const std::string &);
+
+extern std::vector<std::string> VCurXmlFile;
 template <class Type> Type StdGetObjFromFile_WithLC
                       (
 		          int argc,
@@ -1924,6 +2038,13 @@ template <class Type> Type StdGetObjFromFile_WithLC
                           const char *  aNameSauv = 0
                       )
 {
+   if (IsFileDmp(aNameFileObj))
+   {
+        Type aRes;
+        BinUndumpObj(aRes,aNameFileObj);
+        return aRes;
+   }
+
    cElXMLTree aFullTreeParam(aNameFileObj,anArg);
    cElXMLTree * aTreeParam = aFullTreeParam.GetUnique(aNameTagObj,ByAttr);
    cElXMLTree aTreeSpec(aNameFileSpecif);
@@ -2017,6 +2138,12 @@ template <class Type> Type * OptionalGetObjFromFile_WithLC
                           const std::string & aNameTagType
                       )
 {
+   if (IsFileDmp(aNameFileObj))
+   {
+        Type aRes;
+        BinUndumpObj(aRes,aNameFileObj);
+        return new Type(aRes);
+   }
    cElXMLTree aFullTreeParam(aNameFileObj);
    cElXMLTree * aTreeParam = aFullTreeParam.GetOneOrZero(aNameTagObj);
    if (! aTreeParam) return 0;
@@ -2044,6 +2171,12 @@ std::string  GetValLC(int,char **,const std::string & aKey, const std::string & 
 template <class Type>
 void MakeFileXML(const Type & anObj,const std::string & aName,const std::string & aTagEnglob="")
 {
+   if (IsFileDmp(aName))
+   {
+       BinDumpObj(anObj,aName);
+       return;
+   }
+
    cElXMLTree * aTree = ToXMLTree(anObj);
    // FILE * aFp = Fopen(aName.c_str(),"w");
    // Fclose(aFp);
@@ -2099,6 +2232,50 @@ double PolonaiseInverse(const std::string & aStr);
 
 void  XMLPushContext(const cGlobXmlGen & aGXml);
 void  XMLPopContext(const cGlobXmlGen & aGXml);
+
+
+#define StdGetFromPCP(aStr,aObj)\
+StdGetObjFromFile<c##aObj>\
+    (\
+    aStr,\
+        StdGetFileXMLSpec("ParamChantierPhotogram.xml"),\
+        #aObj ,\
+        #aObj \
+     )
+
+#define StdGetFromSI(aStr,aObj)\
+StdGetObjFromFile<c##aObj>\
+    (\
+    aStr,\
+        StdGetFileXMLSpec("SuperposImage.xml"),\
+        #aObj ,\
+        #aObj \
+     )
+
+
+#define StdGetFromMM(aStr,aObj)\
+StdGetObjFromFile<c##aObj>\
+    (\
+    aStr,\
+        StdGetFileXMLSpec("ParamMICMAC.xml"),\
+        #aObj ,\
+        #aObj \
+     )
+
+#define StdGetFromAp(aStr,aObj)\
+StdGetObjFromFile<c##aObj>\
+    (\
+    aStr,\
+        StdGetFileXMLSpec("ParamApero.xml"),\
+        #aObj ,\
+        #aObj \
+     )
+
+
+
+
+
+// Par ex :    cFileOriMnt aFileZ = StdGetFromPCP(aStrZ,FileOriMnt);
 
 
 

@@ -19,6 +19,9 @@ Antipasti ~/micmac/include/XML_MicMac/SaisieInitiale.xml DirectoryChantier="/hom
             <Symb> NameAuto=NONE </Symb>
             <Symb> EnterName=true </Symb>
             <Symb> Pref2Add="" </Symb>
+            <Symb> ForceGray=true </Symb>
+            <Symb> WithInputSec=false </Symb>
+            <Symb> InputSec=XXXX </Symb>
         </DicoLoc>
 
         <SectionWindows>
@@ -34,6 +37,10 @@ Antipasti ~/micmac/include/XML_MicMac/SaisieInitiale.xml DirectoryChantier="/hom
               <NamePointsGlobal> Tmp-SL-Glob-${Sauv} </NamePointsGlobal>
 
               <ExportPointeImage>   ${Sauv}   </ExportPointeImage>
+               <#WHEN  VTEST=${WithInputSec}>
+                   <PatternNameInputsSec> ${InputSec} </PatternNameInputsSec>
+               </#WHEN>
+
 
               <FixedName> ${NamePt}  </FixedName>
               <NameAuto> ${NameAuto} </NameAuto>
@@ -43,7 +50,7 @@ Antipasti ~/micmac/include/XML_MicMac/SaisieInitiale.xml DirectoryChantier="/hom
 
         <SectionImages>
               <SetOfImages> ${Image}  </SetOfImages>
-              <ForceGray> true </ForceGray>
+              <ForceGray> ${ForceGray} </ForceGray>
               <KeyAssocOri> ${Ori}  </KeyAssocOri>
 
 

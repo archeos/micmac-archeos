@@ -42,7 +42,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
 
 #if (ELISE_windows)
-#include "direct.h"
+	#include "direct.h"
+	#define fseek _fseeki64
+	#define ftell _ftelli64
 #endif
 
 
@@ -82,7 +84,8 @@ extern "C" {
 
 	void ShowFClose()
 	{
-		std::cout << "DELTA FCLOSE = " << NbFopen  << " " << FullVerifFClose << " " << FCMapCpt.size()<< "\n";
+                if (NbFopen) 
+		   std::cout << "DELTA FCLOSE = " << NbFopen  << " " << FullVerifFClose << " " << FCMapCpt.size()<< "\n";
 		if (FullVerifFClose)
 		{
 			for
@@ -105,7 +108,7 @@ extern "C" {
 
 
 // const  std::string  TheFileMMDIR="/usr/local/bin/MicMacConfig.xml";
-const  std::string  TheFileMMDIR= TheMicMacInstallDir "MicMacConfig.xml";
+//const  std::string  TheFileMMDIR= TheMicMacInstallDir "MicMacConfig.xml";
 
 FILE  * FopenNN
 	(
@@ -158,22 +161,9 @@ static void DebugFileOpen(INT delta,const std::string & aName)
 	// cout << "-- Number Of File Opened = " << aEliseCptFileOpen << "\n";
 }
 
-
-
-#ifndef S_ISREG
-int S_ISREG(int v) { return v&_S_IFREG;}
-#endif
-
-#ifndef S_ISDIR
-int S_ISDIR(int v)
-{
-	return v&_S_IFDIR;
-}
-#endif
-
-
 bool ELISE_fp::MkDirSvp(const std::string & aName )
 {
+    if (IsDirectory(aName)) return true;
 #if (ELISE_unix)
 	long long int res = mkdir(aName.c_str(),0X7FFFFFFF);
 #endif
@@ -262,8 +252,20 @@ void ELISE_fp::MkDir(const std::string & aName )
 
 bool ELISE_fp::IsDirectory(const std::string &  aName )
 {
+	#if ELISE_windows
+		// MSVC's stat does not tolerate ending '/' or '\'
+		string newName = aName;
+		if ( newName.length()!=0 ){
+			const char lastChar = *aName.rbegin();
+			if ( lastChar=='/' || lastChar=='\\' ) newName.resize( newName.length()-1 );
+		}
+		const string &directoryName = newName;
+	#else
+		const string &directoryName = aName;
+	#endif
+
 	struct stat status;
-	return     (stat(aName.c_str(),&status)== 0)
+	return     (stat(directoryName.c_str(),&status)== 0)
 		&& (S_ISDIR(status.st_mode));
 }
 void ELISE_fp::AssertIsDirectory(const std::string &  aName )
@@ -275,22 +277,48 @@ void ELISE_fp::AssertIsDirectory(const std::string &  aName )
 	}
 }
 
+void ELISE_fp::RmFileIfExist(const std::string & aFile)
+{
+   if (ELISE_fp::exist_file(aFile))
+      ELISE_fp::RmFile(aFile);
+}
+
 
 void ELISE_fp::RmFile(const std::string & aFile)
 {
 #if ELISE_windows
-	string aFileCopy = aFile;
-	replace( aFileCopy.begin(), aFileCopy.end(), '/', '\\' );
-	std::string aNameCom = std::string(SYS_RM)+" \""+aFileCopy+"\"";
+	if ( DeleteFile( aFile.c_str() )==0 )
+	{
+		DWORD error_code = GetLastError();
+		cerr << "unable to delete file [" << aFile << "] ";
+		if ( error_code==ERROR_FILE_NOT_FOUND )
+			 cerr << "which does not exist" << endl;
+		else if ( error_code==ERROR_ACCESS_DENIED )
+			cerr << "which is read-only"  << endl;
+		else
+			cerr << "for a mysterious reason"  << endl;
+	}
+	return;
 #else
     // MODIF MPD LES "" ne passent pas
 	std::string aNameCom = std::string(SYS_RM)+ " " +aFile;
+	::System(aNameCom.c_str());
 #endif
-	VoidSystem(aNameCom.c_str());
-
 }
 
-void  ELISE_fp::PurgeDir(const std::string & aDir)
+void ELISE_fp::MvFile(const std::string & aName1,const std::string &  aDest)
+{
+     std::string aNameCom = std::string(SYS_MV)+ " " + aName1 + " " + aDest;
+     VoidSystem(aNameCom.c_str());
+}
+
+void ELISE_fp::CpFile(const std::string & aName1,const std::string &  aDest)
+{
+     std::string aNameCom = std::string(SYS_CP)+ " " + aName1 + " " + aDest;
+     VoidSystem(aNameCom.c_str());
+}
+
+void  ELISE_fp::PurgeDirGen(const std::string & aDir,bool Recurs)
 {
 	std::string aDirC = aDir;
 	MakeFileDirCompl(aDirC);
@@ -301,8 +329,32 @@ void  ELISE_fp::PurgeDir(const std::string & aDir)
     // MODIF MPD LES "" ne permettent pas
 	std::string aCom = std::string(SYS_RM)+ " " + aDirC+"*";
 #endif
+        if (Recurs)
+           aCom = aCom + " .* -r";
 	VoidSystem(aCom.c_str());
 }
+
+void  ELISE_fp::PurgeDirRecursif(const std::string & aDir)
+{
+    ELISE_fp::PurgeDirGen(aDir,true);
+}
+
+void  ELISE_fp::PurgeDir(const std::string & aDir,bool WithRmDir)
+{
+    ELISE_fp::PurgeDirGen(aDir,false);
+    if (WithRmDir)
+       RmDir(aDir);
+}
+
+void  ELISE_fp::RmDir(const std::string & aDir)
+{
+#if ELISE_POSIX
+rmdir(aDir.c_str());
+#else
+RemoveDirectory(aDir.c_str());
+#endif
+}
+
 
 void ELISE_fp::InterneMkDirRec(const  std::string  & aName )
 {
@@ -341,6 +393,42 @@ void ELISE_fp::MkDirRec(const std::string &  aName )
 
 }
 
+bool ELISE_fp::copy_file( const std::string i_src, const std::string i_dst, bool i_overwrite )
+{
+	#if (ELISE_windows)
+		return (bool)CopyFile( i_src.c_str(), i_dst.c_str(), i_overwrite?0:1 /*fail if Exits*/ );
+	#else
+		if ( !i_overwrite && exist_file(i_dst) ) return false;
+
+		ifstream src( i_src.c_str(), ios::binary );
+		ofstream dst( i_dst.c_str(), ios::binary );
+
+		if ( !src || !dst ) return false;
+
+        const unsigned int buffer_size = 1000000;
+        vector<char> buffer(buffer_size);
+		while ( !src.eof() )
+		{
+            src.read( buffer.data(), buffer_size );
+            dst.write( buffer.data(), src.gcount() );
+		}
+		return true;
+		#if (ELISE_POSIX)
+			// copy rights on file
+			struct stat s;
+			stat( i_src.c_str(), &s );
+			chmod( i_dst.c_str(), s.st_mode );
+		#endif
+	#endif
+}
+
+int ELISE_fp::file_length( const std::string &i_filename )
+{
+   ifstream f( i_filename.c_str(), ios::binary );
+   if (!f) return -1;
+   f.seekg (0, f.end);
+   return (int)f.tellg();
+}
 
 bool  ELISE_fp::exist_file(const char * aNameFile)
 {
@@ -378,22 +466,16 @@ void ELISE_fp::if_not_exist_create_0(const char * name,struct stat * status )
 
 }
 
-#if ( ELISE_POSIX )
-bool ELISE_fp::lastModificationDate(const std::string &i_filename, cElDate &o_date )
-{
-    struct stat sb;
-	if ( stat( i_filename.c_str(), &sb )==-1) return false;
-    struct tm *t = localtime( &sb.st_mtime );
+#if ( ELISE_POSIX ) || defined(_MSC_VER)
+	bool ELISE_fp::lastModificationDate(const std::string &i_filename, cElDate &o_date )
+	{
+		struct stat sb;
+		if ( stat( i_filename.c_str(), &sb )==-1) return false;
+		struct tm *t = localtime( &sb.st_mtime );
     
-    o_date = cElDate( t->tm_mday, t->tm_mon, t->tm_year+1900, cElHour( t->tm_hour, t->tm_min, t->tm_sec ) );
-    return true;
-}
-#endif
-#if ( ELISE_Windows )
-bool ELISE_fp::lastModificationDate(const std::string &i_filename, cElDate &o_date )
-{
-	return false;
-}
+		o_date = cElDate( t->tm_mday, t->tm_mon+1, t->tm_year+1900, cElHour( t->tm_hour, t->tm_min, t->tm_sec ) );
+		return true;
+	}
 #endif
 
 
@@ -494,6 +576,7 @@ tFileOffset ELISE_fp::read_FileOffset4()
 {
     tByte4AbsFileOffset anO4;
     read(&anO4,sizeof(tByte4AbsFileOffset),1);
+    if ( !_byte_ordered ) byte_inv_4( &anO4 );
   
     return anO4;
 }
@@ -628,11 +711,12 @@ char * ELISE_fp::std_fgets()
 	bool aEOF;
 
 	bool OK = fgets(aBigBuf,aEOF); //bool OK = fgets(aBigBuf,aTBUF-1,aEOF,false); TEST_OVERFLOW
-	if (aEOF || (!OK))  return 0;
+	if ( ( aEOF && (aBigBuf.length()==0) ) || (!OK) )  return 0;
 	for (char * aC=&(aBigBuf[0]); *aC ; aC++) //for (char * aC=aBigBuf; *aC ; aC++) TEST_OVERFLOW
 	{
 		if (isspace(*aC)) *aC = ' ' ;
 	}
+
 	return &(aBigBuf[0]); //return aBigBuf; TEST_OVERFLOW
 }
 /* TEST_OVERFLOW
@@ -674,7 +758,7 @@ bool  ELISE_fp::fgets( std::string &s, bool & endof )
 		if ( i==int(s.length()) ) s.resize( s.length()+500 );
 		if ( ( c=='\n' ) || ( c==eof ) )
 		{
-			s[i] = 0;
+			s.resize(i);
 			endof = ( c==eof );
 			return true;
 		}
@@ -928,6 +1012,8 @@ if (mNameFile=="./MEC-Final/Z_Num9_DeZoom1_LeChantier.tif")
 	return res;
 }
 
+extern void BasicErrorHandler();
+
 void ELISE_fp::read(void *ptr,tFileOffset size, tFileOffset nmemb,const char* format)
 {
 	set_last_act_read(true);
@@ -937,10 +1023,24 @@ void ELISE_fp::read(void *ptr,tFileOffset size, tFileOffset nmemb,const char* fo
 		{
 //std::cout <<  "Teeell " << tell()  << " " << ftell(_fp) << " " << _fp << " " << mNameFile << "\n";
 //std::cout <<  "Teeell " << tell()  << " " << ftell(_fp) << " " << _fp << " " << mNameFile << "\n";
+
+			#if defined(__DEBUG) || defined(__BUG_MINGW64)
+				tFileOffset old_offset = tell();
+			#endif
+
+// std::cout << "TEELLL " << tell() << " SZ " << size.BasicLLO() << " NBM " << nmemb.BasicLLO() << "\n";
+
 			tFileOffset nb_read = fread(ptr,size.BasicLLO(),nmemb.BasicLLO(),_fp);
+			#ifdef __DEBUG
+				ELISE_ASSERT( old_offset+nmemb*size==tell(), "old_offset+nmemb*size==tell()" );
+			#endif
+			#ifdef __BUG_MINGW64
+				if ( tell()-old_offset!=nmemb*size ) seek( old_offset+nmemb*size, sbegin, false );
+			#endif
 //std::cout <<  size <<  " " << nmemb  << " " << nb_read << " " << ftell(_fp) << "\n";
 			if (nb_read != nmemb)
 			{
+                                BasicErrorHandler();
 			        std::cout <<  "Error while file reading |\n"
 					<<  "    FILE = " <<  mNameFile.c_str() << "  pos = " << tell().BasicLLO()  << "|\n"
 					<<  " reading " <<   nmemb.BasicLLO() << " , got " << nb_read.BasicLLO() << "|";
@@ -974,7 +1074,7 @@ void ELISE_fp::write(const void *ptr,tFileOffset size, tFileOffset nmemb)
 			ELISE_ASSERT
                         (
 				false,
-				"Error while file reading"
+				"Error while file reading (hard drive might be full)"
                         );
 		}
 	}
@@ -1545,6 +1645,8 @@ void ELISE_fp::write(const Seg2d & aS)
 void ELISE_fp::write(const bool & aBool) { write_INT4(aBool); }
 bool ELISE_fp::read(bool *) {return (read_INT4() != 0);}
 
+FILE *  ELISE_fp::FP() {return _fp;}
+
 
 
 void ELISE_fp::write(const Pt3dr & aP)
@@ -1808,6 +1910,10 @@ template void ReadPtr(ELISE_fp & aFile,tFileOffset aNb,REAL8 *);
 cPackNupletsHom cPackNupletsHom::read(ELISE_fp & aFile)
 {
 	int aDim = aFile.read((int*)0);
+        if ((aDim<0) || (aDim>1000))
+        {
+              ELISE_ASSERT(false,"Bas Dim in cPackNupletsHom::read");
+        }
 	cPackNupletsHom aRes(aDim);
 	aRes.mCont  = read_cont(aFile,(std::list<cNupletPtsHomologues> *)0);
 
@@ -1833,11 +1939,14 @@ void RequireBin
 {
 	// Version minimaliste pour l'instant
 
+	/*
 	std::string aCom =
-		std::string(g_externalToolHandler.get( "make" ).callName()+" -j2 ")
+		//std::string(g_externalToolHandler.get( "make" ).callName()+" -j2 ")
 		+ std::string(" -f")  + LeMake
 		+ std::string(" ") + LautreBin;
 	VoidSystem(aCom.c_str());
+	*/
+	launchMake( LeMake, LautreBin, 2 );
 }
 
 
@@ -1850,6 +1959,201 @@ INT sizeofile (const char * nom)
 		return(status.st_size);
 	return 0;
 }
+
+
+#define STD_MANGL(aType) std::string Mangling(aType *) {return #aType;}
+
+/******************************************************************/
+/*  Quand c'est possible on passe par l'interface standard des Fp */
+/******************************************************************/
+
+#define  STD_ElFp_Dump(aType)\
+void BinaryDumpInFile(ELISE_fp & aFp,const aType & aVal)\
+{\
+     aFp.write(aVal);\
+}
+#define  STD_ElFp_UnDump(aType)\
+void BinaryUnDumpFromFile(aType & aVal,ELISE_fp & aFp)\
+{\
+     aVal = aFp.read(&aVal);\
+}
+
+#define STD_ElFp_DumpUndump(aType)\
+STD_ElFp_Dump(aType)\
+STD_ElFp_UnDump(aType)\
+STD_MANGL(aType)
+
+
+STD_ElFp_DumpUndump(bool)
+STD_ElFp_DumpUndump(double)
+STD_ElFp_DumpUndump(int)
+STD_ElFp_DumpUndump(Pt2di)
+STD_ElFp_DumpUndump(Pt2dr)
+STD_ElFp_DumpUndump(Pt3dr)
+STD_ElFp_DumpUndump(std::string)
+// STD_ElFp_DumpUndump(std::vector<double>)
+
+
+/********************************************************/
+/*  Pour les type a taille fixe on fait du fwrite fread */
+/********************************************************/
+
+#define Raw_ElFp_Dump(aType)\
+void BinaryDumpInFile(ELISE_fp & aFp,const aType & aVal)\
+{\
+   aFp.write(&aVal,sizeof(aType),1);\
+}
+#define Raw_ElFp_Undump(aType)\
+void BinaryUnDumpFromFile(aType & aVal,ELISE_fp & aFp)\
+{\
+     aFp.read(&aVal,sizeof(aType),1);\
+}
+
+#define Raw_ElFp_DumpUndump(aType)\
+Raw_ElFp_Dump(aType)\
+Raw_ElFp_Undump(aType)\
+STD_MANGL(aType)
+
+
+Raw_ElFp_DumpUndump(Pt3di)
+Raw_ElFp_DumpUndump(Box2dr)
+Raw_ElFp_DumpUndump(Box2di)
+
+/********************************************************/
+/* Pour les container on passe par des template         */
+/********************************************************/
+
+template <class tCont> void TplContDumpInFile(ELISE_fp & aFp,const tCont & aCont)
+{
+    aFp.write_INT4(aCont.size());
+    for (typename tCont::const_iterator itV=aCont.begin(); itV!=aCont.end() ; itV++)
+         BinaryDumpInFile(aFp,*itV);
+}
+template <class tCont> void TplContUndumpFromFile(tCont & aCont,ELISE_fp & aFp)
+{
+   aCont.clear();
+   int aSz = aFp.read_INT4();
+   for (int aK=0 ; aK<aSz ; aK++)
+   {
+        typename tCont::value_type  aVal;
+        BinaryUnDumpFromFile(aVal,aFp);
+        aCont.push_back(aVal);
+   }
+}
+
+
+
+#define Tpl_ElFp_Dump(aType)\
+void BinaryDumpInFile(ELISE_fp & aFp,const aType & aVal)\
+{\
+   TplContDumpInFile(aFp,aVal);\
+}
+#define Tpl_ElFp_Undump(aType)\
+void BinaryUnDumpFromFile(aType & aVal,ELISE_fp & aFp)\
+{\
+    TplContUndumpFromFile(aVal,aFp);\
+}
+
+#define Tpl_ElFp_DumpUndump(aType)\
+Tpl_ElFp_Dump(aType)\
+Tpl_ElFp_Undump(aType)\
+STD_MANGL(aType)
+
+
+Tpl_ElFp_DumpUndump(std::vector<double>)
+Tpl_ElFp_DumpUndump(std::vector<int>)
+Tpl_ElFp_DumpUndump(std::vector<std::string>)
+
+
+/********************************************************/
+/*   Qq ad hoc                                          */
+/********************************************************/
+
+void BinaryDumpInFile(ELISE_fp & aFp,const cCpleString & aVal)
+{
+     BinaryDumpInFile(aFp,aVal.N1());
+     BinaryDumpInFile(aFp,aVal.N2());
+}
+void BinaryUnDumpFromFile(cCpleString & aVal,ELISE_fp & aFp)
+{
+    std::string aN1,aN2;
+    BinaryUnDumpFromFile(aN1,aFp);
+    BinaryUnDumpFromFile(aN2,aFp);
+    aVal = cCpleString(aN1,aN2);
+}
+STD_MANGL(cCpleString)
+
+void BinaryDumpInFile(ELISE_fp & aFp,const cElRegex_Ptr & aVal)
+{
+     BinaryDumpInFile(aFp,aVal->NameExpr());
+}
+void BinaryUnDumpFromFile(cElRegex_Ptr & aVal,ELISE_fp & aFp)
+{
+    std::string anExpr;
+    BinaryUnDumpFromFile(anExpr,aFp);
+    aVal = new cElRegex(anExpr,30);
+}
+STD_MANGL(cElRegex_Ptr)
+
+/********************************************************/
+/*    le case adhoc tpl des images                      */
+/********************************************************/
+
+template <class T1,class T2> void BinaryDumpInFile(ELISE_fp & aFp,const Im2D<T1,T2> &      anObj)
+{
+    Pt2di aSz = anObj.sz();
+    BinaryDumpInFile(aFp,aSz);
+    aFp.write(anObj.data_lin(),sizeof(T1),aSz.x*aSz.y);
+}
+
+template void BinaryDumpInFile(ELISE_fp&,const Im2D<REAL4,REAL8> & anIm);
+template void BinaryDumpInFile(ELISE_fp&,const Im2D<REAL8,REAL8> & anIm);
+template void BinaryDumpInFile(ELISE_fp&,const Im2D<U_INT1,INT> & anIm);
+template void BinaryDumpInFile(ELISE_fp&,const Im2D<INT1,INT> & anIm);
+
+template <class T1,class T2> void BinaryUnDumpFromFile(Im2D<T1,T2> & aVal,ELISE_fp & aFp)
+{
+    Pt2di aSz;
+    BinaryUnDumpFromFile(aSz,aFp);
+    aVal.Resize(aSz);
+    aFp.read(aVal.data_lin(),sizeof(T1),aSz.x*aSz.y);
+}
+
+template void BinaryUnDumpFromFile(Im2D<REAL4,REAL8> & anIm,ELISE_fp&);
+template void BinaryUnDumpFromFile(Im2D<REAL8,REAL8> & anIm,ELISE_fp&);
+template void BinaryUnDumpFromFile(Im2D<U_INT1,INT> & anIm,ELISE_fp&);
+template void BinaryUnDumpFromFile(Im2D<INT1,INT> & anIm,ELISE_fp&);
+
+STD_MANGL(Im2D_REAL8)
+STD_MANGL(Im2D_REAL4)
+STD_MANGL(Im2D_U_INT1)
+STD_MANGL(Im2D_INT1)
+/********************************************************/
+/*    ceux dont ne sait pas trop quoi faire             */
+/********************************************************/
+
+#define No_ElFp_Dump(aType)\
+void BinaryDumpInFile(ELISE_fp & aFp,const aType & aVal)\
+{\
+   ELISE_ASSERT(false,"No_ElFp_Dump");\
+}
+#define No_ElFp_Undump(aType)\
+void BinaryUnDumpFromFile(aType & aVal,ELISE_fp & aFp)\
+{\
+   ELISE_ASSERT(false,"No_ElFp_unDump");\
+}
+
+#define No_ElFp_DumpUndump(aType)\
+No_ElFp_Dump(aType)\
+No_ElFp_Undump(aType)\
+STD_MANGL(aType)
+
+
+No_ElFp_DumpUndump(BoolSubst)
+No_ElFp_DumpUndump(IntSubst)
+No_ElFp_DumpUndump(DoubleSubst)
+No_ElFp_DumpUndump(Pt2diSubst)
+No_ElFp_DumpUndump(Pt2drSubst)
 
 
 
