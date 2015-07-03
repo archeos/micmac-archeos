@@ -1,9 +1,0 @@
-0001-Proper-install-directory.patch
-0002-Makefiles-in-tmp-dir.patch
-0003-Hardcoded-paths.-FHS-complient.patch
-0004-Remove-runtime-dependencies-in-CmakeLists.patch
-0005-Use-Debian-ANN.patch
-0006-Remove-non-needed-sotware.patch
-0007-Update-el_dcraw.patch
-0008-Proper-hadenning.patch
-0009-Migration-to-MM3dBinFile.patch

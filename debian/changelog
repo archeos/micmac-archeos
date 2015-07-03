@@ -1,3 +1,7 @@
+micmac (1.0+hg5647-0archeos1) UNRELEASED; urgency=medium
+
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Fri, 03 Jul 2015 16:45:51 +0200
+
 micmac (1.0+hg1340-0archeos2) theodoric; urgency=low
 
   * More respect toward FHS (Corrects patch 3)
