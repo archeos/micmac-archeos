@@ -9197,7 +9197,7 @@ int CLASS el_dcraw_main (int argc, const char **argv)
       fprintf (stderr,_("Will not write an image to the terminal!\n"));
       return 1;
     }
-#if defined(WIN32) || defined(DJGPP) || defined(__MINGW__)
+#if defined(WIN32) || defined(DJGPP) || defined(__CYGWIN__)
     if (setmode(1,O_BINARY) < 0) {
       perror ("setmode()");
       return 1;

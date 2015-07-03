@@ -74,8 +74,6 @@ class cMMSpecArg;
 
 std::string MakeStrFromArgcARgv(int  argc,char** argv);
 
-std::string MakeStrFromArgcARgv(int  argc,char** argv);
-
 void MemoArg(int,char**);
 void ShowArgs();
 

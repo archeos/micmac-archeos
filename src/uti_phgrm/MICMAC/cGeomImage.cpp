@@ -1771,12 +1771,6 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
   if (mDoImMasqAnam)
      mDynIncidTerr = mAppli.MMImNadir()->DynIncid().Val();
 
-  mDoImMasqAnam = mAppli.MMImNadir()!=0;
-  mUseTerMasqAnam = (mAppli.MMImNadir()==0) || (mAppli.MMImNadir()->MakeAlsoMaskTerrain().Val());
-
-  if (mDoImMasqAnam)
-     mDynIncidTerr = mAppli.MMImNadir()->DynIncid().Val();
-
   if (!ELISE_fp::exist_file(aNameXML))
   {
 
@@ -1832,13 +1826,6 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
                   }
               }
           }
-      }
-      if (0) // (aW)
-      {
-          ELISE_COPY(aMi.all_pts(),aMi.in(),aW->odisc());
-          // aW->draw_rect(aP0Ter/mAnDeZoomM,aP1Ter/mAnDeZoomM,aW->pdisc()(P8COL::red));
-          std::cout << " Boxx " << aP0Ter << aP1Ter << "\n";
-          std::cout << "StatNormale " << (aNbOk) / double(aNbTot) << " " << aNbTot << "\n"; getchar();
       }
 
       if (aW)
@@ -2013,7 +2000,7 @@ if (TEST) std::cout << "ALLAOOOK  " << aCdg  << " " << AllOk  << " " << aPExtr0 
           }
       }
 
-      if (0) // (aW)
+      if (aW)
       {
          std::cout <<  "ORTHO  " <<  mPDV.Name() <<  aSzTer << "\n";
 
@@ -2054,35 +2041,6 @@ if (TEST) std::cout << "ALLAOOOK  " << aCdg  << " " << AllOk  << " " << aPExtr0 
 
 
       if (aW)
-      {
-         std::cout << aNameTerTif << "\n";
-         Tiff_Im aTF = Tiff_Im::StdConv(aNameTerTif);
-         ELISE_COPY(aW->all_pts(),P8COL::yellow,aW->odisc());
-         ELISE_COPY(aTF.all_pts(),mod(aTF.in(),8),aW->odisc());
-         getchar();
-         ELISE_COPY(aMt.all_pts(),mod(aMt.in(),8),aW->odisc());
-         getchar();
-      }
-      if (0) // (aW)
-      {
-          ELISE_COPY(aW->all_pts(),P8COL::red,aW->odisc());
-          Im2D_INT2 aImN = mTIncidTerr._the_im;
-          ELISE_COPY(aImN.all_pts(),Min(255,Max(0,aImN.in()/100)),aW->ogray());
-          getchar();
-      }
-
-      if (mUseTerMasqAnam)
-      {
-         Tiff_Im::CreateFromIm(aMt,aNameTerTif);
-      }
-
-      if (mDoImMasqAnam)
-      {
-         Tiff_Im::CreateFromIm(mTIncidTerr._the_im,mNameIncTerTif);
-      }
-
-
-      if (0) // (aW)
       {
          std::cout << aNameTerTif << "\n";
          Tiff_Im aTF = Tiff_Im::StdConv(aNameTerTif);

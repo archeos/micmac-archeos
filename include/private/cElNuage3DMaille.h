@@ -68,22 +68,6 @@ class cFileOriMnt;
 cFileOriMnt ToFOM(const cXML_ParamNuage3DMaille &,bool StdRound);
 
 
-cXML_ParamNuage3DMaille CropAndSousEch
-                        (
-                             const cXML_ParamNuage3DMaille & anInit,
-                             Pt2dr & aP0,
-                             double aSc,
-                             Pt2dr & aSz
-                        );
-cXML_ParamNuage3DMaille CropAndSousEch
-                        (
-                             const cXML_ParamNuage3DMaille & anInit,
-                             Pt2dr & aP0,
-                             double aSc
-                        );
-
-
-
 class  cBasculeNuage;
 
 class cLayerNuage3DM

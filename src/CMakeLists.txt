@@ -41,7 +41,6 @@ set(OPTIM_DIR "optim")
 set(SAMPLESLIBELISE_DIR "SamplesLibElise")
 set(SATELIB_DIR "SateLib")
 set(UTI_FILES_DIR "uti_files")
-set(SAMPLESLIBELISE_DIR "SamplesLibElise")
 set(UTI_IMAGE_DIR "uti_image")
 set(UTI_PHGRM_DIR "uti_phgrm")
 set(UTI_ETAPOLY_DIR "EtalonnagePolygone")
@@ -153,7 +152,6 @@ include(${SAISIE_DIR}/Elise_QT.cmake)
 
 # CONSTRUCTION : Lib ELISE
 
-# CONSTRUCTION : Lib ELISE
 if(${CUDA_ENABLED})
     INCLUDE (GpGpu.cmake)
 

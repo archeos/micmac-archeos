@@ -1470,11 +1470,6 @@ template <> const int
 template <> const int 
    cPIF_Unif<cFraserModel_Generator<double>,cFraserModel_Generator<Fonc_Num>,9,1>::mDegrePolyn[9]={3,5,7,9,11,2,2,1,1};
 
-template <> const int 
-   cPIF_Unif<cDRadModel_Generator<double>,cDRadModel_Generator<Fonc_Num>,5,1>::mDegrePolyn[5]={3,5,7,9,11};
-template <> const int 
-   cPIF_Unif<cFraserModel_Generator<double>,cFraserModel_Generator<Fonc_Num>,9,1>::mDegrePolyn[9]={3,5,7,9,11,2,2,1,1};
-
 template <> const std::string  cDist_DRad_PPaEqPPs::TheName="DRad_PPaEqPPs";
 template <> const std::string  cDist_Fraser_PPaEqPPs::TheName="Fraser_PPaEqPPs";
 template <> const int   cDist_DRad_PPaEqPPs::TheType= (int) eModele_DRad_PPaEqPPs;

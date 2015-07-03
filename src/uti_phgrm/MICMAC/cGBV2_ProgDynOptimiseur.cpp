@@ -591,25 +591,6 @@ void dump32 (__m128i m, const string & prefix = string ())
 	int *i = (int *) &m;
 	cout << prefix << i[0] << ' ' << i[1] << ' ' << i[2] << ' ' << i[3] << endl;
 }
-#endif
-
-
-void cGBV2_ProgDynOptimiseur::Local_SolveOpt(Im2D_U_INT1 aImCor)
-{
-
-    // double aVPentes[theDimPxMax];
-    const cModulationProgDyn &  aModul = mEtape.EtapeMEC().ModulationProgDyn().Val();
-
-    // std::cout << " ZRrg " << mCostRegul[0] << " Pente " <<  aModul.Px1PenteMax().Val() << "\n";
-
-   double aPenteMax = aModul.Px1PenteMax().Val();
-   double aRegul    =  mCostRegul[0];
-   double aRegul_Quad = 0.0;
-    //=================
-    double aVPentes[theDimPxMax];
-
-    mCostRegul[0] = aRegul;
-    mCostRegul[1] = 0;
 
 template<bool final>
 void cGBV2_ProgDynOptimiseur::copyCells_Stream2Mat(Pt2di aDirI, Data2Optimiz<CuHostData3D,2>  &d2Opt, sMatrixCellCost<ushort> &mCellCost, CuHostData3D<uint> &costFinal1D,CuHostData3D<uint> &FinalDefCor, uint idBuf)

@@ -988,7 +988,6 @@ std::string  cAppliMICMAC::NameFileSzW(int aDz)
 
 
 
-
 void cAppliMICMAC::InitMecComp()
 {
    mHasOneModeIm1Maitre = false;

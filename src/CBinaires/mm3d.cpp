@@ -39,8 +39,6 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-
-
 #define DEF_OFSET -12349876
 
 
@@ -200,7 +198,6 @@ extern int Kugelhupf_main(int , char **);
 extern int SimplePredict_main(int , char **);
 extern int SimpleFusionCarte_main(int , char **);
 
-int SampleLibElise_main(int argc,char ** argv);
 
 extern int CPP_Martini_main(int , char **);
 extern int CPP_MartiniGin_main(int , char **);

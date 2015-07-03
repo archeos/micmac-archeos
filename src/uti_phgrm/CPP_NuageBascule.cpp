@@ -177,19 +177,6 @@ std::cout << "mBoxLoc " << mBoxLoc << "\n";
 
 //  BOX GLOB [2154,849][4867,3228]
 
-    if (aXMin > aXMax)
-    {
-         std::cout << "For FILE : " << aTF.name() << "\n";
-         ELISE_ASSERT(false,"Masq is empty");
-    }
-
-    return Box2di(Pt2di(aXMin,aYMin),Pt2di(aXMax,aYMax));
-}
-
-Box2di BoxEnglobMasq(const std::string & aName)
-{
-   return BoxEnglobMasq(Tiff_Im(aName.c_str()));
-}
 
 int  NuageBascule_main(int argc,char ** argv)
 {

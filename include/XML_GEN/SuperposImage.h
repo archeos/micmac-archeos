@@ -5257,51 +5257,6 @@ class cParamFusionMNT
         cParamAlgoFusionMNT & ParamAlgoFusionMNT();
         const cParamAlgoFusionMNT & ParamAlgoFusionMNT()const ;
 
-        cTplValGesInit< cFMNtBySort > & FMNtBySort();
-        const cTplValGesInit< cFMNtBySort > & FMNtBySort()const ;
-
-        double & SigmaPds();
-        const double & SigmaPds()const ;
-
-        cTplValGesInit< double > & SigmaZ();
-        const cTplValGesInit< double > & SigmaZ()const ;
-
-        cTplValGesInit< double > & MaxDif();
-        const cTplValGesInit< double > & MaxDif()const ;
-
-        double & Regul();
-        const double & Regul()const ;
-
-        double & Sigma0();
-        const double & Sigma0()const ;
-
-        int & NbDir();
-        const int & NbDir()const ;
-
-        double & PenteMax();
-        const double & PenteMax()const ;
-
-        double & GainNoVal();
-        const double & GainNoVal()const ;
-
-        double & Trans();
-        const double & Trans()const ;
-
-        cTplValGesInit< cFMNT_GesNoVal > & FMNT_GesNoVal();
-        const cTplValGesInit< cFMNT_GesNoVal > & FMNT_GesNoVal()const ;
-
-        cTplValGesInit< cFMNT_ProgDyn > & FMNT_ProgDyn();
-        const cTplValGesInit< cFMNT_ProgDyn > & FMNT_ProgDyn()const ;
-
-        cTplValGesInit< cFMNtByMaxEvid > & FMNtByMaxEvid();
-        const cTplValGesInit< cFMNtByMaxEvid > & FMNtByMaxEvid()const ;
-
-        cSpecAlgoFMNT & SpecAlgoFMNT();
-        const cSpecAlgoFMNT & SpecAlgoFMNT()const ;
-
-        cParamAlgoFusionMNT & ParamAlgoFusionMNT();
-        const cParamAlgoFusionMNT & ParamAlgoFusionMNT()const ;
-
         cParamGenereStr & GenereRes();
         const cParamGenereStr & GenereRes()const ;
 

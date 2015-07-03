@@ -110,19 +110,6 @@ void  BinaryUnDumpFromFile(eOnEmptyImSecApero &,ELISE_fp &);
 
 typedef enum
 {
-  eOEISA_error,
-  eOEISA_exit,
-  eOEISA_goon
-} eOnEmptyImSecApero;
-void xml_init(eOnEmptyImSecApero & aVal,cElXMLTree * aTree);
-std::string  eToString(const eOnEmptyImSecApero & aVal);
-
-eOnEmptyImSecApero  Str2eOnEmptyImSecApero(const std::string & aName);
-
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const eOnEmptyImSecApero & anObj);
-
-typedef enum
-{
   eAggregSymetrique,
   eAggregIm1Maitre,
   eAggregInfoMut,

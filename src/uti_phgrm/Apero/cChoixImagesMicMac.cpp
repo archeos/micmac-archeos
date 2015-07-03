@@ -724,11 +724,6 @@ bool  cAppliApero::ExportImSecMM(const cChoixImMM & aCIM,cPoseCam* aPC0,const cM
                cCaseOcupIm & aCase  =  aVCase.at(aKY).at(aKX);
                aCase.mSomPds /= aSomPds;
            }
-           cISOM_Vois aV;
-           aV.Name() = aPC2->Name();
-           aV.Nb() = aPC2->MMNbPts();
-           aV.Angle() = anAngle;
-           aILV.ISOM_Vois().push_back(aV);
        }
    }
 

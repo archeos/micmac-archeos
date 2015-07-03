@@ -617,13 +617,6 @@ cCalibDistortion FromCIR(const cCalibrationInterneRadiale & aCIR)
 
     return aRes;
 }
-/*
-   cCalibDistortion aRes ;
-   cModNoDist aNoDist;
-   aRes.ModNoDist().SetVal(aNoDist);
-
-   return aRes;
-*/
 
 
 cCalibDistortion  ElDistortion22_Gen::XmlDistNoVal()

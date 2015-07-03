@@ -1464,7 +1464,6 @@ template <class Type> cFusionCarteProf<Type>::cFusionCarteProf
         else if (mInParal)
            cEl_GPAO::DoComInParal(mListCom,mParam.ParalMkF().Val());
     }
-*/
 }
 
 

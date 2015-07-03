@@ -382,12 +382,6 @@ void cMMTP::FreeCel()
    mTabCTP = 0;
 }
 
-        Im2D_INT2       mImProf;
-        TIm2D<INT2,INT> mTImProf;
-        Im2D_Bits<1>    mImMasqInit;
-        TIm2DBits<1>    mTImMasqInit;   
-        Im2D_Bits<1>    mImMasqFinal;
-        TIm2DBits<1>    mTImMasqFinal;   
 
 
 extern Im2D_REAL4 ProlongByCont (Im2D_Bits<1> & aMasqRes, Im2D_Bits<1> aIMasq, Im2D_INT2 aInput, INT aNbProl,double aDistAdd,double DMaxAdd);

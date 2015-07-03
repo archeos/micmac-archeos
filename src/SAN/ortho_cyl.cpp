@@ -166,67 +166,6 @@ cInterfSurfaceAnalytique * cInterfSurfaceAnalytique::Identite(double aZRef)
 
      /*****************************************/
      /*                                       */
-     /*      cSurfAnalIdent                   */
-     /*                                       */
-     /*****************************************/
-
-class cSurfAnalIdent : public cInterfSurfaceAnalytique
-{
-    public :
-        cSurfAnalIdent(double aZRef) : 
-                 cInterfSurfaceAnalytique (true) ,
-                 mZRef                    (aZRef),
-                 mVec                     (0,0,mZRef)
-         {
-         }
-
-        Pt3dr E2UVL(const Pt3dr & aP) const {return aP - mVec;}
-        Pt3dr UVL2E(const Pt3dr & aP) const {return aP + mVec;}
-        void AdaptBox(Pt2dr & aP0,Pt2dr & aP1) const {}
-
-        NS_SuperposeImage::cXmlDescriptionAnalytique Xml()  const
-        {
-             ELISE_ASSERT(false,"cSurfAnalIdent::Xml");
-             NS_SuperposeImage::cXmlDescriptionAnalytique aNS;
-             return aNS;
-        }
-
-        bool HasOrthoLoc() const {return false;}
-
-        std::vector<cInterSurfSegDroite>  InterDroite(const ElSeg3D & aSeg,double aZ1) const 
-        {
-            std::vector<cInterSurfSegDroite> aRes;
-
-            double aZ0 = aSeg.P0().z -mZRef;
-            double aDZ = aSeg.TgNormee().z;
-
-            if (aDZ==0) return aRes;
-
-            aRes.push_back
-            (
-                cInterSurfSegDroite
-                (
-                    (aZ1-aZ0)/aDZ,
-                    (  aZ0 >  aZ1 ) ? eSurfVI_Rent : eSurfVI_Sort
-                )
-            );
-            return aRes;
-        }
-    private :
-       double mZRef;
-       Pt3dr  mVec;
-
-};
-
-cInterfSurfaceAnalytique * cInterfSurfaceAnalytique::Identite(double aZRef)
-{
-    static cInterfSurfaceAnalytique * aRes = new cSurfAnalIdent(aZRef);
-    return aRes;
-}
-
-
-     /*****************************************/
-     /*                                       */
      /*      cProjOrthoCylindrique            */
      /*                                       */
      /*****************************************/

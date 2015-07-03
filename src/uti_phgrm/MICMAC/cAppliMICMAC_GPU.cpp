@@ -133,27 +133,6 @@ double cStatOneImage::SquareNorm() const
     return aRes;
 }
 
-                mNbScale = mVLI.size() ?  mVLI[0]->NbScale()  : 0;
-
-
-                mVScaIm.clear();
-                for (int aKS=0 ; aKS<mNbScale ; aKS++)
-                {
-                    std::vector<cGPU_LoadedImGeom *> aV;
-                    mVScaIm.push_back(aV);
-                }
-
-                for (int aKS=0 ; aKS<mNbScale ; aKS++)
-                {
-                    for (int aKI=0 ; aKI<mNbIm ; aKI++)
-                    {
-                        mVScaIm[aKS].push_back(mVLI[aKI]->KiemeMSGLI(aKS));
-                    }
-                }
-
-
-                
-
 
 
 /********************************************************************/

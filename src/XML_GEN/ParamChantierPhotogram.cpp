@@ -1290,7 +1290,6 @@ cElXMLTree * ToXMLTree(const cMicMacConfiguration & anObj)
 
 void xml_init(cMicMacConfiguration & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1485,7 +1484,6 @@ cElXMLTree * ToXMLTree(const cBasicSystemeCoord & anObj)
 
 void xml_init(cBasicSystemeCoord & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1578,7 +1576,6 @@ cElXMLTree * ToXMLTree(const cSystemeCoord & anObj)
 
 void xml_init(cSystemeCoord & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1636,7 +1633,6 @@ cElXMLTree * ToXMLTree(const cChangementCoordonnees & anObj)
 
 void xml_init(cChangementCoordonnees & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1856,7 +1852,6 @@ cElXMLTree * ToXMLTree(const cFileOriMnt & anObj)
 
 void xml_init(cFileOriMnt & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1932,7 +1927,6 @@ cElXMLTree * ToXMLTree(const cRefPlani & anObj)
 
 void xml_init(cRefPlani & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1990,7 +1984,6 @@ cElXMLTree * ToXMLTree(const cRefAlti & anObj)
 
 void xml_init(cRefAlti & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2066,7 +2059,6 @@ cElXMLTree * ToXMLTree(const cGestionAltimetrie & anObj)
 
 void xml_init(cGestionAltimetrie & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2169,7 +2161,6 @@ cElXMLTree * ToXMLTree(const cXmlGeoRefFile & anObj)
 
 void xml_init(cXmlGeoRefFile & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2252,7 +2243,6 @@ cElXMLTree * ToXMLTree(const cSpecExtractFromFile & anObj)
 
 void xml_init(cSpecExtractFromFile & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2469,7 +2459,6 @@ cElXMLTree * ToXMLTree(const cSpecifFormatRaw & anObj)
 
 void xml_init(cSpecifFormatRaw & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2609,7 +2598,6 @@ cElXMLTree * ToXMLTree(const cCM_Set & anObj)
 
 void xml_init(cCM_Set & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2720,7 +2708,6 @@ cElXMLTree * ToXMLTree(const cModeCmdMapeur & anObj)
 
 void xml_init(cModeCmdMapeur & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2778,7 +2765,6 @@ cElXMLTree * ToXMLTree(const cCmdMapRel & anObj)
 
 void xml_init(cCmdMapRel & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2840,7 +2826,6 @@ cElXMLTree * ToXMLTree(const cCMVA & anObj)
 
 void xml_init(cCMVA & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3074,7 +3059,6 @@ cElXMLTree * ToXMLTree(const cCmdMappeur & anObj)
 
 void xml_init(cCmdMappeur & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3144,7 +3128,6 @@ cElXMLTree * ToXMLTree(const cOneCmdPar & anObj)
 
 void xml_init(cOneCmdPar & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3227,7 +3210,6 @@ cElXMLTree * ToXMLTree(const cCmdExePar & anObj)
 
 void xml_init(cCmdExePar & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3285,7 +3267,6 @@ cElXMLTree * ToXMLTree(const cPt3drEntries & anObj)
 
 void xml_init(cPt3drEntries & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3361,7 +3342,6 @@ cElXMLTree * ToXMLTree(const cBasesPt3dr & anObj)
 
 void xml_init(cBasesPt3dr & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3419,7 +3399,6 @@ cElXMLTree * ToXMLTree(const cScalEntries & anObj)
 
 void xml_init(cScalEntries & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3495,7 +3474,6 @@ cElXMLTree * ToXMLTree(const cBasesScal & anObj)
 
 void xml_init(cBasesScal & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3589,7 +3567,6 @@ cElXMLTree * ToXMLTree(const cBaseDataCD & anObj)
 
 void xml_init(cBaseDataCD & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3749,7 +3726,6 @@ cElXMLTree * ToXMLTree(const cParamVolChantierPhotogram & anObj)
 
 void xml_init(cParamVolChantierPhotogram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3823,7 +3799,6 @@ cElXMLTree * ToXMLTree(const cParamChantierPhotogram & anObj)
 
 void xml_init(cParamChantierPhotogram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3907,7 +3882,6 @@ cElXMLTree * ToXMLTree(const cPDV & anObj)
 
 void xml_init(cPDV & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -3987,7 +3961,6 @@ cElXMLTree * ToXMLTree(const cBandesChantierPhotogram & anObj)
 
 void xml_init(cBandesChantierPhotogram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4049,7 +4022,6 @@ cElXMLTree * ToXMLTree(const cVolChantierPhotogram & anObj)
 
 void xml_init(cVolChantierPhotogram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4109,7 +4081,6 @@ cElXMLTree * ToXMLTree(const cChantierPhotogram & anObj)
 
 void xml_init(cChantierPhotogram & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4165,7 +4136,6 @@ cElXMLTree * ToXMLTree(const cCplePDV & anObj)
 
 void xml_init(cCplePDV & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4273,7 +4243,6 @@ cElXMLTree * ToXMLTree(const cGraphePdv & anObj)
 
 void xml_init(cGraphePdv & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4333,7 +4302,6 @@ cElXMLTree * ToXMLTree(const cCercleRelief & anObj)
 
 void xml_init(cCercleRelief & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4594,7 +4562,6 @@ cElXMLTree * ToXMLTree(const cCibleCalib & anObj)
 
 void xml_init(cCibleCalib & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4690,7 +4657,6 @@ cElXMLTree * ToXMLTree(const cPolygoneCalib & anObj)
 
 void xml_init(cPolygoneCalib & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4748,7 +4714,6 @@ cElXMLTree * ToXMLTree(const cPointesCibleAC & anObj)
 
 void xml_init(cPointesCibleAC & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4824,7 +4789,6 @@ cElXMLTree * ToXMLTree(const cCibleACalcByLiaisons & anObj)
 
 void xml_init(cCibleACalcByLiaisons & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4909,7 +4873,6 @@ cElXMLTree * ToXMLTree(const cCible2Rech & anObj)
 
 void xml_init(cCible2Rech & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -4994,7 +4957,6 @@ cElXMLTree * ToXMLTree(const cIm2Select & anObj)
 
 void xml_init(cIm2Select & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5056,7 +5018,6 @@ cElXMLTree * ToXMLTree(const cImageUseDirectPointeManuel & anObj)
 
 void xml_init(cImageUseDirectPointeManuel & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5112,7 +5073,6 @@ cElXMLTree * ToXMLTree(const cExportAppuisAsDico & anObj)
 
 void xml_init(cExportAppuisAsDico & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5288,7 +5248,6 @@ cElXMLTree * ToXMLTree(const cComplParamEtalPoly & anObj)
 
 void xml_init(cComplParamEtalPoly & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5366,7 +5325,6 @@ cElXMLTree * ToXMLTree(const cOneAppuisDAF & anObj)
 
 void xml_init(cOneAppuisDAF & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5430,7 +5388,6 @@ cElXMLTree * ToXMLTree(const cDicoAppuisFlottant & anObj)
 
 void xml_init(cDicoAppuisFlottant & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5509,7 +5466,6 @@ cElXMLTree * ToXMLTree(const cOneModifIPF & anObj)
 
 void xml_init(cOneModifIPF & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5573,7 +5529,6 @@ cElXMLTree * ToXMLTree(const cModifIncPtsFlottant & anObj)
 
 void xml_init(cModifIncPtsFlottant & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5629,7 +5584,6 @@ cElXMLTree * ToXMLTree(const cOneMesureAF1I & anObj)
 
 void xml_init(cOneMesureAF1I & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5705,7 +5659,6 @@ cElXMLTree * ToXMLTree(const cMesureAppuiFlottant1Im & anObj)
 
 void xml_init(cMesureAppuiFlottant1Im & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -5767,7 +5720,6 @@ cElXMLTree * ToXMLTree(const cSetOfMesureAppuisFlottants & anObj)
 
 void xml_init(cSetOfMesureAppuisFlottants & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -6071,7 +6023,6 @@ cElXMLTree * ToXMLTree(const cMesureAppuis & anObj)
 
 void xml_init(cMesureAppuis & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -6158,7 +6109,6 @@ cElXMLTree * ToXMLTree(const cListeAppuis1Im & anObj)
 
 void xml_init(cListeAppuis1Im & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -6303,7 +6253,6 @@ cElXMLTree * ToXMLTree(const cVerifOrient & anObj)
 
 void xml_init(cVerifOrient & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -6531,7 +6480,6 @@ cElXMLTree * ToXMLTree(const cJPPTest & anObj)
 
 void xml_init(cJPPTest & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -6899,7 +6847,6 @@ cElXMLTree * ToXMLTree(const cCalibrationInternePghrStd & anObj)
 
 void xml_init(cCalibrationInternePghrStd & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7013,7 +6960,6 @@ cElXMLTree * ToXMLTree(const cCalibrationInterneUnif & anObj)
 
 void xml_init(cCalibrationInterneUnif & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7100,63 +7046,6 @@ void xml_init(cTestNewGrid & anObj,cElXMLTree * aTree)
 std::string  Mangling( cTestNewGrid *) {return "C6C1287A857D21C7FD3F";};
 
 
-std::string & cTestNewGrid::A()
-{
-   return mA;
-}
-
-const std::string & cTestNewGrid::A()const 
-{
-   return mA;
-}
-
-
-Im2D_INT1 & cTestNewGrid::Im()
-{
-   return mIm;
-}
-
-const Im2D_INT1 & cTestNewGrid::Im()const 
-{
-   return mIm;
-}
-
-
-std::string & cTestNewGrid::Z()
-{
-   return mZ;
-}
-
-const std::string & cTestNewGrid::Z()const 
-{
-   return mZ;
-}
-
-cElXMLTree * ToXMLTree(const cTestNewGrid & anObj)
-{
-  XMLPushContext(anObj.mGXml);
-  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"TestNewGrid",eXMLBranche);
-   aRes->AddFils(::ToXMLTree(std::string("A"),anObj.A())->ReTagThis("A"));
-   aRes->AddFils(::ToXMLTree(std::string("Im"),anObj.Im())->ReTagThis("Im"));
-   aRes->AddFils(::ToXMLTree(std::string("Z"),anObj.Z())->ReTagThis("Z"));
-  aRes->mGXml = anObj.mGXml;
-  XMLPopContext(anObj.mGXml);
-  return aRes;
-}
-
-void xml_init(cTestNewGrid & anObj,cElXMLTree * aTree)
-{
-   anObj.mGXml = aTree->mGXml;
-   if (aTree==0) return;
-
-   xml_init(anObj.A(),aTree->Get("A",1)); //tototo 
-
-   xml_init(anObj.Im(),aTree->Get("Im",1)); //tototo 
-
-   xml_init(anObj.Z(),aTree->Get("Z",1)); //tototo 
-}
-
-
 Pt2dr & cGridDeform2D::Origine()
 {
    return mOrigine;
@@ -7231,7 +7120,6 @@ cElXMLTree * ToXMLTree(const cGridDeform2D & anObj)
 
 void xml_init(cGridDeform2D & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7307,7 +7195,6 @@ cElXMLTree * ToXMLTree(const cGridDirecteEtInverse & anObj)
 
 void xml_init(cGridDirecteEtInverse & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7381,7 +7268,6 @@ cElXMLTree * ToXMLTree(const cPreCondRadial & anObj)
 
 void xml_init(cPreCondRadial & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7469,7 +7355,6 @@ cElXMLTree * ToXMLTree(const cPreCondGrid & anObj)
 
 void xml_init(cPreCondGrid & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7578,7 +7463,6 @@ cElXMLTree * ToXMLTree(const cCalibrationInterneGrid & anObj)
 
 void xml_init(cCalibrationInterneGrid & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7636,7 +7520,6 @@ cElXMLTree * ToXMLTree(const cSimilitudePlane & anObj)
 
 void xml_init(cSimilitudePlane & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7708,7 +7591,6 @@ cElXMLTree * ToXMLTree(const cAffinitePlane & anObj)
 
 void xml_init(cAffinitePlane & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7768,7 +7650,6 @@ cElXMLTree * ToXMLTree(const cOrIntGlob & anObj)
 
 void xml_init(cOrIntGlob & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7826,7 +7707,6 @@ cElXMLTree * ToXMLTree(const cParamForGrid & anObj)
 
 void xml_init(cParamForGrid & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -7879,7 +7759,6 @@ cElXMLTree * ToXMLTree(const cModNoDist & anObj)
 
 void xml_init(cModNoDist & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -8056,7 +7935,6 @@ cElXMLTree * ToXMLTree(const cCalibDistortion & anObj)
 
 void xml_init(cCalibDistortion & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -8168,7 +8046,6 @@ cElXMLTree * ToXMLTree(const cCorrectionRefractionAPosteriori & anObj)
 
 void xml_init(cCorrectionRefractionAPosteriori & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -8589,7 +8466,6 @@ cElXMLTree * ToXMLTree(const cCalibrationInternConique & anObj)
 
 void xml_init(cCalibrationInternConique & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -8697,7 +8573,6 @@ cElXMLTree * ToXMLTree(const cRepereCartesien & anObj)
 
 void xml_init(cRepereCartesien & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -8796,7 +8671,6 @@ cElXMLTree * ToXMLTree(const cTypeCodageMatr & anObj)
 
 void xml_init(cTypeCodageMatr & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -9014,7 +8888,6 @@ cElXMLTree * ToXMLTree(const cDatePDV & anObj)
 
 void xml_init(cDatePDV & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -9449,7 +9322,6 @@ cElXMLTree * ToXMLTree(const cOrientationExterneRigide & anObj)
 
 void xml_init(cOrientationExterneRigide & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -9745,7 +9617,6 @@ cElXMLTree * ToXMLTree(const cConvExplicite & anObj)
 
 void xml_init(cConvExplicite & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -9934,7 +9805,6 @@ cElXMLTree * ToXMLTree(const cConvOri & anObj)
 
 void xml_init(cConvOri & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10308,7 +10178,6 @@ cElXMLTree * ToXMLTree(const cOrientationConique & anObj)
 
 void xml_init(cOrientationConique & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10437,7 +10306,6 @@ cElXMLTree * ToXMLTree(const cMNT2Cmp & anObj)
 
 void xml_init(cMNT2Cmp & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10503,7 +10371,6 @@ cElXMLTree * ToXMLTree(const cContourPolyCM & anObj)
 
 void xml_init(cContourPolyCM & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10588,7 +10455,6 @@ cElXMLTree * ToXMLTree(const cEnvellopeZoneCM & anObj)
 
 void xml_init(cEnvellopeZoneCM & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10688,7 +10554,6 @@ cElXMLTree * ToXMLTree(const cZoneCmpMnt & anObj)
 
 void xml_init(cZoneCmpMnt & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10732,7 +10597,6 @@ cElXMLTree * ToXMLTree(const cEcartZ & anObj)
 
 void xml_init(cEcartZ & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10788,7 +10652,6 @@ cElXMLTree * ToXMLTree(const cCorrelPente & anObj)
 
 void xml_init(cCorrelPente & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -10920,7 +10783,6 @@ cElXMLTree * ToXMLTree(const cMesureCmptMnt & anObj)
 
 void xml_init(cMesureCmptMnt & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11193,7 +11055,6 @@ cElXMLTree * ToXMLTree(const cCompareMNT & anObj)
 
 void xml_init(cCompareMNT & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11373,7 +11234,6 @@ cElXMLTree * ToXMLTree(const cDataBaseNameTransfo & anObj)
 
 void xml_init(cDataBaseNameTransfo & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11610,7 +11470,6 @@ cElXMLTree * ToXMLTree(const cInterpoleGrille & anObj)
 
 void xml_init(cInterpoleGrille & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11686,7 +11545,6 @@ cElXMLTree * ToXMLTree(const cOneCalib2Visu & anObj)
 
 void xml_init(cOneCalib2Visu & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11785,7 +11643,6 @@ cElXMLTree * ToXMLTree(const cVisuCalibZoom & anObj)
 
 void xml_init(cVisuCalibZoom & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11859,7 +11716,6 @@ cElXMLTree * ToXMLTree(const cFilterLocalisation & anObj)
 
 void xml_init(cFilterLocalisation & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -11951,7 +11807,6 @@ cElXMLTree * ToXMLTree(const cKeyExistingFile & anObj)
 
 void xml_init(cKeyExistingFile & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -12139,7 +11994,6 @@ cElXMLTree * ToXMLTree(const cNameFilter & anObj)
 
 void xml_init(cNameFilter & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -12315,7 +12169,6 @@ cElXMLTree * ToXMLTree(const cBasicAssocNameToName & anObj)
 
 void xml_init(cBasicAssocNameToName & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -12436,7 +12289,6 @@ cElXMLTree * ToXMLTree(const cAssocNameToName & anObj)
 
 void xml_init(cAssocNameToName & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -12868,7 +12720,6 @@ cElXMLTree * ToXMLTree(const cSetNameDescriptor & anObj)
 
 void xml_init(cSetNameDescriptor & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -12986,7 +12837,6 @@ cElXMLTree * ToXMLTree(const cImMatrixStructuration & anObj)
 
 void xml_init(cImMatrixStructuration & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13096,7 +12946,6 @@ cElXMLTree * ToXMLTree(const cFiltreEmprise & anObj)
 
 void xml_init(cFiltreEmprise & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13200,7 +13049,6 @@ cElXMLTree * ToXMLTree(const cFiltreByRelSsEch & anObj)
 
 void xml_init(cFiltreByRelSsEch & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13450,7 +13298,6 @@ cElXMLTree * ToXMLTree(const cFiltreDeRelationOrient & anObj)
 
 void xml_init(cFiltreDeRelationOrient & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13518,7 +13365,6 @@ cElXMLTree * ToXMLTree(const cSauvegardeNamedRel & anObj)
 
 void xml_init(cSauvegardeNamedRel & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13578,7 +13424,6 @@ cElXMLTree * ToXMLTree(const cSauvegardeSetString & anObj)
 
 void xml_init(cSauvegardeSetString & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13648,7 +13493,6 @@ cElXMLTree * ToXMLTree(const cClassEquivDescripteur & anObj)
 
 void xml_init(cClassEquivDescripteur & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13708,7 +13552,6 @@ cElXMLTree * ToXMLTree(const cOneSpecDelta & anObj)
 
 void xml_init(cOneSpecDelta & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13784,7 +13627,6 @@ cElXMLTree * ToXMLTree(const cGrByDelta & anObj)
 
 void xml_init(cGrByDelta & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -13988,7 +13830,6 @@ cElXMLTree * ToXMLTree(const cRelByGrapheExpl & anObj)
 
 void xml_init(cRelByGrapheExpl & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14086,7 +13927,6 @@ cElXMLTree * ToXMLTree(const cByAdjDeGroupes & anObj)
 
 void xml_init(cByAdjDeGroupes & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14251,7 +14091,6 @@ cElXMLTree * ToXMLTree(const cByGroupesDImages & anObj)
 
 void xml_init(cByGroupesDImages & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14310,7 +14149,6 @@ cElXMLTree * ToXMLTree(const cFiltreDelaunay & anObj)
 
 void xml_init(cFiltreDelaunay & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14352,7 +14190,6 @@ cElXMLTree * ToXMLTree(const cFiltreDist & anObj)
 
 void xml_init(cFiltreDist & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14448,7 +14285,6 @@ cElXMLTree * ToXMLTree(const cModeFiltreSpatial & anObj)
 
 void xml_init(cModeFiltreSpatial & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14656,7 +14492,6 @@ cElXMLTree * ToXMLTree(const cByFiltreSpatial & anObj)
 
 void xml_init(cByFiltreSpatial & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -14866,7 +14701,6 @@ cElXMLTree * ToXMLTree(const cByAdjacence & anObj)
 
 void xml_init(cByAdjacence & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15144,7 +14978,6 @@ cElXMLTree * ToXMLTree(const cNameRelDescriptor & anObj)
 
 void xml_init(cNameRelDescriptor & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15214,7 +15047,6 @@ cElXMLTree * ToXMLTree(const cExeRequired & anObj)
 
 void xml_init(cExeRequired & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15322,7 +15154,6 @@ cElXMLTree * ToXMLTree(const cFileRequired & anObj)
 
 void xml_init(cFileRequired & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15418,7 +15249,6 @@ cElXMLTree * ToXMLTree(const cBatchRequirement & anObj)
 
 void xml_init(cBatchRequirement & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15494,7 +15324,6 @@ cElXMLTree * ToXMLTree(const cExportApero2MM & anObj)
 
 void xml_init(cExportApero2MM & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -15883,7 +15712,6 @@ cElXMLTree * ToXMLTree(const cXmlXifInfo & anObj)
 
 void xml_init(cXmlXifInfo & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -16590,7 +16418,6 @@ cElXMLTree * ToXMLTree(const cOneShowChantDesc & anObj)
 
 void xml_init(cOneShowChantDesc & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -16672,7 +16499,6 @@ cElXMLTree * ToXMLTree(const cShowChantDesc & anObj)
 
 void xml_init(cShowChantDesc & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -16739,7 +16565,6 @@ cElXMLTree * ToXMLTree(const cMatrixSplitBox & anObj)
 
 void xml_init(cMatrixSplitBox & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -16975,7 +16800,6 @@ cElXMLTree * ToXMLTree(const cContenuAPrioriImage & anObj)
 
 void xml_init(cContenuAPrioriImage & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -17219,7 +17043,6 @@ cElXMLTree * ToXMLTree(const cAPrioriImage & anObj)
 
 void xml_init(cAPrioriImage & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -17368,7 +17191,6 @@ cElXMLTree * ToXMLTree(const cKeyedNamesAssociations & anObj)
 
 void xml_init(cKeyedNamesAssociations & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -17455,7 +17277,6 @@ cElXMLTree * ToXMLTree(const cKeyedSetsOfNames & anObj)
 
 void xml_init(cKeyedSetsOfNames & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -17538,7 +17359,6 @@ cElXMLTree * ToXMLTree(const cKeyedSetsORels & anObj)
 
 void xml_init(cKeyedSetsORels & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -17598,7 +17418,6 @@ cElXMLTree * ToXMLTree(const cKeyedMatrixStruct & anObj)
 
 void xml_init(cKeyedMatrixStruct & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18128,7 +17947,6 @@ cElXMLTree * ToXMLTree(const cChantierDescripteur & anObj)
 
 void xml_init(cChantierDescripteur & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18284,7 +18102,6 @@ cElXMLTree * ToXMLTree(const cXML_Date & anObj)
 
 void xml_init(cXML_Date & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18366,7 +18183,6 @@ cElXMLTree * ToXMLTree(const cpt3d & anObj)
 
 void xml_init(cpt3d & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18445,7 +18261,6 @@ cElXMLTree * ToXMLTree(const cXML_LinePt3d & anObj)
 
 void xml_init(cXML_LinePt3d & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18533,7 +18348,6 @@ cElXMLTree * ToXMLTree(const cOneSolImageSec & anObj)
 
 void xml_init(cOneSolImageSec & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18630,7 +18444,6 @@ cElXMLTree * ToXMLTree(const cISOM_Vois & anObj)
 
 void xml_init(cISOM_Vois & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18815,7 +18628,6 @@ cElXMLTree * ToXMLTree(const cImSecOfMaster & anObj)
 
 void xml_init(cImSecOfMaster & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -18891,7 +18703,6 @@ cElXMLTree * ToXMLTree(const cParamOrientSHC & anObj)
 
 void xml_init(cParamOrientSHC & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -19194,7 +19005,6 @@ cElXMLTree * ToXMLTree(const cXmlDataBase & anObj)
 
 void xml_init(cXmlDataBase & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -19272,7 +19082,6 @@ cElXMLTree * ToXMLTree(const cListImByDelta & anObj)
 
 void xml_init(cListImByDelta & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -19486,7 +19295,6 @@ cElXMLTree * ToXMLTree(const cMMUserEnvironment & anObj)
 
 void xml_init(cMMUserEnvironment & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -19684,7 +19492,6 @@ cElXMLTree * ToXMLTree(const cXmlMatis_pt3d & anObj)
 
 void xml_init(cXmlMatis_pt3d & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -19886,7 +19693,6 @@ cElXMLTree * ToXMLTree(const cXmlMatis_quaternion & anObj)
 
 void xml_init(cXmlMatis_quaternion & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -20338,7 +20144,6 @@ cElXMLTree * ToXMLTree(const cXmlMatis_image_size & anObj)
 
 void xml_init(cXmlMatis_image_size & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -20897,7 +20702,6 @@ cElXMLTree * ToXMLTree(const cXmlMatis_image_date & anObj)
 
 void xml_init(cXmlMatis_image_date & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -20979,7 +20783,6 @@ cElXMLTree * ToXMLTree(const cXmlMatis_auxiliarydata & anObj)
 
 void xml_init(cXmlMatis_auxiliarydata & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -21062,7 +20865,6 @@ cElXMLTree * ToXMLTree(const corientation & anObj)
 
 void xml_init(corientation & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 

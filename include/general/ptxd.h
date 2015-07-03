@@ -1038,10 +1038,6 @@ template <class Type> class Box2d
      {
         return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
      }
-     bool contains(const Pt2d<long double> & pt) const
-     {
-		return (pt.x>=_p0.x) && (pt.y>=_p0.y) && (pt.x<_p1.x) && (pt.y<_p1.y);
-     }
 
 
 

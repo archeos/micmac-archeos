@@ -182,18 +182,6 @@ void  BinaryUnDumpFromFile(eImpaintMethod &,ELISE_fp &);
 
 typedef enum
 {
-  eImpaintL2,
-  eImpaintMNT
-} eImpaintMethod;
-void xml_init(eImpaintMethod & aVal,cElXMLTree * aTree);
-std::string  eToString(const eImpaintMethod & aVal);
-
-eImpaintMethod  Str2eImpaintMethod(const std::string & aName);
-
-cElXMLTree * ToXMLTree(const std::string & aNameTag,const eImpaintMethod & anObj);
-
-typedef enum
-{
   eTN_u_int1,
   eTN_int1,
   eTN_u_int2,
@@ -2435,32 +2423,6 @@ void  BinaryDumpInFile(ELISE_fp &,const cTestNewGrid &);
 void  BinaryUnDumpFromFile(cTestNewGrid &,ELISE_fp &);
 
 std::string  Mangling( cTestNewGrid *);
-
-/******************************************************/
-/******************************************************/
-/******************************************************/
-class cTestNewGrid
-{
-    public:
-        cGlobXmlGen mGXml;
-
-        friend void xml_init(cTestNewGrid & anObj,cElXMLTree * aTree);
-
-
-        std::string & A();
-        const std::string & A()const ;
-
-        Im2D_INT1 & Im();
-        const Im2D_INT1 & Im()const ;
-
-        std::string & Z();
-        const std::string & Z()const ;
-    private:
-        std::string mA;
-        Im2D_INT1 mIm;
-        std::string mZ;
-};
-cElXMLTree * ToXMLTree(const cTestNewGrid &);
 
 /******************************************************/
 /******************************************************/

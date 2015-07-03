@@ -138,9 +138,6 @@ class cInterfSurfaceAnalytique
     // troisieme coordonnee (genre faisceau de normal)
      public :
 
-         // renvoie une surface identite, utile pour beneficier
-         // de certaine fonction MicMac passant par l'interface
-         static cInterfSurfaceAnalytique * Identite(double aZ); 
 
          void MakePly   (const cParamISAPly & , cPlyCloud & ,const std::vector<ElCamera *> &);
          // aProfMoy : Prof /10

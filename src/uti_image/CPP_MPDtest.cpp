@@ -157,8 +157,6 @@ Im2D_REAL4 Conv2Float(Im2DGen anI)
    return aRes;
 }
 
-   Fonc_Num aEnct1 = Moy(Square(aF1),aNb) -Square(aM1);
-   Fonc_Num aEnct2 = Moy(Square(aF2),aNb) -Square(aM2);
 
 
 
@@ -444,8 +442,6 @@ void FiltreRemoveFlou(const std::string & aNameIm,const std::string & aNameMasq)
     FiltreRemoveBorderHeter(anIm,aImMasq,1.0,10.0);
 }
 
-   Im2D_Bits<1> aImMasqDef(aSZ.x,aSZ.y,1);
-   ELISE_COPY(rectangle(Pt2di(70,0),Pt2di(130,200)),0,aImMasqDef.out());
 
 
 
@@ -495,8 +491,6 @@ void SobelTestNtt(const std::string &aName)
     std::cout << "Indice " << aSF1 / aSF2 << "\n";
   
 }
-#if (0)
-#endif
 
 void TestNtt(const std::string &aName)
 {
@@ -557,8 +551,6 @@ void TestNtt(const std::string &aName)
 extern void getKeypointFilename( const string &i_basename, int i_resolution, string &o_keypointsName );
 
 
-    Im2D_REAL16 anIm(aSz.x,aSz.y);
-    TIm2D<REAL16,REAL16> aTIm(anIm);
 
 int Jeremy_main( int argc, char **argv )
 {
@@ -604,8 +596,6 @@ void LoadTrScaleRotate
      int aNbCh = aTifIn.nb_chan();
      ELISE_ASSERT(aTifOut.nb_chan()==aNbCh,"LoadTrScaleRotate nb channel diff");
 
-    int aT = 12;
-    double aV =  3.44e7 + aT/1e5;
 
      Pt2dr aVIn  = Pt2dr(aP2Int-aP1Int);
      Pt2di aSzOutInit = round_ni(aVIn / aScale);
@@ -797,9 +787,6 @@ cXml_Ori2Im  aXmlOri = StdGetFromSI(aName,Xml_Ori2Im);
 /*
     cMasqBin3D::FromSaisieMasq3d("/home/marc/TMP/EPI/EXO1-Fontaine/AperiCloud_All_selectionInfo.xml");
 
-/*
-Tiff_Im  aFile("/media/data2/Aerien/Euro-SDR/VaihingenEnz_GSD20cm/MEC-Final/Z_000_DeZoom64_LeChantier.tif");
-*/
 
      LoadTrScaleRotate
      (

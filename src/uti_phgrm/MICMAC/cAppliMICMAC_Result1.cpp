@@ -964,7 +964,6 @@ void GenTFW(const ElAffin2D & anAff,const std::string & aNameTFW)
 
     aFtfw.close();
 }
-*/
 
 double ResolOfAff(const ElAffin2D & anAff)
 {

@@ -162,29 +162,6 @@ bool checkExecRights( const string &i_filename )
     return true;
 }
 
-// check if i_filename has execution rigths and if not, try to grant them (process owner must own the file)
-// if all this fails returns false
-bool checkExecRights( const string &i_filename )
-{	
-	#if (ELISE_POSIX)
-		if ( !hasExecutionRights( i_filename ) )
-		{
-			cerr << "WARNING: process does not have the right to execute " << i_filename << "" << endl;
-			cerr << "WARNING: trying to grant execution rights on " << i_filename << " ..." << endl;
-			if ( setAllExecutionRights( i_filename, true ) )
-				cerr << "WARNING: execution rights have been successfully granted on " << i_filename << endl;
-			else
-			{
-				cerr << "WARNING: unable to grant execution rights on " << i_filename << ", try :" << endl;
-				cerr << "WARNING: sudo chmod +x "+ i_filename << endl;
-				cerr << "WARNING: to solve this problem" << endl;
-				return false;
-			}
-		}
-	#endif
-	return true;
-}
-
 ExternalToolItem & ExternalToolHandler::addTool( const std::string &i_tool )
 {
     // this tool has not been queried before, we need to check

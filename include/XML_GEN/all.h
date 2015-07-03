@@ -1549,12 +1549,6 @@ bool IsMacType(eTypeMMByP aType);
 
 
 
-void MakeMetaData_XML_GeoI(const std::string & aNameImMasq);
-void MakeMetaData_XML_GeoI(const std::string & aNameImMasq,double aResol);
-
-
-//estd::set<std::string> SetOfCorresp(const std::vector<cCpleString> & aRel,const std::string &);
-
 
 #endif   // _ELISE_XML_GEN_ALL_H
 

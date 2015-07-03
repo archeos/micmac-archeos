@@ -172,7 +172,6 @@ cElXMLTree * ToXMLTree(const cContenuPt & anObj)
 
 void xml_init(cContenuPt & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -547,7 +546,6 @@ cElXMLTree * ToXMLTree(const cPointGlob & anObj)
 
 void xml_init(cPointGlob & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -635,7 +633,6 @@ cElXMLTree * ToXMLTree(const cSetPointGlob & anObj)
 
 void xml_init(cSetPointGlob & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -705,7 +702,6 @@ cElXMLTree * ToXMLTree(const cOneSaisie & anObj)
 
 void xml_init(cOneSaisie & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -783,7 +779,6 @@ cElXMLTree * ToXMLTree(const cSaisiePointeIm & anObj)
 
 void xml_init(cSaisiePointeIm & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -845,7 +840,6 @@ cElXMLTree * ToXMLTree(const cSetOfSaisiePointeIm & anObj)
 
 void xml_init(cSetOfSaisiePointeIm & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -988,7 +982,6 @@ cElXMLTree * ToXMLTree(const cSectionWindows & anObj)
 
 void xml_init(cSectionWindows & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1075,7 +1068,6 @@ cElXMLTree * ToXMLTree(const cImportFromDico & anObj)
 
 void xml_init(cImportFromDico & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1378,7 +1370,6 @@ cElXMLTree * ToXMLTree(const cSectionInOut & anObj)
 
 void xml_init(cSectionInOut & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1486,7 +1477,6 @@ cElXMLTree * ToXMLTree(const cSectionImages & anObj)
 
 void xml_init(cSectionImages & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1564,7 +1554,6 @@ cElXMLTree * ToXMLTree(const cProfEstimator & anObj)
 
 void xml_init(cProfEstimator & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -1708,7 +1697,6 @@ cElXMLTree * ToXMLTree(const cSectionTerrain & anObj)
 
 void xml_init(cSectionTerrain & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
@@ -2110,7 +2098,6 @@ cElXMLTree * ToXMLTree(const cParamSaisiePts & anObj)
 
 void xml_init(cParamSaisiePts & anObj,cElXMLTree * aTree)
 {
-   anObj.mGXml = aTree->mGXml;
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
