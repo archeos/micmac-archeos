@@ -30,10 +30,6 @@ cp LISEZMOI $OUT_MICMAC_DIR
 rm -fr $OUT_MICMAC_DIR/include/StdAfx.h.gch
 rm -fr $OUT_MICMAC_DIR/data/Tabul/.svn
 rm -fr $OUT_MICMAC_DIR/src/interface
-rm -rf $OUT_MICMAC_DIR/CodeExterne/ANN
-
-# remove ANN, we use debian one
-rm -rf $OUT_MICMAC_DIR/src/ANN 
 
 # remove hg
 rm -rf $OUT_MICMAC_DIR/.hg .hgignore
