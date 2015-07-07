@@ -1,0 +1,32 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Tue, 7 Jul 2015 11:08:22 +0200
+Subject: Do not install static libs
+
+---
+ CodeExterne/ANN/CMakeLists.txt | 2 +-
+ src/CMakeLists.txt             | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CodeExterne/ANN/CMakeLists.txt b/CodeExterne/ANN/CMakeLists.txt
+index fd474f0..214a67d 100644
+--- a/CodeExterne/ANN/CMakeLists.txt
++++ b/CodeExterne/ANN/CMakeLists.txt
+@@ -23,4 +23,4 @@ add_library( ANN 	${ANN_SRC_DIR}/ANN.cpp
+ 					${ANN_SRC_DIR}/kd_tree.cpp
+ 					${ANN_SRC_DIR}/perf.cpp )
+ 
+-INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )
++# INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index c384ede..d41eac4 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -175,7 +175,7 @@ target_link_libraries(${libElise} ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
+ #    qt5_use_modules(${libElise} Widgets Core Gui Xml Concurrent OpenGL)
+ #endif()
+ 
+-INSTALL(TARGETS ${libElise} ARCHIVE DESTINATION ${BUILD_PATH_LIB} )
++# INSTALL(TARGETS ${libElise} ARCHIVE DESTINATION ${BUILD_PATH_LIB} )
+ 
+ 
+ # OPTION BUILD : En tetes precompilees pour gcc
