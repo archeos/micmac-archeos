@@ -23,4 +23,4 @@ add_library( ANN 	${ANN_SRC_DIR}/ANN.cpp
 					${ANN_SRC_DIR}/kd_tree.cpp
 					${ANN_SRC_DIR}/perf.cpp )
 
-INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )
+# INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )

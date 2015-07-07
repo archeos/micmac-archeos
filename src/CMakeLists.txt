@@ -182,7 +182,7 @@ target_link_libraries(${libElise} ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
 #    qt5_use_modules(${libElise} Widgets Core Gui Xml Concurrent OpenGL)
 #endif()
 
-INSTALL(TARGETS ${libElise} ARCHIVE DESTINATION ${BUILD_PATH_LIB} )
+# INSTALL(TARGETS ${libElise} ARCHIVE DESTINATION ${BUILD_PATH_LIB} )
 
 
 # OPTION BUILD : En tetes precompilees pour gcc
