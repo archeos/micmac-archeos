@@ -2,9 +2,12 @@ Source: micmac
 Section: non-free/science
 Priority: extra
 Maintainer: Romain Janvier <romain.janvier@hotmail.fr>
-Build-Depends: debhelper (>= 9.0.0), cmake (>= 2.8.1), libx11-dev, libqt4-dev,
+Build-Depends: debhelper (>= 9.0.0), 
+ cmake (>= 2.8.1), 
+ libx11-dev, 
+ libqt4-dev,
  bash-completion
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://logiciels.ign.fr/?-Micmac,3-
 Vcs-Git: git://github.com/archeos/micmac-archeos.git
 Vcs-Browser: https://github.com/archeos/micmac-archeos/
