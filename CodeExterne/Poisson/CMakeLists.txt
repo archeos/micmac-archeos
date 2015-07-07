@@ -4,7 +4,7 @@ if (${BUILD_POISSON})
 	include_directories ( ${PROJECT_SOURCE_DIR}/CodeExterne/Poisson/include )
 
 	set(POISSON_SRC_DIR ${PROJECT_SOURCE_DIR}/CodeExterne/Poisson/src)
-	set(BinAuxDir ${PROJECT_SOURCE_DIR}/binaire-aux)
+	set(BinAuxDir /usr/bin)
 	
 	add_executable( PoissonRecon 	
 					${POISSON_SRC_DIR}/CmdLineParser.cpp
