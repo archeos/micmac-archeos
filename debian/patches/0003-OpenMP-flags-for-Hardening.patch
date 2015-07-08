@@ -1,0 +1,23 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Wed, 8 Jul 2015 16:25:29 +0200
+Subject: OpenMP flags for Hardening
+
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7466d5f..e3a6a3d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -75,8 +75,8 @@ if ( WITH_OPEN_MP )
+ 	else()
+ 	    message("using OpenMP for Poisson 3d shell computing")
+ 	endif()
+-	list( APPEND CMAKE_C_FLAGS ${OpenMP_C_FLAGS} )
+-	list( APPEND CMAKE_CXX_FLAGS ${OpenMP_CXX_FLAGS} )
++    SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}" )
++    SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
+ 	add_definitions(-DUSE_OPEN_MP)
+ endif()
+ 
