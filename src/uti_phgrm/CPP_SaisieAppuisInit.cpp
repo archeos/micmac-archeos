@@ -142,7 +142,7 @@ int SaisieAppuisInit_main(int argc,char ** argv)
   if (!MMVisualMode)
   {
       std::string aCom =     MMDir() +"bin/SaisiePts "
-                          +  MMDir() +"include/XML_MicMac/SaisieInitiale.xml "
+                          +  XML_MM_File("SaisieInitiale.xml")
                           +  std::string(" DirectoryChantier=") + aDir
                           +  std::string(" +Image=") + QUOTE(aName)
                           +  std::string(" +Ori=") + anOri

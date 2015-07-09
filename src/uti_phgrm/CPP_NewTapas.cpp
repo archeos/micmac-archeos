@@ -530,7 +530,7 @@ int Tapas_main(int argc,char ** argv)
 
 
        std::string aCom =     MM3dBinFile_quotes( "Apero" )
-                           + ToStrBlkCorr( MMDir()+"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+ aNameFileApero ) + " "
+                           + ToStrBlkCorr(Basic_XML_MM_File(aNameFileApero)) + " "
                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                            + std::string(" ") + QUOTE(std::string("+PatternAllIm=") + aPat) + std::string(" ")
                            + std::string(" ") + QUOTE(std::string("+SetIm=") + aSetIm) + std::string(" ")

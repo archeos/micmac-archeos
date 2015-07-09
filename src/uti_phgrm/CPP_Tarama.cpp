@@ -112,8 +112,8 @@ cAppliTarama::cAppliTarama(int argc,char ** argv) :
 
         MMD_InitArgcArgv(argc,argv);
 
-        std::string aCom =  MM3dBinFile( "MICMAC" )
-                + MMDir() + std::string("include/XML_MicMac/MM-TA.xml ")
+        std::string aCom =   MM3dBinFile( "MICMAC" )
+                + XML_MM_File("MM-TA.xml")
                 + std::string(" WorkDir=") +aDir +  std::string(" ")
                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                 + std::string(" +Zoom=") + ToString(Zoom)

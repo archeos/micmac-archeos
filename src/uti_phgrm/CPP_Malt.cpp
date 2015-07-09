@@ -903,7 +903,7 @@ if(0)
           std::string aFileOAM  = "MM-Malt-OrthoAnamOnly.xml";
 
           mComOA =  MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
-                  + MMDir() +"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+aFileOAM // MM-Malt.xml
+                  + XML_MM_File(aFileOAM)
                   + anArgCommuns
                   +  std::string(" +DirTA=TA-UnAnam") ;
 

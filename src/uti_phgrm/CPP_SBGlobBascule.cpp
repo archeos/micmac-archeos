@@ -113,7 +113,7 @@ int SBGlobBascule_main(int argc,char ** argv)
         MMD_InitArgcArgv(argc,argv);
 
         std::string aCom =   MM3dBinFile( "Apero" )
-                + MMDir() + std::string("include/XML_MicMac/Apero-SB-Bascule.xml ")
+                + XML_MM_File("Apero-SB-Bascule.xml")
                 + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                 + std::string(" +AeroOut=-") +  AeroOut

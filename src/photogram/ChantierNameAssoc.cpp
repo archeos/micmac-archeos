@@ -78,22 +78,22 @@ bool NameIsNKS(const std::string & aPat)
 bool NameIsNKSAssoc(const std::string & aPat)
 {
     return        NameIsNKS (aPat)
-              && (aPat[4]=='A') 
-              && (aPat[5]=='s') 
-              && (aPat[6]=='s') 
-              && (aPat[7]=='o') 
-              && (aPat[8]=='c') 
-              && (aPat[9]=='-') 
+              && (aPat[4]=='A')
+              && (aPat[5]=='s')
+              && (aPat[6]=='s')
+              && (aPat[7]=='o')
+              && (aPat[8]=='c')
+              && (aPat[9]=='-')
            ;
 }
 
 bool NameIsNKSSet(const std::string & aPat)
 {
-    return        NameIsNKS(aPat) 
-              && (aPat[4]=='S') 
-              && (aPat[5]=='e') 
-              && (aPat[6]=='t') 
-              && (aPat[7]=='-') 
+    return        NameIsNKS(aPat)
+              && (aPat[4]=='S')
+              && (aPat[5]=='e')
+              && (aPat[6]=='t')
+              && (aPat[7]=='-')
            ;
 }
 
@@ -647,7 +647,7 @@ std::string MM3dBinFile_quotes(const std::string & aCom)
 //   MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
 std::string Basic_XML_MM_File(const std::string & aFile)
 {
-   return   MMDir() + std::string("include" +std::string(ELISE_STR_DIR) + "XML_MicMac" + std::string(ELISE_STR_DIR) + aFile);
+    return std::string("/usr/share/micmac/XML_MicMac/" + aFile);
 }
 std::string XML_MM_File(const std::string & aFile)
 {
@@ -1150,7 +1150,7 @@ void cSetName::InternalAddList(const std::list<std::string> & aLN)
         itN++
     )
     {
-         std::string aName = mSND.SubDir().Val() +  *itN; // 
+         std::string aName = mSND.SubDir().Val() +  *itN; //
          bool Ok = ! mLR.AuMoinsUnMatch(aName);
 
          if (Ok && mSND.Min().IsInit()   && (*itN< mSND.Min().Val()))
@@ -3557,14 +3557,14 @@ std::string PastisNameFileStd(const std::string & aFullNameOri)
 
    std::string aNameSift = aICNM->Assoc1To1("NKS-Assoc-SFS",aNameSsDir,true);
 
-   if (aNameSift=="NONE") 
+   if (aNameSift=="NONE")
       return  NameFileStd( aFullNameOri, 1, false, true, false );
-      
-   if (aNameSift=="SFS") 
+
+   if (aNameSift=="SFS")
       aNameSift =  std::string("Tmp-MM-Dir")+ELISE_CAR_DIR + aNameSsDir + "_sfs.tif";
 
    aNameSift =  aDir + aNameSift;
- 
+
    if (!  ELISE_fp::exist_file(aNameSift))
    {
       std::string aCom =  MMBin() +  MM3DStr + " TestLib PrepSift  " + aFullNameOri  + " NameOut="+ aNameSift;
@@ -3899,7 +3899,7 @@ Tiff_Im PastisTif(const std::string &  aNameOri)
         }
         else
         {
-            aRes = dist8(PastisTif(mDir+aNameIm).sz()); 
+            aRes = dist8(PastisTif(mDir+aNameIm).sz());
         }
 
         return aRes;

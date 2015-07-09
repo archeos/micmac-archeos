@@ -140,7 +140,7 @@ int  SaisieAppuisPredic_main(int argc,char ** argv)
     if(!MMVisualMode)
     {
         std::string aCom =     MMDir() +"bin/SaisiePts "
-                +  MMDir() +"include/XML_MicMac/SaisieAppuisPredic.xml "
+                +  XML_MM_File("SaisieAppuisPredic.xml")
                 +  std::string(" DirectoryChantier=") + aDir
                 +  std::string(" +Images=") + QUOTE(aName)
                 +  std::string(" +Ori=") + anOri

@@ -115,7 +115,7 @@ int saisieAppuisInitQT_main(QApplication &app, int argc, char *argv[])
         MMVisualMode = true;
         argv[0] = (char*) "SaisieAppuisInitQT";
     }
-    
+
     std::string aInputSec;
 
     SaisieAppuisInit(argc, argv, aSzWin, aNbFen, aFullName, aDir, aName, aNamePt, aNameOri, aModeOri, aNameOut, aNameAuto, aPrefix2Add, aForceGray, aZMoy, aZInc,aInputSec);
@@ -142,7 +142,7 @@ int saisieAppuisInitQT_main(QApplication &app, int argc, char *argv[])
 
         QStringList input;
         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieInitiale.xml")
+                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieInitiale.xml").c_str())
                 << QString("DirectoryChantier=") + QString(aDir.c_str())
                 << QString("+Image=") +  QString(aName.c_str())
                 << QString("+Ori=") + QString(aNameOri.c_str())

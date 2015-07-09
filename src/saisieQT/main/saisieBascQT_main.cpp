@@ -86,7 +86,7 @@ int saisieBascQT_main(QApplication &app, int argc, char *argv[])
 
         QStringList input;
         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieLine.xml")
+                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieLine.xml").c_str())
                 << QString("DirectoryChantier=") + QString(aDir.c_str())
                 << QString("+Image=") +  QString(aName.c_str())
                 << QString("+Ori=")  + QString(anOri.c_str())

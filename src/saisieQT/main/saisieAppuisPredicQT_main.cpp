@@ -109,7 +109,7 @@ int saisieAppuisPredicQT_main(QApplication &app, int argc, char *argv[])
 
         QStringList input;
         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieAppuisPredic.xml")
+                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieAppuisPredic.xml").c_str())
                 << QString("DirectoryChantier=") + QString(aDir.c_str())
                 << QString("+Images=") +  QString(aName.c_str())
                 << QString("+Ori=") + QString(aNameOri.c_str())

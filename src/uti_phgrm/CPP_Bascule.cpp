@@ -239,13 +239,8 @@ int Bascule_main(int argc,char ** argv)
            aStrFixS =  " +DistFS=" + ToString(DistFE);
        }
 
-    #ifdef ELISE_windows
         std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
-                           + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
-    #else
-        std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
-                           + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
-    #endif
+                           + XML_MM_File("Apero-Bascule.xml")
                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                            + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                            + std::string(" +AeroOut=") + aPrefOut + AeroOut
@@ -307,7 +302,7 @@ int BasculePtsInRepCam_main(int argc,char ** argv)
     CamStenope * aCamIn =  BasicCamOrientGenFromFile(aNameCam);
     ElRotation3D aR = aCamIn->Orient();
     cDicoAppuisFlottant aDAFIn =  StdGetFromPCP(aNamePts,DicoAppuisFlottant);
-    for 
+    for
     (
          std::list<cOneAppuisDAF>::iterator itO=aDAFIn.OneAppuisDAF().begin();
          itO!=aDAFIn.OneAppuisDAF().end();
@@ -320,7 +315,7 @@ int BasculePtsInRepCam_main(int argc,char ** argv)
 
     MakeFileXML(aDAFIn,aNamePts_Out);
 
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -358,7 +353,7 @@ cAppliBasculeCamsInRepCam_main::cAppliBasculeCamsInRepCam_main(int argc,char ** 
 
    std::string aKey = "NKS-Assoc-Im2Orient@-" + mOriOut;
 
-   // MtoC * MtoC0  
+   // MtoC * MtoC0
    for (int aK=0 ; aK<int(mVSoms.size()) ; aK++)
    {
        CamStenope * aCS = mVSoms[aK]->attr().mIma->mCam;  // MtoC

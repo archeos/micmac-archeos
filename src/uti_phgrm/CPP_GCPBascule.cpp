@@ -79,8 +79,8 @@ int FlagOfDeg(const Pt3di & aDXY)
    int aRes = 0;
    for (int aK=0 ; aK<6 ; aK++)
    {
-        if (      (aDXY.x>=NLDDegFlagX[aK]) 
-               && (aDXY.y>=NLDDegFlagY[aK]) 
+        if (      (aDXY.x>=NLDDegFlagX[aK])
+               && (aDXY.y>=NLDDegFlagY[aK])
                && (aDXY.z >= (NLDDegFlagX[aK]+NLDDegFlagY[aK]))
            )
            aRes |= 1<< aK;
@@ -150,7 +150,7 @@ int GCPBascule_main(int argc,char ** argv)
     MMD_InitArgcArgv(argc,argv);
 
     std::string aCom =   MM3dBinFile_quotes( "Apero" )
-                       + ToStrBlkCorr( MMDir()+"include/XML_MicMac/Apero-GCP-Bascule.xml" )+" "
+                       + ToStrBlkCorr(Basic_XML_MM_File("Apero-GCP-Bascule.xml")) + " "
                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                        + std::string(" +AeroIn=") + AeroIn
@@ -230,7 +230,7 @@ int GCPCtrl_main(int argc,char ** argv)
 
 
     std::string aCom =   MM3dBinFile_quotes( "Apero" )
-                       + ToStrBlkCorr( MMDir()+"include/XML_MicMac/Apero-GCP-Control.xml" )+" "
+                       + ToStrBlkCorr(Basic_XML_MM_File("Apero-GCP-Control.xml")) + " "
                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                        + std::string(" +AeroIn=") + AeroIn

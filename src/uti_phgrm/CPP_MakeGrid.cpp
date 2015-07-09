@@ -82,7 +82,7 @@ int MakeGrid_main(int argc,char ** argv)
     #else
         std::string aCom =     MMDir() + std::string("bin/Apero ")
     #endif
-                           +  MMDir() + std::string("include/XML_MicMac/AperoGrid.xml ")
+                           + XML_MM_File("AperoGrid.xml")
                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                            + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                            + std::string(" +AeroOut=-") + AeroOut

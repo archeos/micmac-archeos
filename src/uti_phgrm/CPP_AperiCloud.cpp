@@ -120,7 +120,7 @@ int AperiCloud_main(int argc,char ** argv)
         //std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR  "Apero ")
         //                   + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
         std::string aCom =   MM3dBinFile_quotes("Apero")
-                + ToStrBlkCorr( MMDir()+std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR)+ aXmlName)+" "
+                + ToStrBlkCorr( Basic_XML_MM_File(aXmlName))+" "
                 + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                 + std::string(" +Ext=") + (ExpTxt?"txt":"dat")

@@ -127,7 +127,7 @@ int SaisieBasc_main_Gen(int argc,char ** argv,int aMode)
   SaisieBasc(argc, argv, aFullName, aDir, aName, anOri, anOut, aSzW, aNbFen, aForceGray);
 
   std::string aCom =     MMDir() +"bin/mm3d SaisiePts "
-                      +  MMDir() +"include/XML_MicMac/SaisieLine.xml "
+                      +  XML_MM_File("SaisieLine.xml")
                       +  std::string(" DirectoryChantier=") + aDir
                       +  std::string(" +Image=") + QUOTE(aName)
                       +  std::string(" +Ori=") + anOri
