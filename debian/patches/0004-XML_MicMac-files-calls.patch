@@ -1,0 +1,424 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Thu, 9 Jul 2015 14:55:13 +0200
+Subject: XML_MicMac files calls
+
+---
+ src/photogram/ChantierNameAssoc.cpp             | 38 ++++++++++++-------------
+ src/saisieQT/main/saisieAppuisInitQT_main.cpp   |  4 +--
+ src/saisieQT/main/saisieAppuisPredicQT_main.cpp |  2 +-
+ src/saisieQT/main/saisieBascQT_main.cpp         |  2 +-
+ src/uti_phgrm/CPP_AperiCloud.cpp                |  4 +--
+ src/uti_phgrm/CPP_Bascule.cpp                   | 13 +++------
+ src/uti_phgrm/CPP_GCPBascule.cpp                |  8 +++---
+ src/uti_phgrm/CPP_MakeGrid.cpp                  |  2 +-
+ src/uti_phgrm/CPP_Malt.cpp                      |  2 +-
+ src/uti_phgrm/CPP_NewTapas.cpp                  |  2 +-
+ src/uti_phgrm/CPP_RepLocBascule.cpp             |  2 +-
+ src/uti_phgrm/CPP_SBGlobBascule.cpp             |  2 +-
+ src/uti_phgrm/CPP_SEL.cpp                       |  2 +-
+ src/uti_phgrm/CPP_SaisieAppuisInit.cpp          |  2 +-
+ src/uti_phgrm/CPP_SaisieAppuisPredic.cpp        |  2 +-
+ src/uti_phgrm/CPP_SaisieBasc.cpp                |  2 +-
+ src/uti_phgrm/CPP_Tapas.cpp                     |  2 +-
+ src/uti_phgrm/CPP_Tarama.cpp                    |  2 +-
+ src/uti_phgrm/CPP_Tawny.cpp                     |  2 +-
+ 19 files changed, 45 insertions(+), 50 deletions(-)
+
+diff --git a/src/photogram/ChantierNameAssoc.cpp b/src/photogram/ChantierNameAssoc.cpp
+index c831624..a15b177 100644
+--- a/src/photogram/ChantierNameAssoc.cpp
++++ b/src/photogram/ChantierNameAssoc.cpp
+@@ -78,22 +78,22 @@ bool NameIsNKS(const std::string & aPat)
+ bool NameIsNKSAssoc(const std::string & aPat)
+ {
+     return        NameIsNKS (aPat)
+-              && (aPat[4]=='A') 
+-              && (aPat[5]=='s') 
+-              && (aPat[6]=='s') 
+-              && (aPat[7]=='o') 
+-              && (aPat[8]=='c') 
+-              && (aPat[9]=='-') 
++              && (aPat[4]=='A')
++              && (aPat[5]=='s')
++              && (aPat[6]=='s')
++              && (aPat[7]=='o')
++              && (aPat[8]=='c')
++              && (aPat[9]=='-')
+            ;
+ }
+ 
+ bool NameIsNKSSet(const std::string & aPat)
+ {
+-    return        NameIsNKS(aPat) 
+-              && (aPat[4]=='S') 
+-              && (aPat[5]=='e') 
+-              && (aPat[6]=='t') 
+-              && (aPat[7]=='-') 
++    return        NameIsNKS(aPat)
++              && (aPat[4]=='S')
++              && (aPat[5]=='e')
++              && (aPat[6]=='t')
++              && (aPat[7]=='-')
+            ;
+ }
+ 
+@@ -640,7 +640,7 @@ std::string MM3dBinFile_quotes(const std::string & aCom)
+ //   MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
+ std::string Basic_XML_MM_File(const std::string & aFile)
+ {
+-   return   MMDir() + std::string("include" +std::string(ELISE_STR_DIR) + "XML_MicMac" + std::string(ELISE_STR_DIR) + aFile);
++    return std::string("/usr/share/micmac/XML_MicMac/" + aFile);
+ }
+ std::string XML_MM_File(const std::string & aFile)
+ {
+@@ -1143,7 +1143,7 @@ void cSetName::InternalAddList(const std::list<std::string> & aLN)
+         itN++
+     )
+     {
+-         std::string aName = mSND.SubDir().Val() +  *itN; // 
++         std::string aName = mSND.SubDir().Val() +  *itN; //
+          bool Ok = ! mLR.AuMoinsUnMatch(aName);
+ 
+          if (Ok && mSND.Min().IsInit()   && (*itN< mSND.Min().Val()))
+@@ -2807,7 +2807,7 @@ cInterfChantierNameManipulateur* cInterfChantierNameManipulateur::BasicAlloc(con
+       cTplValGesInit<std::string> aNoName;
+       aRes =  StdAlloc(0,0,aDir,aNoName);
+       TheMap[aDir] = aRes;
+-   } 
++   }
+    return aRes;
+ }
+ 
+@@ -3508,14 +3508,14 @@ std::string PastisNameFileStd(const std::string & aFullNameOri)
+ 
+    std::string aNameSift = aICNM->Assoc1To1("NKS-Assoc-SFS",aNameSsDir,true);
+ 
+-   if (aNameSift=="NONE") 
++   if (aNameSift=="NONE")
+       return  NameFileStd( aFullNameOri, 1, false, true, false );
+-      
+-   if (aNameSift=="SFS") 
++
++   if (aNameSift=="SFS")
+       aNameSift =  std::string("Tmp-MM-Dir")+ELISE_CAR_DIR + aNameSsDir + "_sfs.tif";
+ 
+    aNameSift =  aDir + aNameSift;
+- 
++
+    if (!  ELISE_fp::exist_file(aNameSift))
+    {
+       std::string aCom =  MMBin() +  MM3DStr + " TestLib PrepSift  " + aFullNameOri  + " NameOut="+ aNameSift;
+@@ -3850,7 +3850,7 @@ Tiff_Im PastisTif(const std::string &  aNameOri)
+         }
+         else
+         {
+-            aRes = dist8(PastisTif(mDir+aNameIm).sz()); 
++            aRes = dist8(PastisTif(mDir+aNameIm).sz());
+         }
+ 
+         return aRes;
+diff --git a/src/saisieQT/main/saisieAppuisInitQT_main.cpp b/src/saisieQT/main/saisieAppuisInitQT_main.cpp
+index 3187a6d..936aea4 100644
+--- a/src/saisieQT/main/saisieAppuisInitQT_main.cpp
++++ b/src/saisieQT/main/saisieAppuisInitQT_main.cpp
+@@ -115,7 +115,7 @@ int saisieAppuisInitQT_main(QApplication &app, int argc, char *argv[])
+         MMVisualMode = true;
+         argv[0] = (char*) "SaisieAppuisInitQT";
+     }
+-    
++
+     std::string aInputSec;
+ 
+     SaisieAppuisInit(argc, argv, aSzWin, aNbFen, aFullName, aDir, aName, aNamePt, aNameOri, aModeOri, aNameOut, aNameAuto, aPrefix2Add, aForceGray, aZMoy, aZInc,aInputSec);
+@@ -142,7 +142,7 @@ int saisieAppuisInitQT_main(QApplication &app, int argc, char *argv[])
+ 
+         QStringList input;
+         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
+-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieInitiale.xml")
++                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieInitiale.xml").c_str())
+                 << QString("DirectoryChantier=") + QString(aDir.c_str())
+                 << QString("+Image=") +  QString(aName.c_str())
+                 << QString("+Ori=") + QString(aNameOri.c_str())
+diff --git a/src/saisieQT/main/saisieAppuisPredicQT_main.cpp b/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
+index 2bc41d7..1d7a7e6 100644
+--- a/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
++++ b/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
+@@ -109,7 +109,7 @@ int saisieAppuisPredicQT_main(QApplication &app, int argc, char *argv[])
+ 
+         QStringList input;
+         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
+-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieAppuisPredic.xml")
++                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieAppuisPredic.xml").c_str())
+                 << QString("DirectoryChantier=") + QString(aDir.c_str())
+                 << QString("+Images=") +  QString(aName.c_str())
+                 << QString("+Ori=") + QString(aNameOri.c_str())
+diff --git a/src/saisieQT/main/saisieBascQT_main.cpp b/src/saisieQT/main/saisieBascQT_main.cpp
+index abc7b7e..0ce1875 100644
+--- a/src/saisieQT/main/saisieBascQT_main.cpp
++++ b/src/saisieQT/main/saisieBascQT_main.cpp
+@@ -86,7 +86,7 @@ int saisieBascQT_main(QApplication &app, int argc, char *argv[])
+ 
+         QStringList input;
+         input   << QString(MMDir().c_str()) + QString("bin/SaisiePts")
+-                << QString(MMDir().c_str()) + QString("include/XML_MicMac/SaisieLine.xml")
++                << QString(MMDir().c_str()) + QString(XML_MM_File("SaisieLine.xml").c_str())
+                 << QString("DirectoryChantier=") + QString(aDir.c_str())
+                 << QString("+Image=") +  QString(aName.c_str())
+                 << QString("+Ori=")  + QString(anOri.c_str())
+diff --git a/src/uti_phgrm/CPP_AperiCloud.cpp b/src/uti_phgrm/CPP_AperiCloud.cpp
+index c388cc8..44144db 100644
+--- a/src/uti_phgrm/CPP_AperiCloud.cpp
++++ b/src/uti_phgrm/CPP_AperiCloud.cpp
+@@ -118,7 +118,7 @@ int AperiCloud_main(int argc,char ** argv)
+         //std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR  "Apero ")
+         //                   + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Cloud.xml ")
+         std::string aCom =   MM3dBinFile_quotes("Apero")
+-                + ToStrBlkCorr( MMDir()+std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR)+ aXmlName)+" "
++                + ToStrBlkCorr( Basic_XML_MM_File(aXmlName))+" "
+                 + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                 + std::string(" +Ext=") + (ExpTxt?"txt":"dat")
+@@ -162,7 +162,7 @@ int AperiCloud_main(int argc,char ** argv)
+             aCom = aCom + std::string(" +SetHom=") + aSetHom;
+ 
+ 
+-        
++
+ 
+         if (EAMIsInit(&aLimBsH))
+             aCom = aCom + std::string(" +LimBsH=") + ToString(aLimBsH);
+diff --git a/src/uti_phgrm/CPP_Bascule.cpp b/src/uti_phgrm/CPP_Bascule.cpp
+index db6ed61..790a198 100644
+--- a/src/uti_phgrm/CPP_Bascule.cpp
++++ b/src/uti_phgrm/CPP_Bascule.cpp
+@@ -239,13 +239,8 @@ int Bascule_main(int argc,char ** argv)
+            aStrFixS =  " +DistFS=" + ToString(DistFE);
+        }
+ 
+-    #ifdef ELISE_windows
+         std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
+-                           + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
+-    #else
+-        std::string aCom =   MMDir() + std::string("bin" ELISE_STR_DIR "Apero ")
+-                           + MMDir() + std::string("include" ELISE_STR_DIR "XML_MicMac" ELISE_STR_DIR "Apero-Bascule.xml ")
+-    #endif
++                           + XML_MM_File("Apero-Bascule.xml")
+                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                            + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                            + std::string(" +AeroOut=") + aPrefOut + AeroOut
+@@ -307,7 +302,7 @@ int BasculePtsInRepCam_main(int argc,char ** argv)
+     CamStenope * aCamIn =  BasicCamOrientGenFromFile(aNameCam);
+     ElRotation3D aR = aCamIn->Orient();
+     cDicoAppuisFlottant aDAFIn =  StdGetFromPCP(aNamePts,DicoAppuisFlottant);
+-    for 
++    for
+     (
+          std::list<cOneAppuisDAF>::iterator itO=aDAFIn.OneAppuisDAF().begin();
+          itO!=aDAFIn.OneAppuisDAF().end();
+@@ -320,7 +315,7 @@ int BasculePtsInRepCam_main(int argc,char ** argv)
+ 
+     MakeFileXML(aDAFIn,aNamePts_Out);
+ 
+-    
++
+     return EXIT_SUCCESS;
+ }
+ 
+@@ -358,7 +353,7 @@ cAppliBasculeCamsInRepCam_main::cAppliBasculeCamsInRepCam_main(int argc,char **
+ 
+    std::string aKey = "NKS-Assoc-Im2Orient@-" + mOriOut;
+ 
+-   // MtoC * MtoC0  
++   // MtoC * MtoC0
+    for (int aK=0 ; aK<int(mVSoms.size()) ; aK++)
+    {
+        CamStenope * aCS = mVSoms[aK]->attr().mIma->mCam;  // MtoC
+diff --git a/src/uti_phgrm/CPP_GCPBascule.cpp b/src/uti_phgrm/CPP_GCPBascule.cpp
+index 7cb6e07..d5a66cf 100644
+--- a/src/uti_phgrm/CPP_GCPBascule.cpp
++++ b/src/uti_phgrm/CPP_GCPBascule.cpp
+@@ -79,8 +79,8 @@ int FlagOfDeg(const Pt3di & aDXY)
+    int aRes = 0;
+    for (int aK=0 ; aK<6 ; aK++)
+    {
+-        if (      (aDXY.x>=NLDDegFlagX[aK]) 
+-               && (aDXY.y>=NLDDegFlagY[aK]) 
++        if (      (aDXY.x>=NLDDegFlagX[aK])
++               && (aDXY.y>=NLDDegFlagY[aK])
+                && (aDXY.z >= (NLDDegFlagX[aK]+NLDDegFlagY[aK]))
+            )
+            aRes |= 1<< aK;
+@@ -150,7 +150,7 @@ int GCPBascule_main(int argc,char ** argv)
+     MMD_InitArgcArgv(argc,argv);
+ 
+     std::string aCom =   MM3dBinFile_quotes( "Apero" )
+-                       + ToStrBlkCorr( MMDir()+"include/XML_MicMac/Apero-GCP-Bascule.xml" )+" "
++                       + ToStrBlkCorr(Basic_XML_MM_File("Apero-GCP-Bascule.xml")) + " "
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                        + std::string(" +AeroIn=") + AeroIn
+@@ -230,7 +230,7 @@ int GCPCtrl_main(int argc,char ** argv)
+ 
+ 
+     std::string aCom =   MM3dBinFile_quotes( "Apero" )
+-                       + ToStrBlkCorr( MMDir()+"include/XML_MicMac/Apero-GCP-Control.xml" )+" "
++                       + ToStrBlkCorr(Basic_XML_MM_File("Apero-GCP-Control.xml")) + " "
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                        + std::string(" +AeroIn=") + AeroIn
+diff --git a/src/uti_phgrm/CPP_MakeGrid.cpp b/src/uti_phgrm/CPP_MakeGrid.cpp
+index 235cc4b..183ee2a 100644
+--- a/src/uti_phgrm/CPP_MakeGrid.cpp
++++ b/src/uti_phgrm/CPP_MakeGrid.cpp
+@@ -82,7 +82,7 @@ int MakeGrid_main(int argc,char ** argv)
+     #else
+         std::string aCom =     MMDir() + std::string("bin/Apero ")
+     #endif
+-                           +  MMDir() + std::string("include/XML_MicMac/AperoGrid.xml ")
++                           + XML_MM_File("AperoGrid.xml")
+                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                            + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                            + std::string(" +AeroOut=-") + AeroOut
+diff --git a/src/uti_phgrm/CPP_Malt.cpp b/src/uti_phgrm/CPP_Malt.cpp
+index 427e607..8f6de1a 100644
+--- a/src/uti_phgrm/CPP_Malt.cpp
++++ b/src/uti_phgrm/CPP_Malt.cpp
+@@ -849,7 +849,7 @@ cAppliMalt::cAppliMalt(int argc,char ** argv) :
+           std::string aFileOAM  = "MM-Malt-OrthoAnamOnly.xml";
+ 
+           mComOA =  MMDir() +"bin"+ELISE_CAR_DIR+"MICMAC "
+-                  + MMDir() +"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+aFileOAM // MM-Malt.xml
++                  + XML_MM_File(aFileOAM)
+                   + anArgCommuns
+                   +  std::string(" +DirTA=TA-UnAnam") ;
+ 
+diff --git a/src/uti_phgrm/CPP_NewTapas.cpp b/src/uti_phgrm/CPP_NewTapas.cpp
+index 4e78830..e1d7a30 100644
+--- a/src/uti_phgrm/CPP_NewTapas.cpp
++++ b/src/uti_phgrm/CPP_NewTapas.cpp
+@@ -493,7 +493,7 @@ int Tapas_main(int argc,char ** argv)
+ 
+ 
+        std::string aCom =     MM3dBinFile_quotes( "Apero" )
+-                           + ToStrBlkCorr( MMDir()+"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+ aNameFileApero ) + " "
++                           + ToStrBlkCorr(Basic_XML_MM_File(aNameFileApero)) + " "
+                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                            + std::string(" ") + QUOTE(std::string("+PatternAllIm=") + aPat) + std::string(" ")
+                            + std::string(" ") + QUOTE(std::string("+SetIm=") + aSetIm) + std::string(" ")
+diff --git a/src/uti_phgrm/CPP_RepLocBascule.cpp b/src/uti_phgrm/CPP_RepLocBascule.cpp
+index 2832cf3..9fb83a3 100644
+--- a/src/uti_phgrm/CPP_RepLocBascule.cpp
++++ b/src/uti_phgrm/CPP_RepLocBascule.cpp
+@@ -92,7 +92,7 @@ int RepLocBascule_main(int argc,char ** argv)
+ 
+     MMD_InitArgcArgv(argc,argv);
+     std::string aCom =   MM3dBinFile( "Apero" )
+-                       + MMDir() + std::string("include/XML_MicMac/Apero-RLoc-Bascule.xml ")
++                       + XML_MM_File("Apero-RLoc-Bascule.xml")
+                        + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+ 
+                        + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+diff --git a/src/uti_phgrm/CPP_SBGlobBascule.cpp b/src/uti_phgrm/CPP_SBGlobBascule.cpp
+index 7ac2117..9ec1b3b 100644
+--- a/src/uti_phgrm/CPP_SBGlobBascule.cpp
++++ b/src/uti_phgrm/CPP_SBGlobBascule.cpp
+@@ -113,7 +113,7 @@ int SBGlobBascule_main(int argc,char ** argv)
+         MMD_InitArgcArgv(argc,argv);
+ 
+         std::string aCom =   MM3dBinFile( "Apero" )
+-                + MMDir() + std::string("include/XML_MicMac/Apero-SB-Bascule.xml ")
++                + XML_MM_File("Apero-SB-Bascule.xml")
+                 + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                 + std::string(" +AeroOut=-") +  AeroOut
+diff --git a/src/uti_phgrm/CPP_SEL.cpp b/src/uti_phgrm/CPP_SEL.cpp
+index 68b12de..86dc124 100644
+--- a/src/uti_phgrm/CPP_SEL.cpp
++++ b/src/uti_phgrm/CPP_SEL.cpp
+@@ -135,7 +135,7 @@ int SEL_main(int argc,char ** argv)
+ 
+         std::string aCom =   MM3dBinFile("MICMACSaisieLiaisons")
+                            // + MMDir()+std::string("applis/XML-Pattron/Pattron-MicMacLiaison.xml ")
+-                           + MMDir()+std::string("include/XML_MicMac/Pattron-MicMacLiaison.xml ")
++                           + XML_MM_File("Pattron-MicMacLiaison.xml")
+                            + " WorkDir=" + aDir
+                            + " %Im1=" + aN1
+                            + " %Im2=" + aN2
+diff --git a/src/uti_phgrm/CPP_SaisieAppuisInit.cpp b/src/uti_phgrm/CPP_SaisieAppuisInit.cpp
+index 9c79bff..055577a 100644
+--- a/src/uti_phgrm/CPP_SaisieAppuisInit.cpp
++++ b/src/uti_phgrm/CPP_SaisieAppuisInit.cpp
+@@ -142,7 +142,7 @@ int SaisieAppuisInit_main(int argc,char ** argv)
+   if (!MMVisualMode)
+   {
+       std::string aCom =     MMDir() +"bin/SaisiePts "
+-                          +  MMDir() +"include/XML_MicMac/SaisieInitiale.xml "
++                          +  XML_MM_File("SaisieInitiale.xml")
+                           +  std::string(" DirectoryChantier=") + aDir
+                           +  std::string(" +Image=") + QUOTE(aName)
+                           +  std::string(" +Ori=") + anOri
+diff --git a/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp b/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
+index fa837f5..dfc6290 100644
+--- a/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
++++ b/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
+@@ -140,7 +140,7 @@ int  SaisieAppuisPredic_main(int argc,char ** argv)
+     if(!MMVisualMode)
+     {
+         std::string aCom =     MMDir() +"bin/SaisiePts "
+-                +  MMDir() +"include/XML_MicMac/SaisieAppuisPredic.xml "
++                +  XML_MM_File("SaisieAppuisPredic.xml")
+                 +  std::string(" DirectoryChantier=") + aDir
+                 +  std::string(" +Images=") + QUOTE(aName)
+                 +  std::string(" +Ori=") + anOri
+diff --git a/src/uti_phgrm/CPP_SaisieBasc.cpp b/src/uti_phgrm/CPP_SaisieBasc.cpp
+index f4f8e0c..a82a9a5 100644
+--- a/src/uti_phgrm/CPP_SaisieBasc.cpp
++++ b/src/uti_phgrm/CPP_SaisieBasc.cpp
+@@ -127,7 +127,7 @@ int SaisieBasc_main_Gen(int argc,char ** argv,int aMode)
+   SaisieBasc(argc, argv, aFullName, aDir, aName, anOri, anOut, aSzW, aNbFen, aForceGray);
+ 
+   std::string aCom =     MMDir() +"bin/mm3d SaisiePts "
+-                      +  MMDir() +"include/XML_MicMac/SaisieLine.xml "
++                      +  XML_MM_File("SaisieLine.xml")
+                       +  std::string(" DirectoryChantier=") + aDir
+                       +  std::string(" +Image=") + QUOTE(aName)
+                       +  std::string(" +Ori=") + anOri
+diff --git a/src/uti_phgrm/CPP_Tapas.cpp b/src/uti_phgrm/CPP_Tapas.cpp
+index df498c5..ce82673 100644
+--- a/src/uti_phgrm/CPP_Tapas.cpp
++++ b/src/uti_phgrm/CPP_Tapas.cpp
+@@ -407,7 +407,7 @@ int Tapas_main(int argc,char ** argv)
+ 
+ 
+        std::string aCom =     MM3dBinFile_quotes( "Apero" )
+-                           + ToStrBlkCorr( MMDir()+"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+ aNameFileApero ) + " "
++                           + ToStrBlkCorr(Basic_XML_MM_File(aNameFileApero)) + " "
+                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
+                            + std::string(" ") + QUOTE(std::string("+PatternAllIm=") + aPat) + std::string(" ")
+                            //+ std::string(" +PatternAllIm=") + aPat + std::string(" ")
+diff --git a/src/uti_phgrm/CPP_Tarama.cpp b/src/uti_phgrm/CPP_Tarama.cpp
+index 7f98beb..a6579c2 100644
+--- a/src/uti_phgrm/CPP_Tarama.cpp
++++ b/src/uti_phgrm/CPP_Tarama.cpp
+@@ -113,7 +113,7 @@ cAppliTarama::cAppliTarama(int argc,char ** argv) :
+         MMD_InitArgcArgv(argc,argv);
+ 
+         std::string aCom =   MM3dBinFile( "MICMAC" )
+-                + MMDir() + std::string("include/XML_MicMac/MM-TA.xml ")
++                + XML_MM_File("MM-TA.xml")
+                 + std::string(" WorkDir=") +aDir +  std::string(" ")
+                 + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
+                 + std::string(" +Zoom=") + ToString(Zoom)
+diff --git a/src/uti_phgrm/CPP_Tawny.cpp b/src/uti_phgrm/CPP_Tawny.cpp
+index b50cd0c..09aaf20 100644
+--- a/src/uti_phgrm/CPP_Tawny.cpp
++++ b/src/uti_phgrm/CPP_Tawny.cpp
+@@ -104,7 +104,7 @@ int Tawny_main(int argc,char ** argv)
+         MMD_InitArgcArgv(argc,argv);
+ 
+         std::string aCom =    MM3dBinFile( "Porto" )
+-                + MMDir() +std::string("include/XML_MicMac/Param-Tawny.xml ")
++                + XML_MM_File("Param-Tawny.xml")
+                 + std::string(" %WD=") + aDir
+                 + std::string(" +DR1X=") + ToString(mDeqXY.x)
+                 + std::string(" +DR1Y=") + ToString(mDeqXY.y)

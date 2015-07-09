@@ -1,3 +1,4 @@
 0001-Do-not-install-static-libs.patch
 0002-Proper-Poisson-Install-directory.patch
 0003-OpenMP-flags-for-Hardening.patch
+0004-XML_MicMac-files-calls.patch
