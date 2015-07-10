@@ -1,0 +1,834 @@
+From: Romain Janvier <romain.janvier@hotmail.fr>
+Date: Fri, 10 Jul 2015 09:23:54 +0200
+Subject: XML_GEN files calls
+
+---
+ src/photogram/FiltrageSpatial_CNA.cpp | 40 +++++++++++------------
+ src/uti_image/Digeo/cAppliDigeo.cpp   | 26 +++++++--------
+ src/uti_phgrm/CPP_Apero.cpp           |  6 +---
+ src/uti_phgrm/CPP_MICMAC.cpp          | 26 +++++++--------
+ src/uti_phgrm/CPP_Porto.cpp           | 22 ++++++-------
+ src/util/stringifie.cpp               | 40 +++++++++++------------
+ src/util/xml.cpp                      | 60 +++++++++++++++++------------------
+ 7 files changed, 108 insertions(+), 112 deletions(-)
+
+diff --git a/src/photogram/FiltrageSpatial_CNA.cpp b/src/photogram/FiltrageSpatial_CNA.cpp
+index bfe0bba..02c101b 100644
+--- a/src/photogram/FiltrageSpatial_CNA.cpp
++++ b/src/photogram/FiltrageSpatial_CNA.cpp
+@@ -5,7 +5,7 @@
+ 
+     www.micmac.ign.fr
+ 
+-   
++
+     Copyright : Institut Geographique National
+     Author : Marc Pierrot Deseilligny
+     Contributors : Gregoire Maillet, Didier Boldo.
+@@ -17,12 +17,12 @@
+     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
+ 
+ [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
+-    d'images, adapte au contexte geograhique" to appears in 
++    d'images, adapte au contexte geograhique" to appears in
+     Bulletin d'information de l'Institut Geographique National, 2007.
+ 
+ Francais :
+ 
+-   MicMac est un logiciel de mise en correspondance d'image adapte 
++   MicMac est un logiciel de mise en correspondance d'image adapte
+    au contexte de recherche en information geographique. Il s'appuie sur
+    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
+    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
+@@ -59,7 +59,7 @@ cFichier_Trajecto * GetTrajFromString(const std::string & aNameFile,bool toMemo)
+    cFichier_Trajecto  aFT = StdGetObjFromFile<cFichier_Trajecto>
+                             (
+                                 aNameFile,
+-                                "include/XML_GEN/SuperposImage.xml",
++                                StdGetFileXMLSpec("SuperposImage.xml"),
+                                 "Fichier_Trajecto",
+                                 "Fichier_Trajecto"
+                             );
+@@ -80,7 +80,7 @@ const cPtTrajecto & cInterfChantierNameManipulateur::GetPtTrajecto
+    std::map<std::string,cPtTrajecto>::const_iterator iT = aFT.PtTrajecto().find(aKeyDic);
+    if (iT==aFT.PtTrajecto().end())
+    {
+-       std::cout << "For Key=" << aKeyAssoc 
++       std::cout << "For Key=" << aKeyAssoc
+                  << ", Im=" << aNameIm
+                  << ", KeyIm=" << aKeyDic << "\n";
+        ELISE_ASSERT(false,"GetPtTrajecto Cannot find");
+@@ -219,7 +219,7 @@ void cStdChantierRel::ComputeFiltrageSpatial()
+                 aC = StdGetObjFromFile<Pt3dr>
+                      (
+                           mICNM.Dir()+ aNameOri,
+-                          "include/XML_GEN/ParamChantierPhotogram.xml",
++                          StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
+                           "Centre",
+                           "Pt3dr"
+                      );
+@@ -252,7 +252,7 @@ void cStdChantierRel::ComputeFiltrageSpatial()
+                &(aVNC[0]),
+                &(aVNC.back()),
+                itFS->FiltreDist().Val().DistMax(),
+-               aGetP, 
++               aGetP,
+                anAct
+           );
+ 
+@@ -279,7 +279,7 @@ cStrRelEquiv::cStrRelEquiv
+ 
+ void cStrRelEquiv::Compile()
+ {
+-   if (mCompiled) 
++   if (mCompiled)
+       return;
+ 
+    mGlobS =  mICNM.Get(mKCE.KeySet());
+@@ -295,7 +295,7 @@ void cStrRelEquiv::Compile()
+    }
+ }
+ 
+-const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName) 
++const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName)
+ {
+    Compile();
+    const std::vector<std::string> * aRes = mClasses[ValEqui(aName)];
+@@ -307,13 +307,13 @@ const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName)
+    return aRes;
+ }
+ 
+-bool cStrRelEquiv::SameCl(const std::string & aN1,const std::string & aN2) 
++bool cStrRelEquiv::SameCl(const std::string & aN1,const std::string & aN2)
+ {
+    Compile();
+   return ValEqui(aN1) == ValEqui(aN2);
+ }
+ 
+-std::string  cStrRelEquiv::ValEqui(const std::string & aName) 
++std::string  cStrRelEquiv::ValEqui(const std::string & aName)
+ {
+    Compile();
+    return mICNM.Assoc1To1(mKCE.KeyAssocRep(),aName,true);
+@@ -366,7 +366,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
+                                                      aNH,
+                                                      false
+                                                   );
+-          ElPackHomologue aPackH = ElPackHomologue::FromFile(mICNM.Dir()+aNH); 
++          ElPackHomologue aPackH = ElPackHomologue::FromFile(mICNM.Dir()+aNH);
+           int aNb = aPackH.size();
+           if (aNb>= aFRSE.SeuilBasNbPts().Val())
+           {
+@@ -374,7 +374,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
+           }
+           // std::cout << aNb << "\n";
+     }
+-    for 
++    for
+     (
+          std::map<std::string,std::vector<cElemComFRSE> >::iterator itEls=mElems.begin();
+          itEls!=mElems.end();
+@@ -398,7 +398,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
+ 
+ bool cComputeFiltreRelSsEch::OkCple(const std::string & aN1,const std::string & aN2) const
+ {
+-   
++
+    std::map<std::string,std::vector<cElemComFRSE> >::const_iterator itEls=mElems.find(aN1);
+ 
+    if (itEls==mElems.end())
+@@ -429,7 +429,7 @@ correspondances d'images pour la reconstruction du relief.
+ Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
+ respectant les principes de diffusion des logiciels libres. Vous pouvez
+ utiliser, modifier et/ou redistribuer ce programme sous les conditions
+-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
++de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
+ sur le site "http://www.cecill.info".
+ 
+ En contrepartie de l'accessibilité au code source et des droits de copie,
+@@ -440,16 +440,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+ 
+ A cet égard  l'attention de l'utilisateur est attirée sur les risques
+ associés au chargement,  à l'utilisation,  à la modification et/ou au
+-développement et à la reproduction du logiciel par l'utilisateur étant 
+-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
++développement et à la reproduction du logiciel par l'utilisateur étant
++donné sa spécificité de logiciel libre, qui peut le rendre complexe à
+ manipuler et qui le réserve donc à des développeurs et des professionnels
+ avertis possédant  des  connaissances  informatiques approfondies.  Les
+ utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
+ logiciel à leurs besoins dans des conditions permettant d'assurer la
+-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
+-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
++sécurité de leurs systèmes et ou de leurs données et, plus généralement,
++à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
+ 
+-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
++Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
+ pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+ termes.
+ Footer-MicMac-eLiSe-25/06/2007*/
+diff --git a/src/uti_image/Digeo/cAppliDigeo.cpp b/src/uti_image/Digeo/cAppliDigeo.cpp
+index a45bf7b..fcd158f 100644
+--- a/src/uti_image/Digeo/cAppliDigeo.cpp
++++ b/src/uti_image/Digeo/cAppliDigeo.cpp
+@@ -5,7 +5,7 @@
+ 
+     www.micmac.ign.fr
+ 
+-   
++
+     Copyright : Institut Geographique National
+     Author : Marc Pierrot Deseilligny
+     Contributors : Gregoire Maillet, Didier Boldo.
+@@ -17,12 +17,12 @@
+     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
+ 
+ [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
+-    d'images, adapte au contexte geograhique" to appears in 
++    d'images, adapte au contexte geograhique" to appears in
+     Bulletin d'information de l'Institut Geographique National, 2007.
+ 
+ Francais :
+ 
+-   MicMac est un logiciel de mise en correspondance d'image adapte 
++   MicMac est un logiciel de mise en correspondance d'image adapte
+    au contexte de recherche en information geographique. Il s'appuie sur
+    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
+    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
+@@ -49,10 +49,10 @@ extern const char * theNameVar_ParamDigeo[];
+ 
+ void cAppliDigeo::loadParametersFromFile( const string &i_templateFilename, const string &i_parametersFilename )
+ {
+-	AddEntryStringifie( "include/XML_GEN/ParamDigeo.xml", theNameVar_ParamDigeo, true );
++	AddEntryStringifie(StdGetFileXMLSpec("ParamDigeo.xml"), theNameVar_ParamDigeo, true );
+ 
+ 	// construct parameters structure from template and parameters files
+-	cResultSubstAndStdGetFile<cParamDigeo> aP2 
++	cResultSubstAndStdGetFile<cParamDigeo> aP2
+ 	                                       (
+ 	                                           0, NULL,                      // int argc,char **argv
+ 	                                           i_parametersFilename,         // const std::string & aNameFileObj
+@@ -513,7 +513,7 @@ void cAppliDigeo::processTestSection()
+ 		{
+ 			mDoSaveGaussians = true;
+ 			mOutputGaussiansDirectory = testOutput.OutputGaussiansDirectory().Val();
+-			normalizeOutputPath( mOutputGaussiansDirectory, true ); 
++			normalizeOutputPath( mOutputGaussiansDirectory, true );
+ 
+ 			// TODO: use a XML parameter for these expressions
+ 			mTiledOutputGaussian_base_expr = string("${outputGaussiansDirectory}${imageBasename}_tile${iTile:3}_dz${dz:3}_lvl${iLevel:3}.gaussian")+testOutputSuffix;
+@@ -611,7 +611,7 @@ const map<string,int> & cAppliDigeo::dictionnary_tile_dz_level( int i_tile, int
+ 	(*mExpressionIntegerDictionnary)["iLevel"] = i_level;
+ 	return *mExpressionIntegerDictionnary;
+ }
+-       
++
+ string cAppliDigeo::getValue_iTile_dz_iLevel( const Expression &e, int iTile, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( iTile, dz, iLevel ) ); }
+ 
+ string cAppliDigeo::getValue_dz_iLevel( const Expression &e, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( 0, dz, iLevel ) ); }
+@@ -730,7 +730,7 @@ correspondances d'images pour la reconstruction du relief.
+ Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
+ respectant les principes de diffusion des logiciels libres. Vous pouvez
+ utiliser, modifier et/ou redistribuer ce programme sous les conditions
+-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
++de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
+ sur le site "http://www.cecill.info".
+ 
+ En contrepartie de l'accessibilité au code source et des droits de copie,
+@@ -741,16 +741,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+ 
+ A cet égard  l'attention de l'utilisateur est attirée sur les risques
+ associés au chargement,  à l'utilisation,  à la modification et/ou au
+-développement et à la reproduction du logiciel par l'utilisateur étant 
+-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
++développement et à la reproduction du logiciel par l'utilisateur étant
++donné sa spécificité de logiciel libre, qui peut le rendre complexe à
+ manipuler et qui le réserve donc à des développeurs et des professionnels
+ avertis possédant  des  connaissances  informatiques approfondies.  Les
+ utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
+ logiciel à leurs besoins dans des conditions permettant d'assurer la
+-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
+-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
++sécurité de leurs systèmes et ou de leurs données et, plus généralement,
++à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
+ 
+-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
++Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
+ pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+ termes.
+ Footer-MicMac-eLiSe-25/06/2007*/
+diff --git a/src/uti_phgrm/CPP_Apero.cpp b/src/uti_phgrm/CPP_Apero.cpp
+index df21b93..bd5e61e 100644
+--- a/src/uti_phgrm/CPP_Apero.cpp
++++ b/src/uti_phgrm/CPP_Apero.cpp
+@@ -62,11 +62,7 @@ int Apero_main(int argc,char ** argv)
+ 
+    AddEntryStringifie
+    (
+-#if ELISE_windows
+-        "include\\XML_GEN\\ParamApero.xml",
+-#else
+-        "include/XML_GEN/ParamApero.xml",
+-#endif
++         StdGetFileXMLSpec("ParamApero.xml"),
+          theNameVar_ParamApero,
+          true
+    );
+diff --git a/src/uti_phgrm/CPP_MICMAC.cpp b/src/uti_phgrm/CPP_MICMAC.cpp
+index 6b0f117..79e1c63 100644
+--- a/src/uti_phgrm/CPP_MICMAC.cpp
++++ b/src/uti_phgrm/CPP_MICMAC.cpp
+@@ -5,7 +5,7 @@
+ 
+     www.micmac.ign.fr
+ 
+-   
++
+     Copyright : Institut Geographique National
+     Author : Marc Pierrot Deseilligny
+     Contributors : Gregoire Maillet, Didier Boldo.
+@@ -17,12 +17,12 @@
+     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
+ 
+ [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
+-    d'images, adapte au contexte geograhique" to appears in 
++    d'images, adapte au contexte geograhique" to appears in
+     Bulletin d'information de l'Institut Geographique National, 2007.
+ 
+ Francais :
+ 
+-   MicMac est un logiciel de mise en correspondance d'image adapte 
++   MicMac est un logiciel de mise en correspondance d'image adapte
+    au contexte de recherche en information geographique. Il s'appuie sur
+    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
+    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
+@@ -66,16 +66,16 @@ int MICMAC_main(int argc,char ** argv)
+   MicMacRequiresBinaireAux();
+   AddEntryStringifie
+   (
+-     "include" ELISE_STR_DIR "XML_GEN" ELISE_STR_DIR "ParamMICMAC.xml",
++     StdGetFileXMLSpec("ParamMICMAC.xml"),
+      theNameVar_ParamMICMAC,
+      true
+-  ); 
++  );
+   cAppliMICMAC * anAppli = cAppliMICMAC::Alloc(argc,argv,eAllocAM_STD);
+   if (anAppli==0) return 0;
+ 
+   if ((! anAppli->CalledByProcess().Val()) && (anAppli->SectionBatch().IsInit()))
+   {
+-     for 
++     for
+      (
+         std::list<std::string>::iterator itS=anAppli->NextMicMacFile2Exec().begin();
+         itS != anAppli->NextMicMacFile2Exec().end();
+@@ -93,7 +93,7 @@ int MICMAC_main(int argc,char ** argv)
+ 
+   if (0)
+      delete anAppli;
+-    
++
+ 
+    return 0;
+ }
+@@ -108,7 +108,7 @@ correspondances d'images pour la reconstruction du relief.
+ Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
+ respectant les principes de diffusion des logiciels libres. Vous pouvez
+ utiliser, modifier et/ou redistribuer ce programme sous les conditions
+-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
++de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
+ sur le site "http://www.cecill.info".
+ 
+ En contrepartie de l'accessibilité au code source et des droits de copie,
+@@ -119,16 +119,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+ 
+ A cet égard  l'attention de l'utilisateur est attirée sur les risques
+ associés au chargement,  à l'utilisation,  à la modification et/ou au
+-développement et à la reproduction du logiciel par l'utilisateur étant 
+-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
++développement et à la reproduction du logiciel par l'utilisateur étant
++donné sa spécificité de logiciel libre, qui peut le rendre complexe à
+ manipuler et qui le réserve donc à des développeurs et des professionnels
+ avertis possédant  des  connaissances  informatiques approfondies.  Les
+ utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
+ logiciel à leurs besoins dans des conditions permettant d'assurer la
+-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
+-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
++sécurité de leurs systèmes et ou de leurs données et, plus généralement,
++à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
+ 
+-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
++Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
+ pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+ termes.
+ Footer-MicMac-eLiSe-25/06/2007*/
+diff --git a/src/uti_phgrm/CPP_Porto.cpp b/src/uti_phgrm/CPP_Porto.cpp
+index 1dd6686..ecc8afb 100644
+--- a/src/uti_phgrm/CPP_Porto.cpp
++++ b/src/uti_phgrm/CPP_Porto.cpp
+@@ -5,7 +5,7 @@
+ 
+     www.micmac.ign.fr
+ 
+-   
++
+     Copyright : Institut Geographique National
+     Author : Marc Pierrot Deseilligny
+     Contributors : Gregoire Maillet, Didier Boldo.
+@@ -17,12 +17,12 @@
+     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
+ 
+ [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
+-    d'images, adapte au contexte geograhique" to appears in 
++    d'images, adapte au contexte geograhique" to appears in
+     Bulletin d'information de l'Institut Geographique National, 2007.
+ 
+ Francais :
+ 
+-   MicMac est un logiciel de mise en correspondance d'image adapte 
++   MicMac est un logiciel de mise en correspondance d'image adapte
+    au contexte de recherche en information geographique. Il s'appuie sur
+    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
+    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
+@@ -67,13 +67,13 @@ int Porto_main(int argc,char ** argv)
+                                                  (
+                                                      argc-2,argv+2,
+                                                      argv[1],
+-                                                     "include/XML_GEN/SuperposImage.xml",
++                                                     StdGetFileXMLSpec("SuperposImage.xml"),
+                                                      "CreateOrtho",
+                                                      "CreateOrtho",
+                                                       "WorkDir",
+                                                       ""
+ 
+-                                                 ); 
++                                                 );
+    cAppli_Ortho  aCAO(*(aRS.mObj),argc,argv);
+    aCAO.DoAll();
+ 
+@@ -97,7 +97,7 @@ correspondances d'images pour la reconstruction du relief.
+ Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
+ respectant les principes de diffusion des logiciels libres. Vous pouvez
+ utiliser, modifier et/ou redistribuer ce programme sous les conditions
+-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
++de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
+ sur le site "http://www.cecill.info".
+ 
+ En contrepartie de l'accessibilité au code source et des droits de copie,
+@@ -108,16 +108,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+ 
+ A cet égard  l'attention de l'utilisateur est attirée sur les risques
+ associés au chargement,  à l'utilisation,  à la modification et/ou au
+-développement et à la reproduction du logiciel par l'utilisateur étant 
+-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
++développement et à la reproduction du logiciel par l'utilisateur étant
++donné sa spécificité de logiciel libre, qui peut le rendre complexe à
+ manipuler et qui le réserve donc à des développeurs et des professionnels
+ avertis possédant  des  connaissances  informatiques approfondies.  Les
+ utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
+ logiciel à leurs besoins dans des conditions permettant d'assurer la
+-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
+-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
++sécurité de leurs systèmes et ou de leurs données et, plus généralement,
++à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
+ 
+-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
++Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
+ pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+ termes.
+ Footer-MicMac-eLiSe-25/06/2007*/
+diff --git a/src/util/stringifie.cpp b/src/util/stringifie.cpp
+index e2f947a..36557b8 100644
+--- a/src/util/stringifie.cpp
++++ b/src/util/stringifie.cpp
+@@ -50,7 +50,7 @@ Header-MicMac-eLiSe-25/06/2007*/
+ 
+ const std::string Terminator = "//#_-=+{}@$##$##@";
+ 
+-const std::string TheDirXmlGen=std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
++const std::string TheDirXmlGen=std::string("share/micmac")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
+ 
+ 
+ void Stringify
+@@ -83,7 +83,7 @@ void Stringify
+ 
+    fprintf(aFOut,"#include \"StdAfx.h\"\n");
+ 
+-   
++
+    fprintf(aFOut,"const char * (%s[%d]) = {\n",aNameString.c_str(),aNbLigneTot+2);
+ 
+    fprintf(aFOut,"\"");
+@@ -130,10 +130,10 @@ void StdXMl2CppAndString(const std::string &aNameInput)
+    aPref = StdPrefix(aPref);
+ 
+     cElXMLTree aTreeSpec
+-               (
+-                  std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR
+-                 + aPref + std::string(".xml"));
+-    
++                (
++                   StdGetFileXMLSpec(aPref + std::string(".xml"))
++                );
++
+     aTreeSpec.StdGenCppGlob
+     (
+          std::string("src")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+ aPref + ".cpp",
+@@ -157,19 +157,19 @@ void InitEntryStringifie()
+        Done=true;
+        AddEntryStringifie
+        (
+-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"ParamChantierPhotogram.xml",
++          StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
+           theNameVar_ParamChantierPhotogram,
+           true
+        );
+        AddEntryStringifie
+        (
+-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"SuperposImage.xml",
++          StdGetFileXMLSpec("SuperposImage.xml"),
+           theNameVar_SuperposImage,
+           true
+        );
+        AddEntryStringifie
+        (
+-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"DefautChantierDescripteur.xml",
++          StdGetFileXMLSpec("DefautChantierDescripteur.xml"),
+           theNameVar_DefautChantierDescripteur,
+           false
+        );
+@@ -180,7 +180,7 @@ void InitEntryStringifie()
+ 
+ void AddEntryStringifie(const std::string & aKey,const char ** aVal,bool formal)
+ {
+-   
++
+ 
+     // std::cout << aKey << "\n";
+     InitEntryStringifie();
+@@ -233,12 +233,12 @@ const char * GetEntryStringifie(const std::string & aKey)
+ class cSTRVirtStream : public cVirtStream
+ {
+    public :
+-      int my_getc() 
++      int my_getc()
+       {
+          return *(mCur++);
+       }
+       int my_eof() {return 0;}
+-      void my_ungetc(int aC)  
++      void my_ungetc(int aC)
+       {
+            mCur--;
+            ELISE_ASSERT(mCur>=mC0,"Too far in cSTRVirtStream::ungetc");
+@@ -272,14 +272,14 @@ class cSTRVirtStream : public cVirtStream
+ class cIStStrVirstream : public cVirtStream
+ {
+    public :
+-      int my_getc() 
++      int my_getc()
+       {
+          char aC;
+          mISS >> aC;
+          return  aC;
+       }
+       int my_eof() {return CHAR_MIN;}
+-      void my_ungetc(int aC)  
++      void my_ungetc(int aC)
+       {
+            mISS.putback(aC);
+       }
+@@ -303,11 +303,11 @@ class cIStStrVirstream : public cVirtStream
+ // Simplification MPD a la correction de bug GM2, il n'y a pas besoin de
+ // memoriser  dans le getc puisque c'est l'appelant qui se paye le boulot
+ // (ungetc passe la valeur a rebufferiser)
+-         
++
+ class cFILEVirtStream : public cVirtStream
+ {
+    public :
+-      int my_getc() 
++      int my_getc()
+       {
+          if (mBuf.empty())
+             return  fgetc(mFP);
+@@ -318,8 +318,8 @@ class cFILEVirtStream : public cVirtStream
+       }
+ 
+       int my_eof() {return EOF;}
+-     
+-       void my_ungetc(int aC)  
++
++       void my_ungetc(int aC)
+        {
+ // std::cout << "UNGETC " << aC << "\n";
+           mBuf.push_back(aC);
+@@ -375,7 +375,7 @@ cVirtStream::cVirtStream(const std::string & aName,bool isPreDef,bool IsSpec) :
+ bool cVirtStream::IsFilePredef() const  {return mIsPredef;}
+ bool cVirtStream::IsFileSpec() const    {return mIsSpec;}
+ 
+-const  std::string & cVirtStream::Name() 
++const  std::string & cVirtStream::Name()
+ {
+    return mName;
+ }
+@@ -396,7 +396,7 @@ cVirtStream *  cVirtStream::StdOpen(const std::string & aName)
+ {
+    std::string aNameSeul,aDir;
+    SplitDirAndFile(aDir,aNameSeul,aName);
+-    
++
+     bool isFilePredef = (aDir== MMDir()+TheDirXmlGen) || (aDir==TheDirXmlGen);
+     bool isFileSpec =  isFilePredef && (aNameSeul!="DefautChantierDescripteur.xml");
+ 
+diff --git a/src/util/xml.cpp b/src/util/xml.cpp
+index d91cac1..169129c 100644
+--- a/src/util/xml.cpp
++++ b/src/util/xml.cpp
+@@ -46,7 +46,7 @@ Header-MicMac-eLiSe-25/06/2007*/
+ #include <map>
+ #include <locale>
+ 
+-std::string TheEliseDirXmlSpec=string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
++std::string TheEliseDirXmlSpec=string("share/micmac")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
+ bool ValInitNameDecl = false;
+ 
+ std::vector<std::string> VCurXmlFile;
+@@ -98,7 +98,7 @@ static double FNot(const std::vector<double> & aV) { return aV[0]==0; }
+ 
+ static double FEq(const std::vector<double> & aV) { return aV[0]==aV[1]; }
+ static double FNotEq(const std::vector<double> & aV) { return aV[0]!=aV[1]; }
+-    
++
+ static double FSom(const std::vector<double> & aV) { return aV[0]+aV[1]; }
+ static double FPow(const std::vector<double> & aV) { return pow(aV[0],aV[1]); }
+ static double FBarPow(const std::vector<double> & aV) { return  pow(aV[0],aV[2]) * pow(aV[1],1-aV[2]);}
+@@ -112,7 +112,7 @@ static double FSupEq(const std::vector<double> & aV) { return aV[0]>=aV[1]; }
+ static double FInfStrict(const std::vector<double> & aV) { return aV[0]<aV[1]; }
+ static double FSupStrict(const std::vector<double> & aV) { return aV[0]>aV[1]; }
+ static double FIf(const std::vector<double> & aV) { return aV[0]?aV[1] : aV[2]; }
+-static double FDiv(const std::vector<double> & aV) 
++static double FDiv(const std::vector<double> & aV)
+ {
+    ELISE_ASSERT(aV[1]!=0,"Null divisor in / (Polonaise invert)");
+    return aV[0]/aV[1];
+@@ -186,7 +186,7 @@ double PolonaiseInverse(tCCP & aC,bool & OK)
+        if (IsPrefix(anOpName,aC))
+        {
+           aC += strlen(anOpName);
+-          
++
+           std::vector<double> aV;
+           for (int aK=0 ;  (aK<anOp.mNb); aK++)
+           {
+@@ -318,7 +318,7 @@ char XML_fgetcNN(cVirtStream * aFp)
+ 	while (XML_PasserCommentaire(aFp));
+ 	int aC = fgetcNN(aFp);
+ 
+-	// 
++	//
+ 	if (aC==aFp->my_eof())
+ 	{
+ 		std::cout << "For name " << aFp->Name() << "\n";
+@@ -483,7 +483,7 @@ void VirerBlancFinal(std::string & aStr)
+    Une sequence binaire est faite de TheNbDieseBinSeq '#',
+    puis 4 caractere qui seront utilise peut etre plus tard ,
+    pour l'instant '0000' . Elle contient des #, donc ne peut jamais
+-   apparaitres dans les sequences binaire 
++   apparaitres dans les sequences binaire
+ */
+                                 //0123456789012345678901234567890123
+ static const char *  TheBinSeq = "#0ArTuQdI(RvO6z{Z[a924]Uh}mBgD)k37";
+@@ -505,7 +505,7 @@ inline int LengthBinSeq()
+ typedef const char * tConstCharPtr;
+ inline bool AnalyseBinSeq(tConstCharPtr & aSeq,const int &   aCar)
+ {
+-   if (*aSeq!=aCar) 
++   if (*aSeq!=aCar)
+    {
+       aSeq = TheBinSeq;
+       return false;
+@@ -513,22 +513,22 @@ inline bool AnalyseBinSeq(tConstCharPtr & aSeq,const int &   aCar)
+ 
+    aSeq++;
+ 
+-   if (*aSeq==0) 
++   if (*aSeq==0)
+    {
+       aSeq = TheBinSeq;
+       return true;
+    }
+-  
++
+    return false;
+ }
+ 
+ /*
+-   Dans le fichier 
++   Dans le fichier
+       TheBinSeq0000[%NbOct]lkjslkfbeiuriouerio....
+    En sortie
+       TheBinSeq0000[%NbOct][%Num]
+ 
+-   Avec 
++   Avec
+       TheVecDataXMLBin[%Num]=lkjslkfbeiuriouerio.....
+ */
+ 
+@@ -556,7 +556,7 @@ int GetNumEntreCrochet(cVirtStream * aFp,std::string * aPush)
+        else
+        {
+              ELISE_ASSERT(false,"Expected ] in binary sequence count");
+-       } 
++       }
+    }
+    return aNb;
+ }
+@@ -574,7 +574,7 @@ void cElXMLToken::GetSequenceBinaire(cVirtStream * aFp)
+    TheVecDataXMLBin.push_back(aPtr);
+    aFp->fread(aPtr,aNb);
+    mVal = mVal + "["+ToString(int(TheVecDataXMLBin.size()-1)) + "]";
+-   
++
+ }
+ 
+ 
+@@ -586,7 +586,7 @@ void PutCharPtrWithTraitSeqBinaire(FILE * aFp,const  char * aVal)
+          {
+               fprintf(aFp,"%s",TheBinSeq);
+               aVal += LengthBinSeq();
+-              for (int aK=0 ; aK<4 ; aK++) 
++              for (int aK=0 ; aK<4 ; aK++)
+               {
+                   fputc(*aVal,aFp);
+                   aVal++;
+@@ -720,7 +720,7 @@ cElXMLToken::cElXMLToken
+ 				}
+ 				return;
+ 			}
+-			if (isspace(aC)) 
++			if (isspace(aC))
+ 			{
+ 				int aC2 = XML_passer_blanc(aFp);
+ 				if (aC2=='/')
+@@ -1026,7 +1026,7 @@ bool ValInitUseSubst =true;
+ 
+ 
+ 
+-cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool DoFileInclu) 
++cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool DoFileInclu)
+ {
+         VCurXmlFile.push_back(aName);
+ 
+@@ -1105,7 +1105,7 @@ void cElXMLTree::ExpendRef
+ 
+ void TestSpecialTags(const std::string & aMes,cElXMLTree * aTree,cVirtStream * aFP,cArgCreatXLMTree &anArg,bool UsePolI)
+ {
+-	if (aFP->IsFileSpec()) 
++	if (aFP->IsFileSpec())
+ 	{
+ 		return;
+ 	}
+@@ -1400,7 +1400,7 @@ cElXMLTree * cElXMLTree::Get(const std::string & aName,int aDepthMax)
+ 	if (aName==mValTag)
+ 		return this;
+ 
+-	if (aDepthMax==0) 
++	if (aDepthMax==0)
+ 		return 0;
+ 
+ 	for (std::list<cElXMLTree *>::iterator it=mFils.begin(); it!=mFils.end() ; it++)
+@@ -1772,7 +1772,7 @@ void cElXMLTree::ShowOpeningTag(FILE * aFile)
+ void cElXMLTree::Show
+ 	(
+ 	const std::string & mIncr,
+-	FILE * aFile, 
++	FILE * aFile,
+ 	INT aCpt,
+ 	INT LevMin,
+ 	bool  isTermOnLine,
+@@ -1790,7 +1790,7 @@ void cElXMLTree::Show
+ 	if (isTermOnLine && (Profondeur() <= 1) && (! IsFeuille() ))
+ 	{
+ 		ShowOpeningTag(aFile);
+-		for 
++		for
+ 			(
+ 			std::list<cElXMLTree *>::iterator itF=mFils.begin();
+ 		itF != mFils.end();
+@@ -1819,7 +1819,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
+ 		fprintf(aFile,"\n");
+ 	}
+ 
+-	for 
++	for
+ 		(
+ 		std::list<cElXMLTree *>::iterator itF=mFils.begin();
+ 	itF != mFils.end();
+@@ -1840,7 +1840,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
+ void cElXMLTree::Show
+ 	(
+ 	const std::string & mIncr,
+-	FILE * aFile, 
++	FILE * aFile,
+ 	INT aCpt,
+ 	INT LevMin,
+ 	bool  isTermOnLine
+@@ -1887,7 +1887,7 @@ cElXMLTree *  cElXMLTree::Missmatch
+ 		aMes = "UnionType must have exactly on descendant, Tag : " + aT2->ValTag();
+ 		return this;
+ 	}
+-	for 
++	for
+ 		(
+ 		std::list<cElXMLTree *>::iterator itF1=mFils.begin();
+ 	itF1 != mFils.end();
+@@ -1897,7 +1897,7 @@ cElXMLTree *  cElXMLTree::Missmatch
+ 		if (! (*itF1)->IsFeuille())
+ 		{
+ 			int aNbMatch =0;
+-			for 
++			for
+ 				(
+ 				std::list<cElXMLTree *>::iterator itF2=aT2->mFils.begin();
+ 			itF2 != aT2->mFils.end();
+@@ -1958,7 +1958,7 @@ void  cElXMLTree::VerifMatch(cElXMLTree* aTSpecif)
+ 
+ 	cElXMLTree * aMM = Missmatch(aTSpecif,true,aMes);
+ 
+-	if (! aMM) 
++	if (! aMM)
+ 	{
+ 		aMM = aTSpecif->Missmatch(this,false,aMes);
+ 	}
+@@ -2327,7 +2327,7 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
+ 		{
+ 			const std::string & aPat = aSymSp->ValAttr("Nb");
+ 
+-			ELISE_ASSERT 
++			ELISE_ASSERT
+ 				(
+ 				(aPat=="1") || (aPat=="?"),
+ 				"XML-MATCH ERROR dans la ligne de commande (Specif)\n"
+@@ -2343,16 +2343,16 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
+ 			ELISE_ASSERT(false,"NON TERMINAL SYMBOL");
+ 		}
+ 
+-		for 
++		for
+ 			(
+-			cElXMLTree * aS = aSymSp->mPere ; 
+-		aS && (aS->IsBranche()) ; 
++			cElXMLTree * aS = aSymSp->mPere ;
++		aS && (aS->IsBranche()) ;
+ 		aS= aS->mPere
+ 			)
+ 		{
+ 			std::string aS1("1");
+ 			const std::string & aPat = aS->ValAttr("Nb",aS1);
+-			ELISE_ASSERT 
++			ELISE_ASSERT
+ 				(
+ 				(aPat=="1"),
+ 				"XML-MATCH ERROR dans la ligne de commande (Specif)\n"

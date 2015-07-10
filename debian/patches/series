@@ -2,3 +2,4 @@
 0002-Proper-Poisson-Install-directory.patch
 0003-OpenMP-flags-for-Hardening.patch
 0004-XML_MicMac-files-calls.patch
+0005-XML_GEN-files-calls.patch

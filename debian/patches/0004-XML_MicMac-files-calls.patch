@@ -118,7 +118,7 @@ index c831624..a15b177 100644
  
          return aRes;
 diff --git a/src/saisieQT/main/saisieAppuisInitQT_main.cpp b/src/saisieQT/main/saisieAppuisInitQT_main.cpp
-index 3187a6d..936aea4 100644
+index 3187a6d..671ab32 100644
 --- a/src/saisieQT/main/saisieAppuisInitQT_main.cpp
 +++ b/src/saisieQT/main/saisieAppuisInitQT_main.cpp
 @@ -115,7 +115,7 @@ int saisieAppuisInitQT_main(QApplication &app, int argc, char *argv[])
@@ -140,7 +140,7 @@ index 3187a6d..936aea4 100644
                  << QString("+Image=") +  QString(aName.c_str())
                  << QString("+Ori=") + QString(aNameOri.c_str())
 diff --git a/src/saisieQT/main/saisieAppuisPredicQT_main.cpp b/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
-index 2bc41d7..1d7a7e6 100644
+index 2bc41d7..4bef0cd 100644
 --- a/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
 +++ b/src/saisieQT/main/saisieAppuisPredicQT_main.cpp
 @@ -109,7 +109,7 @@ int saisieAppuisPredicQT_main(QApplication &app, int argc, char *argv[])
@@ -153,7 +153,7 @@ index 2bc41d7..1d7a7e6 100644
                  << QString("+Images=") +  QString(aName.c_str())
                  << QString("+Ori=") + QString(aNameOri.c_str())
 diff --git a/src/saisieQT/main/saisieBascQT_main.cpp b/src/saisieQT/main/saisieBascQT_main.cpp
-index abc7b7e..0ce1875 100644
+index abc7b7e..949b749 100644
 --- a/src/saisieQT/main/saisieBascQT_main.cpp
 +++ b/src/saisieQT/main/saisieBascQT_main.cpp
 @@ -86,7 +86,7 @@ int saisieBascQT_main(QApplication &app, int argc, char *argv[])
@@ -166,7 +166,7 @@ index abc7b7e..0ce1875 100644
                  << QString("+Image=") +  QString(aName.c_str())
                  << QString("+Ori=")  + QString(anOri.c_str())
 diff --git a/src/uti_phgrm/CPP_AperiCloud.cpp b/src/uti_phgrm/CPP_AperiCloud.cpp
-index c388cc8..44144db 100644
+index c388cc8..5685e46 100644
 --- a/src/uti_phgrm/CPP_AperiCloud.cpp
 +++ b/src/uti_phgrm/CPP_AperiCloud.cpp
 @@ -118,7 +118,7 @@ int AperiCloud_main(int argc,char ** argv)
@@ -234,7 +234,7 @@ index db6ed61..790a198 100644
     {
         CamStenope * aCS = mVSoms[aK]->attr().mIma->mCam;  // MtoC
 diff --git a/src/uti_phgrm/CPP_GCPBascule.cpp b/src/uti_phgrm/CPP_GCPBascule.cpp
-index 7cb6e07..d5a66cf 100644
+index 7cb6e07..917f046 100644
 --- a/src/uti_phgrm/CPP_GCPBascule.cpp
 +++ b/src/uti_phgrm/CPP_GCPBascule.cpp
 @@ -79,8 +79,8 @@ int FlagOfDeg(const Pt3di & aDXY)
@@ -267,7 +267,7 @@ index 7cb6e07..d5a66cf 100644
                         + std::string(" +PatternAllIm=") + QUOTE(aPat) + std::string(" ")
                         + std::string(" +AeroIn=") + AeroIn
 diff --git a/src/uti_phgrm/CPP_MakeGrid.cpp b/src/uti_phgrm/CPP_MakeGrid.cpp
-index 235cc4b..183ee2a 100644
+index 235cc4b..e125171 100644
 --- a/src/uti_phgrm/CPP_MakeGrid.cpp
 +++ b/src/uti_phgrm/CPP_MakeGrid.cpp
 @@ -82,7 +82,7 @@ int MakeGrid_main(int argc,char ** argv)
@@ -293,7 +293,7 @@ index 427e607..8f6de1a 100644
                    +  std::string(" +DirTA=TA-UnAnam") ;
  
 diff --git a/src/uti_phgrm/CPP_NewTapas.cpp b/src/uti_phgrm/CPP_NewTapas.cpp
-index 4e78830..e1d7a30 100644
+index 4e78830..cce342d 100644
 --- a/src/uti_phgrm/CPP_NewTapas.cpp
 +++ b/src/uti_phgrm/CPP_NewTapas.cpp
 @@ -493,7 +493,7 @@ int Tapas_main(int argc,char ** argv)
@@ -358,7 +358,7 @@ index 9c79bff..055577a 100644
                            +  std::string(" +Image=") + QUOTE(aName)
                            +  std::string(" +Ori=") + anOri
 diff --git a/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp b/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
-index fa837f5..dfc6290 100644
+index fa837f5..20c2880 100644
 --- a/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
 +++ b/src/uti_phgrm/CPP_SaisieAppuisPredic.cpp
 @@ -140,7 +140,7 @@ int  SaisieAppuisPredic_main(int argc,char ** argv)
