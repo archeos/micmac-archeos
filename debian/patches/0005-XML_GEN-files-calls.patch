@@ -439,7 +439,7 @@ index 1dd6686..ecc8afb 100644
  termes.
  Footer-MicMac-eLiSe-25/06/2007*/
 diff --git a/src/util/stringifie.cpp b/src/util/stringifie.cpp
-index e2f947a..36557b8 100644
+index e2f947a..04be5ee 100644
 --- a/src/util/stringifie.cpp
 +++ b/src/util/stringifie.cpp
 @@ -50,7 +50,7 @@ Header-MicMac-eLiSe-25/06/2007*/
