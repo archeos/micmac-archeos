@@ -7,7 +7,7 @@
 
 void setStyleSheet(QApplication &app)
 {
-    QFile file(app.applicationDirPath() + "/../include/qt/style.qss");
+    QFile file(app.applicationDirPath() + "/usr/share/micmac/qt/style.qss");
     if(file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         Q_INIT_RESOURCE(icones);

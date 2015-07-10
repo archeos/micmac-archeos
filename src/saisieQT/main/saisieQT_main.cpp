@@ -172,7 +172,7 @@ void loadTranslation(QApplication &app)
     if(lang>0)
     {
         QString sLang = "saisie_";
-        QString path = app.applicationDirPath() + QDir::separator() + "../include/qt/translations";
+        QString path = app.applicationDirPath() + QDir::separator() + "/usr/share/micmac/qt/translations";
 
         //cf Settings.h
         if (lang == 1)
