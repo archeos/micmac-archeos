@@ -1,3 +1,4 @@
 data /usr/share/micmac
 include/XML_MicMac /usr/share/micmac
 include/XML_GEN /usr/share/micmac
+include/qt /usr/share/micmac
