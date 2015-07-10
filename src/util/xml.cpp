@@ -46,7 +46,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include <map>
 #include <locale>
 
-std::string TheEliseDirXmlSpec=string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
+std::string TheEliseDirXmlSpec=string("share/micmac")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
 bool ValInitNameDecl = false;
 
 std::vector<std::string> VCurXmlFile;
@@ -98,7 +98,7 @@ static double FNot(const std::vector<double> & aV) { return aV[0]==0; }
 
 static double FEq(const std::vector<double> & aV) { return aV[0]==aV[1]; }
 static double FNotEq(const std::vector<double> & aV) { return aV[0]!=aV[1]; }
-    
+
 static double FSom(const std::vector<double> & aV) { return aV[0]+aV[1]; }
 static double FPow(const std::vector<double> & aV) { return pow(aV[0],aV[1]); }
 static double FBarPow(const std::vector<double> & aV) { return  pow(aV[0],aV[2]) * pow(aV[1],1-aV[2]);}
@@ -112,7 +112,7 @@ static double FSupEq(const std::vector<double> & aV) { return aV[0]>=aV[1]; }
 static double FInfStrict(const std::vector<double> & aV) { return aV[0]<aV[1]; }
 static double FSupStrict(const std::vector<double> & aV) { return aV[0]>aV[1]; }
 static double FIf(const std::vector<double> & aV) { return aV[0]?aV[1] : aV[2]; }
-static double FDiv(const std::vector<double> & aV) 
+static double FDiv(const std::vector<double> & aV)
 {
    ELISE_ASSERT(aV[1]!=0,"Null divisor in / (Polonaise invert)");
    return aV[0]/aV[1];
@@ -186,7 +186,7 @@ double PolonaiseInverse(tCCP & aC,bool & OK)
        if (IsPrefix(anOpName,aC))
        {
           aC += strlen(anOpName);
-          
+
           std::vector<double> aV;
           for (int aK=0 ;  (aK<anOp.mNb); aK++)
           {
@@ -318,7 +318,7 @@ char XML_fgetcNN(cVirtStream * aFp)
 	while (XML_PasserCommentaire(aFp));
 	int aC = fgetcNN(aFp);
 
-	// 
+	//
 	if (aC==aFp->my_eof())
 	{
 		std::cout << "For name " << aFp->Name() << "\n";
@@ -483,7 +483,7 @@ void VirerBlancFinal(std::string & aStr)
    Une sequence binaire est faite de TheNbDieseBinSeq '#',
    puis 4 caractere qui seront utilise peut etre plus tard ,
    pour l'instant '0000' . Elle contient des #, donc ne peut jamais
-   apparaitres dans les sequences binaire 
+   apparaitres dans les sequences binaire
 */
                                 //0123456789012345678901234567890123
 static const char *  TheBinSeq = "#0ArTuQdI(RvO6z{Z[a924]Uh}mBgD)k37";
@@ -505,7 +505,7 @@ inline int LengthBinSeq()
 typedef const char * tConstCharPtr;
 inline bool AnalyseBinSeq(tConstCharPtr & aSeq,const int &   aCar)
 {
-   if (*aSeq!=aCar) 
+   if (*aSeq!=aCar)
    {
       aSeq = TheBinSeq;
       return false;
@@ -513,22 +513,22 @@ inline bool AnalyseBinSeq(tConstCharPtr & aSeq,const int &   aCar)
 
    aSeq++;
 
-   if (*aSeq==0) 
+   if (*aSeq==0)
    {
       aSeq = TheBinSeq;
       return true;
    }
-  
+
    return false;
 }
 
 /*
-   Dans le fichier 
+   Dans le fichier
       TheBinSeq0000[%NbOct]lkjslkfbeiuriouerio....
    En sortie
       TheBinSeq0000[%NbOct][%Num]
 
-   Avec 
+   Avec
       TheVecDataXMLBin[%Num]=lkjslkfbeiuriouerio.....
 */
 
@@ -556,7 +556,7 @@ int GetNumEntreCrochet(cVirtStream * aFp,std::string * aPush)
        else
        {
              ELISE_ASSERT(false,"Expected ] in binary sequence count");
-       } 
+       }
    }
    return aNb;
 }
@@ -574,7 +574,7 @@ void cElXMLToken::GetSequenceBinaire(cVirtStream * aFp)
    TheVecDataXMLBin.push_back(aPtr);
    aFp->fread(aPtr,aNb);
    mVal = mVal + "["+ToString(int(TheVecDataXMLBin.size()-1)) + "]";
-   
+
 }
 
 
@@ -586,7 +586,7 @@ void PutCharPtrWithTraitSeqBinaire(FILE * aFp,const  char * aVal)
          {
               fprintf(aFp,"%s",TheBinSeq);
               aVal += LengthBinSeq();
-              for (int aK=0 ; aK<4 ; aK++) 
+              for (int aK=0 ; aK<4 ; aK++)
               {
                   fputc(*aVal,aFp);
                   aVal++;
@@ -720,7 +720,7 @@ cElXMLToken::cElXMLToken
 				}
 				return;
 			}
-			if (isspace(aC)) 
+			if (isspace(aC))
 			{
 				int aC2 = XML_passer_blanc(aFp);
 				if (aC2=='/')
@@ -1026,7 +1026,7 @@ bool ValInitUseSubst =true;
 
 
 
-cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool DoFileInclu) 
+cElXMLTree::cElXMLTree(const std::string & aName,cArgCreatXLMTree * anArgEx,bool DoFileInclu)
 {
         VCurXmlFile.push_back(aName);
 
@@ -1105,7 +1105,7 @@ void cElXMLTree::ExpendRef
 
 void TestSpecialTags(const std::string & aMes,cElXMLTree * aTree,cVirtStream * aFP,cArgCreatXLMTree &anArg,bool UsePolI)
 {
-	if (aFP->IsFileSpec()) 
+	if (aFP->IsFileSpec())
 	{
 		return;
 	}
@@ -1400,7 +1400,7 @@ cElXMLTree * cElXMLTree::Get(const std::string & aName,int aDepthMax)
 	if (aName==mValTag)
 		return this;
 
-	if (aDepthMax==0) 
+	if (aDepthMax==0)
 		return 0;
 
 	for (std::list<cElXMLTree *>::iterator it=mFils.begin(); it!=mFils.end() ; it++)
@@ -1777,7 +1777,7 @@ void cElXMLTree::ShowOpeningTag(FILE * aFile)
 void cElXMLTree::Show
 	(
 	const std::string & mIncr,
-	FILE * aFile, 
+	FILE * aFile,
 	INT aCpt,
 	INT LevMin,
 	bool  isTermOnLine,
@@ -1795,7 +1795,7 @@ void cElXMLTree::Show
 	if (isTermOnLine && (Profondeur() <= 1) && (! IsFeuille() ))
 	{
 		ShowOpeningTag(aFile);
-		for 
+		for
 			(
 			std::list<cElXMLTree *>::iterator itF=mFils.begin();
 		itF != mFils.end();
@@ -1824,7 +1824,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
 		fprintf(aFile,"\n");
 	}
 
-	for 
+	for
 		(
 		std::list<cElXMLTree *>::iterator itF=mFils.begin();
 	itF != mFils.end();
@@ -1845,7 +1845,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
 void cElXMLTree::Show
 	(
 	const std::string & mIncr,
-	FILE * aFile, 
+	FILE * aFile,
 	INT aCpt,
 	INT LevMin,
 	bool  isTermOnLine
@@ -1892,7 +1892,7 @@ cElXMLTree *  cElXMLTree::Missmatch
 		aMes = "UnionType must have exactly on descendant, Tag : " + aT2->ValTag();
 		return this;
 	}
-	for 
+	for
 		(
 		std::list<cElXMLTree *>::iterator itF1=mFils.begin();
 	itF1 != mFils.end();
@@ -1902,7 +1902,7 @@ cElXMLTree *  cElXMLTree::Missmatch
 		if (! (*itF1)->IsFeuille())
 		{
 			int aNbMatch =0;
-			for 
+			for
 				(
 				std::list<cElXMLTree *>::iterator itF2=aT2->mFils.begin();
 			itF2 != aT2->mFils.end();
@@ -1963,7 +1963,7 @@ bool  cElXMLTree::VerifMatch(cElXMLTree* aTSpecif,bool SVP)
 
 	cElXMLTree * aMM = Missmatch(aTSpecif,true,aMes);
 
-	if (! aMM) 
+	if (! aMM)
 	{
 		aMM = aTSpecif->Missmatch(this,false,aMes);
 	}
@@ -2347,7 +2347,7 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
 		{
 			const std::string & aPat = aSymSp->ValAttr("Nb");
 
-			ELISE_ASSERT 
+			ELISE_ASSERT
 				(
 				(aPat=="1") || (aPat=="?"),
 				"XML-MATCH ERROR dans la ligne de commande (Specif)\n"
@@ -2363,16 +2363,16 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
 			ELISE_ASSERT(false,"NON TERMINAL SYMBOL");
 		}
 
-		for 
+		for
 			(
-			cElXMLTree * aS = aSymSp->mPere ; 
-		aS && (aS->IsBranche()) ; 
+			cElXMLTree * aS = aSymSp->mPere ;
+		aS && (aS->IsBranche()) ;
 		aS= aS->mPere
 			)
 		{
 			std::string aS1("1");
 			const std::string & aPat = aS->ValAttr("Nb",aS1);
-			ELISE_ASSERT 
+			ELISE_ASSERT
 				(
 				(aPat=="1"),
 				"XML-MATCH ERROR dans la ligne de commande (Specif)\n"

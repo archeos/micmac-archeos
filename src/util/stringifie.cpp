@@ -50,7 +50,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 const std::string Terminator = "//#_-=+{}@$##$##@";
 
-const std::string TheDirXmlGen=std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
+const std::string TheDirXmlGen=std::string("share/micmac")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR;
 
 
 void Stringify
@@ -83,7 +83,7 @@ void Stringify
 
    fprintf(aFOut,"#include \"StdAfx.h\"\n");
 
-   
+
    fprintf(aFOut,"const char * (%s[%d]) = {\n",aNameString.c_str(),aNbLigneTot+2);
 
    fprintf(aFOut,"\"");
@@ -130,10 +130,10 @@ void StdXMl2CppAndString(const std::string &aNameInput)
    aPref = StdPrefix(aPref);
 
     cElXMLTree aTreeSpec
-               (
-                  std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR
-                 + aPref + std::string(".xml"));
-    
+                (
+                   StdGetFileXMLSpec(aPref + std::string(".xml"))
+                );
+
     aTreeSpec.StdGenCppGlob
     (
          std::string("src")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+ aPref + ".cpp",
@@ -157,19 +157,19 @@ void InitEntryStringifie()
        Done=true;
        AddEntryStringifie
        (
-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"ParamChantierPhotogram.xml",
+          StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
           theNameVar_ParamChantierPhotogram,
           true
        );
        AddEntryStringifie
        (
-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"SuperposImage.xml",
+          StdGetFileXMLSpec("SuperposImage.xml"),
           theNameVar_SuperposImage,
           true
        );
        AddEntryStringifie
        (
-          std::string("include")+ELISE_CAR_DIR+"XML_GEN"+ELISE_CAR_DIR+"DefautChantierDescripteur.xml",
+          StdGetFileXMLSpec("DefautChantierDescripteur.xml"),
           theNameVar_DefautChantierDescripteur,
           false
        );
@@ -180,7 +180,7 @@ void InitEntryStringifie()
 
 void AddEntryStringifie(const std::string & aKey,const char ** aVal,bool formal)
 {
-   
+
 
     // std::cout << aKey << "\n";
     InitEntryStringifie();
@@ -233,12 +233,12 @@ const char * GetEntryStringifie(const std::string & aKey)
 class cSTRVirtStream : public cVirtStream
 {
    public :
-      int my_getc() 
+      int my_getc()
       {
          return *(mCur++);
       }
       int my_eof() {return 0;}
-      void my_ungetc(int aC)  
+      void my_ungetc(int aC)
       {
            mCur--;
            ELISE_ASSERT(mCur>=mC0,"Too far in cSTRVirtStream::ungetc");
@@ -272,14 +272,14 @@ class cSTRVirtStream : public cVirtStream
 class cIStStrVirstream : public cVirtStream
 {
    public :
-      int my_getc() 
+      int my_getc()
       {
          char aC;
          mISS >> aC;
          return  aC;
       }
       int my_eof() {return CHAR_MIN;}
-      void my_ungetc(int aC)  
+      void my_ungetc(int aC)
       {
            mISS.putback(aC);
       }
@@ -303,11 +303,11 @@ class cIStStrVirstream : public cVirtStream
 // Simplification MPD a la correction de bug GM2, il n'y a pas besoin de
 // memoriser  dans le getc puisque c'est l'appelant qui se paye le boulot
 // (ungetc passe la valeur a rebufferiser)
-         
+
 class cFILEVirtStream : public cVirtStream
 {
    public :
-      int my_getc() 
+      int my_getc()
       {
          if (mBuf.empty())
             return  fgetc(mFP);
@@ -318,8 +318,8 @@ class cFILEVirtStream : public cVirtStream
       }
 
       int my_eof() {return EOF;}
-     
-       void my_ungetc(int aC)  
+
+       void my_ungetc(int aC)
        {
 // std::cout << "UNGETC " << aC << "\n";
           mBuf.push_back(aC);
@@ -375,7 +375,7 @@ cVirtStream::cVirtStream(const std::string & aName,bool isPreDef,bool IsSpec) :
 bool cVirtStream::IsFilePredef() const  {return mIsPredef;}
 bool cVirtStream::IsFileSpec() const    {return mIsSpec;}
 
-const  std::string & cVirtStream::Name() 
+const  std::string & cVirtStream::Name()
 {
    return mName;
 }
@@ -396,7 +396,7 @@ cVirtStream *  cVirtStream::StdOpen(const std::string & aName)
 {
    std::string aNameSeul,aDir;
    SplitDirAndFile(aDir,aNameSeul,aName);
-    
+
     bool isFilePredef = (aDir== MMDir()+TheDirXmlGen) || (aDir==TheDirXmlGen);
     bool isFileSpec =  isFilePredef && (aNameSeul!="DefautChantierDescripteur.xml");
 

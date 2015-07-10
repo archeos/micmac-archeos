@@ -62,11 +62,7 @@ int Apero_main(int argc,char ** argv)
 
    AddEntryStringifie
    (
-#if ELISE_windows
-        "include\\XML_GEN\\ParamApero.xml",
-#else
-        "include/XML_GEN/ParamApero.xml",
-#endif
+         StdGetFileXMLSpec("ParamApero.xml"),
          theNameVar_ParamApero,
          true
    );

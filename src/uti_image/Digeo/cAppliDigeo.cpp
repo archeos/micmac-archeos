@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -49,10 +49,10 @@ extern const char * theNameVar_ParamDigeo[];
 
 void cAppliDigeo::loadParametersFromFile( const string &i_templateFilename, const string &i_parametersFilename )
 {
-	AddEntryStringifie( "include/XML_GEN/ParamDigeo.xml", theNameVar_ParamDigeo, true );
+	AddEntryStringifie(StdGetFileXMLSpec("ParamDigeo.xml"), theNameVar_ParamDigeo, true );
 
 	// construct parameters structure from template and parameters files
-	cResultSubstAndStdGetFile<cParamDigeo> aP2 
+	cResultSubstAndStdGetFile<cParamDigeo> aP2
 	                                       (
 	                                           0, NULL,                      // int argc,char **argv
 	                                           i_parametersFilename,         // const std::string & aNameFileObj
@@ -516,7 +516,7 @@ void cAppliDigeo::processTestSection()
 		{
 			mDoSaveGaussians = true;
 			mOutputGaussiansDirectory = testOutput.OutputGaussiansDirectory().Val();
-			normalizeOutputPath( mOutputGaussiansDirectory, true ); 
+			normalizeOutputPath( mOutputGaussiansDirectory, true );
 
 			// TODO: use a XML parameter for these expressions
 			mTiledOutputGaussian_base_expr = string("${outputGaussiansDirectory}${imageBasename}_tile${iTile:3}_dz${dz:3}_lvl${iLevel:3}.gaussian")+testOutputSuffix;
@@ -614,7 +614,7 @@ const map<string,int> & cAppliDigeo::dictionnary_tile_dz_level( int i_tile, int 
 	(*mExpressionIntegerDictionnary)["iLevel"] = i_level;
 	return *mExpressionIntegerDictionnary;
 }
-       
+
 string cAppliDigeo::getValue_iTile_dz_iLevel( const Expression &e, int iTile, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( iTile, dz, iLevel ) ); }
 
 string cAppliDigeo::getValue_dz_iLevel( const Expression &e, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( 0, dz, iLevel ) ); }
@@ -733,7 +733,7 @@ correspondances d'images pour la reconstruction du relief.
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -744,16 +744,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
+développement et à la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe à
 manipuler et qui le réserve donc à des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
 logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

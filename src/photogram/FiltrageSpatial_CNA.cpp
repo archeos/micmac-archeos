@@ -5,7 +5,7 @@
 
     www.micmac.ign.fr
 
-   
+
     Copyright : Institut Geographique National
     Author : Marc Pierrot Deseilligny
     Contributors : Gregoire Maillet, Didier Boldo.
@@ -17,12 +17,12 @@
     (With Special Emphasis on Small Satellites), Ankara, Turquie, 02-2006.
 
 [2] M. Pierrot-Deseilligny, "MicMac, un lociel de mise en correspondance
-    d'images, adapte au contexte geograhique" to appears in 
+    d'images, adapte au contexte geograhique" to appears in
     Bulletin d'information de l'Institut Geographique National, 2007.
 
 Francais :
 
-   MicMac est un logiciel de mise en correspondance d'image adapte 
+   MicMac est un logiciel de mise en correspondance d'image adapte
    au contexte de recherche en information geographique. Il s'appuie sur
    la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
    licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
@@ -59,7 +59,7 @@ cFichier_Trajecto * GetTrajFromString(const std::string & aNameFile,bool toMemo)
    cFichier_Trajecto  aFT = StdGetObjFromFile<cFichier_Trajecto>
                             (
                                 aNameFile,
-                                "include/XML_GEN/SuperposImage.xml",
+                                StdGetFileXMLSpec("SuperposImage.xml"),
                                 "Fichier_Trajecto",
                                 "Fichier_Trajecto"
                             );
@@ -80,7 +80,7 @@ const cPtTrajecto & cInterfChantierNameManipulateur::GetPtTrajecto
    std::map<std::string,cPtTrajecto>::const_iterator iT = aFT.PtTrajecto().find(aKeyDic);
    if (iT==aFT.PtTrajecto().end())
    {
-       std::cout << "For Key=" << aKeyAssoc 
+       std::cout << "For Key=" << aKeyAssoc
                  << ", Im=" << aNameIm
                  << ", KeyIm=" << aKeyDic << "\n";
        ELISE_ASSERT(false,"GetPtTrajecto Cannot find");
@@ -219,7 +219,7 @@ void cStdChantierRel::ComputeFiltrageSpatial()
                 aC = StdGetObjFromFile<Pt3dr>
                      (
                           mICNM.Dir()+ aNameOri,
-                          "include/XML_GEN/ParamChantierPhotogram.xml",
+                          StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
                           "Centre",
                           "Pt3dr"
                      );
@@ -252,7 +252,7 @@ void cStdChantierRel::ComputeFiltrageSpatial()
                &(aVNC[0]),
                &(aVNC.back()),
                itFS->FiltreDist().Val().DistMax(),
-               aGetP, 
+               aGetP,
                anAct
           );
 
@@ -279,7 +279,7 @@ cStrRelEquiv::cStrRelEquiv
 
 void cStrRelEquiv::Compile()
 {
-   if (mCompiled) 
+   if (mCompiled)
       return;
 
    mGlobS =  mICNM.Get(mKCE.KeySet());
@@ -295,7 +295,7 @@ void cStrRelEquiv::Compile()
    }
 }
 
-const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName) 
+const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName)
 {
    Compile();
    const std::vector<std::string> * aRes = mClasses[ValEqui(aName)];
@@ -307,13 +307,13 @@ const std::vector<std::string> * cStrRelEquiv::Classe(const std::string & aName)
    return aRes;
 }
 
-bool cStrRelEquiv::SameCl(const std::string & aN1,const std::string & aN2) 
+bool cStrRelEquiv::SameCl(const std::string & aN1,const std::string & aN2)
 {
    Compile();
   return ValEqui(aN1) == ValEqui(aN2);
 }
 
-std::string  cStrRelEquiv::ValEqui(const std::string & aName) 
+std::string  cStrRelEquiv::ValEqui(const std::string & aName)
 {
    Compile();
    return mICNM.Assoc1To1(mKCE.KeyAssocRep(),aName,true);
@@ -366,7 +366,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
                                                      aNH,
                                                      false
                                                   );
-          ElPackHomologue aPackH = ElPackHomologue::FromFile(mICNM.Dir()+aNH); 
+          ElPackHomologue aPackH = ElPackHomologue::FromFile(mICNM.Dir()+aNH);
           int aNb = aPackH.size();
           if (aNb>= aFRSE.SeuilBasNbPts().Val())
           {
@@ -374,7 +374,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
           }
           // std::cout << aNb << "\n";
     }
-    for 
+    for
     (
          std::map<std::string,std::vector<cElemComFRSE> >::iterator itEls=mElems.begin();
          itEls!=mElems.end();
@@ -398,7 +398,7 @@ cComputeFiltreRelSsEch::cComputeFiltreRelSsEch
 
 bool cComputeFiltreRelSsEch::OkCple(const std::string & aN1,const std::string & aN2) const
 {
-   
+
    std::map<std::string,std::vector<cElemComFRSE> >::const_iterator itEls=mElems.find(aN1);
 
    if (itEls==mElems.end())
@@ -429,7 +429,7 @@ correspondances d'images pour la reconstruction du relief.
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
 utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA 
+de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
 En contrepartie de l'accessibilité au code source et des droits de copie,
@@ -440,16 +440,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
+développement et à la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe à
 manipuler et qui le réserve donc à des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
 logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/
