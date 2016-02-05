@@ -5,8 +5,10 @@ Maintainer: Romain Janvier <romain.janvier@hotmail.fr>
 Build-Depends: debhelper (>= 9.0.0), 
  cmake (>= 2.8.1),
  libx11-dev,
- libqt4-dev,
- libqt4-opengl-dev,
+ libqt5widgets5,
+ libqt5concurrent5,
+ libqt5xml5,
+ libqt5opengl5-dev,
  bash-completion
 Standards-Version: 3.9.5
 Homepage: http://logiciels.ign.fr/?-Micmac,3-

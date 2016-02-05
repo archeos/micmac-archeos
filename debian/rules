@@ -12,7 +12,7 @@ override_dh_auto_configure:
 		-DBUILD_PATH_BIN="/usr/bin" \
 		-DWITH_OPEN_MP=1 \
 		-DBUILD_POISSON=1 \
-		-DWITH_QT4=1
+		-DWITH_QT5=1
 
 override_dh_auto_install:
 	dh_auto_install
