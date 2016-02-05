@@ -18,10 +18,10 @@ index fd474f0..214a67d 100644
 -INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )
 +# INSTALL(TARGETS ANN ARCHIVE DESTINATION ${Install_Dir_lib} )
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index c384ede..d41eac4 100644
+index 3e4972c..a24ae90 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -175,7 +175,7 @@ target_link_libraries(${libElise} ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
+@@ -182,7 +182,7 @@ target_link_libraries(${libElise} ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
  #    qt5_use_modules(${libElise} Widgets Core Gui Xml Concurrent OpenGL)
  #endif()
  

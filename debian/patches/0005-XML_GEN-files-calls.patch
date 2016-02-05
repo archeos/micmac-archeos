@@ -13,7 +13,7 @@ Subject: XML_GEN files calls
  7 files changed, 108 insertions(+), 112 deletions(-)
 
 diff --git a/src/photogram/FiltrageSpatial_CNA.cpp b/src/photogram/FiltrageSpatial_CNA.cpp
-index bfe0bba..02c101b 100644
+index adbcb10..0b26a1f 100644
 --- a/src/photogram/FiltrageSpatial_CNA.cpp
 +++ b/src/photogram/FiltrageSpatial_CNA.cpp
 @@ -5,7 +5,7 @@
@@ -169,7 +169,7 @@ index bfe0bba..02c101b 100644
  termes.
  Footer-MicMac-eLiSe-25/06/2007*/
 diff --git a/src/uti_image/Digeo/cAppliDigeo.cpp b/src/uti_image/Digeo/cAppliDigeo.cpp
-index a45bf7b..fcd158f 100644
+index baf2dd9..9cd1b33 100644
 --- a/src/uti_image/Digeo/cAppliDigeo.cpp
 +++ b/src/uti_image/Digeo/cAppliDigeo.cpp
 @@ -5,7 +5,7 @@
@@ -209,7 +209,7 @@ index a45bf7b..fcd158f 100644
  	                                       (
  	                                           0, NULL,                      // int argc,char **argv
  	                                           i_parametersFilename,         // const std::string & aNameFileObj
-@@ -513,7 +513,7 @@ void cAppliDigeo::processTestSection()
+@@ -516,7 +516,7 @@ void cAppliDigeo::processTestSection()
  		{
  			mDoSaveGaussians = true;
  			mOutputGaussiansDirectory = testOutput.OutputGaussiansDirectory().Val();
@@ -218,7 +218,7 @@ index a45bf7b..fcd158f 100644
  
  			// TODO: use a XML parameter for these expressions
  			mTiledOutputGaussian_base_expr = string("${outputGaussiansDirectory}${imageBasename}_tile${iTile:3}_dz${dz:3}_lvl${iLevel:3}.gaussian")+testOutputSuffix;
-@@ -611,7 +611,7 @@ const map<string,int> & cAppliDigeo::dictionnary_tile_dz_level( int i_tile, int
+@@ -614,7 +614,7 @@ const map<string,int> & cAppliDigeo::dictionnary_tile_dz_level( int i_tile, int
  	(*mExpressionIntegerDictionnary)["iLevel"] = i_level;
  	return *mExpressionIntegerDictionnary;
  }
@@ -227,7 +227,7 @@ index a45bf7b..fcd158f 100644
  string cAppliDigeo::getValue_iTile_dz_iLevel( const Expression &e, int iTile, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( iTile, dz, iLevel ) ); }
  
  string cAppliDigeo::getValue_dz_iLevel( const Expression &e, int dz, int iLevel ) const { return e.value( dictionnary_tile_dz_level( 0, dz, iLevel ) ); }
-@@ -730,7 +730,7 @@ correspondances d'images pour la reconstruction du relief.
+@@ -733,7 +733,7 @@ correspondances d'images pour la reconstruction du relief.
  Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
  respectant les principes de diffusion des logiciels libres. Vous pouvez
  utiliser, modifier et/ou redistribuer ce programme sous les conditions
@@ -236,7 +236,7 @@ index a45bf7b..fcd158f 100644
  sur le site "http://www.cecill.info".
  
  En contrepartie de l'accessibilité au code source et des droits de copie,
-@@ -741,16 +741,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+@@ -744,16 +744,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
  
  A cet égard  l'attention de l'utilisateur est attirée sur les risques
  associés au chargement,  à l'utilisation,  à la modification et/ou au
@@ -259,7 +259,7 @@ index a45bf7b..fcd158f 100644
  termes.
  Footer-MicMac-eLiSe-25/06/2007*/
 diff --git a/src/uti_phgrm/CPP_Apero.cpp b/src/uti_phgrm/CPP_Apero.cpp
-index df21b93..bd5e61e 100644
+index 1c78613..e6ab114 100644
 --- a/src/uti_phgrm/CPP_Apero.cpp
 +++ b/src/uti_phgrm/CPP_Apero.cpp
 @@ -62,11 +62,7 @@ int Apero_main(int argc,char ** argv)
@@ -276,7 +276,7 @@ index df21b93..bd5e61e 100644
           true
     );
 diff --git a/src/uti_phgrm/CPP_MICMAC.cpp b/src/uti_phgrm/CPP_MICMAC.cpp
-index 6b0f117..79e1c63 100644
+index 4dfb818..d621012 100644
 --- a/src/uti_phgrm/CPP_MICMAC.cpp
 +++ b/src/uti_phgrm/CPP_MICMAC.cpp
 @@ -5,7 +5,7 @@
@@ -303,7 +303,7 @@ index 6b0f117..79e1c63 100644
     au contexte de recherche en information geographique. Il s'appuie sur
     la bibliotheque de manipulation d'image eLiSe. Il est distibue sous la
     licences Cecill-B.  Voir en bas de fichier et  http://www.cecill.info.
-@@ -66,16 +66,16 @@ int MICMAC_main(int argc,char ** argv)
+@@ -66,15 +66,15 @@ int MICMAC_main(int argc,char ** argv)
    MicMacRequiresBinaireAux();
    AddEntryStringifie
    (
@@ -315,7 +315,6 @@ index 6b0f117..79e1c63 100644
 +  );
    cAppliMICMAC * anAppli = cAppliMICMAC::Alloc(argc,argv,eAllocAM_STD);
    if (anAppli==0) return 0;
- 
    if ((! anAppli->CalledByProcess().Val()) && (anAppli->SectionBatch().IsInit()))
    {
 -     for 
@@ -323,7 +322,7 @@ index 6b0f117..79e1c63 100644
       (
          std::list<std::string>::iterator itS=anAppli->NextMicMacFile2Exec().begin();
          itS != anAppli->NextMicMacFile2Exec().end();
-@@ -93,7 +93,7 @@ int MICMAC_main(int argc,char ** argv)
+@@ -92,7 +92,7 @@ int MICMAC_main(int argc,char ** argv)
  
    if (0)
       delete anAppli;
@@ -332,7 +331,7 @@ index 6b0f117..79e1c63 100644
  
     return 0;
  }
-@@ -108,7 +108,7 @@ correspondances d'images pour la reconstruction du relief.
+@@ -107,7 +107,7 @@ correspondances d'images pour la reconstruction du relief.
  Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
  respectant les principes de diffusion des logiciels libres. Vous pouvez
  utiliser, modifier et/ou redistribuer ce programme sous les conditions
@@ -341,7 +340,7 @@ index 6b0f117..79e1c63 100644
  sur le site "http://www.cecill.info".
  
  En contrepartie de l'accessibilité au code source et des droits de copie,
-@@ -119,16 +119,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
+@@ -118,16 +118,16 @@ titulaire des droits patrimoniaux et les concédants successifs.
  
  A cet égard  l'attention de l'utilisateur est attirée sur les risques
  associés au chargement,  à l'utilisation,  à la modification et/ou au
@@ -439,7 +438,7 @@ index 1dd6686..ecc8afb 100644
  termes.
  Footer-MicMac-eLiSe-25/06/2007*/
 diff --git a/src/util/stringifie.cpp b/src/util/stringifie.cpp
-index e2f947a..04be5ee 100644
+index a039989..9d4f9b5 100644
 --- a/src/util/stringifie.cpp
 +++ b/src/util/stringifie.cpp
 @@ -50,7 +50,7 @@ Header-MicMac-eLiSe-25/06/2007*/
@@ -583,7 +582,7 @@ index e2f947a..04be5ee 100644
      bool isFileSpec =  isFilePredef && (aNameSeul!="DefautChantierDescripteur.xml");
  
 diff --git a/src/util/xml.cpp b/src/util/xml.cpp
-index d91cac1..169129c 100644
+index 6892e0f..5d70467 100644
 --- a/src/util/xml.cpp
 +++ b/src/util/xml.cpp
 @@ -46,7 +46,7 @@ Header-MicMac-eLiSe-25/06/2007*/
@@ -739,7 +738,7 @@ index d91cac1..169129c 100644
  		return 0;
  
  	for (std::list<cElXMLTree *>::iterator it=mFils.begin(); it!=mFils.end() ; it++)
-@@ -1772,7 +1772,7 @@ void cElXMLTree::ShowOpeningTag(FILE * aFile)
+@@ -1777,7 +1777,7 @@ void cElXMLTree::ShowOpeningTag(FILE * aFile)
  void cElXMLTree::Show
  	(
  	const std::string & mIncr,
@@ -748,7 +747,7 @@ index d91cac1..169129c 100644
  	INT aCpt,
  	INT LevMin,
  	bool  isTermOnLine,
-@@ -1790,7 +1790,7 @@ void cElXMLTree::Show
+@@ -1795,7 +1795,7 @@ void cElXMLTree::Show
  	if (isTermOnLine && (Profondeur() <= 1) && (! IsFeuille() ))
  	{
  		ShowOpeningTag(aFile);
@@ -757,7 +756,7 @@ index d91cac1..169129c 100644
  			(
  			std::list<cElXMLTree *>::iterator itF=mFils.begin();
  		itF != mFils.end();
-@@ -1819,7 +1819,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
+@@ -1824,7 +1824,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
  		fprintf(aFile,"\n");
  	}
  
@@ -766,7 +765,7 @@ index d91cac1..169129c 100644
  		(
  		std::list<cElXMLTree *>::iterator itF=mFils.begin();
  	itF != mFils.end();
-@@ -1840,7 +1840,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
+@@ -1845,7 +1845,7 @@ void PutCharWithSeqBinaire(FILE * aFp,const std::string & aVal)
  void cElXMLTree::Show
  	(
  	const std::string & mIncr,
@@ -775,7 +774,7 @@ index d91cac1..169129c 100644
  	INT aCpt,
  	INT LevMin,
  	bool  isTermOnLine
-@@ -1887,7 +1887,7 @@ cElXMLTree *  cElXMLTree::Missmatch
+@@ -1892,7 +1892,7 @@ cElXMLTree *  cElXMLTree::Missmatch
  		aMes = "UnionType must have exactly on descendant, Tag : " + aT2->ValTag();
  		return this;
  	}
@@ -784,7 +783,7 @@ index d91cac1..169129c 100644
  		(
  		std::list<cElXMLTree *>::iterator itF1=mFils.begin();
  	itF1 != mFils.end();
-@@ -1897,7 +1897,7 @@ cElXMLTree *  cElXMLTree::Missmatch
+@@ -1902,7 +1902,7 @@ cElXMLTree *  cElXMLTree::Missmatch
  		if (! (*itF1)->IsFeuille())
  		{
  			int aNbMatch =0;
@@ -793,7 +792,7 @@ index d91cac1..169129c 100644
  				(
  				std::list<cElXMLTree *>::iterator itF2=aT2->mFils.begin();
  			itF2 != aT2->mFils.end();
-@@ -1958,7 +1958,7 @@ void  cElXMLTree::VerifMatch(cElXMLTree* aTSpecif)
+@@ -1963,7 +1963,7 @@ bool  cElXMLTree::VerifMatch(cElXMLTree* aTSpecif,bool SVP)
  
  	cElXMLTree * aMM = Missmatch(aTSpecif,true,aMes);
  
@@ -802,7 +801,7 @@ index d91cac1..169129c 100644
  	{
  		aMM = aTSpecif->Missmatch(this,false,aMes);
  	}
-@@ -2327,7 +2327,7 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
+@@ -2347,7 +2347,7 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
  		{
  			const std::string & aPat = aSymSp->ValAttr("Nb");
  
@@ -811,7 +810,7 @@ index d91cac1..169129c 100644
  				(
  				(aPat=="1") || (aPat=="?"),
  				"XML-MATCH ERROR dans la ligne de commande (Specif)\n"
-@@ -2343,16 +2343,16 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
+@@ -2363,16 +2363,16 @@ void cElXMLTree::ModifLC(char * anArg,cElXMLTree * aSpecif)
  			ELISE_ASSERT(false,"NON TERMINAL SYMBOL");
  		}
  

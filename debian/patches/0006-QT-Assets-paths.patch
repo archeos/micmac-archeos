@@ -8,28 +8,28 @@ Subject: QT Assets paths
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/saisieQT/main/saisieQT_main.cpp b/src/saisieQT/main/saisieQT_main.cpp
-index d5a395a..b409e4a 100644
+index 52584a2..3b15fde 100644
 --- a/src/saisieQT/main/saisieQT_main.cpp
 +++ b/src/saisieQT/main/saisieQT_main.cpp
-@@ -171,7 +171,7 @@ void loadTranslation(QApplication &app)
+@@ -172,7 +172,7 @@ void loadTranslation(QApplication &app)
      if(lang>0)
      {
          QString sLang = "saisie_";
 -        QString path = app.applicationDirPath() + QDir::separator() + "../include/qt/translations";
-+        QString path = "/usr/share/micmac/qt/translations";
++        QString path = app.applicationDirPath() + QDir::separator() + "/usr/share/micmac/qt/translations";
  
          //cf Settings.h
          if (lang == 1)
 diff --git a/src/saisieQT/saisieQT_window.cpp b/src/saisieQT/saisieQT_window.cpp
-index 57f7f61..254adc4 100644
+index 7e9aaf7..0029270 100644
 --- a/src/saisieQT/saisieQT_window.cpp
 +++ b/src/saisieQT/saisieQT_window.cpp
-@@ -3,7 +3,7 @@
+@@ -7,7 +7,7 @@
  
  void setStyleSheet(QApplication &app)
  {
 -    QFile file(app.applicationDirPath() + "/../include/qt/style.qss");
-+    QFile file("/usr/share/micmac/qt/style.qss");
++    QFile file(app.applicationDirPath() + "/usr/share/micmac/qt/style.qss");
      if(file.open(QIODevice::ReadOnly | QIODevice::Text))
      {
          Q_INIT_RESOURCE(icones);

@@ -7,10 +7,10 @@ Subject: OpenMP flags for Hardening
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 7466d5f..e3a6a3d 100644
+index ba29c47..9a4723d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -75,8 +75,8 @@ if ( WITH_OPEN_MP )
+@@ -83,8 +83,8 @@ if ( WITH_OPEN_MP )
  	else()
  	    message("using OpenMP for Poisson 3d shell computing")
  	endif()
