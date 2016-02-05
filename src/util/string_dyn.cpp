@@ -255,7 +255,7 @@ std::string StdWorkdDir(const std::string & aValWD,const std::string & aNameFile
 void MakeFileDirCompl(std::string & aD)
 {
    const char * aC = aD.c_str();
-   int aL = strlen(aC);
+   int aL = (int)strlen(aC);
    if ( (aL==0) || ( (aC[aL-1]!='/') && (aC[aL-1]!='\\') ) )
    {
           aD = aD + '/';
@@ -463,7 +463,7 @@ int  StringDcraw(const std::string & aStr)
 {
     std::vector<char *> anAM= ToArgMain(aStr);
 
-    int aRes = el_dcraw_main(anAM.size()-1,const_cast<const char **>(&anAM[1]));
+    int aRes = el_dcraw_main((int)(anAM.size() - 1),const_cast<const char **>(&anAM[1]));
 
     delete [] anAM[0];
     return aRes;
@@ -488,13 +488,30 @@ void GlobStdAdapt2Crochet(std::string & aStr)
 std::string QUOTE(const std::string & aStr)
 {
    const char * aC = aStr.c_str();
-   int aL = strlen(aC);
+   int aL = (int)strlen(aC);
    if (aL==0) return aStr;
 
 
    return    ((aC[0]=='"'   ) ? "" : "\"" )
            + aStr
            + ((aC[aL-1]=='"') ? "" : "\"" );
+}
+
+bool needCommandlineProtection( const string &aStr )
+{
+	const char *it = aStr.c_str();
+	size_t i = aStr.length();
+	while (i--)
+	{
+		const char &c = *it++;
+		if (c == '[' || c == '(' || c == ')' || c == ']') return true;
+	}
+	return false;
+}
+
+string PATTERN_QUOTE( const string &aStr )
+{
+	return (needCommandlineProtection(aStr) ? QUOTE(aStr): aStr);
 }
 
 std::vector<std::string> VecStrFromFile(const std::string & aFilePtsIn)
@@ -535,14 +552,14 @@ std::string getBanniereMM3D()
     banniere += "**  - ERC Advanced Grant A.Kaeaeb \"ICEMASS\" (University of Oslo)      ** \n";
     banniere += "**                                                                    ** \n";
     banniere += "**                                                                    ** \n";
-    banniere += "**  Current Team: MP Deseilligny, M Deveau, J Belvaux, G Choqueux,    ** \n";
-    banniere += "**                G Maillet, L Girod                                  ** \n";
+    banniere += "**  Current Team: MP Deseilligny, D Jouin, J Belvaux,                 ** \n";
+    banniere += "**    G Maillet, L Girod, E Rupnik, JM Muller                         ** \n";
     banniere += "**                                                                    ** \n";
     banniere += "**    Contact for participating : Marc.Pierrot-Deseilligny@ensg.eu    ** \n";
     banniere += "**                                                                    ** \n";
     banniere += "**    Hope you enjoy, todo list in case of any problem using MicMac : ** \n";
     banniere += "**      (0) Take a Pastis                                             ** \n";
-    banniere += "**      (1) Switch your computer off and on                           ** \n";
+    banniere += "**      (1) Switch your computer off and on again                     ** \n";
     banniere += "**      (2) Install it on Gnu-Linux (work better on)                  ** \n";
     banniere += "**      (3) Contact the forum http://forum-micmac.forumprod.com/      ** \n";
     banniere += "**                                                                    ** \n";

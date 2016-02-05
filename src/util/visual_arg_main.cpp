@@ -36,10 +36,13 @@ eLiSe image library. MicMac is governed by the  "Cecill-B licence".
 See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+
+#include "general/CMake_defines.h"
 
 #if(ELISE_QT_VERSION >= 4)
-    #include "general/visual_mainwindow.h"
+	#include "general/visual_mainwindow.h"
+#else
+	#include "StdAfx.h"
 #endif
 
 void ShowEnum(const cMMSpecArg & anArg)

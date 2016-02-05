@@ -1,6 +1,10 @@
 #ifndef __CONVOLUTION_KERNEL_1D__
 #define __CONVOLUTION_KERNEL_1D__
 
+#if defined(__MINGW__) && !defined(__MSVCRT_VERSION__)
+	#define __MSVCRT_VERSION__ 0x800
+#endif
+
 #include <vector>
 #include <cstdlib>
 #include <iostream>

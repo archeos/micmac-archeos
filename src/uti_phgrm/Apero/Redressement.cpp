@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 /*******************************************/
@@ -121,7 +122,7 @@ void cAppliApero::ExportRedressement(const cExportRedressement & anER,cPoseCam &
     ELISE_fp::MkDirRec(aNameImOut);
  
     std::vector<Im2DGen *>   aVIn = aTIn.VecOfIm(round_ni(aSzIn));
-    int aNbCh = aVIn.size();
+    int aNbCh = (int)aVIn.size();
     ELISE_COPY(aTIn.all_pts(),aTIn.in(),StdOutput(aVIn));
     std::vector<Im2DGen *>   aVOut = aTIn.VecOfIm(aSzOut);
 

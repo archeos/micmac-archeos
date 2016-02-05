@@ -9,6 +9,7 @@
        <DicoLoc>
            <Symb>  AeroIn=XXXXXX </Symb>
            <Symb>  AeroOut=XXXXXX </Symb>
+           <Symb>  PatterIm0=XXXXXX </Symb>
            <Symb>  SetIm=XXXXXX </Symb>
 
            <Symb>  LibParamInterne=eAllParamFiges  </Symb>
@@ -80,6 +81,8 @@
            <eSymb> DR1Free= SupEq ${DRMax} 1 </eSymb>
            <eSymb> DR2Free= SupEq ${DRMax} 2 </eSymb>
            <eSymb> DR3Free= SupEq ${DRMax} 3 </eSymb>
+
+           <Symb> AcceptGB=true </Symb>
 
 
        </DicoLoc>
@@ -187,6 +190,17 @@
                      </ModifInc>
                 </PointFlottantInc>
              </#WHEN>
+
+
+             <#WHEN  VTEST=${AcceptGB}>
+                 <CamGenInc>
+                    <PatterName>   ${PatterIm0}  </PatterName>
+                    <Orient>      ${AeroIn}  </Orient>
+                    <ErrorWhenEmpytPat> false </ErrorWhenEmpytPat>
+                    <ErrorWhenNoFileOrient> false </ErrorWhenNoFileOrient>
+                 </CamGenInc>
+             </#WHEN>
+
         </SectionInconnues>
 
 
@@ -244,8 +258,9 @@
 
                        </SectionContraintes>
 			<#WHEN VTEST=${PoseFigee}>
-			<Messages>  External orientations of the cameras are frozen </Messages>
-			</#WHEN>
+			     <Messages>  External orientations of the cameras are frozen </Messages>
+		        </#WHEN>
+
 
                    </IterationsCompensation>
 
@@ -415,6 +430,15 @@
                                    </PondAlti>
                               </ObsCentrePDV>
                           </#WHEN>
+                          <#WHEN VTEST=${AcceptGB}>
+                              <ContrCamGenInc>
+                                   <PatternApply> .*  </PatternApply>
+                                   <PdsAttachToId>   1e-8     </PdsAttachToId>
+                                   <PdsAttachToLast> 1e-6    </PdsAttachToLast>
+                                   <PdsAttachRGLob>  1e-2    </PdsAttachRGLob>
+                              </ContrCamGenInc>
+                          </#WHEN>
+
 
 		    </SectionObservations>
 
@@ -436,7 +460,7 @@
                                      <KeyIsName> false </KeyIsName>
                                 </ExportCalib>
                             </#WHEN>
-                             <ExportResiduXml> Ori${AeroOut}/Residus.xml </ExportResiduXml>
+                            <ExportResiduXml> Ori${AeroOut}/Residus.xml </ExportResiduXml>
 
                     </SectionExport>
 	      </EtapeCompensation>

@@ -195,7 +195,11 @@ void getPastisGrayscaleFilename( const string &i_baseName, int i_resolution, str
 
 void InitDetectingTool( std::string & detectingTool )
 {
-    if ( ( !EAMIsInit(&detectingTool) ) && MMUserEnv().TiePDetect().IsInit() )
+    if (0 && MPD_MM() && ( !EAMIsInit(&detectingTool) ) )
+    {
+         detectingTool = "mm3d:Digeo";
+    }
+    else if ( ( !EAMIsInit(&detectingTool) ) && MMUserEnv().TiePDetect().IsInit() )
         detectingTool = MMUserEnv().TiePDetect().Val();
 }
 
@@ -342,6 +346,11 @@ int MultiEch(int argc,char ** argv, const std::string &aArg="")
     return 0;
 }
 
+
+
+
+
+
 int All(int argc,char ** argv, const std::string &aArg="")
 {
     string detectingTool, matchingTool, ignoreMinMaxStr;
@@ -388,6 +397,7 @@ int All(int argc,char ** argv, const std::string &aArg="")
 
         DoMkT();
     }
+
 
     return 0;
 }
@@ -721,7 +731,8 @@ void DoConstructGraph( const string &i_outputFilename, size_t i_nbMaxPointsPerIm
     const DigeoPoint *pSrc;
     DigeoPoint *pDst = &( all_keypoints[0] );
     int *itIndex = &( all_image_indices[0] );
-    for ( iImage=0; iImage<nbImages; iImage++, itSrc++ )
+    const int nbImages_int = (int)nbImages;
+    for ( int i = 0; i < nbImages_int; i++, itSrc++ )
     {
         nbPoints = itSrc->size();
         if ( nbPoints==0 ) continue;
@@ -729,7 +740,7 @@ void DoConstructGraph( const string &i_outputFilename, size_t i_nbMaxPointsPerIm
         pSrc = &( ( *itSrc )[0] );
         memcpy( pDst, pSrc, nbPoints*sizeof( DigeoPoint ) );
         pDst += nbPoints;
-        while ( nbPoints-- ) *itIndex++=iImage;
+        while (nbPoints--) *itIndex++ = i;
     }
 
     // create a connectivity matrix
@@ -1065,6 +1076,194 @@ int Tapioca_main(int argc,char ** argv)
 }
 
 
+/************************************************************************/
+/*                                                                      */
+/*             Nouvelle commnde, compatible vTools                      */
+/*                                                                      */
+/************************************************************************/
+
+
+        //=============== cArgMainTieP  ===================
+
+class cArgMainTieP
+{
+     public  :
+          int Exe();
+     protected :
+          cArgMainTieP(int argc,char ** argv,const std::string & aNameCom);
+
+          std::string  CommandMand();
+          std::string  CommandOpt();
+
+          std::string        mNameCom;
+          std::string        mFullDir;
+          bool               mExpTxt;
+          int                mByP;
+          std::string        mPostFix;
+          std::string        mDetectingTool;
+
+          LArgMain CommonMandatory();
+          
+          // LArgMain CommonOptionnel();
+          // LArgMain CommonOptionnel();
+          LArgMain mComObl;
+          LArgMain mComOpt;
+
+          std::string mComGlob;
+};
+
+
+
+
+cArgMainTieP::cArgMainTieP(int argc,char ** argv,const std::string & aNameCom) :
+    mNameCom (aNameCom),
+    mExpTxt  (false),
+    mByP     (-1),
+    mPostFix ("")
+{
+    mComObl  << EAMC(mFullDir,"Full Name (Dir+Pat)", eSAM_IsPatFile)
+    ;
+    mComOpt  << EAM(mExpTxt,"ExpTxt",true, "Export files in text format (Def=false means binary)", eSAM_IsBool)
+             << EAM(mByP,"ByP",true,"By process")
+             << EAM(mPostFix,"PostFix",false, "Add postfix in directory")
+             << EAM(mDetectingTool,PASTIS_DETECT_ARGUMENT_NAME.c_str(),false)
+    ;
+}
+
+int cArgMainTieP::Exe()
+{
+   if (!MMVisualMode)
+   {
+      return System(mComGlob);
+   }
+   return EXIT_SUCCESS;
+}
+
+LArgMain cArgMainTieP::CommonMandatory()
+{
+    return LArgMain()  << EAMC(aFullDir,"Full Name (Dir+Pat)", eSAM_IsPatFile);
+}
+std::string cArgMainTieP::CommandMand()
+{
+    return MM3dBinFile_quotes("Tapioca") + " " + mNameCom + " "+ QUOTE(mFullDir);
+}
+
+
+/*
+                       << EAM(matchingTool,PASTIS_MATCH_ARGUMENT_NAME.c_str(),false)
+                       << EAM(ignoreMax,PASTIS_IGNORE_MAX_NAME.c_str(),true)
+                       << EAM(ignoreMin,PASTIS_IGNORE_MIN_NAME.c_str(),true)
+                       << EAM(ignoreUnknown,PASTIS_IGNORE_UNKNOWN_NAME.c_str(),true),
+int MultiEch(int argc,char ** argv, const std::string &aArg="")
+*/
+
+std::string cArgMainTieP::CommandOpt()
+{
+    std::string aRes = " ";
+
+    if (EAMIsInit(&mExpTxt))        aRes += " ExpTxt="  + ToString(mExpTxt);
+    if (EAMIsInit(&mByP))           aRes += " ByP="     + ToString(mByP);
+    if (EAMIsInit(&mPostFix))       aRes += " PostFix=" + mPostFix;
+    if (EAMIsInit(&mDetectingTool)) aRes += " " + PASTIS_DETECT_ARGUMENT_NAME + "=" + mDetectingTool;
+
+    return aRes + " ";
+}
+
+        //=============== cArgMainTiePMS  ===================
+
+class cArgMainTiePMS : public cArgMainTieP
+{
+      public :
+          cArgMainTiePMS(int argc,char ** argv);
+      private :
+          int mSsRes;
+          int mFullRes;
+};
+
+cArgMainTiePMS::cArgMainTiePMS(int argc,char ** argv) :
+   cArgMainTieP(argc,argv,"MulScale"),
+   mSsRes     (500),
+   mFullRes   (2000)
+{
+    ElInitArgMain
+    (
+        argc,argv,
+        mComObl << EAMC(mSsRes,"Size of Low Resolution Images")
+                << EAMC(mFullRes,"Size of High Resolution Images"),
+        mComOpt
+    );
+    mComGlob =   CommandMand() +  " " + ToString(mSsRes) +  " " + ToString(mFullRes) + CommandOpt() ;
+}
+
+int TiePMS_main(int argc,char ** argv)
+{
+    cArgMainTiePMS anArg(argc,argv);
+    return anArg.Exe();
+}
+
+
+        //=============== cArgMainTiePAll  ===================
+
+class cArgMainTiePAll : public cArgMainTieP
+{
+      public :
+          cArgMainTiePAll(int argc,char ** argv);
+      private :
+          int mFullRes;
+};
+
+cArgMainTiePAll::cArgMainTiePAll(int argc,char ** argv) :
+   cArgMainTieP(argc,argv,"All"),
+   mFullRes   (2000)
+{
+    ElInitArgMain
+    (
+        argc,argv,
+        mComObl << EAMC(mFullRes,"Size of image"),
+        mComOpt
+    );
+    mComGlob =   CommandMand() + " " +   ToString(mFullRes) + CommandOpt() ;
+}
+
+int TiePAll_main(int argc,char ** argv)
+{
+    cArgMainTiePAll anArg(argc,argv);
+    return anArg.Exe();
+}
+
+        //=============== cArgMainTiePLine  ===================
+
+class cArgMainTiePLine : public cArgMainTieP
+{
+      public :
+          cArgMainTiePLine(int argc,char ** argv);
+      private :
+          int mFullRes;
+          int mNbAdj;
+};
+
+cArgMainTiePLine::cArgMainTiePLine(int argc,char ** argv) :
+   cArgMainTieP(argc,argv,"Line"),
+   mFullRes   (2000),
+   mNbAdj     (4)
+{
+    ElInitArgMain
+    (
+        argc,argv,
+        mComObl << EAMC(mFullRes,"Image size")
+                << EAMC(mNbAdj,"Number of adjacent images to look for"),
+        mComOpt
+    );
+    mComGlob =   CommandMand() +  " " + ToString(mFullRes) +  " " + ToString(mNbAdj) + CommandOpt() ;
+}
+
+int TiePLine_main(int argc,char ** argv)
+{
+    cArgMainTiePLine anArg(argc,argv);
+    return anArg.Exe();
+}
+
+
 
 
 
@@ -1075,28 +1274,28 @@ correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
 respectant les principes de diffusion des logiciels libres. Vous pouvez
-utiliser, modifier et/ou redistribuer ce programme sous les conditions
-de la licence CeCILL-B telle que diffusée par le CEA, le CNRS et l'INRIA
+utiliser modifier et/ou redistribuer ce programme sous les conditions
+de la licence CeCILL-B telle que diffusée par le CEA le CNRS et l'INRIA
 sur le site "http://www.cecill.info".
 
-En contrepartie de l'accessibilité au code source et des droits de copie,
-de modification et de redistribution accordés par cette licence, il n'est
-offert aux utilisateurs qu'une garantie limitée.  Pour les mêmes raisons,
-seule une responsabilité restreinte pèse sur l'auteur du programme,  le
+En contrepartie de l'accessibilité au code source et des droits de copie
+de modification et de redistribution accordés par cette licence il n'est
+offert aux utilisateurs qu'une garantie limitée.  Pour les mêmes raisons
+seule une responsabilité restreinte pèse sur l'auteur du programme  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  �  l'utilisation,  �  la modification et/ou au
+associés au chargement  �  l'utilisation,  �  la modification et/ou au
 développement et �  la reproduction du logiciel par l'utilisateur étant
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �
+donné sa spécificité de logiciel libre qui peut le rendre complexe �
 manipuler et qui le réserve donc �  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
 logiciel �  leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+sécurité de leurs systèmes et ou de leurs données et plus généralement,
 �  l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
 Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez
-pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
+pris connaissance de la licence CeCILL-B et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

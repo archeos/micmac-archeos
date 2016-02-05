@@ -1341,7 +1341,7 @@ template <class Type,class TyBase> void  Im2D<Type,TyBase>::PutData
    Type & aV = data()[aP.y][aP.x];
    if (aModeBin)
    {
-         int aNb= fwrite(&aV,sizeof(Type),1,aFP);
+         size_t aNb= fwrite(&aV,sizeof(Type),1,aFP);
          ELISE_ASSERT(aNb==1,"cElNuage3DMaille::PlyPutData");
 
    }
@@ -2053,7 +2053,7 @@ template <class Type,class Type_Base> Im2D<Type,Type_Base>
                      aV.push_back(aVal);
              }
 
-             int aNb = aV.size();
+             size_t aNb = aV.size();
              if (aNb==0)
              {
                 aRes.data()[aY][aX] = ValDef;
@@ -2073,7 +2073,7 @@ template <class Type,class Type_Base> Im2D<Type,Type_Base>
                  double  aSomV= 0;
                  double  aSomP= 0;
                  double aTol = ElMax(aTolTh,1/double(aNb-1));
-                 for (int aK=0 ; aK<aNb; aK++)
+                 for (size_t aK=0 ; aK<aNb; aK++)
                  {
                      double aRank = ElAbs(aK/double(aNb-1) - 0.5);
                      double aPds = ElMax(0.0,aTol-aRank);
@@ -2120,6 +2120,24 @@ template  Im2D<Type,TyBase> ImMediane(const std::vector<Im2D<Type,TyBase> > & aV
 }
 */
 
+template<class Type,class TypeBase> Output   StdOut(std::vector<Im2D<Type,TypeBase> > & aV)
+{
+    Output aRes = aV[0].out();
+    for (int aK=1 ; aK<int(aV.size()) ; aK++)
+    {
+       aRes = Virgule(aRes,aV[aK].out());
+    }
+    return aRes;
+}
+template<class Type,class TypeBase> Fonc_Num StdInput(std::vector<Im2D<Type,TypeBase> > & aV)
+{
+    Fonc_Num aRes = aV[0].in();
+    for (int aK=1 ; aK<int(aV.size()) ; aK++)
+    {
+       aRes = Virgule(aRes,aV[aK].in());
+    }
+    return aRes;
+}
 
 
 /***********************************************************************/
@@ -2133,6 +2151,8 @@ template void verif_value_op_ass(OperAssocMixte const &, TyBase const *, TyBase 
 
 #define INSTANTIATE_BITM_KD_GEN(Type,TyBase)\
 template  Im2D<Type,TyBase> ImMediane(const std::vector<Im2D<Type,TyBase> > & aVIm, TyBase VaUnused,Type,double);\
+template Fonc_Num StdInput(std::vector<Im2D<Type,TyBase> > & aV);\
+template Output   StdOut(std::vector<Im2D<Type,TyBase> > & aV);\
 template class Im1D<Type,TyBase>;\
 template class DataIm1D<Type,TyBase>;\
 template class Im2D<Type,TyBase>;\
@@ -2532,6 +2552,11 @@ Fonc_Num StdInPut(std::vector<Im2DGen *> aV)
     }
     return aRes;
 }
+
+
+
+
+
 Output StdOutput(std::vector<Im2DGen *> aV)
 {
     Output aRes = aV[0]->out();
@@ -2541,6 +2566,8 @@ Output StdOutput(std::vector<Im2DGen *> aV)
     }
     return aRes;
 }
+
+
 
 
 

@@ -76,9 +76,9 @@ cASAMG::cASAMG(cAppliMergeCloud * anAppli,cImaMM * anIma)  :
    mMaxNivH   (-1),
    mSSIma     (mStdN->DynProfInPixel() *  mAppli->Param().ImageVariations().SeuilStrictVarIma()),
    mISOM      (StdGetISOM(anAppli->ICNM(),anIma->mNameIm,anAppli->Ori())),
-   mNivSelected  (-1),
-   mIsMAP        (mAppli->IsInImageMAP(this))
+   mNivSelected  (-1)
 {
+   mIsMAP = mAppli->IsInImageMAP(this);
 
    bool doComputeIncid = mAppli->Param().ComputeIncid().Val();
    if (doComputeIncid)
@@ -387,7 +387,7 @@ std::string  cASAMG::ExportMiseAuPoint()
     std::string aComPly =  MM3dBinFile("Nuage2Ply") + "  " + aNameXML;
     if (mAppli->DoPlyCoul())
     {
-       aComPly = aComPly + " Attr=" + mIma->mNameIm + " RatioAttrCarte=" + ToString(mStdN->Params().SsResolRef().Val());
+       aComPly = aComPly + " "+QUOTE("Attr=" + mAppli->Dir()+mIma->mNameIm) + " RatioAttrCarte=" + ToString(mStdN->Params().SsResolRef().Val());
     }
 
 

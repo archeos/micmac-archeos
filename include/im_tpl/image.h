@@ -160,6 +160,11 @@ template  <class Type,class Type_Base> class  TIm2D : public GTIm2D
           std::string  NameType() {return El_CTypeTraits<Type>::Name();}
 
           Im2D<Type,Type_Base>    _the_im;
+          Flux_Pts all_pts() {return _the_im.all_pts();}
+          Fonc_Num in() {return _the_im.in();}
+          Fonc_Num in(Type_Base aVal) {return _the_im.in(aVal);}
+          Output out() {return _the_im.out();}
+
           Type **                     _d;
 
 		  typedef Type tValueElem;
@@ -453,11 +458,13 @@ template  <const INT NBB> class  TIm2DBits : public GTIm2D
           {
               nb_per_byte = Tabul_Bits<NBB,true>::nb_per_byte
           };
-          U_INT1 **                   _d;
 
 
      public :
           Im2D_Bits<NBB>              _the_im;
+     private :
+          U_INT1 **                   _d;
+     public :
 
           virtual ~TIm2DBits(){};
 
@@ -501,10 +508,19 @@ template  <const INT NBB> class  TIm2DBits : public GTIm2D
 
           TIm2DBits(Im2D_Bits<NBB>  TheIm) :
               GTIm2D  (TheIm.tx(),TheIm.ty()),
-              _d      (TheIm.data()),
-              _the_im (TheIm)
+              _the_im (TheIm),
+              _d      (TheIm.data())
           {
           }
+
+          TIm2DBits(Pt2di aSz,int aVDef=0) :
+              GTIm2D  (aSz.x,aSz.y),
+              _the_im (aSz.x,aSz.y,aVDef),
+              _d      (_the_im.data())
+          {
+          }
+
+
           Im2D_Bits<NBB> Im() const {return _the_im;}
 
 

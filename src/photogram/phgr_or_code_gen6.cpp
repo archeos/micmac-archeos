@@ -89,6 +89,35 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "../../CodeGenere/photogram/cEqBBCamSecond_AccelCsteCoord.cpp"
 #include "../../CodeGenere/photogram/cEqBBCamThird_AccelCsteCoord.cpp"
 
+
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg0.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg1.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg2.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg3.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg4.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg5.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg6.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleEgProj_Deg7.cpp"
+
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg0.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg1.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg2.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg3.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg4.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg5.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg6.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAttach_Deg7.cpp"
+
+
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg0.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg1.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg2.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg3.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg4.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg5.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg6.cpp"
+#include "../../CodeGenere/photogram/cGen2DBundleAtRot_Deg7.cpp"
+
 //=======================  Droite ========================
 
 

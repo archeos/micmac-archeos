@@ -36,14 +36,33 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 //  AJOUT DES OBSERVATIONS
 
-cXmlSauvExportAperoOneIter & cAppliApero::CurXmlE()
+void cAppliApero::AddStatCam(cGenPoseCam * aCam,double aRes,double aPerc)
 {
-    ELISE_ASSERT(!mXMLExport.Iters().empty(),"cAppliApero::CurXmlE");
+   if  (aRes>mWorstRes)
+   {
+       mWorstRes = aRes;
+       mPoseWorstRes  = aCam;
+   }
+   if (aPerc<mWorstPerc)
+   {
+        mWorstPerc = aPerc;
+        mPoseWorstPerc = aCam;
+   }
+}
+
+cXmlSauvExportAperoOneIter & cAppliApero::CurXmlE(bool SVP)
+{
+    if (mXMLExport.Iters().empty())
+    {
+        ELISE_ASSERT(SVP,"cAppliApero::CurXmlE");
+       mXMLExport.Iters().push_back(cXmlSauvExportAperoOneIter());
+    }
     return mXMLExport.Iters().back();
 }
 
@@ -54,6 +73,11 @@ void cAppliApero::AddObservations
           cStatObs & aSO
      )
 {
+   mWorstRes = -1;
+   mWorstPerc = 1e10;
+   mPoseWorstRes = 0;
+   mPoseWorstPerc = 0;
+
    cXmlSauvExportAperoOneIter aXmlE;
    aXmlE.NumIter() = mNbIterDone;
    aXmlE.NumEtape() = mNbEtape;
@@ -126,6 +150,11 @@ void cAppliApero::AddObservations
        //  if (NumIterDebug())  MessageDebug("Avant RigGrp");
 
        AddObservationsRigidGrp(anSO.ObsRigidGrpImage(),IsLastIter,aSO);
+   }
+
+
+   {
+       AddObservationsContrCamGenInc(anSO.ContrCamGenInc(),IsLastIter,aSO);
    }
 
    MajAddCoeffMatrix();
@@ -287,8 +316,33 @@ void cAppliApero::AddObservationsAppuisFlottants(const std::list<cObsAppuisFlott
    for (std::list<cObsAppuisFlottant>::const_iterator itOAF= aL.begin(); itOAF!=aL.end() ; itOAF++)
    {
       cBdAppuisFlottant * aBAF =  GetEntreeNonVide(mDicPF,itOAF->NameRef(),"AddObservationsAppuisFlottants");
+
+      mNbPtsFlot = 0;
+      mMaxDistFlot=0.0;
+      mSomDistFlot=0.0;
+      mSomEcPtsFlot = Pt3dr(0,0,0);
+      mSomAbsEcPtsFlot = Pt3dr(0,0,0);
+      mMaxAbsEcPtsFlot = Pt3dr(0,0,0);
       aBAF->AddObs(*itOAF,aSO);
+
+      if (mNbPtsFlot)
+      {
+          std::cout << "=== GCP STAT ===  Dist,  Moy="<< (mSomDistFlot/mNbPtsFlot) << " Max=" << mMaxDistFlot << "\n";
+          std::cout <<  " XYZ , MoyAbs=" << (mSomAbsEcPtsFlot/mNbPtsFlot) << " Max=" << mMaxAbsEcPtsFlot << " Bias=" << (mSomEcPtsFlot/mNbPtsFlot) << "\n";
+      }
    }
+}
+
+void cAppliApero::AddEcPtsFlot(const Pt3dr & anEc)
+{
+   mNbPtsFlot++;
+   double aD = euclid(anEc);
+   mMaxDistFlot= ElMax(mMaxDistFlot,aD);
+   mSomDistFlot += aD;
+   mSomEcPtsFlot = anEc + mSomEcPtsFlot;
+   Pt3dr aEcAbs = Pt3dr(ElAbs(anEc.x),ElAbs(anEc.y),ElAbs(anEc.z));
+   mSomAbsEcPtsFlot = aEcAbs + mSomAbsEcPtsFlot  ;
+   mMaxAbsEcPtsFlot = Sup(mMaxAbsEcPtsFlot,aEcAbs);
 }
 
 
@@ -383,6 +437,11 @@ std::cout << "DONNNNE AOAF : NonO ==============================================
         itD->second->InitAvantCompens();
     }
 
+    for (tDiCal::iterator itC=mDicoCalib.begin() ; itC!=mDicoCalib.end(); itC++)
+    {
+        itC->second->InitAvantCompens();
+    }
+
 
     ActiveContraintes(true);
     mSetEq.SetPhaseEquation();
@@ -422,6 +481,10 @@ std::cout << "DONNNNE AOAF : NonO ==============================================
         }
     }
 
+    for (tDiCal::iterator itC=mDicoCalib.begin() ; itC!=mDicoCalib.end(); itC++)
+    {
+        itC->second->PostFinCompens();
+    }
 
 
 
@@ -467,6 +530,7 @@ std::cout << "DONNNNE AOAF : NonO ==============================================
     }
 
     mCptIterCompens ++;
+
 }
 
 
@@ -505,7 +569,7 @@ void cAppliApero::MAJContrainteCamera(const cContraintesCamerasInc & aC)
        {
           First = false;
           std::cout << "WARN No Math for ContraintesCamerasInc " << aC.PatternNameApply().Val() << "\n";
-          GetCharOnBrkp();
+          // GetCharOnBrkp();
        }
    }
 }
@@ -744,9 +808,13 @@ void cAppliApero::DoContraintesAndCompens
      (
             const cEtapeCompensation & anEC,
             const cIterationsCompensation &  anIter,
-            bool  IsLastIter
+            bool  IsLastIter,
+            bool IsLastEtape
      )
 {
+ 
+
+   mIsLastEtape = IsLastEtape;
 
 /*
    if (mSqueezeDOCOAC)
@@ -766,7 +834,7 @@ void cAppliApero::DoContraintesAndCompens
       return;
    }
 
-  std::cout << "-------------  MESURE ERREUR EXTRAPOLATION  ------------------------\n";
+  std::cout << "-------------  MESURE ERREUR EXTRAPOLATION  ------------------------\n"; 
 
   const cMesureErreurTournante & aMET = anIter.MesureErreurTournante().Val();
   int aNbPer = aMET.NbTest().ValWithDef(aMET.Periode()) ;
@@ -852,7 +920,7 @@ void cAppliApero::TestF2C2()
 }
 
 
-void  cAppliApero::DoOneEtapeCompensation(const cEtapeCompensation & anEC)
+void  cAppliApero::DoOneEtapeCompensation(const cEtapeCompensation & anEC,bool LastEtape)
 {
     delete mMTRes;
     mMTRes = 0;
@@ -951,7 +1019,7 @@ void  cAppliApero::DoOneEtapeCompensation(const cEtapeCompensation & anEC)
 
                        if (aStepC==0)
                        {
-                           int aNb = mVProfs.size();
+                           int aNb = (int)mVProfs.size();
                            aStepC = ElMax(1,mVProfs[aNb-1] - mVProfs[aNb-2]);
                        }
                        while (mVProfs.back() <= mProfMax)
@@ -994,12 +1062,12 @@ void  cAppliApero::DoOneEtapeCompensation(const cEtapeCompensation & anEC)
                            }
                        }
                        bool aKProfLast = (aKProf==((int)mVProfs.size()-1));
-                       DoContraintesAndCompens(anEC,anIter,kIterLast&&aKProfLast);
+                       DoContraintesAndCompens(anEC,anIter,kIterLast&&aKProfLast,LastEtape);
                    }
                 }
                 else
                 {
-                   DoContraintesAndCompens(anEC,anIter,kIterLast);
+                   DoContraintesAndCompens(anEC,anIter,kIterLast,LastEtape);
                 }
 
                 if (anIter.BasculeOrientation().IsInit())
@@ -1091,8 +1159,13 @@ typedef std::list<cEtapeCompensation> tLEC;
 void cAppliApero::DoCompensation()
 {
    const tLEC & aLEC =mParam.EtapeCompensation();
+   int aNbRest = aLEC.size();
    for ( tLEC::const_iterator itEC=aLEC.begin(); itEC != aLEC.end() ;itEC++)
-      DoOneEtapeCompensation(*itEC);
+   {
+      
+      DoOneEtapeCompensation(*itEC,aNbRest==1);
+      aNbRest--;
+   }
 
    
    MajAddCoeffMatrix();

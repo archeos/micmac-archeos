@@ -1,6 +1,10 @@
 #include "saisieQT_window.h"
 #include "ui_saisieQT_window.h"
 
+#ifdef USE_MIPMAP_HANDLER
+	#include "StdAfx.h"
+#endif
+
 void setStyleSheet(QApplication &app)
 {
     QFile file(app.applicationDirPath() + "/../include/qt/style.qss");
@@ -40,6 +44,11 @@ SaisieQtWindow::SaisieQtWindow(int mode, QWidget *parent) :
     _Engine->setParams(_params);
 
     init(_params, _appMode > MASK3D);
+
+	#ifdef USE_MIPMAP_HANDLER
+		for (int iWidget = 0; iWidget < nbWidgets(); iWidget++)
+			getWidget(iWidget)->setParent(this);
+	#endif
 
     setUI();
 
@@ -209,6 +218,8 @@ bool SaisieQtWindow::loadPly(const QStringList& filenames)
     return true;
 }
 
+string __humanReadable( size_t aSize );
+
 bool SaisieQtWindow::loadImages(const QStringList& filenames)
 {
     QTimer *timer_test = new QTimer(this);
@@ -217,8 +228,11 @@ bool SaisieQtWindow::loadImages(const QStringList& filenames)
     timer_test->start();
 
     if (filenames.size() == 1) _ProgressDialog->setMaximum(0);
-    runProgressDialog(QtConcurrent::run(_Engine, &cEngine::loadImages,filenames,_incre));
-
+	#ifdef USE_MIPMAP_HANDLER
+		_Engine->loadImages(filenames, _incre);
+	#else
+    	runProgressDialog(QtConcurrent::run(_Engine, &cEngine::loadImages,filenames,_incre));
+	#endif
     timer_test->stop();
     disconnect(timer_test, SIGNAL(timeout()), this, SLOT(progression()));
     delete _incre;
@@ -272,7 +286,7 @@ void SaisieQtWindow::addFiles(const QStringList& filenames, bool setGLData)
         {
             if(!QFile(filenames[i]).exists())
             {
-                QMessageBox::critical(this, tr("Error"), tr("File does not exist (or bad argument)"));
+                QMessageBox::critical(this, tr("Error"), QString(tr("File [%1] does not exist (or bad argument)")).arg(filenames[i]));
                 return;
             }
             else
@@ -357,7 +371,12 @@ void SaisieQtWindow::addFiles(const QStringList& filenames, bool setGLData)
 
                 for (int aK = 0; aK < nbWidgets();++aK)
                 {
-                    getWidget(aK)->setGLData(_Engine->getGLData(aK), _ui->actionShow_messages->isChecked(), _ui->actionShow_cams->isChecked(),true,true,_params->eNavigation());
+						#ifdef USE_MIPMAP_HANDLER
+							setDataToGLWidget(aK, _Engine->getGLData(aK));
+						#else
+							getWidget(aK)->setGLData(_Engine->getGLData(aK), _ui->actionShow_messages->isChecked(), _ui->actionShow_cams->isChecked(),true,true,_params->eNavigation());
+						#endif
+
                     getWidget(aK)->setParams(_params);
 
                     if (getWidget(aK)->getHistoryManager()->size())
@@ -566,6 +585,149 @@ void fillStringList(QStringList & actions, int appMode)
         actions.push_back(QObject::tr("remove outside polygon"));
     }
 }
+
+#ifdef __DEBUG
+	class QT_node
+	{
+	public:
+		QWidget *mValue;
+		QT_node *mParent;
+		list<QT_node *> mChildren;
+
+		QT_node(QWidget *aValue):
+			mValue(aValue),
+			mParent(NULL)
+		{
+		}
+
+		void setParent(QT_node &aParent)
+		{
+			ELISE_DEBUG_ERROR(mParent != NULL, "QT_node::setParent", "mParent != NULL");
+			ELISE_DEBUG_ERROR(this == &aParent, "QT_node::setParent", "this == &aParent");
+
+			mParent = &aParent;
+			mParent->_addChild(*this);
+		}
+
+		bool isRoot() const { return mParent == NULL; }
+
+		size_t height() const
+		{
+			size_t result = 0;
+			list<QT_node *>::const_iterator it = mChildren.begin();
+			while (it != mChildren.end()) result = max<size_t>((**it++).height() + 1, result);
+			return result;
+		}
+
+		void printDescent(const string &aPrefix, ostream &aStream)
+		{
+		
+		}
+
+	private:
+		bool _addChild(QT_node &aChild)
+		{
+			QT_node * const child = &aChild;
+			list<QT_node *>::iterator it = mChildren.begin();
+			while (it != mChildren.end() && *it < child) it++;
+
+			if (it == mChildren.end() && *it != child)
+			{
+				mChildren.insert(it, child);
+				return true;
+			}
+			return false;
+		}
+	};
+
+	class QT_forest
+	{
+	public:
+		bool add(QWidget *aValue, QT_node **oAddedNode = NULL)
+		{
+			ELISE_DEBUG_ERROR(aValue == NULL, "QT_graph::add", "aValue == NULL");
+
+			list<QT_node>::iterator it = mNodes.begin();
+			while (it != mNodes.end() && it->mValue < aValue) it++;
+
+			bool result = false;
+			if (it == mNodes.end() || it->mValue != aValue)
+			{
+				it = mNodes.insert(it, QT_node(aValue));
+				result = true;
+			}
+
+			if (oAddedNode != NULL) *oAddedNode = &*it;
+			return result;
+		}
+
+		bool addLineage(QT_node &aNode)
+		{
+			bool result = false;
+			QT_node *node = &aNode, *parentNode = NULL;
+			while (node != NULL)
+			{
+				QWidget * const parent = node->mValue->parentWidget();
+				if (parent == NULL || !add(parent, &parentNode)) return result;
+				node->setParent(*parentNode);
+				node = parentNode;
+				result = true;
+			}
+			return result;
+		}
+
+		void addLineage(QWidget *aValue)
+		{
+			QT_node *node;
+			add(aValue, &node);
+			addLineage(*node);
+		}
+
+		size_t nbRoots() const
+		{
+			size_t result = 0;
+			list<QT_node>::const_iterator it = mNodes.begin();
+			while (it != mNodes.end())
+				if ((*it++).mParent == NULL) result++;
+			return result;
+		}
+
+		void print(const string &aPrefix, ostream &aStream)
+		{
+			//~ aStream << 
+		}
+
+		size_t maxHeight() const
+		{
+			size_t result = 0;
+			list<QT_node>::const_iterator it = mNodes.begin();
+			while (it != mNodes.end())
+			{
+				if (it->isRoot()) result = max<size_t>(result, it->height());
+				it++;
+			}
+			return result;
+		}
+
+		size_t minHeight() const
+		{
+			size_t result = numeric_limits<size_t>::max();
+			list<QT_node>::const_iterator it = mNodes.begin();
+			while (it != mNodes.end())
+			{
+				if (it->isRoot())
+				{
+					//~ qt_out << "--- " << it->height() << endl;
+					result = min<size_t>(result, it->height());
+				}
+				it++;
+			}
+			return result;
+		}
+
+		list<QT_node> mNodes;
+	};
+#endif
 
 void SaisieQtWindow::on_actionHelpShortcuts_triggered()
 {
@@ -1451,36 +1613,66 @@ void SaisieQtWindow::setUI()
         hideAction(_ui->actionShow_list_polygons, false);
 }
 
-bool SaisieQtWindow::eventFilter( QObject* object, QEvent* event )
-{
-    if( object == tableView_PG() )
-    {
-        QAbstractItemView* table    = (QAbstractItemView*)object;
+#ifdef USE_MIPMAP_HANDLER
+	void SaisieQtWindow::keyPressEvent( QKeyEvent *aEvent )
+	{
+		switch (aEvent->key())
+		{
+		case Qt::Key_Return:
+			on_actionConfirm_changes_triggered();
+			break;
+		case Qt::Key_PageUp:
+			changeDisplayedImages(false); // false = aForward
+			break;
+		case Qt::Key_PageDown:
+			changeDisplayedImages(true); // true = aForward
+			break;
+		}
+	}
+#else
+	bool SaisieQtWindow::eventFilter( QObject* object, QEvent* event )
+	{
+		if( object == tableView_PG() )
+		{
+		    QAbstractItemView* table    = (QAbstractItemView*)object;
 
-        QItemSelectionModel* sModel = table->selectionModel();
+		    QItemSelectionModel* sModel = table->selectionModel();
 
-        if(sModel)
-        {
-            QString pointName = sModel->currentIndex().data(Qt::DisplayRole).toString();
+		    if(sModel)
+		    {
+		        QString pointName = sModel->currentIndex().data(Qt::DisplayRole).toString();
 
-            if(event->type() == QEvent::KeyRelease )
-            {
-                QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+		        if(event->type() == QEvent::KeyRelease )
+		        {
+		            QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
-                if (keyEvent->key() == Qt::Key_Delete)
+		            if (keyEvent->key() == Qt::Key_Delete)
 
-                    emit removePoint(pointName); // we send point name, because point has not necessarily a widget index (point non saisi)
+		                emit removePoint(pointName); // we send point name, because point has not necessarily a widget index (point non saisi)
 
-                else if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down)
-                {
-                    emit selectPoint(pointName);
-                }
-            }
-        }
-    }
+		            else if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down)
+		            {
+		                emit selectPoint(pointName);
+		            }
+		        }
+		    }
+		}
 
-    return false;
-}
+		return false;
+	}
+
+	void SaisieQtWindow::keyPressEvent(QKeyEvent *event)
+	{
+		switch(event->key())
+		{
+		case Qt::Key_Return:
+		    on_actionConfirm_changes_triggered();
+		    break;
+		default:
+		    return;
+		}
+	}
+#endif
 
 QTableView *SaisieQtWindow::tableView_PG(){return _ui->tableView_PG;}
 
@@ -1508,18 +1700,6 @@ void SaisieQtWindow::setModelObject(QAbstractItemModel *model_Objects)
     tableView_Objects()->setModel(model_Objects);
 }
 
-void SaisieQtWindow::keyPressEvent(QKeyEvent *event)
-{
-    switch(event->key())
-    {
-    case Qt::Key_Return:
-        on_actionConfirm_changes_triggered();
-        break;
-    default:
-        return;
-    }
-}
-
 void SaisieQtWindow::setModel(QAbstractItemModel *model_Pg, QAbstractItemModel *model_Images)
 {
     tableView_PG()->setModel(model_Pg);
@@ -1533,12 +1713,20 @@ void SaisieQtWindow::selectPointAllWGL(QString pointName)
 
 void SaisieQtWindow::setDataToGLWidget(int idGLW, cGLData *glData)
 {
-    if (glData)
-    {
-        GLWidget * glW = getWidget(idGLW);
-        glW->setGLData(glData, glData->stateOption(cGLData::OpShow_Mess), glData->stateOption(cGLData::OpShow_Cams));
-        glW->setParams(getParams());
-    }
+	if (glData == NULL) return;
+
+	#ifdef USE_MIPMAP_HANDLER
+		if (glData->glImageMasked().hasSrcImage()) _Engine->Loader()->loadImage(glData->glImageMasked().srcImage());
+		if (glData->glImageMasked().hasSrcMask() && !_Engine->Loader()->loadImage(glData->glImageMasked().srcMask()))
+		{
+			cout << "ignoring mask image [" << glData->glImageMasked().srcMask().mFilename << "]: cannot be loaded" << endl;
+			glData->glImageMasked().removeSrcMask();
+		}
+	#endif
+
+	GLWidget * glW = getWidget(idGLW);
+	glW->setGLData(glData, glData->stateOption(cGLData::OpShow_Mess), glData->stateOption(cGLData::OpShow_Cams));
+	glW->setParams(getParams());
 }
 
 void SaisieQtWindow::loadPlyIn3DPrev(const QStringList &filenames, cData *dataCache)
@@ -1653,6 +1841,7 @@ void SaisieQtWindow::setImagePosition(QPointF pt)
         if(glW)
             if ( glW->hasDataLoaded() && !glW->getGLData()->is3D() && (glW->isPtInsideIm(pt)))
             {
+				ELISE_DEBUG_ERROR(glW->getGLData()->glImageMasked()._m_image == NULL, " SaisieQtWindow::setImagePosition", "glW->getGLData()->glImageMasked()._m_image == NULL");
                 int imHeight = glW->getGLData()->glImageMasked()._m_image->height();
 
                 text = QString(text + QString::number(pt.x(),'f',1) + ", " + QString::number((imHeight - pt.y()),'f',1)+" px");
@@ -1864,6 +2053,109 @@ void SaisieQtWindow::labelShowMode(bool state)
         }
     }
 }
+
+#ifdef USE_MIPMAP_HANDLER
+	#ifdef __DEBUG
+		void SaisieQtWindow::dumpGLDataIdSet( const vector<int> &aIdSet, const string &aPrefix, ostream &aStream ) const
+		{
+			for (size_t i = 0; i < aIdSet.size(); i++)
+			{
+				if (aIdSet[i] == -1)
+				{
+					aStream << aPrefix << i << ": -1" << endl;
+					continue;
+				}
+
+				cGLData &data = *_Engine->getGLData(aIdSet[i]);
+				aStream << aPrefix << i << ": " << aIdSet[i];
+				data.dump(" ", aStream);
+			}
+		}
+
+		void SaisieQtWindow::dumpAllGLData( const string &aPrefix, ostream &aStream ) const
+		{
+			vector<int> idSet((size_t)_Engine->nbGLData());
+			for (int i = 0; i < _Engine->nbGLData(); i++)
+			{
+				aStream << aPrefix << i;
+				_Engine->getGLData(i)->dump(": ", aStream);
+			}
+		}
+	#endif
+
+	void SaisieQtWindow::loadGLDataIdSet( const vector<int> &aIdSet )
+	{
+		ELISE_DEBUG_ERROR(aIdSet.size() != (size_t)nbWidgets(), "SaisieQtWindow::loadGLDataIdSet", "aIdSet.size() = " << aIdSet.size() << " != nbWidgets() = " << nbWidgets());
+
+		for (int i = 0; i < nbWidgets(); i++)
+			if (aIdSet[i] != -1) getWidget(i)->setGLData(NULL);
+
+		for (size_t i = 0; i < aIdSet.size(); i++)
+		{
+			if (aIdSet[i] == -1) continue;
+
+			const int newDataId = aIdSet[i];
+			#ifdef __DEBUG
+				const int nbGLData = _Engine->nbGLData();
+				ELISE_DEBUG_ERROR(newDataId < 0 || newDataId >= nbGLData, "SaisieQtWindow::loadGLDataIdSet", "invalid aIdSet[" << i << "] = " << newDataId << ", nbGLData = " << nbGLData);
+			#endif
+			cGLData &data = *_Engine->getGLData(newDataId);
+
+			ELISE_DEBUG_ERROR( !data.glImageMasked().hasSrcImage(), "SaisieQtWindow::loadGLDataIdSet", "!data.glImageMasked().hasSrcImage()");
+			_Engine->Loader()->loadImage(data.glImageMasked().srcImage());
+
+			if (data.glImageMasked().hasSrcMask()) _Engine->Loader()->loadImage(data.glImageMasked().srcMask());
+
+			getWidget((int)i)->setGLData(&data);
+		}
+	}
+
+	void SaisieQtWindow::changeDisplayedImages( bool aForward )
+	{
+		ELISE_DEBUG_ERROR(_Engine == NULL, "SaisieQtWindow::changeImages", "_Engine == NULL");
+
+		if (nbWidgets() >= _Engine->nbImages()) return;
+
+		const int nbGLData = _Engine->nbGLData();
+		vector<int> loadedIds;
+		_Engine->getGLDataIdSet(0, nbGLData - 1, true, nbWidgets(), loadedIds); // true = aIsLoaded
+		ELISE_DEBUG_ERROR(loadedIds.size() != (size_t)nbWidgets(), "SaisieQtWindow::changeImages", "loadedIds.size() = " << loadedIds.size() << " != nbWidgets() = " << nbWidgets());
+
+		vector<int> toLoadIds;
+		int i0, i1;
+		if (aForward)
+		{
+			i0 = _Engine->minLoadedGLDataId() + 1;
+			i1 = nbGLData - 1;
+		}
+		else
+		{
+			i0 = _Engine->minLoadedGLDataId() - 1;
+			i1 = 0;
+		}
+		_Engine->getGLDataIdSet(i0, i1, false, nbWidgets(), toLoadIds); // false = aIsLoaded
+
+		if (toLoadIds.size() < (size_t)nbWidgets())
+		{
+			size_t nbToLoad = toLoadIds.size();
+			toLoadIds.resize((size_t)nbWidgets());
+			size_t nbToKeep = toLoadIds.size() - nbToLoad;
+
+			if (aForward)
+				memcpy(toLoadIds.data() + nbToLoad, loadedIds.data() + nbToLoad, nbToKeep * sizeof(int));
+			else
+				memcpy(toLoadIds.data() + nbToLoad, loadedIds.data(), nbToKeep * sizeof(int));
+		}
+
+		sort(toLoadIds.begin(), toLoadIds.end());
+
+		// prevent unchanged widget association to be unload
+		for (size_t i = 0; i < loadedIds.size(); i++)
+			if (toLoadIds[i] == loadedIds[i]) toLoadIds[i] = -1; // -1 is as special value for loadGLDataIdSet meaning do not unload and load GLData
+
+		loadGLDataIdSet(toLoadIds);
+	}
+#endif
 
 ModelObjects::ModelObjects(QObject *parent, HistoryManager* hMag)
     :QAbstractTableModel(parent),

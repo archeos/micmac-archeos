@@ -11,20 +11,29 @@ class MatrixManager;
 class cGLData : public cObjectGL
 {
 public:
+	#ifdef USE_MIPMAP_HANDLER
+		cGLData( int aId, cData *data, cParameters aParams, int appMode = MASK2D, MaskedImage aSrcImage = MaskedImage(NULL, NULL) );
+	#else
+		cGLData(cData *data, QMaskedImage *qMaskedImage, cParameters aParams, int appMode = MASK2D);
 
-    cGLData(cData *data, QMaskedImage *qMaskedImage, cParameters aParams, int appMode = MASK2D);
-
-    cGLData(cData *data, cParameters aParams, int appMode = MASK2D);
+		cGLData(cData *data, cParameters aParams, int appMode = MASK2D);
+	#endif
 
     ~cGLData();
 
     void        draw();
 
-    bool        is3D()                                  { return _vClouds.size() || _vCams.size();   }
+    bool        is3D() const                            { return ((!_vClouds.empty()) || (!_vCams.empty()));   }
+    //~ bool        is3D() const;
 
     bool        isImgEmpty()                            { return _glMaskedImage._m_image == NULL; }
 
-    QImage*     getMask()                               { return _glMaskedImage.getMaskedImage()->_m_rescaled_mask; }
+	#ifndef USE_MIPMAP_HANDLER
+		QImage * getMask()                               { return _glMaskedImage.getMaskedImage()->_m_rescaled_mask; }
+
+		// this method may crash, for unknown reason, probably because of the multiple cObject inheritance
+		QString imageName() { return _glMaskedImage.cObjectGL::name(); }
+	#endif
 
     void        setPolygon(int aK, cPolygon *aPoly)     { _vPolygons[aK] = aPoly; }
 
@@ -36,8 +45,6 @@ public:
 	void        clearCurrentPolygon();
 
     bool        isNewMask()                             { return !isImgEmpty() ? _glMaskedImage._m_newMask : true; }
-
-    QString     imageName() { return _glMaskedImage.cObjectGL::name(); }
 
     //info coming from cData
     float       getBBoxMaxSize(){return _diam;}
@@ -91,6 +98,7 @@ public:
     void        setIncFirstCloud(bool incFirstCloud);
 
 	cMaskedImageGL &glImageMasked();
+	const cMaskedImageGL &glImageMasked() const;
     QVector <cMaskedImageGL*> glTiles();
 
     cPolygon*   polygon(int id = 0);
@@ -129,7 +137,38 @@ public:
 	void		saveLockRule();
 
 	void		applyLockRule();
+
+	#ifdef USE_MIPMAP_HANDLER
+		int id() const { return mId; }
+
+		MipmapHandler::Mipmap & getMask()
+		{
+			ELISE_DEBUG_ERROR( !_glMaskedImage.hasSrcMask(), "cMaskedImageGL::getMask()", "!_glMaskedImage.hasSrcMask()");
+			return _glMaskedImage.srcMask();
+		}
+
+		bool isLoaded() const { return mNbLoaded != 0; }
+
+		void setLoaded(bool aLoad)
+		{
+			if (aLoad)
+				mNbLoaded++;
+			else
+			{
+				ELISE_DEBUG_ERROR(mNbLoaded == 0, "cGLData::setLoaded", "aLoad == false && mNbLoaded == 0");
+				mNbLoaded--;
+			}
+
+			if (mNbLoaded == 0) _glMaskedImage.deleteTextures();
+		}
+
+		void dump( std::string aPrefix, std::ostream &aStream ) const;
+	#endif
 private:
+	#ifdef USE_MIPMAP_HANDLER
+		int mId;
+		unsigned int mNbLoaded;
+	#endif
 
 	cMaskedImageGL      _glMaskedImage;
 	QVector <cMaskedImageGL*> _glMaskedTiles;
@@ -168,6 +207,20 @@ private:
 
 	QPointF     _locksRule[2];
 };
+
+#ifdef __DEBUG
+	string eToString( QImage::Format e );
+#endif
+
+#ifdef DUMP_GL_DATA
+	extern list<cGLData *> __all_cGLData;
+
+	bool __exist_cGLData( cGLData *aData );
+
+	void __add_cGLData( cGLData *aData );
+
+	void __remove_cGLData( cGLData *aData );
+#endif
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(cGLData::options)
 //====================================================================================

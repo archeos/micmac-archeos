@@ -53,7 +53,7 @@ extern void mem_raz(void *,tFileOffset);
 
 extern int MemoArgc;
 extern char ** MemoArgv;
-extern std::string SubstArgcArvGlob(int aKSubst,std::string aSubst);
+extern std::string SubstArgcArvGlob(int aKSubst,std::string aSubst, bool aProtect = false);
 
 
 std::string GetUnikId();
@@ -298,6 +298,14 @@ inline REAL mod_real(REAL a,REAL b)
    while (res<0) res += b;
    return res;
 }
+
+inline REAL Centered_mod_real(REAL a,REAL b)
+{
+    REAL aRes = mod_real(a,b);
+    if (aRes > (b/2)) aRes -= b;
+    return aRes;
+}
+
 
 class cDecimal
 {
@@ -610,7 +618,8 @@ std::string ToCommande(int argc,char ** argv);
 std::string QUOTE(const std::string & aStr);
 void GlobStdAdapt2Crochet(std::string & aStr);
 
-
+bool needPatternProtection( const string &aStr );
+string PATTERN_QUOTE( const string &aStr );
 
 bool SplitIn2ArroundCar
      (
@@ -835,6 +844,7 @@ class cTplValGesInit
           }
 
           const Type * PtrVal() const { return mIsInit?&mVal:0;}
+          const Type * PtrCopy() const { return mIsInit?new Type(mVal):0;}
           Type * PtrVal() { return mIsInit?&mVal:0;}
      private :
           Type mVal;
@@ -1203,7 +1213,10 @@ void RequireBin
 // For top call like Tapas, Malt , .. want to duplicate args in @
 int TopSystem(const std::string & aComOri);
 
-int System(const std::string & aCom,bool aSVP=false,bool AddOptGlob=false,bool UseTheNbIterProcess=false);
+#define DEF_SVP_System false
+#define DEF_AdaptGlob_System false
+
+int System(const std::string & aCom,bool aSVP=DEF_SVP_System,bool AddOptGlob=DEF_AdaptGlob_System,bool UseTheNbIterProcess=false);
 
 void  EliseVerifAndParseArgcArgv(int argc,char ** argv);
 
@@ -1353,6 +1366,16 @@ class cCpleString
         std::string mN2;
 };
 
+class cMonomXY
+{
+     public :
+         cMonomXY(double,int,int);
+         cMonomXY();
+         double mCoeff; 
+         int mDegX; 
+         int mDegY; 
+};
+
 class cXmlHour;
 class cXmlDate;
 
@@ -1391,6 +1414,8 @@ class cElHour
        int mM;
        double mS;
 };
+
+ostream & operator <<( ostream &aStream, const cElHour &aHour );
 
 class cElDate
 {
@@ -1457,6 +1482,8 @@ class cElDate
 };
 
 bool operator < (const cElDate & aD1, const cElDate & aD2);
+
+ostream & operator <<( ostream &aStream, const cElDate &aDate );
 
 class cINT8ImplemSetInt
 {
@@ -1610,6 +1637,17 @@ bool launchMake( const std::string &i_makefile, const std::string &i_rule=std::s
 double MoyHarmonik(const double & aV1,const double & aV2);
 double MoyHarmonik(const double & aV1,const double & aV2,const double & aV3);
 
+size_t getSystemMemory();
+
+size_t getUsedMemory();
+
+std::string humanReadable( size_t aSize );
+
+template <class T>
+inline char toS(const T &v)
+{
+	return (v < 2 ? '\0' : 's');
+}
 
 #endif /* ! _ELISE_UTIL_H */
 

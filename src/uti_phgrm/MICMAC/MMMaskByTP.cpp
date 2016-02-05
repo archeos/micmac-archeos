@@ -945,7 +945,7 @@ static int aCptCMT =0 ; aCptCMT++;
     double aSomDistTot = 0;
     double aMaxDistTot = 0;
     double aMinDistTot = 4;
-    int aNbCpleOk = aVOk.size() - 1;
+    int aNbCpleOk = (int)(aVOk.size() - 1);
     for (int aKK=1 ; aKK<int(aVOk.size()) ; aKK++)
     {
          int aK0 = 0;
@@ -1185,7 +1185,7 @@ void  cAppliMICMAC::DoMasqueAutoByTieP(const Box2di& aBoxLoc,const cMasqueAutoBy
    mTP3d = StdNuage3DFromFile(WorkDir()+aNamePts);
 
    cMasqBin3D * aMasq3D = 0;
-#if (ELISE_QT_VERSION >= 4)
+//#if (ELISE_QT_VERSION >= 4)
    if (aMATP.Masq3D().IsInit())
    {
          aMasq3D  = cMasqBin3D::FromSaisieMasq3d(WorkDir()+aMATP.Masq3D().Val());
@@ -1198,7 +1198,7 @@ void  cAppliMICMAC::DoMasqueAutoByTieP(const Box2di& aBoxLoc,const cMasqueAutoBy
          }
          *mTP3d = aNewVec;
    }
-#endif
+// #endif
 
    std::cout << "== cAppliMICMAC::DoMasqueAutoByTieP " << aBoxLoc._p0 << " " << aBoxLoc._p1 << " Nb=" << mTP3d->size() << "\n"; 
    std::cout << " =NB Im " << mVLI.size() << "\n";

@@ -297,6 +297,7 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
 
       // operator * est deja surcharge
       Pt2d<Type> mul (const Type & aL) const { return Pt2d<Type>(x*aL,y*aL);}
+      Pt2d<Type> div (const Type & aL) const { return Pt2d<Type>(x/aL,y/aL);}
 
 
          // binaires,  PtxPt => scalaire
@@ -327,6 +328,7 @@ template <class Type> class Pt2d : public  ElStdTypeScal<Type>
      void to_tab(Type (& t)[2] ) const;
      static Pt2d<Type> FromTab(const Type *);
      static Pt2d<Type> FromTab(const std::vector<Type> &);
+     std::vector<Type> ToTab() const;
      Output sigma();
      Output VMax();
      Output VMin();
@@ -442,10 +444,15 @@ typedef  Pt2d<INT> Pt2di;
 typedef  Pt2d<REAL> Pt2dr;
 typedef  Pt2d<long double> Pt2dlr;
 typedef  Pt2d<float> Pt2df;
+typedef  Pt2d<U_INT2> Pt2dUi2;
 double DMaxCoins(Pt2dr aSzIm,Pt2dr aC);
 double DMaxCoins(Pt2dr aP0,Pt2dr aP1,Pt2dr aC);
 
+template<class Type> Pt2dr ToPt2dr(const  Pt2d<Type> & aP) {return Pt2dr(aP.x,aP.y);}
+template<class Type> Pt2df ToPt2df(const  Pt2d<Type> & aP) {return Pt2df(aP.x,aP.y);}
+template<class Type> Pt2di ToPt2di(const  Pt2d<Type> & aP) {return Pt2di(round_ni(aP.x),round_ni(aP.y));}
 
+extern std::ostream & operator << (std::ostream & ofs,const Pt2dUi2  &p);
 extern std::ostream & operator << (std::ostream & ofs,const Pt2df  &p);
 extern std::ostream & operator << (std::ostream & ofs,const Pt2dr  &p);
 extern std::ostream & operator << (std::ostream & ofs,const Pt2di  &p);
@@ -533,7 +540,7 @@ class ElAffin2D : public cElMap2D
         );
 
 
-       static ElAffin2D  L2Fit(const class ElPackHomologue &);
+       static ElAffin2D  L2Fit(const class ElPackHomologue &,double * aRes=0);
 
         bool IsId() const;
         // bool operator == (const ElAffin2D & aF2);
@@ -759,6 +766,7 @@ template <class Type> class Pt3d : public  ElStdTypeScal<Type>
 
      void to_tab(Type (& t)[3] ) const;
      static Pt3d<Type> FromTab(const Type *);
+     std::vector<Type> ToTab() const;
      static Pt3d<Type> FromTab(const std::vector<Type> &);
 
 
@@ -1223,6 +1231,7 @@ class cMetaDataPhoto
          bool & FocForced();
          const std::string & Orientation() const;
          const std::string & CameraOrientation() const;
+         void dump( const std::string &aPrefix, std::ostream &aStream = std::cout );
    private :
         static cMetaDataPhoto  CreateNewExiv2(const std::string &);
 
@@ -1446,7 +1455,7 @@ class cMIC_IndicAutoCorrel;
 
 cMTDImCalc GetMTDImCalc(const std::string & aNameIm);
 const cMIC_IndicAutoCorrel * GetIndicAutoCorrel(const cMTDImCalc & aMTD,int aSzW);
-std::string NameMTDImCalc(const std::string & aFullName);
+std::string NameMTDImCalc(const std::string & aFullName,bool Bin);
 
 
 inline double CoutAttenueTetaMax(const double & aVal,const double & aVMax)
@@ -1462,7 +1471,9 @@ inline double GenCoutAttenueTetaMax(const double & aVal,const double & aVMax)
 
 Pt2dr arrondi_ni(const Pt2dr & aP,double aPer);
 
+inline std::string to_yes_no( bool aBoolean ){ return aBoolean ? "yes" : "no"; }
 
+inline std::string to_true_false( bool aBoolean ){ return aBoolean ? "true" : "false"; }
 
 
 #endif //  _ELISE_INCLUDE_GENERAL_PTXD_H_

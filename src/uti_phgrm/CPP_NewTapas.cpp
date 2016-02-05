@@ -119,7 +119,7 @@ void Tapas_Banniere()
 }
 
 
-#define  NbModele 25
+#define  NbModele 27
 
 const char * Modele[NbModele] = {
                                    "RadialBasic",     // 0
@@ -148,7 +148,10 @@ const char * Modele[NbModele] = {
                                    "AddPolyDeg4",          // 21
                                    "AddPolyDeg5",          // 22
                                    "AddPolyDeg6",          // 23
-                                   "AddPolyDeg7"           // 24
+                                   "AddPolyDeg7",          // 24
+
+                                   "Ebner",                // 25
+                                   "Brown"                 // 26
 
                                 };
 
@@ -319,6 +322,16 @@ void InitVerifModele(const std::string & aMod,cInterfChantierNameManipulateur *)
         }
         eModAutom = "eCalibAutomNone";
     }
+    else if (     (aMod==Modele[25]) // Ebner
+              ||  (aMod==Modele[26]) // Brown
+           )
+    {
+        eModAutom = "eCalibAutom" + aMod;
+
+        LocDRadMaxUSer = 1;
+        LocDegGen = 5;
+        LocLibDec = false;
+    }
     else
     {
         std::cout << "For modele =" << aMod << " KMod=" << aKModele << "\n";
@@ -381,12 +394,23 @@ int Tapas_main(int argc,char ** argv)
 
     std::string  aRapTxt;
     std::string  aPoseFigee="";
+    std::string  aCalFigee="";
+    std::string  aCalLibre=".*";
+    bool         aFreeCalibInit = false;
     bool Debug = false;
     bool AffineAll = true;
     double EcartMaxFin=5.0;
 
     std::vector<std::string> aImMinMax;
+    Pt2dr EcartInit(100.0,5.0);
 
+    double CondMaxPano = 1e6 ;
+
+    std::vector<std::string>  SinglePos;
+    int RankFocale = 3;
+    int RankPP     = 4;
+
+    std::vector<double> aVRegulDist;
 
     ElInitArgMain
     (
@@ -419,12 +443,21 @@ int Tapas_main(int argc,char ** argv)
                     << EAM(aRapTxt,"RapTxt",true, "RapTxt", eSAM_NoInit)
                     << EAM(TolLPPCD,"LinkPPaPPs",true, "Link PPa and PPs (double)", eSAM_NoInit)
                     << EAM(aPoseFigee,"FrozenPoses",true,"List of frozen poses (pattern)", eSAM_IsPatFile)
+                    << EAM(aFreeCalibInit,"FreeCalibInit",true,"Free calibs as soon as created (Def=false)", eSAM_IsPatFile)
+                    << EAM(aCalFigee,"FrozenCalibs",true,"List of frozen calibration (pattern)", eSAM_IsPatFile)
+                    << EAM(aCalLibre,"FreeCalibs",true,"List of free calibration (pattern, Def=\".*\")", eSAM_IsPatFile)
                     << EAM(aSetHom,"SH",true,"Set of Hom, Def=\"\", give MasqFiltered for result of HomolFilterMasq")
                     << EAM(AffineAll,"RefineAll",true,"More refinement at all step, safer and more accurate, but slower, def=true")
                     << EAM(aImMinMax,"ImMinMax",true,"Image min and max (may avoid tricky pattern ...)")
                     << EAM(EcartMaxFin,"EcMax",true,"Final threshold for residual, def = 5.0 ")
-    );
+                    << EAM(EcartInit,"EcInit",true,"Inital threshold for residual def = [100,5.0] ")
+                    << EAM(CondMaxPano,"CondMaxPano",true,"Precaution for conditionning with Panoramic images, Def=1e4 (old was 0) ")
+                    << EAM(SinglePos,"SinglePos",true,"Pattern of single Pos Calib to save [Pose,Calib]")
 
+                    << EAM(RankFocale,"RankInitF",true,"Order of focal initialisation, ref id distotion =2, Def=3 ")
+                    << EAM(RankPP,"RankInitPP",true,"Order of Principal point initialisation, ref id distotion =2, Def=4")
+                    << EAM(aVRegulDist,"RegulDist",true,"Parameter fo RegulDist [Val,Grad,Hessian,NbCase,SeuilNb]")
+    );
 
 
     if (!MMVisualMode)
@@ -492,6 +525,10 @@ int Tapas_main(int argc,char ** argv)
         }
 
 
+       bool SpecFocale = (RankFocale!=3);
+       bool SpecPP = (RankPP!=4);
+
+
        std::string aCom =     MM3dBinFile_quotes( "Apero" )
                            + ToStrBlkCorr( MMDir()+"include"+ELISE_CAR_DIR+"XML_MicMac"+ELISE_CAR_DIR+ aNameFileApero ) + " "
                            + std::string(" DirectoryChantier=") +aDir +  std::string(" ")
@@ -513,14 +550,27 @@ int Tapas_main(int argc,char ** argv)
                            + std::string(" +PropDiagU=") + ToString(PropDiag)
 
                            + std::string(" +DegRadMax=") + ToString(GlobDRadMaxUSer)
-                           + std::string(" +LibFoc=") + ToString(GlobLibFoc)
-                           + std::string(" +LibPP=") + ToString(GlobLibPP)
+                           + std::string(" +LibFoc=") + ToString(GlobLibFoc && (!SpecFocale))
+                           + std::string(" +LibPP=") + ToString(GlobLibPP && (!SpecPP))
                            + std::string(" +LibCD=") + ToString(GlobLibCD)
                            + std::string(" +DegGen=") + ToString(GlobDegGen)
                            + std::string(" +LibDec=") + ToString(GlobLibDec)
                            + std::string(" +Fast=") + ToString(! AffineAll)
+                           + std::string(" +UsePano=true") 
+                           + std::string(" +CondMaxPano=") + ToString(CondMaxPano)
                           ;
 
+       if  (SpecPP || SpecFocale)
+       {
+           std::string aSpecialParam0 = "eLib_PP_CD_10";
+           std::string aSpecialParam1 = "eLiberteFocale_1";
+           if (RankFocale < RankPP)
+              ElSwap(aSpecialParam0,aSpecialParam1);
+
+           aCom = aCom + " +UseSpecialParam0=true +SpecialParam0=" +aSpecialParam0;
+           if  (SpecPP &&  SpecFocale)
+               aCom = aCom + " +UseSpecialParam1=true +SpecialParam1=" +aSpecialParam1;
+       }
 
         StdCorrecNameHomol(aSetHom,aDir);
         if (EAMIsInit(&aSetHom))
@@ -531,6 +581,11 @@ int Tapas_main(int argc,char ** argv)
         if (EAMIsInit(&EcartMaxFin))
         {
             aCom = aCom + " +EcartMaxFin=" + ToString(EcartMaxFin);
+        }
+
+        if (EAMIsInit(&EcartInit))
+        {
+            aCom = aCom + " +EcartMaxInit=" + ToString(EcartInit.x) + " +SigmaPondInit=" + ToString(EcartInit.y) ;
         }
 
 
@@ -609,11 +664,50 @@ int Tapas_main(int argc,char ** argv)
           aCom  = aCom + " +PoseFigee=" + QUOTE(aPoseFigee) + " +WithPoseFigee=true";
        }
 
+       if (aFreeCalibInit)
+       {
+          aCom  = aCom + " +FrozeCalibInit=false";
+       }
+ 
+
+       if (aCalFigee!="")
+       {
+          aCom  = aCom + " +CalibFigee=" + QUOTE(aCalFigee) ;
+       }
+       if (EAMIsInit(&aCalLibre))
+       {
+          aCom  = aCom + " +CalibLibre=" + QUOTE(aCalLibre) ;
+       }
+
        if (IsAutoCal) aCom  = aCom + " +AutoCal=true";
        if (IsFigee) aCom  = aCom + " +CalFigee=true";
 
+       if (EAMIsInit(&SinglePos))
+       {
+           ELISE_ASSERT(SinglePos.size()==2,"SinglePos size must be 2");
+           aCom =   aCom 
+                  + std::string(" +HasSinglePoseCalibEstim=true")
+                  + std::string(" +PatSinglePose=") + QUOTE(SinglePos[0])
+                  + std::string(" +PatSingleCalib=") + QUOTE(SinglePos[1]);
+       }
+
+       if (EAMIsInit(&aVRegulDist))
+       {
+           ELISE_ASSERT(aVRegulDist.size()>=3,"Not enough parameter in RegulDist")
+           double aNbCase = (aVRegulDist.size() >= 4) ? round_ni(aVRegulDist[3])  : 7;
+           double aSeuilNbPts = (aVRegulDist.size() >= 5) ? aVRegulDist[4]  : 5.0;
+           aCom = aCom  + std::string(" +UseRegulDist=true")
+                        + std::string(" +RegDist0=") + ToString(aVRegulDist[0])
+                        + std::string(" +RegDist1=") + ToString(aVRegulDist[1])
+                        + std::string(" +RegDist2=") + ToString(aVRegulDist[2])
+                        + std::string(" +RegDistNbCase=") + ToString(aNbCase)
+                        + std::string(" +RegDistSeuil=") + ToString(aSeuilNbPts);
+       }
+
+
        std::cout << "Com = " << aCom << "\n";
        int aRes = 0;
+
        aRes = TopSystem(aCom);
     /*
        if (MajickTest)

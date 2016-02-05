@@ -45,25 +45,46 @@ const std::string  cNewO_NameManager::PrefixDirTmp = "NewOriTmp";
 
 cNewO_NameManager::cNewO_NameManager
 (
+     const std::string  & aPrefHom,
      bool                 Quick,
      const std::string  & aDir,
      const std::string  & anOriCal,
-     const std::string  & aPostHom
+     const std::string  & aPostHom,
+     const std::string  & aOriOut
 ) :
     mICNM        (cInterfChantierNameManipulateur::BasicAlloc(aDir)),
     mDir         (aDir),
     mPrefOriCal  (anOriCal),
     mPostHom     (aPostHom),
-    mQuick       (Quick)
+    mPrefHom     (aPrefHom),
+    mQuick       (Quick),
+    mOriOut      (aOriOut)
 {
+   if (mOriOut=="") 
+      mOriOut = (mQuick ? "Martini" : "MartiniGin") + mPrefHom + anOriCal;
+
    StdCorrecNameOrient(mPrefOriCal,mDir);
-   mPostfixDir    =   mPrefOriCal + std::string(mQuick ? "Quick" : "Std");
+   mPostfixDir    =   mPrefHom +  mPrefOriCal + std::string(mQuick ? "Quick" : "Std");
    mDirTmp      =   std::string(PrefixDirTmp) + mPostfixDir + "/";
+
+   ELISE_fp::MkDir(mDir+"Ori-"+mOriOut+"/");
+}
+
+
+cVirtInterf_NewO_NameManager * cVirtInterf_NewO_NameManager::StdAlloc(const std::string & aDir,const std::string  & anOri,bool  Quick)
+{
+
+   return new cNewO_NameManager("",Quick,aDir,anOri,"dat");
 }
 
 const std::string & cNewO_NameManager::Dir() const
 {
    return mDir;
+}
+
+const std::string & cNewO_NameManager::OriOut() const
+{
+   return mOriOut;
 }
 
 
@@ -82,7 +103,7 @@ std::string cNewO_NameManager::KeyAssocCpleOri() const
 
 ElPackHomologue cNewO_NameManager::PackOfName(const std::string & aN1,const std::string & aN2) const
 {
-    std::string aNameH = mICNM->Assoc1To2("NKS-Assoc-CplIm2Hom@@"+mPostHom,aN1,aN2,true);
+    std::string aNameH = mICNM->Assoc1To2("NKS-Assoc-CplIm2Hom@"+ mPrefHom+"@"+mPostHom,aN1,aN2,true);
     if (!  ELISE_fp::exist_file(aNameH))
        return ElPackHomologue();
 
@@ -95,29 +116,30 @@ cInterfChantierNameManipulateur *  cNewO_NameManager::ICNM()
 }
 
 
-CamStenope * cNewO_NameManager::CamOfName(const std::string  & aName) 
+CamStenope * cInterfChantierNameManipulateur::GlobCalibOfName(const std::string  & aName,const std::string & aPrefOriCal,bool aModeFraser) 
 {
+   // std::cout << "cInterfChantierNameManipulateur::GlobCalibOfName \n"; getchar();
 
-   cMetaDataPhoto aMTD = cMetaDataPhoto::CreateExiv2(mDir+aName);
 
-   if (mPrefOriCal =="")
+   if (aPrefOriCal =="")
    {
+        cMetaDataPhoto aMTD = cMetaDataPhoto::CreateExiv2(Dir() +aName);
         std::vector<double> aPAF;
         double aFPix  = aMTD.FocPix();
         Pt2di  aSzIm  = aMTD.XifSzIm();
         Pt2dr  aPP = Pt2dr(aSzIm) / 2.0;
 
         bool IsFE;
-        FromString(IsFE,mICNM->Assoc1To1("NKS-IsFishEye",aName,true));
+        FromString(IsFE,Assoc1To1("NKS-IsFishEye",aName,true));
         std::string aNameCal = "CamF" + ToString(aFPix) +"_Sz"+ToString(aSzIm) + "FE"+ToString(IsFE);
-        if (DicBoolFind(mDicoCam,aNameCal))
-           return mDicoCam[aNameCal];
+        if (DicBoolFind(mMapName2Calib,aNameCal))
+           return mMapName2Calib[aNameCal];
         CamStenope * aRes = 0;
 
+        std::vector<double> aVP;
+        std::vector<double> aVE;
         if (IsFE)
         {
-            std::vector<double> aVP;
-            std::vector<double> aVE;
             aVE.push_back(aFPix);
             aVP.push_back(aPP.x);
             aVP.push_back(aPP.y);
@@ -133,23 +155,43 @@ CamStenope * cNewO_NameManager::CamOfName(const std::string  & aName)
         }
         else
         {
-             aRes = new CamStenopeIdeale(false,aFPix,aPP,aPAF);
+// std::cout << "aModeFraseraModeFraser " << aModeFraser << "\n"; getchar();
+             if (aModeFraser)
+                aRes = new cCam_Fraser_PPaEqPPs(false,aFPix,aPP,Pt2dr(aSzIm),aPAF,&aVP,&aVE);
+             else
+                aRes = new CamStenopeIdeale(false,aFPix,aPP,aPAF);
         }
         aRes->SetSz(aSzIm);
-        mDicoCam[aNameCal] =  aRes;
+        mMapName2Calib[aNameCal] =  aRes;
         return aRes;
    }
 
+   std::string  aNC = StdNameCalib(aPrefOriCal,aName);
 
-   std::string  aNC = mICNM->StdNameCalib(mPrefOriCal,aName);
+   if (DicBoolFind(mMapName2Calib,aNC))
+      return mMapName2Calib[aNC];
 
-   if (DicBoolFind(mDicoCam,aNC))
-      return mDicoCam[aNC];
+   mMapName2Calib[aNC] =  CamOrientGenFromFile(aNC,this);
 
-   mDicoCam[aNC] =  CamOrientGenFromFile(aNC,mICNM);
-
-   return mDicoCam[aNC];
+   return mMapName2Calib[aNC];
 }
+
+CamStenope * cNewO_NameManager::CamOfName(const std::string  & aName) 
+{
+    return mICNM->GlobCalibOfName(aName,mPrefOriCal,true);
+}
+
+std::string cNewO_NameManager::NameOriOut(const std::string & aNameIm) const
+{
+   return mICNM->Assoc1To1("NKS-Assoc-Im2Orient@-"+OriOut(),aNameIm,true);
+}
+
+CamStenope *  cNewO_NameManager::OutPutCamera(const std::string & aName) const
+{
+    return  mICNM->StdCamOfNames(aName,OriOut());
+}
+
+
 /*
 */
 CamStenope *  cInterfChantierNameManipulateur::StdCamOfNames(const std::string & aNameIm,const std::string & anOri)
@@ -163,11 +205,6 @@ CamStenope *  cInterfChantierNameManipulateur::StdCamOfNames(const std::string &
 CamStenope * cNewO_NameManager::CamOriOfName(const std::string & aNameIm,const std::string & anOri)
 {
     return mICNM->StdCamOfNames(aNameIm,anOri);
-/*
-     std::string aKey = "NKS-Assoc-Im2Orient@-"+ anOri ;
-     std::string aNameCam =  mICNM->Assoc1To1(aKey,aNameIm,true);
-     return CamOrientGenFromFile(aNameCam,mICNM);
-*/
 }
 const std::string &   cNewO_NameManager::OriCal() const {return mPrefOriCal;}
 
@@ -184,6 +221,39 @@ std::string cNewO_NameManager::NameXmlOri2Im(const std::string & aN1,const std::
 }
 /*
 */
+
+std::string cNewO_NameManager::NameListeImOrientedWith(const std::string & aName,bool Bin) const
+{
+    return Dir3POneImage(aName) + "ListOrientedsWith-" + aName + (Bin ? ".dmp" : ".xml");
+}
+
+std::string cNewO_NameManager::NameListeCpleOriented(bool Bin) const
+{
+    return Dir3P() + "ListCpleOriented"+ (Bin ? ".dmp" : ".xml");
+}
+
+std::list<std::string>  cNewO_NameManager::ListeImOrientedWith(const std::string & aName) const
+{
+   return StdGetFromPCP(NameListeImOrientedWith(aName,true),ListOfName).Name();
+}
+
+std::list<std::string>  cNewO_NameManager::ListeCompleteTripletTousOri(const std::string & aN1,const std::string & aN2) const
+{
+    cListOfName aL1 = StdGetFromPCP(NameListeImOrientedWith(aN1,true),ListOfName);
+    cListOfName aL2 = StdGetFromPCP(NameListeImOrientedWith(aN2,true),ListOfName);
+
+    std::set<std::string>  aS1(aL1.Name().begin(),aL1.Name().end());
+
+
+    std::list<std::string> aRes;
+
+    for  (std::list<std::string>::const_iterator it2=aL2.Name().begin() ; it2!=aL2.Name().end() ; it2++)
+        if (DicBoolFind(aS1,*it2))
+           aRes.push_back(*it2);
+
+    return  aRes;
+}
+
 
 
 
@@ -225,17 +295,33 @@ std::string  cNewO_NameManager::Dir3POneImage(cNewO_OneIm * anIm,bool WithMakeDi
 
 
 
-std::string  cNewO_NameManager::Dir3PDeuxImage(cNewO_OneIm * anI1,cNewO_OneIm * anI2,bool WithMakeDir)
+std::string  cNewO_NameManager::Dir3PDeuxImage(const std::string & aName1,const std::string & aName2,bool WithMakeDir)
 {
-    std::string aRes = Dir3POneImage(anI1,WithMakeDir) + anI2->Name() + "/";
+    std::string aRes = Dir3POneImage(aName1,WithMakeDir) + aName2 + "/";
     if (WithMakeDir)  ELISE_fp::MkDir(aRes);
     return aRes;
 }
 
+
+std::string  cNewO_NameManager::Dir3PDeuxImage(cNewO_OneIm * anI1,cNewO_OneIm * anI2,bool WithMakeDir)
+{
+   return Dir3PDeuxImage(anI1->Name(),anI2->Name(),WithMakeDir);
+}
+
+
+
+
+std::string cNewO_NameManager::NameHomFloat(const std::string & aName1,const std::string & aName2)
+{
+   return Dir3PDeuxImage(aName1,aName2,false) + "HomFloatSym"  + ".dat";
+}
+
 std::string cNewO_NameManager::NameHomFloat(cNewO_OneIm * anI1,cNewO_OneIm * anI2)
 {
-   return Dir3PDeuxImage(anI1,anI2,false) + "HomFloatSym"  + ".dat";
+    return NameHomFloat(anI1->Name(),anI2->Name());
 }
+
+
 
 
 
@@ -250,23 +336,47 @@ std::string cNewO_NameManager::NameTripletsOfCple(cNewO_OneIm * anI1,cNewO_OneIm
 std::string cNewO_NameManager::NameAttribTriplet
             (
                const std::string & aPrefix,const std::string & aPost,
+               const std::string &   aI1,const std::string &   aI2,const std::string &   aI3,
+               bool WithMakeDir
+            )
+
+{
+    ELISE_ASSERT(aI1<aI2,"cNO_P3_NameM::NameAttribTriplet");
+    ELISE_ASSERT(aI2<aI3,"cNO_P3_NameM::NameAttribTriplet");
+
+    std::string aDir = Dir3PDeuxImage(aI1,aI2,WithMakeDir);
+
+    return aDir + "Triplet-" + aPrefix + "-" + aI3 + "." + aPost;
+}
+/*
+*/
+
+std::string cNewO_NameManager::NameAttribTriplet
+            (
+               const std::string & aPrefix,const std::string & aPost,
                cNewO_OneIm * aI1,cNewO_OneIm * aI2,cNewO_OneIm * aI3,
                bool WithMakeDir
             )
 
 {
-    ELISE_ASSERT(aI1->Name()<aI2->Name(),"cNO_P3_NameM::NameAttribTriplet");
-    ELISE_ASSERT(aI2->Name()<aI3->Name(),"cNO_P3_NameM::NameAttribTriplet");
+    return NameAttribTriplet(aPrefix,aPost,aI1->Name(),aI2->Name(),aI3->Name(),WithMakeDir);
+}
 
-    std::string aDir = Dir3PDeuxImage(aI1,aI2,WithMakeDir);
 
-    return aDir + "Triplet-" + aPrefix + "-" + aI3->Name() + "." + aPost;
+std::string cNewO_NameManager::NameHomTriplet(const std::string & aI1,const std::string & aI2,const std::string & aI3,bool WithMakeDir)
+{
+    return NameAttribTriplet("Hom","dat",aI1,aI2,aI3,WithMakeDir);
 }
 
 std::string cNewO_NameManager::NameHomTriplet(cNewO_OneIm *aI1,cNewO_OneIm *aI2,cNewO_OneIm *aI3,bool WithMakeDir)
 {
-    return NameAttribTriplet("Hom","dat",aI1,aI2,aI3,WithMakeDir);
+    return NameAttribTriplet("Hom","dat",aI1->Name(),aI2->Name(),aI3->Name(),WithMakeDir);
 }
+
+
+
+
+
 
 std::string cNewO_NameManager::NameOriInitTriplet(bool ModeBin,cNewO_OneIm *aI1,cNewO_OneIm *aI2,cNewO_OneIm *aI3,bool WithMakeDir)
 {

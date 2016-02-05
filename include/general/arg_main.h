@@ -72,12 +72,14 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 class cMMSpecArg;
 
-std::string MakeStrFromArgcARgv(int  argc,char** argv);
+std::string MakeStrFromArgcARgv( int argc, char **argv, bool aProtect = false);
 
 void MemoArg(int,char**);
 void ShowArgs();
 
 extern std::string TheStringMemoArgOptGlob;
+extern std::string GlobArcArgv;
+
 
 
 // Remet dans la commande les option commancant par "-"

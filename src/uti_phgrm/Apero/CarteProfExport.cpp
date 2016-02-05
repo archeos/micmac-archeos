@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 void cAppliApero::ExportMesuresFromCarteProf
@@ -45,7 +46,7 @@ void cAppliApero::ExportMesuresFromCarteProf
           const cCartes2Export &              aC,
           cElNuage3DMaille *                  aNuage,
           const ElPackHomologue &             aPackH,
-          cPoseCam *                          aPose2Compl,
+          cGenPoseCam *                       aPose2Compl,
           const std::string &                 aNameCarte
      )
 {
@@ -138,7 +139,7 @@ void cAppliApero::ExportMesuresFromCarteProf
        const std::vector<cOneElemLiaisonMultiple *>  & aVELM = aPackM->VPoses();
        for (int aKP=0 ; aKP<int(aVELM.size()) ; aKP++)
        {
-          cPoseCam * aPose2Compl = aVELM[aKP]->Pose();
+          cGenPoseCam * aPose2Compl = aVELM[aKP]->GenPose();
           ElPackHomologue aPackH;
        
           if (anAutom.Match(aPose2Compl->Name())

@@ -128,7 +128,8 @@ class cAppliCmpCal
                  const std::string & aName2,
                  bool  aModeL1,
                  int   aSzW,
-                 double aDynV
+                 double aDynV,
+                 const std::string Out
           ) :
              mGr1   (cCapteurCmpCal::StdAlloc(aName1)),
              mGr2   (cCapteurCmpCal::StdAlloc(aName2)),
@@ -157,7 +158,8 @@ std::cout <<  mGr2.P0() << mGr2.P1() << "\n";
               mSetEq.SetClosed();
           }
 
-          void OneItere(bool First,bool Last);
+          void OneItere(bool First,bool Last,const std::string Out);
+          void OneItere2(bool First,bool Last,const std::string Out,const std::string mXmlG);
 
           double K2Pds(int aK)
           {
@@ -237,7 +239,7 @@ double cAppliCmpCal::EcartFromRay(double aR)
 }
 
 
-void cAppliCmpCal::OneItere(bool First,bool Last)
+void cAppliCmpCal::OneItere(bool First,bool Last,const std::string Out)
 {
 
     double aS1=0, aSD=0;
@@ -246,14 +248,22 @@ void cAppliCmpCal::OneItere(bool First,bool Last)
     mRotCur =  mRotF.CurRot();
 
     FILE * aFP=0;
-    if (Last)
-    {
-        std::string aName = StdPrefix(mGr1.Name()) + "_Ecarts.txt";
-        aFP = ElFopen(aName.c_str(),"w");
-    }
 
     if (Last)
     {
+        if(Out!="")
+		{
+			std::string aName = Out;
+			aFP = ElFopen(aName.c_str(),"w");
+		}
+		else
+		{
+			std::string aName = StdPrefix(mGr1.Name()) + "_Ecarts.txt";
+			aFP = ElFopen(aName.c_str(),"w");
+		}
+			
+       //std::string aName = StdPrefix(mGr1.Name()) + "_Ecarts.txt";
+       //aFP = ElFopen(aName.c_str(),"w");
        double aStep = 200;
        fprintf(aFP,"--------------  Ecart radiaux  -----------\n");
        fprintf(aFP," Rayon   Ecart\n");
@@ -318,6 +328,117 @@ void cAppliCmpCal::OneItere(bool First,bool Last)
           ElFclose(aFP);
 }
 
+void cAppliCmpCal::OneItere2(bool First,bool Last,const std::string Out,const std::string mXmlG)
+{
+	cXmlTNR_TestCalibReport aCalib;
+	aCalib.CalibName() = mGr1.Name();
+	
+    double aS1=0, aSD=0;
+    mSetEq.AddContrainte(mRotF.StdContraintes(),true);
+    mSetEq.SetPhaseEquation();
+    mRotCur =  mRotF.CurRot();
+
+    FILE * aFP=0;
+    double SEp = 0;
+    double SUx = 0;
+    double SUy = 0;
+    double SE = 0;
+
+    if (Last)
+    {
+        if(Out!="")
+		{
+			std::string aName = Out;
+			aFP = ElFopen(aName.c_str(),"w");
+		}
+		else
+		{
+			std::string aName = StdPrefix(mGr1.Name()) + "_Ecarts.txt";
+			aFP = ElFopen(aName.c_str(),"w");
+		}
+			
+       //std::string aName = StdPrefix(mGr1.Name()) + "_Ecarts.txt";
+       //aFP = ElFopen(aName.c_str(),"w");
+       double aStep = 200;
+       fprintf(aFP,"--------------  Ecart radiaux  -----------\n");
+       fprintf(aFP," Rayon   Ecart\n");
+       for( double aR = 0 ; aR<(mRay+aStep) ; aR+= aStep)
+       {
+           double aRM = ElMin(aR,mRay-10.0);
+           double EC =  EcartFromRay(aRM);
+           std::cout << "Ray=" << aRM
+                     << " ; Ecart=" << EC << "\n";
+           SEp += EC;
+           fprintf(aFP," %lf %lf\n",aRM,EC);
+           Pt2dr aER(aRM,EC);
+           aCalib.EcartsRadiaux().push_back(aER);
+       }
+    }
+
+    if (Last)
+    {
+       fprintf(aFP,"--------------  Ecart plani  -----------\n");
+       fprintf(aFP,"Im.X Im.Y  PhG.X Phg.Y Ec\n");
+    }
+    for (int aKX=0 ; aKX<=mNBP ; aKX++)
+       for (int aKY=0 ; aKY<=mNBP ; aKY++)
+       {
+           double aPdsX = K2Pds(aKX);
+           double aPdsY = K2Pds(aKY);
+
+           Pt2dr  aPIm (
+                      mP0.x * aPdsX+mP1.x * (1-aPdsX),
+                      mP0.y * aPdsY+mP1.y * (1-aPdsY)
+                 );
+
+           InitNormales (aPIm);
+
+           mEqORV->AddObservation(mN1,mN2);
+           Pt2dr U = EcartNormaleCorr();
+           aS1++;
+           aSD += euclid(U);
+
+            if ((mW!=0) && (First || Last ))
+            {
+                // Pt2dr aP0 (mSzW*aPdsX,mSzW*aPdsY);
+               //  Pt2dr aP0 = (aPIm- mP0)  * mRatioW;
+                Pt2dr aP0 = (aPIm-mP0)  * mRatioW;
+
+
+                mW->draw_circle_loc(aP0,2.0,mW->pdisc()(P8COL::green));
+                int aCoul = First ? P8COL::blue : P8COL::red;
+
+                mW->draw_seg
+                (
+                   aP0,
+                   aP0 + U* mDynVisu,
+                   mW->pdisc()(aCoul)
+                );
+            }
+            if (aFP)
+               fprintf(aFP,"%lf %lf %lf %lf %lf\n",aPIm.x,aPIm.y,U.x,U.y,euclid(U));
+            SUx += U.x;
+            SUy += U.y;
+            SE += euclid(U);
+            Pt2dr aCoord(aPIm.x,aPIm.y);
+            Pt3dr aR(U.x,U.y,euclid(U));
+            cEcartsPlani aEP;
+            aEP.CoordPx() = aCoord;
+            aEP.UxUyE() = aR;
+            aCalib.EcartsPlani().push_back(aEP);
+            
+       }
+
+       std::cout << (aSD/aS1) << " "  << (aSD/aS1) * (1e6/mFocale) << " MicroRadians " << "\n";
+       mSetEq.SolveResetUpdate();
+
+       if (aFP)
+          ElFclose(aFP);
+if(SEp==0&&SUx==0&&SUy==0&&SE==0){aCalib.TestCalibDiff() = true;}
+else{aCalib.TestCalibDiff() = false;}
+MakeFileXML(aCalib, mXmlG);
+}
+
 
 int CmpCalib_main(int argc,char ** argv)
 {
@@ -327,8 +448,11 @@ int CmpCalib_main(int argc,char ** argv)
     int     aL1 = 0;
     int     aSzW= 700;
     double  aDynV = 100.0;
+    bool 	DispW = false;
+    std::string	mXmlG ="";
     std::string aName1;
     std::string aName2;
+    std::string Out="";
 
     ElInitArgMain
     (
@@ -341,18 +465,21 @@ int CmpCalib_main(int argc,char ** argv)
                 << EAM(aL1,"L1",true)
                 << EAM(aSzW,"SzW",true)
                 << EAM(aDynV,"DynV",true)
+                << EAM(Out,"Out",true,"Result (Def=Name1_ecarts.txt)", eSAM_IsOutputFile)
+                << EAM(DispW,"DispW",true,"Display window")
+                << EAM(mXmlG,"XmlG",true,"Generate Xml")
     );
-
     if (!MMVisualMode)
     {
-        cAppliCmpCal aCmpC(aName1,aName2, (aL1!=0),aSzW,aDynV);
-
+        cAppliCmpCal aCmpC(aName1,aName2, (aL1!=0),aSzW,aDynV,Out);
         int aNbStep = 5;
         for (int aK=0 ; aK< 5 ; aK++)
-            aCmpC.OneItere(aK==0,aK==(aNbStep-1));
-
-        getchar();
-
+			if(mXmlG!=""){aCmpC.OneItere2(aK==0,aK==(aNbStep-1),Out,mXmlG);}
+			else{aCmpC.OneItere(aK==0,aK==(aNbStep-1),Out);}
+		if(DispW)
+		{
+			getchar();
+		}
         return EXIT_SUCCESS;
     }
     else return EXIT_SUCCESS;
@@ -390,13 +517,13 @@ cLibertOfCalib GetDefDegreeOfCalib(const cCalibDistortion & aCalib )
     if (aCalib.ModRad().IsInit())
     {
          const cCalibrationInterneRadiale & aCIR = aCalib.ModRad().Val();
-         return cLibertOfCalib(aCIR.CoeffDist().size(),0,0,true ,false);
+         return cLibertOfCalib((int)aCIR.CoeffDist().size(), 0, 0, true, false);
     }
     if (aCalib.ModPhgrStd().IsInit())
     {
          const cCalibrationInternePghrStd & aCIR = aCalib.ModPhgrStd().Val();
          const cCalibrationInterneRadiale & aCIP = aCIR.RadialePart();
-         return cLibertOfCalib(aCIP.CoeffDist().size(),1,1,true ,false);
+         return cLibertOfCalib((int)aCIP.CoeffDist().size(), 1, 1, true, false);
     }
 
     if (aCalib.ModUnif().IsInit())
@@ -431,52 +558,15 @@ cLibertOfCalib GetDefDegreeOfCalib(const cCalibDistortion & aCalib )
 }
 
 
-int ConvertCalib_main(int argc, char** argv)
+void GenerateMesure2D3D(CamStenope * aCamIn,int aNbXY,int aNbProf,const std::string & aNameIm,cDicoAppuisFlottant & aDAF,cMesureAppuiFlottant1Im & aMAF)
 {
-   // virtual  Pt3dr ImEtProf2Terrain(const Pt2dr & aP,double aZ) const;
-   // for (int aK=0 ; aK<argc ; aK++)
-   //     std::cout << " # " << argv[aK] << "\n";
 
-    std::string aCalibIn;
-    std::string aCalibOut;
-    int aNbXY=20;
-    int aNbProf=2;
-    int aDRMax;
-    int aDegGen;
-    std::string aNameCalibOut =  "Out-ConvCal.xml";
-    bool PPFree = true;
-    bool CDFree = true;
-    bool FocFree = true;
-
-    ElInitArgMain
-    (
-       argc,argv,
-       LArgMain()  << EAMC(aCalibIn, "Input Calibration",eSAM_IsExistFile)
-                   << EAMC(aCalibOut,"Output calibration",eSAM_IsExistFile),
-       LArgMain()  << EAM(aNbXY,"NbXY",true,"Number of point of the Grid")
-                   << EAM(aNbProf,"NbProf",true,"Number of depth")
-                   << EAM(aDRMax,"DRMax",true,"Max degree of radial dist (def=depend Output calibration)")
-                   << EAM(aDegGen,"DegGen",true,"Max degree of generik polynom (def=depend Output calibration)")
-                   << EAM(PPFree,"PPFree",true,"Principal point free (Def=true)")
-                   << EAM(CDFree,"CDFree",true,"Distorsion center free (def=true)")
-                   << EAM(FocFree,"FocFree",true,"Focal free (def=true)")
-    );
-
-    if (MMVisualMode) return EXIT_SUCCESS;
-
-   std::string aNameImage = aCalibOut;
-   std::string aDirTmp = DirOfFile(aCalibIn) + "Ori-ConvCalib/";
-   ELISE_fp::MkDir(aDirTmp);
-
-   CamStenope * aCamIn =  Std_Cal_From_File(aCalibIn);
    Pt2dr aSzPix = aCamIn->SzPixel();
 
    Pt2di aPInt;
    double aEps = 1e-2;
-   cDicoAppuisFlottant aDAF;
    double anInc = 1/ euclid(aSzPix);
-   cMesureAppuiFlottant1Im aMAF;
-   aMAF.NameIm() = aNameImage;
+   aMAF.NameIm() = aNameIm;
    for (aPInt.x=0 ; aPInt.x<= aNbXY ; aPInt.x++)
    {
        for (aPInt.y=0 ; aPInt.y<= aNbXY ; aPInt.y++)
@@ -505,11 +595,140 @@ int ConvertCalib_main(int argc, char** argv)
               cOneMesureAF1I aM1;
               aM1.NamePt() = aNamePt;
               aM1.PtIm() = aPIm;
-          aMAF.OneMesureAF1I().push_back(aM1);
+               aMAF.OneMesureAF1I().push_back(aM1);
 
            }
        }
    }
+}
+
+class cAppli_GenerateAppuisLiaison : public cAppliWithSetImage
+{
+    public :
+        cAppli_GenerateAppuisLiaison(int argc, char** argv);
+
+        std::string mNameIm,mNameOri;
+        int mNbXY,mNbProf;
+};
+ 
+
+
+cAppli_GenerateAppuisLiaison::cAppli_GenerateAppuisLiaison(int argc, char** argv) :
+      cAppliWithSetImage (argc-1,argv+1,0),
+      mNbXY    (20),
+      mNbProf  (3)
+{
+
+    ElInitArgMain
+    (
+       argc,argv,
+       LArgMain()  << EAMC(mNameIm, "Image",eSAM_IsExistFile)
+                   << EAMC(mNameOri, "Orientation",eSAM_IsExistFile),
+       LArgMain()  << EAM(mNbXY,"NbXY",true,"Number of point of the Grid")
+                   << EAM(mNbProf,"NbProf",true,"Number of depth")
+    );
+    std::string aPref = "Genepi-";
+
+     for (int aK=0 ; aK<int(mVSoms.size()) ; aK++)
+     {
+          cImaMM * anIm = mVSoms[aK]->attr().mIma;
+          cDicoAppuisFlottant aDAF;
+          cMesureAppuiFlottant1Im aMAF;
+          GenerateMesure2D3D(anIm->mCam,mNbXY,mNbProf,anIm->mNameIm,aDAF,aMAF);
+          cSetOfMesureAppuisFlottants  aSMAF;
+          aSMAF.MesureAppuiFlottant1Im().push_back(aMAF);
+          MakeFileXML(aDAF, aPref+ anIm->mNameIm + "-Mes3D.xml");
+          MakeFileXML(aSMAF, aPref+ anIm->mNameIm + "-Mes2D.xml");
+        
+     }
+}
+
+
+
+
+int GenerateAppLiLiaison_main(int argc, char** argv)
+{
+     cAppli_GenerateAppuisLiaison anAppli(argc,argv);
+/*
+    std::string aNameCam,aNameOri;
+    int aNbXY = 20,aNbProf = 3;
+
+    ElInitArgMain
+    (
+       argc,argv,
+       LArgMain()  << EAMC(aNameIm, "Image",eSAM_IsExistFile),
+                   << EAMC(aNameOri, "Orientation",eSAM_IsExistFile),
+       LArgMain()  << EAM(aNbXY,"NbXY",true,"Number of point of the Grid")
+                   << EAM(aNbProf,"NbProf",true,"Number of depth")
+    );
+
+    CamStenope * aCam = BasicCamOrientGenFromFile(aNameCam);
+    cDicoAppuisFlottant aDAF;
+    cMesureAppuiFlottant1Im aMAF;
+    cInterfChantierNameManipulateur * anICNM = cInterfChantierNameManipulateur::BasicAlloc(aDir);
+
+    GenerateMesure2D3D(aCam,aNbXY,aNbProf,aNameIm,aDAF,aMAF);
+*/
+
+
+
+    std::cout << "*******************************\n";
+    std::cout << "*                             *\n";
+    std::cout << "*     GENE-rate               *\n";
+    std::cout << "*     P-oints 3D and          *\n";
+    std::cout << "*     I-mage projectctio,     *\n";
+    std::cout << "*                             *\n";
+    std::cout << "*******************************\n";
+
+    return EXIT_SUCCESS;
+}
+
+int ConvertCalib_main(int argc, char** argv)
+{
+   // virtual  Pt3dr ImEtProf2Terrain(const Pt2dr & aP,double aZ) const;
+   // for (int aK=0 ; aK<argc ; aK++)
+   //     std::cout << " # " << argv[aK] << "\n";
+
+    std::string aCalibIn;
+    std::string aCalibOut;
+    int aNbXY=20;
+    int aNbProf=2;
+    int aDRMax;
+    int aDegGen;
+    std::string aNameCalibOut =  "Out-ConvCal.xml";
+    bool PPFree = true;
+    bool CDFree = true;
+    bool FocFree = true;
+    bool DecFree = true;
+
+    
+
+    ElInitArgMain
+    (
+       argc,argv,
+       LArgMain()  << EAMC(aCalibIn, "Input Calibration",eSAM_IsExistFile)
+                   << EAMC(aCalibOut,"Output calibration",eSAM_IsExistFile),
+       LArgMain()  << EAM(aNbXY,"NbXY",true,"Number of point of the Grid")
+                   << EAM(aNbProf,"NbProf",true,"Number of depth")
+                   << EAM(aDRMax,"DRMax",true,"Max degree of radial dist (def=depend Output calibration)")
+                   << EAM(aDegGen,"DegGen",true,"Max degree of generik polynom (def=depend Output calibration)")
+                   << EAM(PPFree,"PPFree",true,"Principal point free (Def=true)")
+                   << EAM(CDFree,"CDFree",true,"Distorsion center free (def=true)")
+                   << EAM(FocFree,"FocFree",true,"Focal free (def=true)")
+                   << EAM(DecFree,"DecFree",true,"Decentrik free (def=true when appliable)")
+    );
+
+    if (MMVisualMode) return EXIT_SUCCESS;
+
+   std::string aNameImage = aCalibOut;
+   std::string aDirTmp = DirOfFile(aCalibIn) + "Ori-ConvCalib/";
+   ELISE_fp::MkDir(aDirTmp);
+
+   CamStenope * aCamIn =  Std_Cal_From_File(aCalibIn);
+   cDicoAppuisFlottant aDAF;
+   cMesureAppuiFlottant1Im aMAF;
+
+   GenerateMesure2D3D(aCamIn,aNbXY,aNbProf,aNameImage,aDAF,aMAF);
    cCalibrationInternConique aCICOut = StdGetFromPCP(aCalibOut,CalibrationInternConique);
    cLibertOfCalib  aLOC = GetDefDegreeOfCalib(aCICOut.CalibDistortion().back());
    if (!EAMIsInit(&aDRMax) ) aDRMax = aLOC.mDegRad;
@@ -535,6 +754,7 @@ int ConvertCalib_main(int argc, char** argv)
                        + " +CDFree="   + ToString(CDFree)
                        + " +DRMax=" + ToString(aDRMax)
                        + " +DegGen=" + ToString(aDegGen)
+                       + " +LibDec=" + ToString(DecFree)
                       ;
 
 
@@ -549,6 +769,7 @@ int ConvertCalib_main(int argc, char** argv)
    // std::cout << "CalIn=" << aCalibIn << " Foc " << aCamIn->Focale() << "\n";
    return EXIT_SUCCESS;
 }
+
 
 
 

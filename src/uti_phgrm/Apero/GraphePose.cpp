@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 template  class ElGraphe<NS_ParamApero::cPoseCam*,NS_ParamApero::cAttrArcPose>;
 template  class ElTabDyn<ElSom<NS_ParamApero::cPoseCam*, NS_ParamApero::cAttrArcPose> >;
@@ -127,7 +128,7 @@ void  cAppliApero::ConstructMST
        aVCible.push_back(PoseFromName(*itS));
    }
 
-   int aNbC = aVCible.size() ; 
+   int aNbC = (int)aVCible.size(); 
 
    // A chaque iteration on va affecter un sommet
    for (int aTimes=0 ; aTimes<aNbC ; aTimes++)

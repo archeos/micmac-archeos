@@ -36,7 +36,13 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
+
+cArg_UPL::cArg_UPL(const cXmlSLM_RappelOnPt * aRop) :
+    mRop (aRop)
+{
+}
 
 
     /************************************************/
@@ -183,7 +189,14 @@ void  cAppliApero::InitLVM
        )
 {
    if (anOpt.IsInit())
+   {
      aPtr = anOpt.PtrVal();
+     const cXmlSLM_RappelOnPt * aRop = aPtr->XmlSLM_RappelOnPt().PtrVal();
+     if (aRop)
+     {
+        mXmlSMLRop  = aRop;
+     }
+   }
 
    if (aOpMul.IsInit())
      aMult = aOpMul.Val();

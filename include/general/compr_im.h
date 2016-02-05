@@ -40,6 +40,11 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef _ELISE_GENERAL_COMPR_IM_H
 #define _ELISE_GENERAL_COMPR_IM_H
 
+double VerifInt(const int    * anInput,int aNb);
+double VerifInt(const double * anInput,int aNb);
+
+
+
 
 template <class Type> class Data_PackB_IM;
 
@@ -123,15 +128,35 @@ void GetBoxUpdate(Pt2di tr,Box2di box,INT rab,Box2di & BX,Box2di & BY);
 
 
 
+class cImgVisuChgDyn
+{
+    public :
+        virtual void ChgDyn(int * anOut,const int * anInput,int aNb) = 0;
+        virtual void ChgDyn(int * anOut,const double * anInput,int aNb) = 0;
+    private :
+};
+
+class Visu_ElImDest;
+
+template <class Type> class FriendVisu_ElImDest
+{
+   public :
+       static void write_image(Visu_ElImDest&,INT  x0src,Pt2di p0dest,INT nb,Type ** data,int** aDataBuf,int aNbChanelIn);
+};
+
 class Visu_ElImDest
 {
       public :
-           virtual ~Visu_ElImDest();
 		   friend class ElImScroller;
+                   friend class FriendVisu_ElImDest<int>;
+                   friend class FriendVisu_ElImDest<double>;
+
+                   virtual ~Visu_ElImDest();
 		   virtual void VerifDim(INT DimOut) =0;
 
 		   void SetGamaCorr(REAL aGamaFact);
-           void write_image(INT x0src,Pt2di p0dest,INT nb,INT ** data);
+                   void write_image(INT x0src,Pt2di p0dest,INT nb,INT ** data,int aNbChanelIn);
+                   void write_image(INT x0src,Pt2di p0dest,INT nb,double ** data,int aNbChanelIn);
 
 		   Visu_ElImDest(Pt2di aSz,INT aDimOut);
 
@@ -140,16 +165,19 @@ class Visu_ElImDest
 		   INT VMax() const;
 		   INT VMin() const;
 
+                   void SetChgDyn(cImgVisuChgDyn *);
+
 	  protected :
 		   // Visu_ElImDest();
       // private :
-           virtual void write_image_brute(INT x0src,Pt2di p0dest,INT nb,INT ** data) =0;
+                   virtual void write_image_brute(INT x0src,Pt2di p0dest,INT nb,INT ** data) =0;
 		   Visu_ElImDest(const Visu_ElImDest &);
 
 		   INT             mDimOut;
-		   Pt2di           mSz;
-		   Im2D_INT4       mBuf;
-		   INT4 **         mDataBuf;
+		   Pt2di           mSzBigIm;
+		   Pt2di           mSzBuf;
+		   Im2D_INT4       mBufI;
+		   INT4 **         mDataBufI;
 		   bool            mUseEtalDyn;
 		   INT             mVMin;
 		   INT             mVMax;
@@ -160,6 +188,7 @@ class Visu_ElImDest
 		   INT4 *         mDataGamaCorr;
 		   bool           mUseGamaCorr;
 
+                   cImgVisuChgDyn * mIVCD;
 };
 
 
@@ -274,23 +303,33 @@ class VideoWin_Visu_ElImScr  : public Visu_ElImScr
 
 class ElPyramScroller;
 
+class cElScrCalcNameSsResol
+{
+     public :
+         virtual std::string  CalculName(const std::string & aName, INT InvScale) = 0;
+
+};
+
 class ElImScroller
 {
      public :
-              virtual bool CanReinitTif();
-              virtual void ReInitTifFile(Tiff_Im aTif);
+               virtual ElImScroller * CurScale() ;   // Default this => utilise dans Pyram
+               virtual bool CanReinitTif();
+               virtual void ReInitTifFile(Tiff_Im aTif);
 
 
-               void  SetAlwaysQuick(bool aVal);
-
-               void  SetAlwaysQuickInZoom();
-               void  SetAlwaysQuick();
+               virtual void  SetAlwaysQuick(bool aVal);
+               virtual void  SetAlwaysQuickInZoom(bool aVal);
+               virtual void  SetAlwaysQuickInZoom();
+               virtual void  SetAlwaysQuick();
 
 
                bool AlwaysQuick() const;
+               bool AlwaysQuickZoom() const;
 
 		virtual Output out(); //  Output::onul();
 		virtual Fonc_Num in(); // 0
+                virtual Pt2di SzIn() = 0;
                 virtual REAL  GetValPtsR(Pt2dr aP);  // Def Erreur Fatale
 
                 virtual void Sauv(const std::string & aName);
@@ -314,7 +353,8 @@ class ElImScroller
 					const std::string &,
 					std::vector<INT> * EchAcc =0,
 					bool Adapt =false,
-					bool ForceGray =false
+					bool ForceGray =false,
+                                        cElScrCalcNameSsResol * = 0
 			);
 
 	    friend class ElPyramScroller;
@@ -391,13 +431,22 @@ class ElImScroller
 
         Pt2di           _SzW;
         Pt2di           _SzU;
-        void write_image(INT x0src,Pt2di p0dest,INT nb,INT ** data)
-		{
-				mVisuCur->write_image(x0src,p0dest,nb,data);
-		}
-		void SetVisuCur(Visu_ElImDest *);
-		REAL mTimeLoadXIm;
-		REAL mTimeReformat;
+        void write_image(INT x0src,Pt2di p0dest,INT nb,INT ** data,int aNbChanelIn);
+        void write_image(INT x0src,Pt2di p0dest,INT nb,double ** data,int aNbChanelIn);
+/*
+        {
+              mVisuCur->write_image(x0src,p0dest,nb,data);
+        }
+        void write_image(INT x0src,Pt2di p0dest,INT nb,double ** data)
+        {
+              mVisuCur->write_image(x0src,p0dest,nb,data);
+        }
+*/
+
+
+        void SetVisuCur(Visu_ElImDest *);
+        REAL mTimeLoadXIm;
+        REAL mTimeReformat;
 
 
 
@@ -406,7 +455,7 @@ class ElImScroller
 
 	    static ElImScroller * StdScrollIfExist(Visu_ElImScr &Visu,const std::string &,REAL scale,bool Adapt,bool ForceGray);
      private :
-	    static ElImScroller * StdFileGenerique(Visu_ElImScr &Visu,const std::string &,INT  InvScale,bool Adapt,bool ForceGray);
+	    static ElImScroller * StdFileGenerique(Visu_ElImScr &Visu,const std::string &,INT  InvScale,bool Adapt,bool ForceGray,cElScrCalcNameSsResol * = 0);
 
 
 
@@ -452,7 +501,14 @@ class ElPyramScroller : public ElImScroller
 		virtual REAL TimeReformat() const; // 0.0
 		Fonc_Num in(); // 0
 
+           virtual void  SetAlwaysQuick(bool aVal);
+           virtual void  SetAlwaysQuickInZoom(bool aVal);
+           virtual void  SetAlwaysQuickInZoom();
+           virtual void  SetAlwaysQuick();
+           virtual ElImScroller * CurScale() ; 
+           virtual Pt2di SzIn() ;
 	private :
+
            void Sauv(const std::string & aName);
            void SetPoly(Fonc_Num ,std::vector<Pt2dr>);
            virtual void ApplyLutOnPoly(Fonc_Num ,std::vector<Pt2dr>);
@@ -893,6 +949,7 @@ class BiScroller : public ElImScroller
 
 
                 Im2D_U_INT1 ImMasq();
+                Pt2di SzIn() ;
 
                 const ElSTDNS vector<ElImScroller *> & SubScrolls();
 
@@ -1002,6 +1059,12 @@ class BiScroller : public ElImScroller
                 Im2D_U_INT1                    mImMasq;
 };
 
+class cClikInterceptor
+{
+    public :
+       virtual bool InterceptClik(Clik) = 0;
+};
+
 class  EliseStdImageInteractor
 {
       public :
@@ -1013,7 +1076,8 @@ class  EliseStdImageInteractor
                  ElImScroller & aScrol,
                  INT            aButonGeom,
                  INT            aButonZoomIn = -1,
-                 INT            aButonZoomOut = -1
+                 INT            aButonZoomOut = -1,
+                 cClikInterceptor *           = 0
           );
 
           Clik clik_press();
@@ -1091,6 +1155,7 @@ class  EliseStdImageInteractor
           std::vector<Pt2dr> mPolygCur;
           INT                mCoulSomPolygCur;
           INT                mCoulEdgePolygCur;
+          cClikInterceptor*  mClikIntercept;
 
 
           friend class Graber;

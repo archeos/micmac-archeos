@@ -153,7 +153,7 @@ void match_lebris( vector<DigeoPoint> &i_array0, vector<DigeoPoint> &i_array1, s
     const ANNdist *neighDistances = anns.getNeighboursDistances();
 
 	DigeoPoint *itQuery = &i_array1[0];
-	int         nbQueries = i_array1.size(),
+	int         nbQueries = (int)i_array1.size(),
 	            iQuery;
 
 	for ( iQuery=0; iQuery<nbQueries; iQuery++ )
@@ -185,7 +185,8 @@ bool write_matches_ascii( const std::string &i_filename, const vector<DigeoPoint
 	const DigeoPoint *p0 = i_array0.data(),
 	                 *q0 = i_array1.data(),
 	                 *p, *q;
-	while ( itCouple!=i_matchingCouples.end() ){
+	while ( itCouple!=i_matchingCouples.end() )
+	{
 		p = p0+itCouple->x;
 		q = q0+( itCouple++ )->y;
 		f << p->x << '\t' << p->y << '\t' << q->x << '\t' << q->y << endl;
@@ -221,8 +222,8 @@ void unfoldMatchingCouples( vector<DigeoPoint> &io_array0, vector<DigeoPoint> &i
 static inline int _count_A_in_B( const vector<int> &A, const vector<int> &B)
 {
     int count = 0;
-    int nbA = A.size(),
-        nbB = B.size(),
+    int nbA = (int)A.size(),
+        nbB = (int)B.size(),
         iB;
     vector<int>::const_iterator itA = A.begin(),
                                 itB;
@@ -258,7 +259,7 @@ void getNeighbours( vector<DigeoPoint> &i_array, vector<vector<ANNidx> > &o_neig
     int                             iNeighbour, iQuery;
     vector<vector<int> >::iterator  itQueryNeighbourhood = o_neighbourhood.begin();
     DigeoPoint                     *itQuery              = &i_array[0];
-    int                             nbQueries            = i_array.size();
+    int                             nbQueries            = (int)i_array.size();
     for ( iQuery=0; iQuery<nbQueries; iQuery++ )
     {
         anns.search( &itQuery->x );
@@ -298,7 +299,7 @@ void neighbourFilter( vector<DigeoPoint> &i_array0, vector<DigeoPoint> &i_array1
             cerr << "PROG_WARN : neighbourFilter: i_array0 and i_array1 are of different size" << endl;
     #endif
 
-    int nbCouples = i_array0.size();
+    int nbCouples = (int)i_array0.size();
     //vector<int> neighbours( SIFT_ANN_DEFAULT_NB_NEIGHBOURS );
 	vector<int> neighbours( SIFT_ANN_DEFAULT_NB_NEIGHBOURS+1 ); // TODO : voir pourquoi un point n'est pas toujours dans ses 8 plus proches voisins
     vector<vector<int> > neighbours0( nbCouples, neighbours ),
@@ -331,21 +332,24 @@ DigeoTypedVectors::DigeoTypedVectors( const vector<DigeoPoint> &i_points ):
 	m_points( (int)DigeoPoint::DETECT_UNKNOWN+1 )
 {
 	// count the number of points of each type
-	vector<unsigned int> countTypes( DigeoPoint::nbDetectTypes, 0 );
+	vector<unsigned int> countTypes(DigeoPoint::nbDetectTypes, 0);
 	const DigeoPoint *itSrc = i_points.data();
 	size_t iPoint = i_points.size();
 	while ( iPoint-- ) countTypes[(size_t)( *itSrc++ ).type]++;
 
 	// resize vectors
-	for ( size_t iType=0; iType<DigeoPoint::nbDetectTypes; iType++ ){
-		m_points[iType].resize( countTypes[iType] );
+	m_points.resize(DigeoPoint::nbDetectTypes);
+	for ( unsigned int iType=0; iType<DigeoPoint::nbDetectTypes; iType++ )
+	{
+		m_points[iType].resize(countTypes[iType]);
 		countTypes[iType] = 0;
 	}
-	
+
 	// copy points
 	itSrc = i_points.data();
 	iPoint = i_points.size();
-	while ( iPoint-- ){
+	while ( iPoint-- )
+	{
 		const size_t iType = (size_t)itSrc->type;
 		m_points[iType][countTypes[iType]++] = *itSrc;
 		itSrc++;
@@ -355,7 +359,8 @@ DigeoTypedVectors::DigeoTypedVectors( const vector<DigeoPoint> &i_points ):
 		size_t total = m_points[0].size();
 		for ( size_t iType=1; iType<DigeoPoint::nbDetectTypes; iType++ )
 			total += m_points[iType].size();
-		if ( total!=i_points.size() ){
+		if ( total!=i_points.size() )
+		{
 			cerr << "DEBUG_ERROR: DigeoTypedVectors::DigeoTypedVectors: split is incorrect" << endl;
 			exit(1);
 		}

@@ -483,6 +483,9 @@ class  cElemEqFormelle :  public cNameSpaceEqF
 
 	    void AddFoncteurEEF(cElCompiledFonc *);
             void CloseEEF(bool asIntervBlock = true);
+
+            // Rajoute ce qui doit etre fait dans le constructeur de maniere virtuelle et est specifique
+            virtual void Virtual_CloseEEF();
             // Au cas ou des inconnues ont ete modifiee,
             // remet a jour mSet.Alloc()
             void ReinitOnCur();
@@ -1110,9 +1113,15 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
                                 public cObjFormel2Destroy
 {
 	public  :
+
+           void AddCstrRegulDist(Pt2dr aP,double aPdsVal,double aPdsGrad,double aPdsD2);
+           void AddCstrRegulGlob(int aNbEch,double aPdsVal,double aPdsGrad,double aPdsD2,Im2D_REAL4 * aFoncPds=0);
+
+
            // certaine camera (par exe de type grid def) ont besoin de "changer l'état" des equations ou
            // elle interviennet notamment sur la numeroration  dans les inconnues des variable
            virtual void PrepareEqFForPointIm(const cIncListInterv &,cElCompiledFonc *,const Pt2dr &,bool EqDroite,int aKCam); 
+           void GenEqRegulDist();
 
            // Avant il y avait en dur :   mLInterv.AddInterv(mCam.PIF().IncInterv());
            // Pour prendre en compte les camera grilles avec des intervalles d'inconnues non connexes
@@ -1213,6 +1222,7 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
 	    // Ne fait pas "Close", doit etre fait pres construction
 	    // des derives, donc est fait par l'allocateur static
 	    // de cSetEqFormelles
+            virtual void Virtual_CloseEEF();
             cParamIntrinsequeFormel
 		    (
                          bool isDC2M,
@@ -1253,8 +1263,50 @@ class cParamIntrinsequeFormel : public cElemEqFormelle,
 	     double                     mTolAF1;
 	     double                     mTolAF2;
              ElProjStenopeGen<Fonc_Num> mProjStenF;
+
+             cP2d_Etat_PhgrF  *         mRegulDistDxyP1;
+             cP2d_Etat_PhgrF  *         mRegulDistDxyP2;
+             cP2d_Etat_PhgrF  *         mRegulDistDxyP3;
+             cP2d_Etat_PhgrF  *         mRegulDistDxyP4;
+
+             cP2d_Etat_PhgrF  *         mRegulDistDxxP1;
+             cP2d_Etat_PhgrF  *         mRegulDistDxxP2;
+             cP2d_Etat_PhgrF  *         mRegulDistDxxP3;
+
+/*
+             cP2d_Etat_PhgrF  *         mRegulDistDyyP1;
+             cP2d_Etat_PhgrF  *         mRegulDistDyyP2;
+             cP2d_Etat_PhgrF  *         mRegulDistDyyP3;
+*/
+
+             cP2d_Etat_PhgrF  *         mRegulDistDxP1;
+             cP2d_Etat_PhgrF  *         mRegulDistDxP2;
+             cP2d_Etat_PhgrF  *         mRegulDistKnownDer;
+
+/*
+             cP2d_Etat_PhgrF  *         mRegulDistDyP1;
+             cP2d_Etat_PhgrF  *         mRegulDistDyP2;
+*/
+
+             cP2d_Etat_PhgrF  *         mRegulDistValP1;
+             cP2d_Etat_PhgrF  *         mRegulDistKnownVal;
+
+             std::string                mNameRegDistDxDy;
+             std::string                mNameRegDistD2;  // Partage pour Dxx Dyy
+             std::string                mNameRegDistGrad;  // Partage pour Dx et Dy
+             std::string                mNameRegDistVal;  // Partage pour Dx et Dy
+
+             cElCompiledFonc *          mFER_DxDy; 
+             cElCompiledFonc *          mFER_Dxx; 
+             // cElCompiledFonc *          mFER_Dyy; 
+             cElCompiledFonc *          mFER_Dx; 
+             // cElCompiledFonc *          mFER_Dy; 
+             cElCompiledFonc *          mFER_Val; 
+             Im2D_REAL4                 mImPdsDef;
       private :
             virtual  Pt2d<Fonc_Num> VDist(Pt2d<Fonc_Num>,int aKCam);
+            cIncListInterv mLInterv;
+
 };
 
 // class cHomogFormelle;
@@ -1552,10 +1604,31 @@ class cPoint3DInc : public cNameSpaceEqF,
 };
 
 
-class cCameraFormelle :  public cNameSpaceEqF ,
+class cGenPDVFormelle : public cNameSpaceEqF ,
                          public cObjFormel2Destroy
 {
+    public :
+	  virtual const cBasicGeomCap3D * GPF_CurBGCap3D() const =0;
+	  virtual cBasicGeomCap3D * GPF_NC_CurBGCap3D() =0;
+	  virtual Pt2dr AddEqAppuisInc(const Pt2dr & aPIm,double aPds, cParamPtProj &,bool IsEqDroite)=0;
+	  virtual cIncListInterv & IntervAppuisPtsInc() =0; 
+
+          cGenPDVFormelle(cSetEqFormelles & aSet);
+          cSetEqFormelles & Set();
+
+    protected :
+          cSetEqFormelles &           mSet;
+    private :
+          cGenPDVFormelle(const cGenPDVFormelle &) ; // N.I.
+};
+
+
+
+class cCameraFormelle :  public cGenPDVFormelle
+{
      public :
+	  virtual const cBasicGeomCap3D * GPF_CurBGCap3D() const ;
+	  virtual       cBasicGeomCap3D * GPF_NC_CurBGCap3D() ;
           
           void PrepareEqFForPointIm(const cIncListInterv &,cElCompiledFonc *,const Pt2dr &,bool EqDroite,int aKCam);  // Transmet a Intrinseque
           ElAffin2D & ResiduM2C();
@@ -1582,10 +1655,11 @@ class cCameraFormelle :  public cNameSpaceEqF ,
           cRotationFormelle &       RF();
           cParamIntrinsequeFormel & PIF();
 
-          cSetEqFormelles & Set();
           const std::string & Name() const;
           eModeContrRot  ModeRot() const;
 	  void SetModeRot(eModeContrRot);
+
+
 
 	  // static void GenAllCode();
 
@@ -1688,7 +1762,6 @@ class cCameraFormelle :  public cNameSpaceEqF ,
           );
           cCameraFormelle   *         pCamAttach;
           cParamIntrinsequeFormel &   mIntr;
-          cSetEqFormelles &           mSet;
           cRotationFormelle *         mRot;
 	  std::string                 mName;
 

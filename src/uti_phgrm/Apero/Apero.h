@@ -37,6 +37,13 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 
+#ifndef _APERO_H_
+#define _APERO_H_
+#include "StdAfx.h"
+#include "cParamApero.h"
+#include "BundleGen.h"
+
+
 
 extern bool ResidualStepByStep ;
 
@@ -57,6 +64,7 @@ extern bool BugBestCam;
 
 class cCalibCam;
 class cAppliApero;
+class cGenPoseCam;
 class cPoseCam;
 class cObservLiaison_1Cple;
 class cPackObsLiaison;
@@ -72,6 +80,7 @@ class  cBdAppuisFlottant;
 typedef std::map<std::string,cCalibCam *> tDiCal;
 typedef std::map<std::string,const cCalibrationCameraInc *> tDiArgCab; // Pour gerer les calib/pose qui necessitent
 typedef std::map<std::string,cPoseCam *>  tDiPo;
+typedef std::map<std::string,cGenPoseCam *>  tDiPoGen;
 typedef std::map<std::string, cPackObsLiaison *> tDiLia;
 
 
@@ -93,6 +102,10 @@ class cClassEquivPose;
 class cRelEquivPose;
 
 class cImplemBlockCam;
+class cPoseCdtImSec;
+
+std::vector<cGenPoseCam *> ToVecGP(const std::vector<cPoseCam *> &);
+std::vector<cPoseCam *> ToVecDownCastPoseCamNN(const std::vector<cGenPoseCam *> &);
 
 /************************************************************/
 /*                                                          */
@@ -115,14 +128,14 @@ class cClassEquivPose
 {
     public :
         cClassEquivPose(const std::string & anId);
-        void AddAPose(cPoseCam *);
-        const std::vector<cPoseCam *> &   Grp() const;
+        void AddAPose(cGenPoseCam *);
+        const std::vector<cGenPoseCam *> &   Grp() const;
         const std::string & Id() const;
     private :
         cClassEquivPose(const cClassEquivPose &); // N.I.
 
         std::string               mId;
-        std::vector<cPoseCam *>   mGrp;
+        std::vector<cGenPoseCam *>   mGrp;
 };
 
 class cRelEquivPose
@@ -134,9 +147,9 @@ class cRelEquivPose
 
           const std::map<std::string,cClassEquivPose *> & Map() const;
           void Show();
-          cClassEquivPose &  ClassOfPose(const cPoseCam &);
+          cClassEquivPose &  ClassOfPose(const cGenPoseCam &);
 
-          bool SameClass(const cPoseCam &,const cPoseCam &);
+          bool SameClass(const cGenPoseCam &,const cGenPoseCam &);
       private :
           cRelEquivPose(const cRelEquivPose &); // N.I. 
 
@@ -202,6 +215,12 @@ class cCalibCam
         bool HasRayonMax() const;
         double RayonMax() const;
         void AddViscosite(const std::vector<double> & aTol);
+        void InitAvantCompens();
+        void AddPds(const Pt2dr & aPt,const double & aPds);
+        void Export(const std::string & aNameXml);
+        void PostFinCompens();
+
+
      protected :
         virtual ~cCalibCam();
 
@@ -229,6 +248,13 @@ class cCalibCam
         bool                            mFiged;
         double                          mPropDiagU;
         double                          mRay2Max;
+
+        double                          mReducPReg;
+        Pt2di                           mSzPReg;
+        Im2D_REAL4                      mImReg;
+        TIm2D<REAL4,REAL>               mTImReg;
+        double                          mSomNbReg;
+        double                          mSomPdsReg;
 };
 
 /*
@@ -312,7 +338,7 @@ class cAttrArcPose
         int    mNb;
 };
 
-typedef ElGraphe<cPoseCam*,cAttrArcPose> tGrApero;
+typedef ElGraphe<cGenPoseCam*,cAttrArcPose> tGrApero;
 
 class cCompileAOI
 {
@@ -323,11 +349,121 @@ class cCompileAOI
      std::vector<eTypeContraintePoseCamera> mCstr;
 };
 
-class cPoseCdtImSec;
 
-class cPoseCam
+class cGenPoseCam
+{
+    public :
+	  const std::string & Name() const;
+          cPoseCam * DownCastPoseCamNN();
+          const cPoseCam * DownCastPoseCamNN() const;
+          virtual cPoseCam * DownCastPoseCamSVP();
+          virtual const cPoseCam * DownCastPoseCamSVP() const;
+
+          virtual cGenPDVFormelle *  PDVF() = 0;
+          virtual const cGenPDVFormelle *  PDVF() const  = 0;
+          virtual cCalibCam *  CalibCam() const ;
+          cCalibCam *  CalibCamNN() const ;
+          int   & NumTmp(); // Entre autre dans bloc bascule
+
+          virtual const cBasicGeomCap3D * GenCurCam () const ;
+          virtual cBasicGeomCap3D * GenCurCam () ;
+          cPoseCdtImSec *  & CdtImSec();
+
+          virtual bool IsInZoneU(const Pt2dr & ) const;
+          virtual Pt3dr CurCentreOfPt(const Pt2dr & ) const;
+          virtual void Trace() const;
+          bool RotIsInit() const;
+          bool PreInit() const;
+          void ResetStatR();
+          void AddStatR(double aPds,double aRes);
+          void GetStatR(double & aSomP,double & aSomPR,double & aSom1) const;
+          const ElAffin2D &  OrIntM2C() const;
+          const ElAffin2D &  OrIntC2M() const;
+
+          void ResetPtsVu();
+          void AddPtsVu(const Pt3dr &);
+          const std::vector<Pt3dr> & PtsVu() const;
+          bool HasMasqHom() const;
+	  void    AddPMoy(const Pt2dr &aPIm,const Pt3dr & aP,double aBSurH,int aKPoseThis=-1,const std::vector<double> * =0,const std::vector<cGenPoseCam*>* =0);
+	  virtual void    VirtualAddPMoy(const Pt2dr &aPIm,const Pt3dr & aP,int aKPoseThis=-1,const std::vector<double> * =0,const std::vector<cGenPoseCam*>* =0);
+	  void    InitAvantCompens();
+	  virtual void    VirtualInitAvantCompens();
+	  bool    PMoyIsInit() const;
+	  Pt3dr   GetPMoy() const;
+	  double  SomPM() const;
+	  double   ProfMoyHarmonik() const;
+          int   NbPtsMulNN() const ;
+          void  SetNbPtsMulNN(int) ;
+          int                  &  NbPLiaisCur();
+          cAnalyseZoneLiaison  &  AZL();
+          double               &  QualAZL();
+          bool CanBeUSedForInit(bool OnInit) const;
+          void SetCurLayer(cLayerImage *);
+          cOneImageOfLayer * GetCurLayer();
+          void C2MCompenseMesureOrInt(Pt2dr &);
+          virtual bool AcceptPoint(const Pt2dr &) const;
+         void SetSom(tGrApero::TSom &);
+         tGrApero::TSom * Som();
+         virtual Pt2di SzCalib() const = 0;
+    protected :
+          cGenPoseCam(cAppliApero & anAppli,const std::string & aName);
+   
+          cAppliApero & mAppli;
+	  std::string   mName;
+          int           mNumTmp; // Entre autre dans bloc bascule
+          cPoseCdtImSec *              mCdtImSec;
+          bool                         mRotIsInit;
+          bool                         mPreInit;
+          double                       mStatRSomP;
+          double                       mStatRSomPR;
+          double                       mStatRSom1;
+          ElAffin2D                    mOrIntM2C;
+          ElAffin2D                    mOrIntC2M;
+          std::vector<Pt3dr>           mPtsVu;
+          Im2D_Bits<1> *               mMasqH;
+          TIm2DBits<1> *               mTMasqH;
+	  Pt3dr                        mPMoy;
+	  double                       mMoyInvProf;
+	  double                       mSomPM;
+          bool                         mLastEstimProfIsInit;
+          double                       mLasEstimtProf;
+          int                          mNbPtsMulNN;
+          int                          mNbPLiaisCur;
+          cAnalyseZoneLiaison          mAZL;
+          double                       mQualAZL;
+          cOneImageOfLayer *           mCurLayer;
+          tGrApero::TSom *             mSom;
+};
+
+
+class cPosePolynGenCam : public  cGenPoseCam
+{
+     public  :
+         cPosePolynGenCam(cAppliApero &,const std::string & aNameIma,const std::string & aDirOri);
+         virtual cGenPDVFormelle *  PDVF() ;
+         virtual const cGenPDVFormelle *  PDVF() const;
+         cPolynBGC3M2D_Formelle *   PolyF() ;
+         Pt2di SzCalib() const ;
+     private :
+         cPosePolynGenCam(const cPosePolynGenCam &); // N.I. 
+
+         std::string             mNameOri;
+         cPolynomial_BGC3M2D *   mCam;
+         cPolynBGC3M2D_Formelle  mCamF;
+};
+
+class cPoseCam : public cGenPoseCam
 {
      public :
+
+	 virtual void    VirtualAddPMoy(const Pt2dr & aPIm,const Pt3dr & aP,int aKPoseThis=-1,const std::vector<double> * =0,const std::vector<cGenPoseCam*> * =0);
+	 virtual void    VirtualInitAvantCompens();
+         virtual cPoseCam * DownCastPoseCamSVP();
+         virtual const cPoseCam * DownCastPoseCamSVP() const;
+         virtual cCalibCam *  CalibCam() const ;
+         virtual cGenPDVFormelle *  PDVF() ;
+         virtual const cGenPDVFormelle *  PDVF() const;
+         Pt2di SzCalib() const ;
 
        // Fonction relative a une camera eventuellement non ortho,
        // si active alors toute evolution est bloquee
@@ -342,12 +478,9 @@ class cPoseCam
          void AddMajick(cMajickChek &) const;
 
          bool IsId(const ElAffin2D & anAff) const;
-         const ElAffin2D &  OrIntM2C() const;
-         const ElAffin2D &  OrIntC2M() const;
          bool FidExist() const;
          bool AcceptPoint(const Pt2dr &) const;
 
-         cPoseCdtImSec *  & CdtImSec();
 /*
          double & MMNbPts();
          double & MMGainAng();
@@ -361,19 +494,12 @@ class cPoseCam
 */
 
 
-         void C2MCompenseMesureOrInt(Pt2dr &);
 
          void SetOrInt(const cTplValGesInit<cSetOrientationInterne> &);
-         void ResetStatR();
-         void AddStatR(double aPds,double aRes);
-          
-         void GetStatR(double & aSomP,double & aSomPR,double & aSom1) const;
          
 
          double Time() const;
          void Trace() const;
-         void SetSom(tGrApero::TSom &);
-         tGrApero::TSom * Som();
          static cPoseCam * Alloc
 	                   (
 			         cAppliApero &,
@@ -386,31 +512,25 @@ class cPoseCam
          const CamStenope * CurCam() const;
          CamStenope * NC_CurCam();
          CamStenope * DupCurCam() const;
+         const cBasicGeomCap3D * GenCurCam () const ;
+         cBasicGeomCap3D * GenCurCam () ;
          void DoInitIfNow();
 
-          cCalibCam * Calib();
+          cCalibCam * Calib() const;
 	  void SetContrainte(const cContraintesPoses &);
           void SetFigee();
           void SetDeFigee();
 	  cCameraFormelle * CamF();
 	  void ActiveContrainte(bool Stricte);
-	  const std::string & Name() const;
 	  double  AltiSol() const;
 	  double  Profondeur() const;
           double  GetProfDyn(int & Ok) const;
 
 
-	  void    InitAvantCompens();
-	  void    AddPMoy(const Pt3dr & aP,double aBSurH);
-	  bool    PMoyIsInit() const;
-	  Pt3dr   GetPMoy() const;
-	  double   ProfMoyHarmonik() const;
 
           void  ShowRel(const cTraceCpleCam &,const cPoseCam & aCam2) const;
 
          // Si true requiert une initialisation complete
-          bool CanBeUSedForInit(bool OnInit) const;
-          bool RotIsInit() const;
           int Prof2Init() const;
           void Set0Prof2Init();
           void UpdateHeriteProf2Init(const cPoseCam &) ;
@@ -426,6 +546,7 @@ class cPoseCam
           double & PdsTmpMST();
           ElRotation3D   CurRot() const;
           Pt3dr CurCentre() const;
+          Pt3dr CurCentreOfPt(const Pt2dr & ) const;
           void SetCurRot(const ElRotation3D & aRot);
           void  SetBascRig(const cSolBasculeRig & aSBR);
 
@@ -438,7 +559,6 @@ class cPoseCam
           void AssertImL() const;
           const Box2di & BoxIm();
           Im2D_U_INT2  Im();
-          bool     PreInit() const;
 
           bool HasObsOnCentre() const;
           bool LastItereHasUsedObsOnCentre() const;
@@ -458,34 +578,22 @@ class cPoseCam
                      cStatObs &
                );
 
-          cAnalyseZoneLiaison  &  AZL();
-          double               &  QualAZL();
-          int                  &  NbPLiaisCur();
 
           void BeforeCompens();
-          bool HasMasqHom() const;
           int  NumInit() const;
 
           std::string  CalNameFromL(const cLiaisonsInit & aLI);
 
           void SetNameCalib(const std::string &);
-          int   NbPtsMulNN() const ;
-          void  SetNbPtsMulNN(int) ;
           void  SetLink(cPoseCam * aPrec,bool OKLink);
 
           int  NumCreate() const;
 
-          void SetCurLayer(cLayerImage *);
-          cOneImageOfLayer * GetCurLayer();
           bool IsInZoneU(const Pt2dr & ) const;
           int   NbPosOfInit(int aValDef);
           void  SetNbPosOfInit(int);
 
-          int   & NumTmp(); // Entre autre dans bloc bascule
 
-          void ResetPtsVu();
-          void AddPtsVu(const Pt3dr &);
-          const std::vector<Pt3dr> & PtsVu() const;
           cEqOffsetGPS *   EqOffsetGPS();
      private  :
 
@@ -508,9 +616,9 @@ class cPoseCam
 
 	  static int                theCpt;
 
-          cAppliApero &             mAppli;
+          // cAppliApero &             mAppli;
 	  std::string               mNameCalib;
-	  std::string               mName;
+	  // std::string               mName;
 	  int                       mCpt;  // Compteur de date de creation
           // 0 si direct (appuis,BDD, ) sinon 1 + Prof de la pose de base
           int                       mProf2Init;
@@ -529,13 +637,8 @@ class cPoseCam
 	  double                       mAltiSol;
 	  double                       mProfondeur;
           double                       mTime;
-	  Pt3dr                        mPMoy;
-	  double                        mMoyInvProf;
-	  double                       mSomPM;
 	  int                          mPrioSetAlPr;
-          bool                         mRotIsInit;
           const cContraintesPoses *    mLastCP;
-          tGrApero::TSom *             mSom;
           cCompileAOI *                mCompAOI;
 
           bool                         mFirstBoxImSet;
@@ -543,36 +646,22 @@ class cPoseCam
           Box2di                       mBoxIm;
           Im2D_U_INT2                  mIm;
           TIm2D<U_INT2,INT>            mTIm;
-          Im2D_Bits<1> *               mMasqH;
-          TIm2DBits<1> *               mTMasqH;
-          bool                         mPreInit;
 
           cObsCentre                   mObsCentre;
           bool                         mHasObsOnCentre;
           bool                         mHasObsOnVitesse;
           bool                         mLastItereHasUsedObsOnCentre;
 
-          int                          mNumTmp; // Entre autre dans bloc bascule
           // Pour qualifier les Pack Pts Mul
-          cAnalyseZoneLiaison          mAZL;
-          double                       mQualAZL;
-          int                          mNbPLiaisCur;
 
           // Ensemble des poses a centre comun 
           int                          mNumInit;
-          int                          mNbPtsMulNN;
           int                          mNumBande;
           cPoseCam *                   mPrec;  
           cPoseCam *                   mNext;
 
           int                          mNumCreate; // Pour conserver l'ordre de creation
           // Ensemble des poses liees par des equations de liaison
-          double                       mStatRSomP;
-          double                       mStatRSomPR;
-          double                       mStatRSom1;
-          cOneImageOfLayer *           mCurLayer;
-          ElAffin2D                    mOrIntM2C;
-          ElAffin2D                    mOrIntC2M;
           int                          mNbPosOfInit;
    // Parametres lies aux export pour MicMac (en fait de maniere + generale
    // a la gestion du canevas)
@@ -591,10 +680,6 @@ class cPoseCam
 
           bool                         mFidExist;
 
-          std::vector<Pt3dr>           mPtsVu;
-          bool                         mLastEstimProfIsInit;
-          double                       mLasEstimtProf;
-          cPoseCdtImSec *              mCdtImSec;
           CamStenope *                 mCamNonOrtho;
           cEqOffsetGPS *               mEqOffsetGPS;
 };
@@ -703,7 +788,7 @@ class cOneAppuiMul
      public :
       
          cOneAppuiMul(const Pt3dr & aPTer,int aNum);
-         void AddPt(cPoseCam *,const Pt2dr & aPIm);
+         void AddPt(cGenPoseCam *,const Pt2dr & aPIm);
 
          const Pt3dr & PTer() const;
          Pt3dr  PInter() const;
@@ -712,7 +797,7 @@ class cOneAppuiMul
          Pt3dr   mPTer;
          //int     mNum;
          std::vector<double>      mVPds;
-         std::vector<cPoseCam *>  mPoses;
+         std::vector<cGenPoseCam *>  mPoses;
          cNupletPtsHomologues     mPt;
 };
 
@@ -866,28 +951,28 @@ class cOneCombinMult
         cOneCombinMult
 	(
 	       cSurfInconnueFormelle  *        anEqS,
-	       const std::vector<cPoseCam *> & aVP,
-	       const std::vector<cCameraFormelle *>  & aVCF ,
+	       const std::vector<cGenPoseCam *> & aVP,
+	       const std::vector<cGenPDVFormelle *>  & aVCF ,
 	       const tFixedSetInt &                    aFlag
         );
 	cManipPt3TerInc * LiaisTer();
 	const std::vector<int> & NumCams();
-	const std::vector<cPoseCam *> & VP();
+	const std::vector<cGenPoseCam *> &  GenVP();
         //
         // Renvoie -1 si pas trouve
-        int IndOfPose(cPoseCam *) const;
-        cPoseCam *  Pose0() const;
-        cPoseCam *  PoseK(int aK) const;
+        int IndOfPose(cGenPoseCam *) const;
+        cGenPoseCam *  GenPose0() const;
+        cGenPoseCam *  GenPoseK(int aK) const;
         void AddLink(cAppliApero &);
     private :
 	 cManipPt3TerInc  * mPLiaisTer;
 	 std::vector<int>   mNumCams;
-	 std::vector<cPoseCam *>  mVP;
+	 std::vector<cGenPoseCam *>  mGenVP;
 };
 
 Pt3dr TestInterFaisceaux
       (
-           const std::vector<cPoseCam *> & aVC,
+           const std::vector<cGenPoseCam *> & aVC,
            const cNupletPtsHomologues  &   aNPt,
            double                          aSigma,
            bool                            Show
@@ -897,7 +982,7 @@ Pt3dr TestInterFaisceaux
 Pt3dr InterFaisceaux
       (
            const std::vector<double> & aVPds,
-           const std::vector<cPoseCam *> & aVC,
+           const std::vector<cGenPoseCam *> & aVC,
            const cNupletPtsHomologues  &   aNPt
       );
 
@@ -937,9 +1022,9 @@ class cOnePtsMult
 
 
         // Renvoie -1 si pas trouve
-        int IndOfPose(cPoseCam *) const;
-        cPoseCam *  Pose0() const;
-        cPoseCam *  PoseK(int aK) const;
+        int IndOfPose(cGenPoseCam *) const;
+        cGenPoseCam *  GenPose0() const;
+        cGenPoseCam *  GenPoseK(int aK) const;
 
          double & MemPds() ;
          Pt3dr  & MemPt() ;
@@ -982,12 +1067,12 @@ class cOneElemLiaisonMultiple
      public :
         cOneElemLiaisonMultiple(const std::string & aNameCam);
 	const std::string & NameCam();
-	cPoseCam * Pose();
+	cGenPoseCam * GenPose();
 	void  Compile(cAppliApero &);
 
      private :
-         std::string  mNameCam;
-	 cPoseCam *   mPose;
+         std::string     mNameCam;
+	 cGenPoseCam *   mGenPose;
 };
 
 class cStatObs
@@ -1121,7 +1206,7 @@ class cObsLiaisonMultiple
                         const cRapOnZ *
 		 );
 	  double BasicAddObsLM(const cPonderationPackMesure & aPond,cStatObs &,const cRapOnZ *);
-          void CheckInit();
+          void OLMCheckInit();
 
 
 
@@ -1140,9 +1225,9 @@ class cObsLiaisonMultiple
                             const cNupletPtsHomologues    &   aNuple
                         );
 
-          int IndOfCam(const cPoseCam *) const;
+          int IndOfCam(const cGenPoseCam *) const;
           void CompilePose();
-          cPoseCam *  Pose1() const;
+          cGenPoseCam *  Pose1() const;
 
           int  NbRotPreInit() const;
 
@@ -1187,7 +1272,7 @@ class cObsLiaisonMultiple
 
           std::vector<cOnePtsMult *>                 mVPMul;
           bool                                       mCompilePoseDone;
-          cPoseCam *                                 mPose1;
+          cGenPoseCam *                              mPose1;
 // Pour l'instant inutile, mais qd les points multiples seront partages
 // entre les images, il conviendra de gerer un numero variable;
 // c'est plutot un tag pour a partir de maintenant reperer les references
@@ -1207,6 +1292,11 @@ typedef enum
   eModeAGPNoPoint
 } eModeAGP;
 
+typedef enum
+{
+   eTGC_CS,
+   eTGC_Gen
+} eTypeGenCam;
 
 extern const  double mAGPFactN;
 class cArgGetPtsTerrain
@@ -1221,7 +1311,7 @@ class cArgGetPtsTerrain
                    double aPds,
                    bool aUseImRed,
                    const std::vector<double> * aVPds = 0,
-                   const std::vector<cPoseCam *> * aVPose=0
+                   const std::vector<cGenPoseCam *> * aVPose=0
 
                     
                );
@@ -1449,7 +1539,7 @@ class cOneAppuisFlottant
        cManipPt3TerInc *       mMP3TI;
        std::vector<Pt2dr>      mPts;
        std::vector<double>     mPdsIm;
-       std::vector<cPoseCam *> mCams;
+       std::vector<cGenPoseCam *> mCams;
        std::vector<bool>       mIsDroite;
        bool mHasGround;
        Pt3dr mPt;
@@ -1869,9 +1959,11 @@ class cCompiledObsRelGPS
 class cAppliApero : public NROptF1vND
 {
     public :
+        void AddEcPtsFlot(const Pt3dr &) ;
 
-       void DebugPbConvAppui();
-        cXmlSauvExportAperoOneIter & CurXmlE();
+        void AddStatCam(cGenPoseCam *,double aRes,double aPerc);
+        void DebugPbConvAppui();
+        cXmlSauvExportAperoOneIter & CurXmlE(bool SVP=false);
 
         int  NumSauvAuto() const {return  mNumSauvAuto;}
         bool NumIterDebug() const;
@@ -1900,9 +1992,18 @@ class cAppliApero : public NROptF1vND
 
 	bool  CalibExist(const std::string &);
 	cCalibCam * CalibFromName(const std::string &,cPoseCam * );
+
 	cPoseCam *  PoseFromName  (const std::string &);
 	cPoseCam *  PoseFromNameSVP  (const std::string &);
-	cPoseCam *  PoseFromNameGen  (const std::string &,bool SVP);
+	cGenPoseCam *  PoseGenFromName  (const std::string &);
+	cGenPoseCam *  PoseGenFromNameSVP  (const std::string &);
+	// cPoseCam *  PoseFromNameGen  (const std::string &,bool SVP);
+
+
+        // :0 = > Stenope , 2 Gen ,
+	cPoseCam *     PoseCSFromNameGen  (const std::string &,bool SVP);
+	cGenPoseCam *  PoseGenFromNameGen  (const std::string &,bool SVP);
+
 	bool   PoseExist  (const std::string &);
         //  cSurfParam * SurfIncFromName(const std::string &);
 
@@ -1959,7 +2060,9 @@ class cAppliApero : public NROptF1vND
 	// Verifie qu'il n'existe pas et la rajoute
 	void NewSymb(const std::string &);
 
-	bool NamePoseIsKnown(const std::string &) const;
+	bool NamePoseGenIsKnown(const std::string &) const;
+	bool NamePoseCSIsKnown(const std::string &) const;
+
         const std::string &  DC() const;
         const std::string &  OutputDirectory() const;
         bool  HasEqDr() const;
@@ -2029,9 +2132,7 @@ class cAppliApero : public NROptF1vND
         void  NormaliseScTr(CamStenope &);
         std::vector<cPoseCam *> ListPoseOfPattern(const std::string & aPat);
 
-        void AddLinkCam(cPoseCam *,cPoseCam *);
-        void AddLinkCal(cCalibCam  *,cCalibCam  *);
-        void AddLinkCamCal(cPoseCam *,cCalibCam  *);
+        void AddLinkCamCam(cGenPoseCam *,cGenPoseCam *);
 
         void SplitHomFromImageLayer(const std::string &, const cSplitLayer &,const std::string &,const std::string &);
 
@@ -2048,14 +2149,22 @@ class cAppliApero : public NROptF1vND
        void TestInteractif(const cTplValGesInit<cTestInteractif> & aTTI,bool Avant);
        void TestF2C2();
 
-       bool SameClass(const std::string&,const cPoseCam & aPC1,const cPoseCam & aPC2);
+       bool SameClass(const std::string&,const cGenPoseCam & aPC1,const cGenPoseCam & aPC2);
 
 
 
        void CheckInit(const cLiaisonsInit * ,cPoseCam *);
        bool SqueezeDOCOAC() const;  
        cAperoOffsetGPS *  OffsetNNOfName(const std::string &);
+       const cXmlSLM_RappelOnPt *  XmlSMLRop();
+       cArg_UPL                    ArgUPL();
+
+       bool   UsePdsCalib();
+       const cXmlPondRegDist * CurXmlPondRegDist();
     private :
+
+       void SetPdsRegDist(const cXmlPondRegDist *);
+
 
        // Active uniquement si  mFileDebug != 0
        void AddAllMajick(int aLine,const std::string & aFile,const std::string & aMes);
@@ -2150,6 +2259,9 @@ class cAppliApero : public NROptF1vND
 	void InitObsRelGPS ();
 	void InitPoses();
 	void InitSurf();
+        void InitGenPoses();
+        void InitGenPoses(const cCamGenInc&);
+
 
          void CompileObsersvations();
          void CompileLiaisons();
@@ -2191,7 +2303,7 @@ class cAppliApero : public NROptF1vND
 	                    
 
 	void InitOneSurfParam(const cSurfParamInc &);
-        void DoOneEtapeCompensation(const cEtapeCompensation &);
+        void DoOneEtapeCompensation(const cEtapeCompensation &,bool LastEtape);
 
 
         void DoOneContraintesAndCompens
@@ -2204,7 +2316,8 @@ class cAppliApero : public NROptF1vND
              (
                     const cEtapeCompensation & anEC,
                     const cIterationsCompensation &  anIter,
-                    bool IsLastIter
+                    bool IsLastIter,
+                    bool IsLastEtape
              );
 
 
@@ -2259,6 +2372,9 @@ class cAppliApero : public NROptF1vND
         void AddObservationsRigidBlockCam(const cObsBlockCamRig &,bool IsLastIter,cStatObs & aSO);
         void AddObservationsRigidBlockCam(const std::list<cObsBlockCamRig> &,bool IsLastIter,cStatObs & aSO);
 
+        void AddObservationsContrCamGenInc(const std::list<cContrCamGenInc> &,bool IsLastIter,cStatObs & aSO);
+        void AddObservationsContrCamGenInc(const cContrCamGenInc &,bool IsLastIter,cStatObs & aSO);
+
         double AddAppuisOnePose
               (
                  const cObsAppuis &,cObserv1Im<cTypeEnglob_Appuis> *,
@@ -2294,7 +2410,8 @@ class cAppliApero : public NROptF1vND
                     const cSetOfMesureAppuisFlottants & aMAF,
                     const std::string & aNamePt,
                     const cElPlan3D  * aPlan,
-                    const std::string & aNameSec=""
+                    const std::string & aNameSec="",
+                    const Pt3dr * aPDef  = 0
               );
 
         ElSeg3D   PointeMono2Seg(const cAperoPointeMono &) ;
@@ -2308,7 +2425,7 @@ class cAppliApero : public NROptF1vND
                 const cCartes2Export &              aC,
                 cElNuage3DMaille *                  aNuage,
                 const ElPackHomologue &             aPackH,
-                cPoseCam *                          aPose,
+                cGenPoseCam *                          aPose,
                 const std::string &                 aName
              );
 
@@ -2374,6 +2491,9 @@ class cAppliApero : public NROptF1vND
 	tDiCal mDicoCalib;
         tDiArgCab mDicoArgCalib; // Pour gerer les calib/pose qui necessitent
                                                                      // une initialisation differeee
+        std::vector<cGenPoseCam*> mVecGenPose;
+
+        std::vector<cPosePolynGenCam*> mVecPolynPose;
         std::vector<cPoseCam*> mVecPose;
         std::vector<cPoseCam*> mTimeVP; // Triee selon le temps
 
@@ -2383,8 +2503,9 @@ class cAppliApero : public NROptF1vND
     // (lorsque l'on recherche  a affiner les pts mul par re-correl)
         std::vector<cPoseCam*> mVecLoadedPose;
 
-	tDiPo mDicoPose;
-	tDiPo mDPByNum;
+	tDiPo    mDicoPose;
+	tDiPoGen mDicoGenPose;
+	tDiPo    mDPByNum;
 
         tDiLia  mDicoLiaisons;
         std::map<std::string,tPackAppuis *> mDicoAppuis;
@@ -2429,12 +2550,11 @@ class cAppliApero : public NROptF1vND
 
         std::map<std::string,cCompFilterProj3D *> mMapFilters;
 
-        std::set<std::pair<cPoseCam *,cPoseCam *> > mSetLinkedCam;
-        std::set<std::pair<cPoseCam *,cCalibCam *> > mSetLinkedCamCal;
-        std::set<std::pair<cCalibCam *,cCalibCam *> > mSetLinkedCal;
+        std::set<std::pair<cGenPoseCam *,cGenPoseCam *> > mSetLinkedCamCam;
 
         const cEtapeCompensation * mCurEC;
         bool                       mIsLastIter;
+        bool                       mIsLastEtape;
         double                     mScoreLambda0;
         double                     mScoreLambda1;
 
@@ -2471,12 +2591,33 @@ class cAppliApero : public NROptF1vND
              // flag utilise lorque l'on a utilise ori non ortho
         int                                    mSqueezeDOCOAC;  
         cXmlSauvExportAperoGlob                mXMLExport;
+        const cXmlSLM_RappelOnPt *             mXmlSMLRop;
+        const cXmlPondRegDist *                mCurXmlPondRegDist;
+
+        
+    public :
+         double                                mWorstRes;
+         double                                mWorstPerc;
+         cGenPoseCam *                         mPoseWorstRes;
+         cGenPoseCam *                         mPoseWorstPerc;
+
+         // Stat sur les Pts flottants 
+         double mNbPtsFlot;
+         double mMaxDistFlot;
+         double mSomDistFlot;
+         Pt3dr  mSomEcPtsFlot;
+         Pt3dr  mSomAbsEcPtsFlot;
+         Pt3dr  mMaxAbsEcPtsFlot;
+
 };
 
 
 
 
 #define ADDALLMAJ(aMes) AddAllMajick(__LINE__,__FILE__,aMes)
+
+#endif //  _APERO_H_
+
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

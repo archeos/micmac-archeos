@@ -130,8 +130,8 @@ class cImage
 
         void SetSPIM(cSaisiePointeIm * aSPIM);
         Tiff_Im &  Tif() const;
-        cCapture3D *       Capt3d();
-        ElCamera *         CaptCam();
+        cBasicGeomCap3D *       Capt3d();
+        ElCamera *         ElCaptCam();
         cElNuage3DMaille * CaptNuage();
         void AddAImPointe(cOneSaisie *,cSP_PointGlob *,bool FromFile);
         const std::string & Name() const;
@@ -167,9 +167,9 @@ class cImage
 
            std::string                               mName;
            mutable Tiff_Im *                         mTif;
-           cCapture3D *                              mCapt3d;
+           cBasicGeomCap3D *                         mCapt3d;
            // mCapt3d est l'un ou l'autre
-           ElCamera *                                mCaptCam;
+           ElCamera *                                mCaptElCam;
            cElNuage3DMaille *                        mCaptNuage;
            cSaisiePointeIm *                         mSPIm;
            std::map<std::string,cSP_PointeImage *>   mPointes; //map (nom point, pointe image)
@@ -372,6 +372,8 @@ class cVirtualInterface
     virtual void        Warning(std::string)=0;
 
     cCaseNamePoint *    GetCaseNamePoint(string name);
+
+    bool                DeleteCaseNamePoint(string name);
 
     void OUT_Map();
 protected:
@@ -602,14 +604,15 @@ private :
 
 
          void InitImages();
-         void InitImages(const std::string &);
+         // Deuxieme nom pour assurer la compat avec existant
+         void InitImages(const std::string & aN1,const std::string & aN2,const std::string & aNameS2D);
 
          void InitInPuts();
          void AddOnePGInImage(cSP_PointGlob * aSPG,cImage & anI,bool WithP3D,const Pt3dr & aP3d,bool InMasq3D);
 
 
          void InitPG();
-         void InitPG(const std::string &);
+         void InitPG(const std::string & aN1,const std::string & aN2);
          void InitPointeIm();
 
          cParamSaisiePts &                     mParam;
@@ -617,6 +620,10 @@ private :
 
          cInterfChantierNameManipulateur *     mICNM;
          std::string                           mDC;
+         std::string                           mDirTmp;
+         std::string                           mPrefSauv;
+         std::string                           mSauv2D;
+         std::string                           mSauv3D;
          std::vector<cImage *>                 mImagesVis;
          std::vector<cImage *>                 mImagesTot;
          std::map<std::string,cImage *>        mMapNameIms;
@@ -651,6 +658,8 @@ private :
 
          std::vector<std::string>          mGlobLInputSec;
          std::vector<std::string>          mPtImInputSec;
+
+         static const std::string          TheTmpSaisie;
 };
 
 

@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 std::vector<cRecorrel*> RC2VCR(cRecorrel & aRC)
@@ -86,7 +87,7 @@ cRecorrel::cRecorrel
            mBox._p1.SetSup(aP);
        }
    }
-   mNbPts =  mPInit.size();
+   mNbPts =  (int)mPInit.size();
    int  aSzK = mInterp->SzKernel()+1;
    Pt2dr aPSzK(aSzK,aSzK);
    mBox._p0 = mBox._p0-aPSzK;

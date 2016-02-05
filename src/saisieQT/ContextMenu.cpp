@@ -17,7 +17,6 @@ void ContextMenu::createContextMenuActions()
     connect(_ThisP,             SIGNAL(triggered()),   _switchSignalMapper, SLOT(map()));
 
     _switchSignalMapper->setMapping (_AllW,  eAllWindows);
-    _switchSignalMapper->setMapping (_RollW, eRollWindows);
     _switchSignalMapper->setMapping (_ThisW, eThisWindow);
     _switchSignalMapper->setMapping (_ThisP, eThisPoint);
 

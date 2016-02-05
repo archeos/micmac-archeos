@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 #if ELISE_windows
 #include <iterator>
@@ -89,12 +90,58 @@ void cAppliApero::InitCalibCam()
     
 void cAppliApero::InitPoses()
 {
-   CompileInitPoseGen(false);
+    CompileInitPoseGen(false);
 }
+
+void cAppliApero::InitGenPoses()
+{
+    for (std::list<cCamGenInc>::const_iterator itCG=mParam.CamGenInc().begin() ; itCG!=mParam.CamGenInc().end() ; itCG++)
+    {
+          InitGenPoses(*itCG);
+    }
+}
+
+void  cAppliApero::InitGenPoses(const cCamGenInc& aCGI)
+{
+     std::list<std::string> aLName  = mICNM->StdGetListOfFile(aCGI.PatterName()->NameExpr(),1,aCGI.ErrorWhenEmpytPat().Val());
+
+
+    for (std::list<std::string>::const_iterator itN=aLName.begin() ; itN!=aLName.end() ; itN++)
+    {
+
+         // std::string aNameOri = DC() + "Ori" + aCGI.Orient()  +"/Orientation-" + *itN + ".xml";
+         std::string aNameOri = DC() + StdNameCSOrient(aCGI.Orient(),*itN ,false);
+
+         if ((!ELISE_fp::exist_file(aNameOri)) || (!mParam.StenCamSupresGBCam().Val()))
+         {
+             if (! ELISE_fp::exist_file(StdNameGBOrient(aCGI.Orient(),*itN ,false)))
+             {
+                 if (aCGI.ErrorWhenNoFileOrient().Val())
+                 {
+                      std::cout <<  "For ori=" << aCGI.Orient() << " Ima=" << *itN << "\n";
+                      ELISE_ASSERT(false,"No file for required GB orient");
+                 }
+             }
+             else
+             {
+                 cPosePolynGenCam * aPPGC = new cPosePolynGenCam(*this,*itN,aCGI.Orient());
+                 mVecPolynPose.push_back(aPPGC);
+                 mVecGenPose.push_back(aPPGC);
+                 mDicoGenPose[*itN] = aPPGC;
+             }
+         }
+
+    }
+
+}
+
+
+
 
 void cAppliApero::PreCompilePose()
 {
    CompileInitPoseGen(true);
+   InitGenPoses();
 }
 
 
@@ -238,8 +285,8 @@ void cAppliApero::CompileInitPoseGen(bool isPrecComp)
                   if((aFilter==0) || (aFilter->Match(*aNewN)))
                   {
                      bool isNew = isPrecComp                          ?
-                                  (! NamePoseIsKnown(*aNewN))         :
-                                  (      (NamePoseIsKnown(*aNewN))
+                                  (! NamePoseCSIsKnown(*aNewN))         :
+                                  (      (NamePoseCSIsKnown(*aNewN))
                                      &&  (! PoseFromName(*aNewN)->PreInit()) 
                                   );
                      if (isNew)
@@ -338,6 +385,38 @@ void cAppliApero::CompileInitPoseGen(bool isPrecComp)
            aLName = aNewL;
         }
 
+
+        // On regarde si il existe un nom bundle gen
+        {
+             std::list<std::string> aNewL;
+	     for 
+	     (
+	        std::list<std::string>::const_iterator itS=aLName.begin();
+	        itS != aLName.end();
+	        itS++
+	     )
+             {
+                 bool ExistFileGB = false;
+                 for (std::list<cCamGenInc>::const_iterator itGC=mParam.CamGenInc().begin();itGC!=mParam.CamGenInc().end();itGC++)
+                 {
+                     if (itGC->PatterName()->Match(*itS) && ELISE_fp::exist_file(StdNameGBOrient(itGC->Orient(),*itS,false)))
+                        ExistFileGB = true;
+
+/*
+                     std::string aNameOri = DC() + "Ori" + itGC->Orient()  +"/GB-Orientation-" + *itS + ".xml";
+                     if (ELISE_fp::exist_file(aNameOri))
+                        ExistFileGB = true;
+*/
+
+                 }
+                 if ((!ExistFileGB) || ( !mParam.GBCamSupresStenCam().Val()))
+                 {
+                      aNewL.push_back(*itS);
+                 }
+             }
+            aLName = aNewL;
+        }
+
         if (isPrecComp)
         {
            cCompileAOI * aCAOI =  
@@ -417,9 +496,11 @@ void cAppliApero::CompileInitPoseGen(bool isPrecComp)
               {
 	          cPoseCam * aPC = cPoseCam::Alloc(*this,*itP,*itS,aNameCal,aCAOI);
 	          mDicoPose[*itS] = aPC;
+	          mDicoGenPose[*itS] = aPC;
                   mVecPose.push_back(aPC);
-                  tGrApero::TSom & aSom = mGr.new_som(aPC);
-                  aPC->SetSom(aSom);
+                  mVecGenPose.push_back(aPC);
+                  // tGrApero::TSom & aSom = mGr.new_som(aPC);
+                  // aPC->SetSom(aSom);
                   if (! isMST)
                      aPC->InitCpt();
 

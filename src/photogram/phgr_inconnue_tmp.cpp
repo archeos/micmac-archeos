@@ -450,7 +450,7 @@ void cEqfBlocIncTmp::CloseEBI()
 
 cElemEqFormelle::tContFcteur  cEqfBlocIncTmp::FctrRap(const double * aVal)
 {
-   return FoncRapp(0,mIncTmp.size(),aVal);
+   return FoncRapp(0, (int)mIncTmp.size(), aVal);
 }
 
 /*
@@ -480,12 +480,23 @@ cEqfP3dIncTmp::cEqfP3dIncTmp
 {
 }
 
-void cEqfP3dIncTmp::InitVal(const Pt3dr & aP)
+void cEqfP3dIncTmp::InitEqP3iVal(const Pt3dr & aP)
 {
    mIncTmp[0]->SetVal(aP.x);
    mIncTmp[1]->SetVal(aP.y);
    mIncTmp[2]->SetVal(aP.z);
 }
+
+Pt3dr  cEqfP3dIncTmp::GetEqP3iVal() const
+{
+   return Pt3dr
+          (
+              mIncTmp[0]->Val(),
+              mIncTmp[1]->Val(),
+              mIncTmp[2]->Val()
+          );
+}
+
 
 Pt3d<Fonc_Num> cEqfP3dIncTmp::PF()
 {
@@ -502,7 +513,7 @@ cElemEqFormelle::tContFcteur  cEqfP3dIncTmp::FctrRap(const Pt3dr & aP)
 {
    double aV[3];
    aP.to_tab(aV);
-   return FoncRapp(0,mIncTmp.size(),aV);
+   return FoncRapp(0, (int)mIncTmp.size(), aV);
 }
 
 
@@ -585,10 +596,11 @@ cBufSubstIncTmp * cBufSubstIncTmp::TheBuf()
 }
 
 
-static double aMaxCond = 1e4;
-static double aSomCond = 0;
-static double aNbCond = 0;
-static double aNb100 = 0;
+double aSeuilCond = 1e20;
+double aGlobMaxCond = 0;
+double aSomCond = 0;
+double aNbCond = 0;
+double aNb100 = 0;
 
 double aSeuilMaxCondSubstFaiseau =  1e60;
 
@@ -605,7 +617,7 @@ void ShowStatCondFaisceau(bool aShowVect)
      if (!ShowStatMatCond) return;
 
 
-     std::cout << "Cond = " << aMaxCond  
+     std::cout << "Cond = " << aGlobMaxCond  
                << "  Moy = " << (aSomCond/aNbCond) 
                << "  SupS = " << (double(aNb100)/double(aNbCond))
                << " CptUPL=" << CptUPL
@@ -658,6 +670,28 @@ void ShowM3(const ElMatrix<tSysCho> & aM,const std::string & aMes)
       }
 }
 
+double CondMat(ElMatrix<tSysCho> & aMat,bool Sym3,bool SSym)
+{
+   double aCond = aMat.L2();
+   if (Sym3)
+   {
+       tSysCho ** aDL =aMat.data();
+       cMSymCoffact3x3<tSysCho>   aCf(aDL);
+       aCf.CoffSetInv(aDL);
+   }
+   else
+   {
+      if (SSym)
+      {
+          aMat.SymetriseParleBas();
+      }
+      self_gaussj(aMat);
+   }
+
+   aCond *=  aMat.L2();
+   aCond = sqrt(aCond) / (aMat.tx() * aMat.ty());
+   return aCond;
+}
 
 double cBufSubstIncTmp::DoSubst
      (  // X et Y notation de la doc, pas ligne ou colonnes
@@ -667,7 +701,8 @@ double cBufSubstIncTmp::DoSubst
           const int                     aNbBloc,
           //   const std::vector<int> &  ,//aVX,
           //   const std::vector<int> &  ,// aVY,
-          bool                     doRaz
+          bool                     doRaz,
+          double                   aLimCond
      )
 {
 
@@ -683,10 +718,6 @@ if(DebugCamBil)
   getchar();
 }
    cGenSysSurResol & aSys =  *(aSet->Sys());
-/*
-*/
-  // ELISE_ASSERT(aNbBloc==int(aVY.size()),"Sz inc in cBufSubstIncTmp::DoSubst");
-   // Resize(aSet,aVX.size(),aVY.size());
    int aNbX = aX_SBlTmp[0].Nb();
    Resize(aSet,aNbX,aNbBloc);
 
@@ -706,6 +737,7 @@ if(DebugCamBil)
    ElMatrix<tSysCho> aSauvL  = mLambda;
 
    double aCond = mLambda.L2();
+   double aNormL2 = aCond;
    if (Sym3)
    {
        tSysCho ** aDL =mLambda.data();
@@ -724,14 +756,30 @@ if(DebugCamBil)
 
    aCond *=  mLambda.L2();
    aCond = sqrt(aCond) / (mLambda.tx() * mLambda.ty());
+
+   if ((aLimCond>0)  && (aCond>aLimCond))
+   {
+      aNormL2 = sqrt(aNormL2/(mLambda.tx() * mLambda.ty()));
+      double aPds = (aCond-aLimCond) / aCond;
+      aSauvL = aSauvL + ElMatrix<tSysCho>(mLambda.tx(),true) * ((aNormL2/(2*aLimCond)) * aPds);
+      double 	aC2 =  CondMat(aSauvL,Sym3,SSym);
+      if (0)
+      {
+          std::cout << "CooooooNnndd " << aC2  << " " << aCond << "\n";
+      }
+      mLambda = aSauvL;
+      // double aCond = mLambda.L2();
+   }
+
    aSomCond += aCond;
    aNbCond++;
    if(aCond> 100)
      aNb100++;
-   if (aCond> aMaxCond)
+   if (aCond> aGlobMaxCond)
    {       
-      aMaxCond = aCond;
-      ShowStatCondFaisceau(false);
+      aGlobMaxCond = aCond;
+      if (aCond> aSeuilCond)
+         ShowStatCondFaisceau(false);
    }
 //   if (DebugPbCondFaisceau) { aVBSurH.push_back(aCond); }
 
@@ -833,12 +881,19 @@ void cSubstitueBlocIncTmp::AddInc(const cIncListInterv & anILI)
           if (mVSBlTmp[0].I0AbsAlloc()<aSB.I1AbsAlloc())
           {
 
-                // std::cout << " HHHHHhhhh " << mVSBlTmp[0].I0AbsAlloc() << " " << aSB.I1AbsAlloc() << "\n";
-                ELISE_ASSERT
-                (
-                     mVSBlTmp[0].I0AbsAlloc()>=aSB.I1AbsAlloc(),
-                     "cSubstitueBlocIncTmp::AddInc recouvrement / TMP "
-                );
+                if ( mVSBlTmp[0].I0AbsAlloc()<aSB.I1AbsAlloc())
+                {
+                    std::cout << " BasOrderInterval Tmp:" 
+                              << mVSBlTmp[0].I0AbsAlloc() 
+                              << " - " << mVSBlTmp[0].I1AbsAlloc() 
+                              << " NoTmp " << aSB.I0AbsAlloc() 
+                              << "  " << aSB.I1AbsAlloc() << "\n";
+                    ELISE_ASSERT
+                    (
+                         mVSBlTmp[0].I0AbsAlloc()>=aSB.I1AbsAlloc(),
+                         "cSubstitueBlocIncTmp::AddInc recouvrement / TMP "
+                    );
+                }
           }
       }
 
@@ -910,14 +965,15 @@ void cSubstitueBlocIncTmp::RazNonTmp()
 }
     
 
-void cSubstitueBlocIncTmp::DoSubst(bool doRaz)
+void cSubstitueBlocIncTmp::DoSubst(bool doRaz,double LimCond)
 {
 
    mCond = cBufSubstIncTmp::TheBuf()->DoSubst
            (
               mBlocTmp.Set(),
               mVSBlTmp,mSBlNonTmp,mNbBloc,
-              doRaz
+              doRaz,
+              LimCond
            );
 }
 
@@ -934,14 +990,29 @@ double  cSubstitueBlocIncTmp::Cond() const
 
 const double cResiduP3Inc::TheDefBSurH = 1.0;
 
-cParamPtProj::cParamPtProj(double aSeuilBsH,double aSeuilBsHRefut,bool aDebug) :
+cParamPtProj::cParamPtProj(double aSeuilBsH,double aSeuilBsHRefut,bool aDebug,double aSeuilOkBehind) :
    mBsH       (cResiduP3Inc::TheDefBSurH),
    mDebug     (aDebug),
    mSeuilBsH  (aSeuilBsH),
+   mSeuilOkBehind  (aSeuilOkBehind),
    mSeuilBsHRefut  (aSeuilBsHRefut),
    mProjIsInit (false),
-   wDist       (true)
+   wDist       (true),
+   mInitBasePPP (false),
+   mInitHautPPP (false)
 {
+}
+
+void cParamPtProj::SetHautPPP(const double & aH) 
+{
+   mHautPPP = aH; 
+   mInitHautPPP=true;
+}
+
+void cParamPtProj::SetBasePPP(const double & aB) 
+{
+    mBasePPP = aB;  
+    mInitBasePPP=true;
 }
 
 /************************************************************/
@@ -954,7 +1025,7 @@ cManipPt3TerInc::cManipPt3TerInc
 (
         cSetEqFormelles &              aSet,
         cSurfInconnueFormelle *         anEqSurf,
-        std::vector<cCameraFormelle *> aVCamVis,
+        std::vector<cGenPDVFormelle *> aVCamVis,
         bool                           aClose
 )  :
    mSet        (aSet),
@@ -963,7 +1034,7 @@ cManipPt3TerInc::cManipPt3TerInc
    mVCamVis    (aVCamVis),
    mSubst      (*mP3Inc),
    mTerIsInit  (false),  // Pour eventuellement eviter le re-calcul
-   mPPP        (0.0,0.0,true), // INIT +ou- bidon, refaite par ailleurs
+   mPPP        (0.0,0.0,true,-1), // INIT +ou- bidon, refaite par ailleurs
    mMulGlobPds (1.0)
 
 {
@@ -982,7 +1053,7 @@ cManipPt3TerInc::cManipPt3TerInc
 
 void VerifSizeCamPtPds
      (
-           std::vector<CamStenope *>    aVCams,
+           std::vector<cBasicGeomCap3D *>    aVCams,
            const cNupletPtsHomologues & aNuple,
            const std::vector<double> &  aVPds,
            std::vector<Pt3dr> *         aVAp
@@ -1031,7 +1102,7 @@ class cCmpX
 Pt3dr CalcPTerIFC_Robuste
       (
            double                       aDistPdsErr,
-           std::vector<CamStenope *>    aVCC,
+           std::vector<cBasicGeomCap3D *>    aVCC,
            const cNupletPtsHomologues & aNuple,
            const std::vector<double> &  aVPds
       )
@@ -1042,7 +1113,7 @@ Pt3dr CalcPTerIFC_Robuste
 
    std::vector<Pt2dr> aVAbscPds;
 
-   ElSeg3D aSeg0 = aVCC[0]->F2toRayonR3(aNuple.PK(0));
+   ElSeg3D aSeg0 = aVCC[0]->Capteur2RayTer(aNuple.PK(0));
 
 
    int aK;
@@ -1050,15 +1121,15 @@ Pt3dr CalcPTerIFC_Robuste
    {
        if (aVPds[aK] != 0)
        {
-          ElSeg3D aSegK = aVCC[aK]->F2toRayonR3(aNuple.PK(aK));
+          ElSeg3D aSegK = aVCC[aK]->Capteur2RayTer(aNuple.PK(aK));
           double aA0,aAK;
           aSeg0.AbscissesPseudoInter(aA0,aAK,aSegK);
 
           Pt3dr aP0 = aSeg0.PtOfAbsc(aA0);
           Pt3dr aPK = aSegK.PtOfAbsc(aAK);
 
-          Pt2dr aPIm0 = aVCC[0]->R3toF2(aP0);
-          Pt2dr aPImK = aVCC[0]->R3toF2(aPK);
+          Pt2dr aPIm0 = aVCC[0]->Ter2Capteur(aP0);
+          Pt2dr aPImK = aVCC[0]->Ter2Capteur(aPK);
 
           double aDist  =euclid(aPIm0,aPImK);
           double aDistDir = euclid(aSeg0.TgNormee()-aSegK.TgNormee());
@@ -1092,11 +1163,11 @@ void cManipPt3TerInc::SetMulPdsGlob(double aMul)
    mMulGlobPds = aMul;
 }
 
-std::vector<CamStenope *> cManipPt3TerInc::VCamCur()
+std::vector<cBasicGeomCap3D *> cManipPt3TerInc::VCamCur()
 {
-   std::vector<CamStenope *> aRes;
+   std::vector<cBasicGeomCap3D *> aRes;
    for (int aK=0 ; aK<int(mVCamVis.size()) ; aK++)
-       aRes.push_back(mVCamVis[aK]->NC_CameraCourante());
+       aRes.push_back(mVCamVis[aK]->GPF_NC_CurBGCap3D());
    return aRes;
 }
 
@@ -1141,20 +1212,34 @@ void InspectInterFaisc
 
 bool OkReproj
      (  
-          const std::vector<CamStenope *> &  aVCam,
+          const std::vector<cBasicGeomCap3D *> &  aVCam,
           const std::vector<double> &  aVPds,
           const Pt3dr &                aPTer,
-          int & aKP
+          int & aKP,
+          bool  OkBehind
     )
 {
+
+  cArgOptionalPIsVisibleInImage anArg;
+  anArg.mOkBehind = OkBehind; 
+
+
    aKP = -1;
    for (int aK=0 ; aK<int(aVCam.size()) ; aK++)
    {
        if (aVPds[aK] >0)
        {
-           CamStenope & aCam = *(aVCam[aK]);
-           Pt2dr aProj = aCam.R3toF2(aPTer);
-           if (! aCam.IsInZoneUtile(aProj))
+           cBasicGeomCap3D & aCam = *(aVCam[aK]);
+/*
+           Pt2dr aProj = aCam.Ter2Capteur(aPTer);
+           if (! aCam.CaptHasData(aProj))
+           {
+              aKP = aK;
+              return false;
+           }
+*/
+ // Semble + robuste de se baser sur la visibilite car reprojection peut etre degeneree
+           if (! aCam.PIsVisibleInImage(aPTer,&anArg))
            {
               aKP = aK;
               return false;
@@ -1179,19 +1264,11 @@ Pt3dr  cManipPt3TerInc::CalcPTerInterFaisceauCams
            std::string *             aMesPb
        )
 {
+   if (aMesPb) *aMesPb="NoPb";
 
-if (BugZ0) 
-{
-    std::cout << "====== cManipPt3TerInc::CalcPTerInterFaisceau ====\n";
-    for (int aK=0 ; aK< int(aVPds.size()) ; aK++)
-       std::cout << "   PDS IM = " <<aVPds[aK] << "\n";;
-    if (aPAbs)
-       for (int aK=0 ; (2*aK)< int(aPAbs->size()) ; aK+=2)
-          std::cout << "   PDS IM = " << (*aPAbs)[2*aK] << (*aPAbs)[2*aK+1] << "\n";
-}
+   aParam.mHasResolMoy = false;
 
-
-   std::vector<CamStenope *>  aVCC = VCamCur();
+   std::vector<cBasicGeomCap3D *>  aVCC = VCamCur();
    VerifSizeCamPtPds(aVCC,aNuple,aVPds,aPAbs);
 
    std::vector<ElSeg3D> aVS;
@@ -1213,6 +1290,11 @@ if (BugZ0)
         {
             Pt2dr aPIm = aNuple.PK(aK);
         // ElSeg3D aSeg ;
+
+
+// Apparemmnt les cCamStenopeGrid ne sont plus utilisee pour simplifier le code et faciliter vers 
+// une transition vers  CapteurBasic 
+/*
             cCamStenopeGrid * aCSG =  mVCamVis[aK]->PIF().CamGrid();
             if (aCSG)
             {
@@ -1220,8 +1302,12 @@ if (BugZ0)
             }
             else
             {
-              aSeg = aVCC[aK]->F2toRayonR3(aPIm);
+               //  aSeg = aVCC[aK]->F2toRayonR3(aPIm); Modif SatBundle
+
+               aSeg = aVCC[aK]->Capteur2RayTer(aPIm);
             }
+*/
+            aSeg = aVCC[aK]->Capteur2RayTer(aPIm);
 
         // cCamStenopeGrid * aCSG =  mVCamVis[aK]->PIF().CamGrid();
 	    if (mEqSurf)
@@ -1244,6 +1330,7 @@ if (BugZ0)
    Pt3dr aSomT(0,0,0);
    Pt3dr aSomT2(0,0,0);
    double aSP = 0;
+   double aSomPdsC = 0;
    double aSP2 = 0;
  // std::cout << "BsssHH " << aParam.mSeuilBsHRefut  << " "  << aParam.mSeuilBsH << " " << CanUseProjectifP<< "\n";
    if (((aParam.mSeuilBsH > 0) || (aParam.mSeuilBsHRefut>0)) && (CanUseProjectifP))
@@ -1256,12 +1343,15 @@ if (BugZ0)
           aSomT2 = aSomT2 + Pcoord2(aT) *aPds;
           aSP += aPds;
           aSP2 += ElSquare(aPds);
-          aSomC = aSomC + aVCC[aK]->PseudoOpticalCenter() * aPds;
+          if (aVCC[aK]->HasOpticalCenterOfPixel())
+          {
+             aSomPdsC += aPds;
+             aSomC = aSomC + aVCC[aK]->OpticalCenterOfPixel(aNuple.PK(aK)) * aPds;
+          }
       }
       aSomT = aSomT / aSP;
       aSomT2 = aSomT2 / aSP;
       aSomT2 = aSomT2 - Pcoord2(aSomT);
-      aSomC = aSomC / aSP;
       // Ce debiaisement est necessaire, par exemple si tous les poids sauf 1 sont
       // presque nuls
       double aDebias = 1 - aSP2/ElSquare(aSP);
@@ -1291,6 +1381,8 @@ if (BugZ0)
    
       if ((aParam.mBsH < aParam.mSeuilBsH) && (! aRAZ))
       {
+
+
           aParam.mProjIsInit = true;
       }
       else
@@ -1355,13 +1447,17 @@ if (BugZ0)
       }
 
       aParam.mTer = aRes;
-      aParam.mHaut = euclid(aParam.mTer-aSomC);
-
-      aParam.mBase = aParam.mBsH * aParam.mHaut;
+      if (aSomPdsC!=0)
+      {
+         aSomC = aSomC / aSomPdsC;
+         double aHaut = euclid(aParam.mTer-aSomC);
+         aParam.SetHautPPP(aHaut);
+         aParam.SetBasePPP(aParam.mBsH * aHaut);
+     }
 
 
       int aKPb=-1;
-      if (! OkReproj(aVCC,aVPds,aRes,aKPb))
+      if (! OkReproj(aVCC,aVPds,aRes,aKPb,(aParam.mBsH<aParam.mSeuilOkBehind)))
       {
          OKInter = false;
          if (aMesPb)
@@ -1408,13 +1504,27 @@ if (BugZ0)
           aParam.mP0 = aRes;
 
       }
+
+      double aSResol = 0;
+      aSP = 0;
+      aParam.mHasResolMoy = true;
+      for (int aK=0 ; aK<int(aVCC.size()) ; aK++)
+      {
+          double aPds = aVPds[aK] ;
+          aSResol += aPds * aVCC[aK]->ResolSolOfPt(aRes);
+          aSP += aPds;
+      }
+
+      aParam.mResolMoy = aSResol / aSP;
+      aParam.mHasResolMoy = true;
+      aParam.mSomPds = aSP;
       
       OKInter = true;
       return aRes;
    }
 }
 
-const std::vector<cCameraFormelle *> &  
+const std::vector<cGenPDVFormelle *> &  
        cManipPt3TerInc::VCamVis() const
 {
    return mVCamVis;
@@ -1442,6 +1552,7 @@ bool UPL_DCC() {return false;}
 
 const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                            (
+                              const cArg_UPL& anArg,
                               double  aLimBsHProj,
                               double  aLimBsHRefut,
                               double  aPdsPl,
@@ -1454,6 +1565,44 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                               const cRapOnZ *      aRAZ
                            )
 {
+   double aLimBsHOKBehind = 1e-2;
+   double aCondMax = -1;
+   if (anArg.mRop)
+   {
+      aCondMax = anArg.mRop->CondMax();
+   }
+
+/*
+   bool  DoLvmGcp =  false; //  anArg.mRop   && AddEq  && (aPtApuis==0) ;
+   double aNbPixRop = anArg.mRop ? anArg.mRop->NbPixInc().Val() : 0;
+   DoLvmGcp = DoLvmGcp && (aNbPixRop>0);
+   Pt3dr aLVMPtApuis,aLVMIncertApuis;
+   if (DoLvmGcp )
+   {
+      if (mTerIsInit && mResolMoyIsInit)
+      {
+          double aSP =0;
+          for (int aK=0 ; aK<int(aVPdsIm.size()) ; aK++)
+              aSP += aVPdsIm[aK];
+          aSP /= aVPdsIm.size();
+          
+          double anInc1Pix = mResolMoy / sqrt(aSP);
+
+          double aBsHMin = anArg.mRop->BsHMin().Val();
+          double anIncXY = anInc1Pix * aNbPixRop;
+          double anIncZ = anIncXY  / ElMax(mPPP.mBsH,aBsHMin);
+
+
+          aLVMPtApuis= mPPP.mProjIsInit ? Pt3dr(0,0,0) :mResidus.mPTer;
+          aLVMIncertApuis = Pt3dr(anIncXY,anIncXY,anIncZ);
+          aPtApuis = & aLVMPtApuis;
+          anIncertApuis = & aLVMIncertApuis;
+      }
+      aLimBsHProj = 0;
+   }
+*/
+
+
    CptUPL++;
    NewBug =   ::DebugPbCondFaisceau   &&
               (
@@ -1483,19 +1632,9 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
 
    if (!mTerIsInit)
    {
-      mPPP = cParamPtProj(aLimBsHProj,aLimBsHRefut,true);
+        mPPP = cParamPtProj(aLimBsHProj,aLimBsHRefut,true,aLimBsHOKBehind);
 
 
-    // if (DebugFaisceau && (aCpt%1000==999)) getchar();
-
-/*
-       if (aPtApuis && aUseAppAsInit)
-       {
-         mResidus.mPTer = *aPtApuis;
-         mResidus.mOKRP3I = 1;
-       }
-*/
-       
 
        {
           bool WithApp = aPtApuis && aUseAppAsInit;
@@ -1520,9 +1659,18 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
                               (WithApp ? &aVAppui : 0),
                               &mResidus.mMesPb
                          );
+           mResolMoyIsInit =  mPPP.mHasResolMoy;
+           if (mResolMoyIsInit)  
+           {
+              mResolMoy = mPPP.mResolMoy;
+           }
 
 
-   if (UPL_DCC()) std::cout << "================== mResidus.mPTer " <<mResidus.mPTer  << " " << mResidus.mBSurH << "\n";
+          if (UPL_DCC())
+          {
+              std::cout << "================== mResidus.mPTer " 
+                        <<mResidus.mPTer  << " " << mResidus.mBSurH << "\n";
+          }
           mResidus.mBSurH  = mPPP.mBsH;
           if (BugNanFE)
           {
@@ -1531,27 +1679,15 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
 
           if (!mResidus.mOKRP3I) 
           {
-// std::cout << "mResidus.mOKRP3I  "  << __LINE__ <<  " " << WithApp << "\n";
                return mResidus;
           }
        }
     }
 
-   static double aBsHMin = 1;
-   if (aBsHMin> mPPP.mBsH)
-   {
-       // std::cout << mPPP.mBsH << "\n";
-       aBsHMin = mPPP.mBsH;
-  }
-// Pour l'instant on bloque avant validation ....
-  // mPPP.mProjIsInit = false;
-
-    // if (mPPP.mBsH < 1/30) AddEq=false;
  
     Pt3dr aPTer =   mPPP.mProjIsInit ? Pt3dr(0,0,0) :  mResidus.mPTer;
-    // mResidus.mPTer = aPTer;
-   if (UPL_DCC()) std::cout << "================== aPTer " << aPTer << "\n";
-    mP3Inc->InitVal(aPTer);
+
+    mP3Inc->InitEqP3iVal(aPTer);
 
 
 
@@ -1561,16 +1697,21 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaisonGen
 	int aNbNN =0;
         for (int aK=0 ; aK<int(mVCamVis.size()) ; aK++)
         {
-            if (euclid(mResidus.mPTer-mVCamVis[aK]->NC_CameraCourante()->PseudoOpticalCenter())<1e-5)
-              aVPdsIm[aK] = 0;
+            cBasicGeomCap3D * aBGC3d = mVCamVis[aK]->GPF_NC_CurBGCap3D();
+
+            if (aBGC3d->HasOpticalCenterOfPixel())
+            {
+
+               Pt3dr aCOpt = aBGC3d->OpticalCenterOfPixel(aNuple.PK(aK));
+               if (euclid(mResidus.mPTer-aCOpt)<1e-5)
+                 aVPdsIm[aK] = 0;
+            }
 	    if (aVPdsIm[aK]>0) 
             {
 	       aNbNN++;
             }
-if (UPL_DCC())  std::cout  << "==================== Pds " << aVPdsIm[aK] << "\n";
+            if (UPL_DCC())  std::cout  << "==================== Pds " << aVPdsIm[aK] << "\n";
         }
-	// if ((aNbNN<2)  && (!mEqSurf) && (! aPtApuis))
-        // 	AddEq=0;
 
         if (    (aNbNN==0)
              || ((aNbNN==1) && (!mEqSurf) && (! aPtApuis))
@@ -1590,6 +1731,10 @@ if (UPL_DCC())  std::cout  << "==================== Pds " << aVPdsIm[aK] << "\n"
        if (aVPdsIm[aK]>0)
        {
            Pt2dr anEr = mVCamVis[aK]->AddEqAppuisInc(aNuple.PK(aK),aPds,mPPP,aNuple.IsDr(aK));
+
+
+
+
            mResidus.mEcIm.push_back(anEr);
 if (UPL_DCC())  std::cout << "=x=x=x=x=x=x=x=x=x=x=x=x=x " << aNuple.PK(aK) << " " << mMulGlobPds << "\n";
 
@@ -1606,7 +1751,6 @@ if (UPL_DCC())  std::cout << "=x=x=x=x=x=x=x=x=x=x=x=x=x " << aNuple.PK(aK) << "
     {
         mResidus.mEcSurf = mEqSurf->DoResiduPInc(AddEq?aPdsPl:0);
         mResidus.mSomPondEr += aPdsPl * ElSquare(mResidus.mEcSurf);
-//if (aPtApuis) std::cout << "UPLG-CCCCCCC " << mResidus.mSomPondEr << "\n";
     }
 
 
@@ -1632,18 +1776,22 @@ if (UPL_DCC())  std::cout << "=x=x=x=x=x=x=x=x=x=x=x=x=x " << aNuple.PK(aK) << "
         }
 	for (int aK=0 ; aK< 3 ; aK++)
 	{
+if (0 &&MPD_MM())
+{
+std::cout << "AAAAAAAAAAAAA " << aVInc[aK] << " " << mMulGlobPds  << " " <<  aPRapel << AddEq << " \n";
+}
 	    if (aVInc[aK] > 0)
 	    {
 	        double aPds = (1/ElSquare(aVInc[aK])) * mMulGlobPds;
 		const std::vector<REAL> &  aV =   AddEq                                     ?
                                                   mSet.VAddEqFonctToSys(aFR[aK],aPds,false) :
                                                   mSet.VResiduSigne(aFR[aK])                ;
-/*
-		const std::vector<REAL> &  aV =   mSet.VAddEqFonctToSys(aFR[aK],aPds,false) ;
-*/
-if (UPL_DCC())  std::cout  << "y====y===y===yyyyyy " << aPds << " " << aK <<  " " << aFR[aK]  << " " << aV[0] << "\n";
+                if (UPL_DCC())  
+                {
+                   std::cout  << "y====y===y===yyyyyy " 
+                              << aPds << " " << aK <<  " " << aFR[aK]  << " " << aV[0] << "\n";
+                }
                 mResidus.mSomPondEr +=  aPds * ElSquare(aV[0]);
-//if (aPtApuis) std::cout << "UPLG-DDDDDDDDDDDD " << mResidus.mSomPondEr << "\n";
 	    }
 	}
     }
@@ -1652,7 +1800,7 @@ if (UPL_DCC())  std::cout  << "y====y===y===yyyyyy " << aPds << " " << aK <<  " 
     if (UPL_DCC()) std::cout << "HHHHHHHHhhhhhhhhhh " << AddEq << "\n";
     if (AddEq)
     {
-       mSubst.DoSubst();
+       mSubst.DoSubst(true,(mPPP.mProjIsInit?aCondMax:-1));
     }
 
     return mResidus;
@@ -1660,6 +1808,7 @@ if (UPL_DCC())  std::cout  << "y====y===y===yyyyyy " << aPds << " " << aK <<  " 
 
 const cResiduP3Inc& cManipPt3TerInc::UsePointLiaison
                            (
+                              const cArg_UPL& anArg,
                               double  aLimBsHProj,
                               double  aLimBsH,
                               double  aPdsPl,
@@ -1669,12 +1818,13 @@ const cResiduP3Inc& cManipPt3TerInc::UsePointLiaison
                               const cRapOnZ *      aRAZ
                            )
 {
-   return UsePointLiaisonGen(aLimBsHProj,aLimBsH,aPdsPl,aNuple,aVPdsIm,AddEq,0,0,false,aRAZ);
+   return UsePointLiaisonGen(anArg,aLimBsHProj,aLimBsH,aPdsPl,aNuple,aVPdsIm,AddEq,0,0,false,aRAZ);
 }
 
 
 const cResiduP3Inc & cManipPt3TerInc::UsePointLiaisonWithConstr
                      (
+                          const cArg_UPL& anArg,
                           double aLimBsHProj,
                           double  aLimBsH,
                           double aPdsPl,
@@ -1688,6 +1838,7 @@ const cResiduP3Inc & cManipPt3TerInc::UsePointLiaisonWithConstr
 {
    return UsePointLiaisonGen
           (
+               anArg,
                aLimBsHProj,
                aLimBsH,
                aPdsPl,aNuple,aVPdsIm,AddEq,

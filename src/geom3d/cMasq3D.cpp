@@ -41,9 +41,20 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
-#if (ELISE_QT_VERSION >= 4)
-
+#if  (ELISE_QT_VERSION >= 4)
 #include "../saisieQT/include_QT/3DObject.h"
+#else
+enum SELECTION_MODE { SUB_INSIDE,
+                      ADD_INSIDE,
+                      SUB_OUTSIDE,
+                      ADD_OUTSIDE,
+                      INVERT,
+                      ALL,
+                      NONE,
+                      SIZE_OF_SELECTION_MODE
+                    };
+
+#endif
 
 
 bool IsModeGlobal(SELECTION_MODE aMode)
@@ -244,19 +255,21 @@ cMasq3DOrthoRaster * cMasq3DOrthoRaster::ByPolyg3D(SELECTION_MODE aModeSel,const
     ElRotation3D aP2E = aPlan.CoordPlan2Euclid();
     ElRotation3D aE2P = aP2E.inv();
 
-    std::vector<Pt2dr> aVP2;
-    Pt2dr aMin(1e20,1e20);
-    Pt2dr aMax(-1e20,-1e20);
-    double aZAM = 0; // Z Abs Max
-    for (int aKP=0 ; aKP<int(aPol3.size()); aKP++)
-    {
-        Pt3dr  aQ3 = aE2P.ImAff(aPol3[aKP]);
-        Pt2dr aP2(aQ3.x,aQ3.y);
-        aVP2.push_back(aP2);
-        aMax.SetSup(aP2);
-        aMin.SetInf(aP2);
-        aZAM = ElMax(aZAM,ElAbs(aQ3.z));
-    }
+	std::vector<Pt2dr> aVP2;
+	Pt2dr aMin(1e20,1e20);
+	Pt2dr aMax(-1e20,-1e20);
+	double aZAM = 0; // Z Abs Max
+	for (size_t aKP=0 ; aKP<aPol3.size(); aKP++)
+	{
+		Pt3dr  aQ3 = aE2P.ImAff(aPol3[aKP]);
+		Pt2dr aP2(aQ3.x, aQ3.y);
+		aVP2.push_back(aP2);
+
+		aMax.SetSup(aP2);
+		aMin.SetInf(aP2);
+		aZAM = ElMax(aZAM,ElAbs(aQ3.z));
+	}
+    
 
     if (aZAM>1e-5)
     {
@@ -319,7 +332,7 @@ cMasq3DEmpileMasqPart::cMasq3DEmpileMasqPart(const std::vector<cMasq3DPartiel *>
    bool doInvert = false;
    bool HasConst = false;
    bool LastAdd = false;
-   for (int aK=aVM.size()-1 ; (aK>=0) && (!HasConst) ; aK--)
+   for (int aK = (int)(aVM.size() - 1); (aK>=0) && (!HasConst) ; aK--)
    {
         cMasq3DPartiel * aMk = aVM[aK];
         SELECTION_MODE aMode = aMk->ModeSel();
@@ -367,7 +380,7 @@ bool cMasq3DEmpileMasqPart::IsInMasq(const Pt3dr & aP) const
 */
 
 
-#include "MatrixManager.h"
+// #include "MatrixManager.h"
 
 
 
@@ -441,7 +454,7 @@ cMasq3DEmpileMasqPart * cMasq3DEmpileMasqPart::FromSaisieMasq3d(const std::strin
    }
    cPolyg3D aP3D = StdGetFromSI(aName,Polyg3D);
    bool Cont=true;
-   int aK0 =  aP3D.Item().size()-1;
+   int aK0 = (int)(aP3D.Item().size() - 1);
    for ( ; (aK0>=0) && Cont ; aK0--)
    {
       SELECTION_MODE aMode = (SELECTION_MODE) aP3D.Item()[aK0].Mode();
@@ -541,7 +554,10 @@ int Masq3Dto2D_main(int argc,char ** argv)
                     << EAM(aNameMasq,"MasqNuage",true, "Masq of Nuage if dif of XML File")
     );
 
-   cMasqBin3D * aM3D = cMasq3DEmpileMasqPart::FromSaisieMasq3d(aNameMasq3D);
+// std::cout << "AAAAAA " << SUB_OUTSIDE << "\n";
+
+   // cMasqBin3D * aM3D = cMasq3DEmpileMasqPart::FromSaisieMasq3d(aNameMasq3D);
+   cMasqBin3D  * aM3D = cMasqBin3D::FromSaisieMasq3d(aNameMasq3D);
 
    cXML_ParamNuage3DMaille aXmlPN = StdGetFromSI(aNameNuage,XML_ParamNuage3DMaille);
    cElNuage3DMaille * aNuage = cElNuage3DMaille::FromParam
@@ -556,7 +572,7 @@ int Masq3Dto2D_main(int argc,char ** argv)
    {
       if (!AcceptNew2d)
       {
-          ELISE_ASSERT(false,"Masq3Dto2D file res do not exist, set AcceptNew2d=true for create")
+          ELISE_ASSERT(false,"Masq3Dto2D file res do not exist, set OkNew2d=true for create")
       }
       Tiff_Im aFileRes(aNameRes.c_str(),aNuage->SzUnique(),GenIm::u_int1,Tiff_Im::No_Compr,Tiff_Im::BlackIsZero);
       ELISE_COPY(aFileRes.all_pts(),1,aFileRes.out());
@@ -575,6 +591,7 @@ int Masq3Dto2D_main(int argc,char ** argv)
    return 1;
 }
 
+/*
 #else
 cMasqBin3D  *cMasqBin3D::FromSaisieMasq3d(const std::string & aName)
 {
@@ -582,6 +599,7 @@ cMasqBin3D  *cMasqBin3D::FromSaisieMasq3d(const std::string & aName)
    return 0;
 }
 #endif
+*/
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

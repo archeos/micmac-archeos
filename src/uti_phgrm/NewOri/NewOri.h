@@ -42,6 +42,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "StdAfx.h"
 
+#define NbCamTest 6
+
+
 //================ SEUILS ==============
 
 // Nombre de point pour echantillonner le recouvrt / homogr
@@ -74,73 +77,18 @@ class cNewO_OrInit2Im;
 class cNewO_NameManager;
 class cNewO_Appli;
 
+typedef std::vector<Pt2df> tVP2f;
+typedef const tVP2f   tCVP2f;
+typedef std::vector<U_INT1> tVUI1;
+typedef const tVUI1 tCVUI1;
 
 
-template <const int TheNbPts,class Type>  class cFixedMergeTieP
-{
-     public :
-       typedef cFixedMergeTieP<TheNbPts,Type> tMerge;
-       typedef std::map<Type,tMerge *>     tMapMerge;
 
-       cFixedMergeTieP() ;
-       void FusionneInThis(cFixedMergeTieP<TheNbPts,Type> & anEl2,tMapMerge * Tabs);
-       void AddArc(const Type & aV1,int aK1,const Type & aV2,int aK2);
-
-        bool IsInit(int aK) const {return mTabIsInit[aK];}
-        const Type & GetVal(int aK)    const {return mVals[aK];}
-        bool IsOk() const {return mOk;}
-        void SetNoOk() {mOk=false;}
-        void SetOkForDelete() {mOk=true;}  // A n'utiliser que dans cFixedMergeStruct::delete
-        int  NbArc() const {return mNbArc;}
-        void IncrArc() { mNbArc++;}
-        int  NbSom() const ;
-     private :
-        void AddSom(const Type & aV,int aK);
-
-        Type mVals[TheNbPts];
-        bool  mTabIsInit[TheNbPts];
-        bool  mOk;
-        int   mNbArc;
-};
-
-template <const int TheNb,class Type> class cFixedMergeStruct
-{
-     public :
-        typedef cFixedMergeTieP<TheNb,Type> tMerge;
-        typedef std::map<Type,tMerge *>     tMapMerge;
-        typedef typename tMapMerge::iterator         tItMM;
-
-        // Pas de delete implicite dans le ~X(),  car exporte l'allocation dans
-        void Delete();
-        void DoExport();
-        const std::list<tMerge *> & ListMerged() const;
+typedef cStructMergeTieP< cFixedSizeMergeTieP<2,Pt2dr> > tMergeLPackH;
+typedef cFixedSizeMergeTieP<2,Pt2dr>                     tMergeCplePt;
 
 
-        void AddArc(const Type & aV1,int aK1,const Type & aV2,int aK2);
-        cFixedMergeStruct();
 
-        const Type & ValInf(int aK) const {return mEnvInf[aK];}
-        const Type & ValSup(int aK) const {return mEnvSup[aK];}
-
-
-     private :
-        cFixedMergeStruct(const cFixedMergeStruct<TheNb,Type> &);
-        void AssertExported() const;
-        void AssertUnExported() const;
-        void AssertUnDeleted() const;
-
-        tMapMerge                           mTheMaps[TheNb];
-        Type                                mEnvInf[TheNb];
-        Type                                mEnvSup[TheNb];
-        int                                 mNbSomOfIm[TheNb];
-        std::vector<int>                    mStatArc;
-        bool                                mExportDone;
-        bool                                mDeleted;
-        std::list<tMerge *>                 mLM;
-};
-
-typedef cFixedMergeStruct<2,Pt2dr> tMergeLPackH;
-typedef cFixedMergeTieP<2,Pt2dr>   tMergeCplePt;
 typedef std::list<tMergeCplePt *>  tLMCplP;
 ElPackHomologue ToStdPack(const tMergeLPackH *,bool PondInvNorm,double PdsSingle=0.1);
 
@@ -160,6 +108,7 @@ class cNewO_OneIm
             CamStenope * CS();
             const std::string & Name() const;
             const cNewO_NameManager&  NM() const;
+            cNewO_NameManager&  NM() ;
     private :
             cNewO_NameManager*  mNM;
             CamStenope *        mCS;
@@ -289,18 +238,22 @@ class cNewO_OrInit2Im
 };
 
 
-class cNewO_NameManager
+
+class cNewO_NameManager : public cVirtInterf_NewO_NameManager
 {
      public :
            cNewO_NameManager
            (
+               const std::string  & aPrefHom, // => mis en premier pour forcer la re-compile
                bool  Quick,
                const std::string  & aDir,
                const std::string  & anOri,
-               const std::string  & PostTxt
+               const std::string  & PostTxt,
+               const std::string  & anOriOut=""  // Def => Martini / MartiniGin
            );
            CamStenope * CamOfName(const std::string & aName);
            ElPackHomologue PackOfName(const std::string & aN1,const std::string & aN2) const;
+           std::string NameOriOut(const std::string & aNameIm) const;
 
            std::string KeySetCpleOri() const ;
            std::string KeyAssocCpleOri() const ;
@@ -317,6 +270,7 @@ class cNewO_NameManager
            // 
            CamStenope * CamOriOfName(const std::string & aName,const std::string & anOri);
            const std::string &  OriCal() const;
+           const std::string &  OriOut() const;
            cInterfChantierNameManipulateur *  ICNM();
 
 
@@ -326,12 +280,27 @@ class cNewO_NameManager
            std::string Dir3POneImage(const std::string & aName,bool WithMakeDir=false) const;
 
 
+           // Liste des image tels que  N3-N1 et N3-N2 soient oriente
+           std::list<std::string > ListeCompleteTripletTousOri(const std::string & aN1,const std::string & aN2) const;
+
+
            std::string NameTripletsOfCple(cNewO_OneIm *,cNewO_OneIm *,bool Bin);
            std::string Dir3PDeuxImage(cNewO_OneIm *,cNewO_OneIm *,bool WithMakeDir=false);
+           std::string Dir3PDeuxImage(const std::string&,const std::string&,bool WithMakeDir=false);
            std::string NameHomFloat(cNewO_OneIm * ,cNewO_OneIm * );
+           std::string NameHomFloat(const std::string&,const std::string&);
 
+           std::string NameListeImOrientedWith(const std::string &,bool Bin) const;
+           std::list<std::string>  ListeImOrientedWith(const std::string & aName) const;
+
+           CamStenope * OutPutCamera(const std::string & aName) const;
+           std::string NameListeCpleOriented(bool Bin) const;
+
+           void LoadHomFloats(std::string,std::string,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2,bool SVP=false);
            void LoadHomFloats(cNewO_OneIm * ,cNewO_OneIm *,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2);
            std::string NameHomTriplet(cNewO_OneIm *,cNewO_OneIm *,cNewO_OneIm *,bool WithMakeDir=false);
+           std::string NameHomTriplet(const std::string&,const std::string&,const std::string&,bool WithMakeDir=false);
+
            std::string NameOriInitTriplet(bool ModeBin,cNewO_OneIm *,cNewO_OneIm *,cNewO_OneIm *,bool WithMakeDir=false);
            std::string NameOriOptimTriplet(bool ModeBin,cNewO_OneIm *,cNewO_OneIm *,cNewO_OneIm *,bool WithMakeDir=false);
 
@@ -342,27 +311,41 @@ class cNewO_NameManager
 
 
            bool LoadTriplet(cNewO_OneIm * ,cNewO_OneIm *,cNewO_OneIm *,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2,std::vector<Pt2df> * aVP3);
+           bool LoadTriplet(const std::string &,const std::string &,const std::string &,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2,std::vector<Pt2df> * aVP3);
+           
+
+           void WriteTriplet(const std::string & aNameFile,tCVP2f &,tCVP2f &,tCVP2f &,tCVUI1 &);
+           void WriteCouple(const std::string & aNameFile,tCVP2f &,tCVP2f &,tCVUI1 &);
 
      private :
 
+           void WriteTriplet(const std::string & aNameFile,tCVP2f &,tCVP2f &,tCVP2f *,tCVUI1 &);
+
+
+
+
            std::string NameAttribTriplet(const std::string & aPrefix,const std::string & aPost,cNewO_OneIm *,cNewO_OneIm *,cNewO_OneIm *,bool WithMakeDir=false);
+           std::string NameAttribTriplet(const std::string & aPrefix,const std::string & aPost,const std::string & aN1,const std::string & aN2,const std::string & aN3,bool WithMakeDir=false);
 
 
            cInterfChantierNameManipulateur *  mICNM;
            std::string                        mDir;
            std::string                        mPrefOriCal;
            std::string                        mPostHom;
-           std::map<std::string,CamStenope *> mDicoCam;
+           std::string                        mPrefHom;
+           // std::map<std::string,CamStenope *> mDicoCam;
            static const std::string           PrefixDirTmp;
            std::string                        mDirTmp;
            std::string                        mPostfixDir;
            bool                               mQuick;
+           std::string                        mOriOut;
 };
+
 
 
 template <const int TheNb> void NOMerge_AddPackHom
                            (
-                                cFixedMergeStruct<TheNb,Pt2dr> & aMap,
+                                cStructMergeTieP< cFixedSizeMergeTieP<TheNb,Pt2dr> > & aMap,
                                 const ElPackHomologue & aPack,
                                 const ElCamera & aCam1,int aK1,
                                 const ElCamera & aCam2,int aK2
@@ -370,69 +353,15 @@ template <const int TheNb> void NOMerge_AddPackHom
 
 template <const int TheNb> void NOMerge_AddAllCams
                            (
-                                cFixedMergeStruct<TheNb,Pt2dr> & aMap,
+                                cStructMergeTieP< cFixedSizeMergeTieP<TheNb,Pt2dr> >  & aMap,
                                 std::vector<cNewO_OneIm *> aVI
                            );
 
 
-class cCdtCombTiep
-{
-    public :
-        typedef cFixedMergeTieP<2,Pt2dr> tMerge;
-        cCdtCombTiep(tMerge * aM) ;
-        Pt3dr NormQ1Q2();
-
-        tMerge * mMerge;
-        Pt2dr    mP1;
-        double   mDMin;
-        bool     mTaken;
-        double   mPdsOccup;
-        Pt3dr    mQ1;
-        Pt3dr    mQ2;
-        Pt3dr    mQ2Init;
-};
 
 
-class cNewO_CombineCple
-{
-    public :
-         typedef cFixedMergeTieP<2,Pt2dr> tMerge;
-         cNewO_CombineCple(const  cFixedMergeStruct<2,Pt2dr>  & aM,ElRotation3D * aTestSol);
 
-          const cXml_Ori2Im &  Result() const;
-    private :
-          cXml_Ori2Im  mResult;
-          double CostOneArc(const Pt2di &);
-          double CostOneBase(const Pt3dr & aBase);
 
-          Pt2dr ToW(const Pt2dr &) const;
-          void SetCurRot(const Pt3di & aP);
-          void SetCurRot(const  ElMatrix<double> & aP);
-
-          double K2Teta(int aK) const;
-          int    PInt2Ind(const Pt3di  & aP) const;
-          Pt3dr   PInt2Tetas(const Pt3di  & aP) const;
-
-          double GetCost(const Pt3di  & aP) ;
-          double  CalculCostCur();
-
-          int               mCurStep;
-          int               mNbStepTeta;
-          ElMatrix<double>  mCurRot;
-          Pt3di             mCurInd;
-          Pt3dr             mCurTeta;
-          Pt3dr             mCurBase;
-
-          std::map<int,double>     mMapCost;
-          std::vector<cCdtCombTiep> mVAllCdt;
-          std::vector<cCdtCombTiep*> mVCdtSel;
-          std::list<Pt2di>         mLArcs;
-
-          Video_Win *                mW;
-          double                     mScaleW;
-          Pt2dr                      mP0W;
-         
-};
 
 extern Pt3dr MedianNuage(const ElPackHomologue & aPack,const ElRotation3D & aRot);
 ElMatrix<double> TestMEPCoCentrik(const ElPackHomologue & aPack,double aFoc,const ElRotation3D * aRef,double & anEcart);
@@ -446,6 +375,8 @@ class  cResIPR
          std::vector<int> mVSel;
          double           mDistMoy;
 };
+
+cResIPR cResIPRIdent(int aNb);
 
 cResIPR  IndPackReduit(const std::vector<Pt2df> & aV,int aNbMaxInit,int aNbFin);
 cResIPR  IndPackReduit(const std::vector<Pt2df> & aV,int aNbMaxInit,int aNbFin,const cResIPR & aResExist,const std::vector<Pt2df> & aVPtsExist);

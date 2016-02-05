@@ -211,7 +211,7 @@ int  Luc_main_corner_crop(int argc,char ** argv){
     const std::vector<std::string> * aSetIm = aICNM->Get(aPatIm);
 
     std::vector<std::string> aVectIm=*aSetIm;
-    int nbIm=aVectIm.size();
+    int nbIm=(int)aVectIm.size();
 
     vector<vector<Pt2dr> > Pts;
     vector<int> SzX, SzY;
@@ -388,7 +388,7 @@ vector<SpatioTempImage> LoadGrpImages(string aDir, std::string aPatIm, std::stri
     cInterfChantierNameManipulateur * aICNM = cInterfChantierNameManipulateur::BasicAlloc(aDir);
     const std::vector<std::string> * aSetIm = aICNM->Get(aPatIm);
     std::vector<std::string> aVectIm = *aSetIm;
-    int nbIm = aVectIm.size();
+    int nbIm = (int)aVectIm.size();
 
     vector<SpatioTempImage> aGrIm;
 
@@ -456,7 +456,7 @@ Im2D_U_INT1 Window_Maker(SpatioTempImage aIm, Pt2di aCtrPt, int aSzW)
 double Correlator(vector<vector<float> > aWindow1, vector<vector<float> > aWindow2)
 {
     double aScore=0;
-    int aSz = aWindow1.size();
+    int aSz = (int)aWindow1.size();
     for (int i = 0; i < aSz; i++)
     {
         for (int j = 0; j < aSz; j++)
@@ -694,7 +694,7 @@ int Luc_main_truc(int argc, char ** argv)
 }
 
 
-int Luc_main(int argc, char ** argv)
+int Luc_main_PSEUDORPC2D(int argc, char ** argv)
 {
     //GET PSEUDO-RPC2D FOR ASTER FROM LATTICE POINTS
     std::string aTxtImage, aTxtCarto;
@@ -889,6 +889,145 @@ int Luc_main(int argc, char ** argv)
     return 0;
 }
 
+int Luc_main_geodesy_geodeticvsgeocentric(int argc, char ** argv)
+{
+
+	//WGS84 ellipsoid
+	double a = 6378137;
+	double b = (1 - 1 / 298.257223563)*a;
+	double e2 = 1 - (b * b) / (a * a);
+	double WGSCorFact = 0.99330562;
+
+	//Point 
+	Pt3dr aPtECEF(-2741844.353494039736688137054443359375, -1664255.3605559789575636386871337890625, 6304189.845196328125894069671630859375); //ALASKA
+	//Pt3dr aPtECEF(3310919.731059408746659755706787109375, 628192.44206570624373853206634521484375, 6219499.615476393140852451324462890625); //NORWAY
+	//NEW
+	Pt3dr aPtGeo;
+	// Computing longitude (true transformation)
+	aPtGeo.x = atan(aPtECEF.y / aPtECEF.x) * 180 / M_PI; //degrees
+	cout << aPtGeo.x << endl;
+	if (aPtECEF.y < 0)//"Western emisphere"
+		aPtGeo.x = aPtGeo.x - 180;
+
+	//Computing latitude (estimation)
+	double r = sqrt(aPtECEF.x*aPtECEF.x + aPtECEF.y*aPtECEF.y + aPtECEF.z*aPtECEF.z);
+	double p = sqrt(aPtECEF.x*aPtECEF.x + aPtECEF.y*aPtECEF.y);
+	double latNow = atan(p / aPtECEF.z);//rad geocentric
+	//loop
+	for (u_int i = 0; i < 4; i++)
+	{
+		double Rn = a / sqrt(1 - e2*sin(latNow)*sin(latNow));
+		double h = p / cos(latNow) - Rn;
+		latNow = atan(aPtECEF.z / p * 1 / (1 - e2*Rn / (Rn + h)));
+	}
+	aPtGeo.y = latNow;
+
+	//Computing Ellipsoid height
+	double Rn = a / sqrt(1 - e2*sin(aPtGeo.y)*sin(aPtGeo.y));
+	aPtGeo.z = p / cos(aPtGeo.y) - Rn;
+	//Latitude to degrees
+	aPtGeo.y = aPtGeo.y * 180 / M_PI;
+	cout << "NEW solution :" << aPtGeo << endl;
+
+	//OLD
+	r = sqrt(aPtECEF.x*aPtECEF.x + aPtECEF.y*aPtECEF.y + aPtECEF.z*aPtECEF.z);
+	aPtGeo.y = asin(aPtECEF.z / r) * 180 / M_PI; //degrees
+	aPtGeo.x = acos(aPtECEF.x / (r*cos(aPtGeo.y * M_PI / 180))) * 180 / M_PI;//degrees
+	if (aPtECEF.y < 0)//"Western emisphere"
+	aPtGeo.x = -aPtGeo.x;
+	aPtGeo.z = r - sqrt(a*a*b*b / (a*a*sin(aPtGeo.y * M_PI / 180)*sin(aPtGeo.y * M_PI / 180) + b*b*cos(aPtGeo.y * M_PI / 180)*cos(aPtGeo.y * M_PI / 180)));//(distance from point to earth center)-(distance from ellipsoide to earth center)
+	//to geodetic
+	aPtGeo.y = atan(tan(aPtGeo.y *M_PI / 180) / WGSCorFact) * 180 / M_PI;
+
+	cout << "OLD solution :" << aPtGeo << endl;
+	return 0;
+}
+
+
+int Luc_main(int argc, char ** argv)
+{
+	//GET PSEUDO-RPC2D FOR ASTER FROM LATTICE POINTS
+	std::string aNameIm, aNameParallax;
+	std::string aFileOut = "RPC2D-params.xml";
+	//Reading the arguments
+	ElInitArgMain
+		(
+		argc, argv,
+		LArgMain()
+		<< EAMC(aNameIm, "image to be corrected", eSAM_IsPatFile)
+		<< EAMC(aNameParallax, "Paralax correction file", eSAM_IsPatFile),
+		LArgMain()
+		<< EAM(aFileOut, "Out", true, "Output xml file with RPC2D coordinates")
+		);
+
+	std::string aDir, aPatIm;
+	SplitDirAndFile(aDir, aPatIm, aNameIm);
+
+	cout << "Correcting " << aNameIm << endl;
+	string aNameOut = aNameIm + "_corrected.tif";
+
+	//Reading the image and creating the objects to be manipulated
+	Tiff_Im aTF = Tiff_Im::StdConvGen(aDir + aNameIm, 1, false);
+
+	Pt2di aSz = aTF.sz();
+	Im2D_U_INT1  aIm(aSz.x, aSz.y);
+	Im2D_U_INT1  aImOut(aSz.x, aSz.y);
+
+	ELISE_COPY
+		(
+		aTF.all_pts(),
+		aTF.in(),
+		aIm.out()//Virgule(aImR.out(),aImG.out(),aImB.out())
+		);
+
+	U_INT1 ** aData = aIm.data();
+	U_INT1 ** aDataOut = aImOut.data();
+
+	//Reading the parallax correction file
+	Tiff_Im aTFPar = Tiff_Im::StdConvGen(aDir + aNameParallax, 1, false);
+	Im2D_REAL8  aPar(aSz.x, aSz.y);
+	ELISE_COPY
+		(
+		aTFPar.all_pts(),
+		aTFPar.in(),
+		aPar.out()//Virgule(aImR.out(),aImG.out(),aImB.out())
+		);
+	REAL8 ** aDatPar = aPar.data();
+
+
+
+	for (int aX = 0; aX < aSz.x; aX++)
+	{
+		for (int aY = 0; aY < aSz.y; aY++)
+		{
+			Pt2dr ptOut;
+			ptOut.x = aX-aDatPar[aY][aX];
+			ptOut.y = aY;
+			aDataOut[aY][aX] = Reechantillonnage::biline(aData, aSz.x, aSz.y, ptOut);
+		}
+	}
+
+	Tiff_Im  aTOut
+		(
+		aNameOut.c_str(),
+		aSz,
+		GenIm::u_int1,
+		Tiff_Im::No_Compr,
+		Tiff_Im::BlackIsZero
+		);
+
+
+	ELISE_COPY
+		(
+		aTOut.all_pts(),
+		aImOut.in(),
+		aTOut.out()
+		);
+
+
+
+	return 0;
+}
 /*Footer-MicMac-eLiSe-25/06/2007
 
 Ce logiciel est un programme informatique servant Ã  la mise en

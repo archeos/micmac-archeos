@@ -101,6 +101,7 @@ class ElDistPolyDegre2;
 class ElDistortionPolynomiale;
 class ElCamera;
 class CamStenope;
+class CameraRPC;
 class cCamStenopeGen;
 class CamStenopeIdeale;
 class CalcPtsInteret;
@@ -1281,6 +1282,7 @@ class PolynomialEpipolaireCoordinate : public EpipolaireCoordinate
                  Pt2dr aP0,
                  Pt2dr aDirX,
                  const Polynome2dReal & aPolY,
+                 const Polynome2dReal * aPolInvY,
                  REAL                   anAmpl,
                  INT                    DeltaDegreInv = 2,
                  Pt2dr                  aTrFin = Pt2dr(0,0)
@@ -1302,8 +1304,8 @@ class PolynomialEpipolaireCoordinate : public EpipolaireCoordinate
           INT DeltaDegre() const;
           REAL AmplInv() const;
 
-              Polynome2dReal  mPolToYEpip;
-              Polynome2dReal  mPolToYInit;
+          Polynome2dReal  mPolToYEpip;
+          Polynome2dReal  mPolToYInit;
 
           Pt2dr ToCoordEpipol(Pt2dr aPInit) const;
           Pt2dr ToCoordInit(Pt2dr aPEpi) const;
@@ -1320,6 +1322,7 @@ class CpleEpipolaireCoord
 
             static CpleEpipolaireCoord * PolynomialFromHomologue
                                         (
+                                                bool  UseL1,  // Si aSolApprox nulle alors utilise-t-on L1 ?
                                                 const ElPackHomologue &,
                                                 INT   aDegre,
                                                 Pt2dr aDir1,
@@ -1337,6 +1340,7 @@ class CpleEpipolaireCoord
 
             static CpleEpipolaireCoord * PolynomialFromHomologue
                                         (
+                                                bool  UseL1,  // Si aSolApprox nulle alors utilise-t-on L1 ?
                                                 CpleEpipolaireCoord  *  aSolApprox, // Solution pour calcul de residu
                                                 REAL  aResiduMin,
                                                 const ElPackHomologue &,
@@ -1443,27 +1447,96 @@ class cCorrRefracAPost
          bool       mIntegDist;
 };
 
+// La plus basique des classes, normalement tout doit pouvoir etre redefini 
+// a partir de ca
+
+class cArgOptionalPIsVisibleInImage
+{
+    public :
+       cArgOptionalPIsVisibleInImage();
+
+       bool   mOkBehind;
+};
+
+class cBasicGeomCap3D
+{
+    public :
+      virtual ElSeg3D  Capteur2RayTer(const Pt2dr & aP) const =0;
+      virtual Pt2dr    Ter2Capteur   (const Pt3dr & aP) const =0;
+      virtual Pt2di    SzBasicCapt3D() const = 0;
+      virtual double ResolSolOfPt(const Pt3dr &) const = 0;
+      virtual bool  CaptHasData(const Pt2dr &) const = 0;
+      //  Def return true, mean that the geometry is ok independently of the image data
+      virtual bool  CaptHasDataGeom(const Pt2dr &) const ;
+      virtual bool     PIsVisibleInImage   (const Pt3dr & aP,const cArgOptionalPIsVisibleInImage * =0) const =0;
+      // Can be very approximate, using average depth or Z
+      virtual Pt3dr RoughCapteur2Terrain   (const Pt2dr & aP) const =0;
+
+  // Optical center 
+      virtual bool     HasOpticalCenterOfPixel() const; // 1 - They are not alway defined
+// When they are, they may vary, as with push-broom, Def fatal erreur (=> Ortho cam)
+      virtual Pt3dr    OpticalCenterOfPixel(const Pt2dr & aP) const ; 
+
+      virtual Pt3dr    ImEtProf2Terrain(const Pt2dr & aP,double aZ) const;
+      virtual Pt3dr ImEtZ2Terrain(const Pt2dr & aP,double aZ) const;
+// Compute the differential, defaut value compute it by finite difference,at step ResolSolOfPt, 
+// to accelerate it is note centered en reuse the value PIm
+      virtual void Diff(Pt2dr & aDx,Pt2dr & aDy,Pt2dr & aDz,const Pt2dr & aPIm,const Pt3dr & aTer);
+
+      static cBasicGeomCap3D * StdGetFromFile(const std::string &,int & aType, 
+                                              const cSystemeCoord * aChSys=0); // !!! aType in fact is eTypeImporGenBundle 
+
+      // Down cast , dirty but usefull ;-)
+      virtual CamStenope * DownCastCS() ;
+
+      virtual Pt3dr DirRayonR3(const Pt2dr & aPIm) const;
+      virtual double ProfondeurDeChamps(const Pt3dr & aP) const;
+      virtual Pt3dr DirVisee() const;
+
+
+       virtual double ResolutionAngulaire() const;  // OO
+       /// This function calls existing virtual function; in many case it will be redundant with
+       // them, the goals is to be sure that the Center  and the PTer are exactly
+       //  on the line given by Capteur2RayTer; which theoritically may be not the case
+       // especialy when centers are computed from multiples intersections
+       virtual void  GetCenterAndPTerOnBundle(Pt3dr & aC,Pt3dr & aPTer,const Pt2dr & aPIm) const;
+
+       // Return an "ordre de grandeur'virtual" of the interval of prof in prop; default return 1/600 adapted to
+       // pleiade-spot satellites, redefine in Stenope to 0.2;  used for epipolar computation
+       virtual double GetVeryRoughInterProf() const;
+
+
+       // Save using standard MicMac naming ; !! Not supported for now by Stenope camera; Def :  Fatal Error
+       virtual void Save2XmlStdMMName(const std::string &) const ;
+
+       Pt2dr Mil() const;
+       double GlobResol() const;
+       Pt3dr  PMoyOfCenter() const;
+       virtual bool  HasRoughCapteur2Terrain() const ;
+       virtual   Pt2dr OrGlbImaM2C(const Pt2dr &) const;
+
+       virtual Pt3dr ToSysCible(const Pt3dr &) const;
+       virtual Pt3dr ToSysSource(const Pt3dr &) const;
+       virtual Pt2dr ImRef2Capteur   (const Pt2dr & aP) const;
+       virtual double ResolImRefFromCapteur() const;
+      virtual bool  HasPreciseCapteur2Terrain() const ;
+      virtual Pt3dr PreciseCapteur2Terrain   (const Pt2dr & aP) const ;
+};
+
+
+
 
 //  Classe qui permet de manipuler de manière via une interface uniforme une image,
 // ou un nuage de point
-class cCapture3D
+
+class cCapture3D : public cBasicGeomCap3D
 {
    public :
-      virtual Pt2dr    Ter2Capteur   (const Pt3dr & aP) const =0;
-      virtual bool     PIsVisibleInImage   (const Pt3dr & aP) const =0;
-      virtual ElSeg3D  Capteur2RayTer(const Pt2dr & aP) const =0;
+      // virtual ElSeg3D  Capteur2RayTer(const Pt2dr & aP) const =0;
 
-      virtual bool  HasRoughCapteur2Terrain() const = 0;
-      virtual bool  HasPreciseCapteur2Terrain() const = 0;
-      virtual Pt3dr RoughCapteur2Terrain   (const Pt2dr & aP) const =0;
-      virtual Pt3dr PreciseCapteur2Terrain   (const Pt2dr & aP) const =0;
 
-      virtual double ResolSolOfPt(const Pt3dr &) const = 0;
       virtual double ResolSolGlob() const = 0;
-      virtual bool  CaptHasData(const Pt2dr &) const = 0;
 
-      virtual Pt2dr ImRef2Capteur   (const Pt2dr & aP) const =0;
-      virtual double ResolImRefFromCapteur() const =0;
 };
 
 
@@ -1476,9 +1549,12 @@ class ElCamera : public cCapture3D
          const bool &   IsScanned() const;
          void  SetScanned(bool mIsSC);
 
+         Pt3dr DirRayonR3(const Pt2dr & aPIm) const;
+         Pt2di    SzBasicCapt3D() const; 
+         double GetVeryRoughInterProf() const;
          bool  CaptHasData(const Pt2dr &) const ;
          Pt2dr    Ter2Capteur   (const Pt3dr & aP) const;
-         bool     PIsVisibleInImage   (const Pt3dr & aP) const ;
+         bool     PIsVisibleInImage   (const Pt3dr & aP,const cArgOptionalPIsVisibleInImage * =0) const ;
          ElSeg3D  Capteur2RayTer(const Pt2dr & aP) const;
          double ResolImRefFromCapteur() const ;
          bool  HasRoughCapteur2Terrain() const ;
@@ -1508,6 +1584,7 @@ class ElCamera : public cCapture3D
          cVerifOrient MakeVerif( int aNbVerif,double aProf,const char *,const Pt3di  * aNbDeterm=0) const;
          cOrientationConique  StdExportCalibGlob(bool Matr) const;
          cOrientationConique  StdExportCalibGlob() const;
+         std::string StdExport2File(cInterfChantierNameManipulateur *,const std::string & aDirOri,const std::string & aNameIm);  // Test -> Ori-R
 
       virtual  Pt3dr ImEtProf2Terrain(const Pt2dr & aP,double aZ) const = 0;
       virtual  Pt3dr NoDistImEtProf2Terrain(const Pt2dr & aP,double aZ) const = 0;
@@ -1526,8 +1603,8 @@ class ElCamera : public cCapture3D
           // Pour compatibilite stricte avec ce qui etait fait avant
          // dans cDistStdFromCam::Diff
           virtual double SzDiffFinie() const = 0;
-     Pt3dr DirVisee() const;
-     double ProfondeurDeChamps(const Pt3dr & aP) const;
+          Pt3dr DirVisee() const;
+          double ProfondeurDeChamps(const Pt3dr & aP) const;
 
           virtual double ResolutionSol() const = 0;
           virtual double ResolutionSol(const Pt3dr &) const = 0;
@@ -1717,6 +1794,7 @@ class ElCamera : public cCapture3D
           bool    HasDomaineSpecial() const;
 
          virtual ElDistortion22_Gen   *  DistPreCond() const ;
+         ElDistortion22_Gen   *  StaticDistPreCond() const ;
   // Eventuellement a redef; now : DistPreCond != 0
          bool IsForteDist() const;
 
@@ -1728,10 +1806,10 @@ class ElCamera : public cCapture3D
          virtual Pt3dr OrigineProf() const;
          virtual bool  HasOrigineProf() const;
          const cElPolygone &  EmpriseSol() const;
+         const Box2dr &  BoxSol() const;
 
          const tOrIntIma & IntrOrImaC2M() const;
 
-     virtual Pt3dr ImEtZ2Terrain(const Pt2dr & aP,double aZ) const;
 
          Pt2dr ResiduMond2Cam(const Pt2dr & aRes)const;
          tOrIntIma  InhibeScaneOri();
@@ -1825,6 +1903,9 @@ class ElCamera : public cCapture3D
          Pt3dr  mVitesse;
          bool   mVitesseIsInit;
          Pt3dr  mIncCentre;
+
+         mutable ElDistortion22_Gen *mStatDPC;
+         mutable bool                mStatDPCDone;
 };
 
 
@@ -1843,6 +1924,8 @@ class cCameraOrtho : public ElCamera
          bool  HasOrigineProf() const;
          double ResolutionSol() const ;
          double ResolutionSol(const Pt3dr &) const ;
+
+         virtual bool     HasOpticalCenterOfPixel() const; // 
     private :
          double SzDiffFinie() const;
        cCameraOrtho(const Pt2di & aSz);
@@ -1955,6 +2038,7 @@ Pt3dr IntersectionRayonPerspectif
 class CamStenope : public ElCamera
 {
       public :
+         CamStenope * DownCastCS() ;
 
          double GetRoughProfondeur() const; // Tente Prof puis Alti
          const tParamAFocal   & ParamAF() const;
@@ -1966,6 +2050,8 @@ class CamStenope : public ElCamera
          static CamStenope * StdCamFromFile(bool UseGr,const std::string &,cInterfChantierNameManipulateur * anICNM);
 
          virtual const cCamStenopeDistRadPol * Debug_CSDRP() const;
+
+
 
 
           // renvoit la distance de p1 a la projection de la droite
@@ -2093,6 +2179,7 @@ class CamStenope : public ElCamera
      Pt2dr PP() const ;
      Pt3dr VraiOpticalCenter() const;
      Pt3dr PseudoOpticalCenter() const;
+     Pt3dr    OpticalCenterOfPixel(const Pt2dr & aP) const ; 
      Pt3dr OpticalVarCenterIm(const Pt2dr &) const;
      Pt3dr OpticalVarCenterTer(const Pt3dr &) const;
      Pt3dr ImEtProf2Terrain(const Pt2dr & aP,double aZ) const;
@@ -2106,7 +2193,7 @@ class CamStenope : public ElCamera
          Pt3dr Im1DirEtProf2_To_Terrain  //OO
                (Pt2dr p1,const CamStenope &  ph2,double prof2,const Pt3dr & aDir) const;
          Pt3dr Im1EtProfSpherik2_To_Terrain (Pt2dr p1,const CamStenope &  ph2,double prof2) const;
-
+    void ExpImp2Bundle(const Pt2di aGridSz, const std::string aName) const;
 
      double ProfInDir(const Pt3dr & aP,const Pt3dr &) const; // OO
 
@@ -2368,7 +2455,7 @@ class cDistCamStenopeGrid : public ElDistortion22_Gen
        virtual bool OwnInverse(Pt2dr &) const ;    //  return true
 
        // Si RayonInv <=0 pas utilise
-       static cDistCamStenopeGrid * Alloc(double aRayInv,const CamStenope &,Pt2dr aStepGr,bool doDir=true,bool doInv=true);
+       static cDistCamStenopeGrid * Alloc(bool P0P1IsBoxDirect,double aRayInv,const CamStenope &,Pt2dr aStepGr,bool doDir=true,bool doInv=true);
 
        cDistCamStenopeGrid
        (
@@ -2843,6 +2930,7 @@ class cDbleGrid : public ElDistortion22_Gen
 
          cDbleGrid
          (
+         bool P0P1IsBoxDirect,
          bool AdaptStep,
              Pt2dr aP0,Pt2dr aP1,
              Pt2dr               aStep,
@@ -3042,7 +3130,7 @@ class cCpleEpip
          bool IsLeft(const std::string &);
 
 
-         void ImEpip(Tiff_Im aFile,const std::string & aNameOriIn,bool Im1,bool InParal=true,bool DoIm=true,const char * NameHom= 0,int aDegPloCor=-1);
+         void ImEpip(Tiff_Im aFile,const std::string & aNameOriIn,bool Im1,bool InParal=true,bool DoIm=true,const char * NameHom= 0,int aDegPloCor=-1,bool ExpTxt=false);
          void AssertOk() const;
 
          void LockMess(const std::string & aMes);
@@ -3340,6 +3428,29 @@ void SolveBundle3Image
      );
 
 
+
+void Merge2Pack
+     (
+          std::vector<Pt2dr> & aVP1,
+          std::vector<Pt2dr> & aVP2,
+          int aSeuil,
+          const ElPackHomologue & aPack1,
+          const ElPackHomologue & aPack2
+     );
+
+void Merge3Pack
+     (
+          std::vector<Pt2dr> & aVP1,
+          std::vector<Pt2dr> & aVP2,
+          std::vector<Pt2dr> & aVP3,
+          int aSeuil,
+          const std::vector<Pt2dr> & aV12,
+          const std::vector<Pt2dr> & aV21,
+          const std::vector<Pt2dr> & aV13,
+          const std::vector<Pt2dr> & aV31,
+          const std::vector<Pt2dr> & aV23,
+          const std::vector<Pt2dr> & aV32
+     );
 
 
 

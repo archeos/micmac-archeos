@@ -138,13 +138,14 @@ bool  cMMByImNM::StrIsPImsDIr(const std::string & aDir)
 
 
 
-cMMByImNM::cMMByImNM(double aDS,const std::string & aDirGlob,const std::string & aDirLoc,const std::string & aPrefix,const std::string & aNameType) :
+cMMByImNM::cMMByImNM(double aDS,const std::string & aDirGlob,const std::string & aDirLoc,const std::string & aPrefix,const std::string & aNameType,bool AddDirLoc) :
     mDS        (aDS),
     mDirGlob   (aDirGlob),
     mDirLoc    (aDirLoc),
     mPrefix    (aPrefix),
     mFullDir   (mDirGlob + mDirLoc),
-    mNameFileLON (mFullDir + TheNamePimsFile),
+    mNameFileLON ((AddDirLoc ? mDirLoc : mFullDir) + TheNamePimsFile),
+    // mNameFileLON (mFullDir + TheNamePimsFile),
     mKeyFileLON (aDirGlob+ "%NKS-Set-OfFile@" + mNameFileLON),
     mNameEtat   (mFullDir+ TheNamePimsEtat),
     mNameType   (aNameType)
@@ -208,17 +209,17 @@ std::string cMMByImNM::StdDirPims(double aDS, const std::string & aNameMatch)
    return  PrefixMPI  + aNameDS  + aNameMatch + "/";
 }
 
-cMMByImNM * cMMByImNM::ForGlobMerge(const std::string & aDirGlob,double aDS, const std::string & aNameMatch)
+cMMByImNM * cMMByImNM::ForGlobMerge(const std::string & aDirGlob,double aDS, const std::string & aNameMatch,bool AddDirLoc)
 {
    // std::string aNameDS = DS2String(aDS);
    // std::string aDirLoc = PrefixMPI  + aNameDS  + aNameMatch + "/";
-   return new cMMByImNM(aDS,aDirGlob,StdDirPims(aDS,aNameMatch),"Nuage-",aNameMatch);
+   return new cMMByImNM(aDS,aDirGlob,StdDirPims(aDS,aNameMatch),"Nuage-",aNameMatch,AddDirLoc);
 }
 
 
 void SelfSuppressCarDirEnd(std::string & aDir)
 {
-    int aL = strlen(aDir.c_str());
+    int aL = (int)strlen(aDir.c_str());
     if (aL && (aDir[aL-1]==ELISE_CAR_DIR))
     {
         aDir = aDir.substr(0,aL-1);
@@ -231,7 +232,7 @@ std::string SuppressCarDirEnd(const std::string & aDirOri)
     return aRes;
 }
 
-cMMByImNM *  cMMByImNM::FromExistingDirOrMatch(const std::string & aNameDirOri,bool Svp,double aDS,const std::string & aDir0)
+cMMByImNM *  cMMByImNM::FromExistingDirOrMatch(const std::string & aNameDirOri,bool Svp,double aDS,const std::string & aDir0,bool AddDirLoc)
 {
 
 // std::cout << "cMMByImNM::FromExistingDirOrMatch " << aNameDirOri << "\n"; getchar();
@@ -262,13 +263,13 @@ cMMByImNM *  cMMByImNM::FromExistingDirOrMatch(const std::string & aNameDirOri,b
          }
          if (Ok)
          {
-             return  cMMByImNM::ForGlobMerge(aDirGlob,aDS,aNameMatch);
+             return  cMMByImNM::ForGlobMerge(aDirGlob,aDS,aNameMatch,AddDirLoc);
          }
      }
 
      if (StrIsPImsDIr(StdDirPims(aDS,aNameDirOri)))
      {
-        return  cMMByImNM::ForGlobMerge(aDir0,aDS,aNameDirOri);
+        return  cMMByImNM::ForGlobMerge(aDir0,aDS,aNameDirOri,AddDirLoc);
      }
 
 
@@ -579,7 +580,7 @@ cAppli_Enveloppe_Main::cAppli_Enveloppe_Main(int argc,char ** argv) :
 
            VoidSystem(aComPyr.c_str());
        }
-       std::list<std::pair<std::string,std::string> >  aLPair = ExpandCommand(3,"InternalCalledByP=true");
+       std::list<std::pair<std::string,std::string> >  aLPair = ExpandCommand(3,"InternalCalledByP=true",false,true);
 
        std::list<std::string>  aLCom ;
        std::list<std::string>  aNameIs ;
@@ -598,7 +599,6 @@ cAppli_Enveloppe_Main::cAppli_Enveloppe_Main(int argc,char ** argv) :
 
            if (aDoIt)
            {
-              std::cout << aCom<< "\n";
               aLCom.push_back(aCom);
            }
            else
@@ -732,10 +732,11 @@ cAppli_Enveloppe_Main::cAppli_Enveloppe_Main(int argc,char ** argv) :
    {
 
        std::string aDirMatch  = Dir() + "Masq-TieP-" + mNameIm  + "/";
-       ELISE_fp::PurgeDir(Dir()+aDirMatch,true);
+       ELISE_fp::PurgeDir(aDirMatch,true);
+
        if (mGlob)
        {
-           ELISE_fp::PurgeDir(Dir()+mDirMergeCurIm,true);
+           ELISE_fp::PurgeDir(mDirMergeCurIm,true);
        }
        else
        {
@@ -774,7 +775,7 @@ void cAppli_Enveloppe_Main::DownScaleNuage(eTypeMMByImNM aType)
 int MMEnveloppe_Main(int argc,char ** argv)
 {
    cAppli_Enveloppe_Main(argc,argv);
-   return 1;
+   return EXIT_SUCCESS;
 }
 
 
@@ -884,7 +885,7 @@ int MMInitialModel_main(int argc,char ** argv)
 
    // int i; DoNothingButRemoveWarningUnused(i);
 
-   return 0;
+   return EXIT_SUCCESS;
 }
 
 

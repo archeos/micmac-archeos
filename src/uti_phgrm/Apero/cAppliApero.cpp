@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 #define BDDL_FIRST 0
 
@@ -92,8 +93,14 @@ cAppliApero::cAppliApero (cResultSubstAndStdGetFile<cParamApero> aParam) :
    mCptIterCompens    (0),
    mHasEqDr           (false),
    mStatLastIter      (false),
-   mSqueezeDOCOAC     (0)
+   mSqueezeDOCOAC     (0),
+   mXmlSMLRop         (0)
 {
+     mIsLastIter = false;
+     mIsLastEtape = false;
+
+     SetPdsRegDist(mParam.SectionSolveur().RegDistGlob().PtrVal());
+
      setInputDirectory( mDC );
      std::string aNameFileDebug;
      if (mParam.FileDebug().IsInit())
@@ -214,6 +221,14 @@ void  cAppliApero::InitPosesTimeLink(const cTimeLinkage & aTLnk)
 }
 
 
+void AddNumBloc(std::vector<int> & aBloc, const cMapIncInterv & aMap)
+{
+    for (cMapIncInterv::const_iterator itB=aMap.begin() ; itB!=aMap.end() ; itB++)
+    {
+        aBloc.push_back(itB->NumBlocAlloc());
+    }
+}
+
 void cAppliApero::DoAMD()
 {
    if (mParam.ModeResolution() != eSysL2BlocSym)
@@ -245,11 +260,24 @@ void cAppliApero::DoAMD()
 
    for 
    (
-       std::set<std::pair<cPoseCam *,cPoseCam *> >::const_iterator it=mSetLinkedCam.begin();
-       it!=mSetLinkedCam.end();
+       std::set<std::pair<cGenPoseCam *,cGenPoseCam *> >::const_iterator it=mSetLinkedCamCam.begin();
+       it!=mSetLinkedCamCam.end();
        it++
    )
    {
+
+       cGenPoseCam * aPG1 = it->first;
+       cGenPoseCam * aPG2 = it->second;
+       std::vector<int> aNewNum;
+       AddNumBloc(aNewNum,aPG1->PDVF()->IntervAppuisPtsInc().Map());
+       AddNumBloc(aNewNum,aPG2->PDVF()->IntervAppuisPtsInc().Map());
+
+       for (int aK1=0 ; aK1 <int(aNewNum.size()) ; aK1++)
+           for (int aK2=aK1 ; aK2 <int(aNewNum.size()) ; aK2++)
+                mAMD->AddArc(aNewNum[aK1],aNewNum[aK2],true);
+
+/*
+       Ancienne version, avant GenPoseCam
        // int aNums[4];
        std::vector<int> aNums;
        cPoseCam * aPC1 = it->first;
@@ -257,7 +285,6 @@ void cAppliApero::DoAMD()
        cParamIntrinsequeFormel &  aPIF1 = aCal1->PIF();
        aNums.push_back(aPIF1.IncInterv().NumBlocAlloc());
        aNums.push_back(aPC1->RF().IncInterv().NumBlocAlloc());
-
 
        cPoseCam * aPC2 = it->second;
        cCalibCam * aCal2 = aPC2->Calib();
@@ -269,6 +296,11 @@ void cAppliApero::DoAMD()
        for (int aK1=0 ; aK1 <int(aNums.size()) ; aK1++)
            for (int aK2=aK1 ; aK2 <int(aNums.size()) ; aK2++)
                 mAMD->AddArc(aNums[aK1],aNums[aK2],true);
+
+
+
+
+*/
 
 
    }
@@ -334,38 +366,24 @@ void cAppliApero::DoAMD()
    if (ShowMes())
       std::cout << "END AMD \n";
    
-
-  
-
 }
 
-void cAppliApero::AddLinkCam(cPoseCam * aC1,cPoseCam * aC2)
+void cAppliApero::AddLinkCamCam(cGenPoseCam * aCG1,cGenPoseCam * aCG2)
 {
-   if (aC1>aC2) 
-      ElSwap(aC1,aC2);
-  mSetLinkedCam.insert(std::pair<cPoseCam *,cPoseCam *>(aC1,aC2)); 
-  AddLinkCamCal(aC1,aC1->Calib());
-  AddLinkCamCal(aC2,aC2->Calib());
-  AddLinkCal(aC1->Calib(),aC2->Calib());
+   if (aCG1>aCG2) 
+      ElSwap(aCG1,aCG2);
+
+  mSetLinkedCamCam.insert(std::pair<cGenPoseCam *,cGenPoseCam *>(aCG1,aCG2)); 
+
 }
 
-
-void cAppliApero::AddLinkCal(cCalibCam  * aC1,cCalibCam  * aC2)
-{
-   if (aC1>aC2) 
-      ElSwap(aC1,aC2);
-  mSetLinkedCal.insert(std::pair<cCalibCam *,cCalibCam *>(aC1,aC2)); 
-}
 
 bool cAppliApero::ZuUseInInit() const
 {
   return true;
 }
 
-void cAppliApero::AddLinkCamCal(cPoseCam *aCam,cCalibCam  * aCalib)
-{
-   mSetLinkedCamCal.insert(std::pair<cPoseCam *,cCalibCam *>(aCam,aCalib));
-}
+
 
 void cAppliApero::InitFilters()
 {
@@ -533,6 +551,14 @@ void  cAppliApero::CompileObsersvations()
   CompileOsbOr();
   CompileObsCentre();
   InitObsRelGPS();
+
+
+  for (int aK=0 ; aK<int(mVecPolynPose.size()) ; aK++)
+  {
+      cPosePolynGenCam * aGPC = mVecPolynPose[aK];
+      aGPC->PolyF()->PostInit() ;
+  }
+
 }
 
 void cAppliApero::Verifs()
@@ -634,13 +660,10 @@ cPackObsLiaison * cAppliApero::GetPackOfName(const std::string& anId)
    return GetEntreeNonVide(mDicoLiaisons,anId,"cAppliApero::GetPackOfName");
 }
 
-bool  cAppliApero::PoseExist(const std::string & aName)
-{
-   return mDicoPose.find(aName) != mDicoPose.end();
-}
 
-cPoseCam * cAppliApero::PoseFromNameGen(const std::string & aName,bool SVP)
+cPoseCam * cAppliApero::PoseCSFromNameGen(const std::string & aName,bool SVP)
 {
+   
    tDiPo::iterator iT = mDicoPose.find(aName);
    if (iT==mDicoPose.end())
    {
@@ -649,20 +672,41 @@ cPoseCam * cAppliApero::PoseFromNameGen(const std::string & aName,bool SVP)
           return iT->second;
        if (SVP)
           return 0;
-       std::cout << "NAME =[" << aName << "]\n";
+       std::cout << "NAME =[" << aName << "]\n"; 
        ELISE_ASSERT(false,"cAppliApero::PoseFromName");
    }
    return iT->second;
 }
-
 cPoseCam * cAppliApero::PoseFromName(const std::string & aName)
 {
-    return PoseFromNameGen(aName,false);
+    return PoseCSFromNameGen(aName,false);
 }
 cPoseCam * cAppliApero::PoseFromNameSVP(const std::string & aName)
 {
-    return PoseFromNameGen(aName,true);
+    return PoseCSFromNameGen(aName,true);
 }
+
+
+
+cGenPoseCam * cAppliApero::PoseGenFromNameGen(const std::string & aName,bool SVP)
+{
+   tDiPoGen::iterator iT = mDicoGenPose.find(aName);
+
+   if (iT !=  mDicoGenPose.end()) 
+      return iT->second;
+
+   return PoseCSFromNameGen(aName,SVP);
+}
+cGenPoseCam *  cAppliApero::PoseGenFromName(const std::string & aName)
+{
+   return PoseGenFromNameGen(aName,false);
+}
+cGenPoseCam *  cAppliApero::PoseGenFromNameSVP(const std::string & aName)
+{
+   return PoseGenFromNameGen(aName,true);
+}
+
+
  
 
 std::vector<cPoseCam *> cAppliApero::ListPoseOfPattern(const std::string & aPat)
@@ -703,9 +747,18 @@ const std::string & cAppliApero::NameCalOfPose(const std::string & aNP)
 }
 
 
-bool cAppliApero::NamePoseIsKnown(const std::string & aName) const
+
+bool  cAppliApero::PoseExist(const std::string & aName)
+{
+   return mDicoPose.find(aName) != mDicoPose.end();
+}
+bool cAppliApero::NamePoseCSIsKnown(const std::string & aName) const
 {
       return mDicoPose.find(aName) != mDicoPose.end();
+}
+bool cAppliApero::NamePoseGenIsKnown(const std::string & aName) const
+{
+      return mDicoGenPose.find(aName) != mDicoGenPose.end();
 }
 
 
@@ -836,6 +889,17 @@ const std::string & cAppliApero::SymbPack0() const
   return mSymbPack0;
 }
 
+const cXmlSLM_RappelOnPt *   cAppliApero::XmlSMLRop()
+{
+    return mXmlSMLRop;
+}
+
+cArg_UPL     cAppliApero::ArgUPL()
+{
+   return cArg_UPL(mXmlSMLRop);
+}
+
+
 
 void cAppliApero::CheckInit(const cLiaisonsInit * aLI,cPoseCam * aPC)
 {
@@ -844,7 +908,7 @@ void cAppliApero::CheckInit(const cLiaisonsInit * aLI,cPoseCam * aPC)
 
     if (! anOLM) return;
 
-     anOLM->CheckInit();
+     anOLM->OLMCheckInit();
 
 
 }
@@ -945,11 +1009,11 @@ void ShowSpectrSys(cSetEqFormelles & aSetEq)
         aVPMin = ElMin(aVPMin,aValP);
         aVPMax = ElMax(aVPMax,aValP);
 
-        std::cout << "Valp "  << aValP << "\n";
+        std::cout << "Valp[" << aK << "]= "  << aValP << "\n";
     }
 
     std::cout << "Det=" << aDet  << " VPMin=" << aVPMin << " VPMax=" << aVPMax << "\n";
-    getchar();
+    // getchar();
 }
 
 void cAppliApero::DebugPbConvAppui()
@@ -957,6 +1021,26 @@ void cAppliApero::DebugPbConvAppui()
     ShowSpectrSys(mSetEq);
 }
 
+void cAppliApero::SetPdsRegDist(const cXmlPondRegDist * aPds)
+{
+    if (aPds && (aPds->Pds0() || aPds->Pds1() ||  aPds->Pds2()))
+       mCurXmlPondRegDist = aPds;
+    else
+       mCurXmlPondRegDist = 0;
+}
+
+bool  cAppliApero::UsePdsCalib()
+{
+      return true;
+      // return (mCurXmlPondRegDist!=0) || (mIsLastIter && mIsLastEtape);
+}
+
+const cXmlPondRegDist * cAppliApero::CurXmlPondRegDist()
+{
+   return mCurXmlPondRegDist;
+}
+
+ 
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

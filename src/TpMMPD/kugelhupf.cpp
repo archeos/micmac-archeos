@@ -37,7 +37,7 @@ English :
 
 Header-MicMac-eLiSe-25/06/2007*/
 #include "StdAfx.h"
-
+#include "kugelhupf.h"
 /**
  * Kugelhupf: Automatic fiducial point determination
  * Klics Ubuesques Grandement Evites, Lent, Hasardeux mais Utilisable pour Points Fiduciaux
@@ -56,45 +56,427 @@ Header-MicMac-eLiSe-25/06/2007*/
  * */
 
 
+// "PAquet" d'image correspondant a une resolution
+
+double cQuickCorrelPackIm::Correl(const Pt2dr & aDec,eModeInterpolation aMode)
+{
+    Pt2di aDecI = round_ni(aDec);
+    RMat_Inertie aMat;
+    double aV1=0,aV2=0,aPds=0;
+    int aRab = 3;
+    Pt2di aPRab(aRab,aRab);
+
+    Pt2di aP0 = Sup(Pt2di(0,0), aPRab-aDecI );
+    Pt2di aP1 = Inf(mTRef.sz(), mTIm.sz() - aDecI - aPRab);
+
+    Pt2di aP;
+    for (aP.x =aP0.x ; aP.x<aP1.x ; aP.x++)
+    {
+        for (aP.y =aP0.y ; aP.y<aP1.y ; aP.y++)
+        {
+            aPds = mTMasq.get(aP);
+            if (aPds)
+            {
+                aV1 = mTRef.get(aP);
+                if (aMode==eInterpolPPV)
+                {
+                    aV2 = mTIm.get(aP+aDecI);
+                }
+                else // if (aMode==eInterpolBiLin)
+                {
+                    aV2 = mTIm.getr(Pt2dr(aP)+aDec);
+                }
+
+                aMat.add_pt_en_place(aV1,aV2,aPds);
+            }
+        }
+    }
+    if (aMat.s()==0) return -1;
+    return aMat.correlation(1e-5);
+}
+
+Pt2di cQuickCorrelPackIm::OptimizeInt(const Pt2di aP0,int aSzW)
+{
+    double aMaxCor = -1e9;
+    Pt2di aPMax(0,0);
+
+    for (int aDx=-aSzW ; aDx<=aSzW ; aDx++)
+    {
+       for (int aDy=-aSzW ; aDy<=aSzW ; aDy++)
+       {
+           Pt2di aP  = Pt2di(aDx,aDy) + aP0;
+           double aCor =  Correl(Pt2dr(aP),eInterpolPPV);
+           if (aCor>aMaxCor)
+           {
+               aMaxCor = aCor;
+               aPMax = aP;
+           }
+       }
+    }
+    return aPMax;
+}
+
+
+
+Pt2dr cQuickCorrelPackIm::OptimizeReel(const Pt2dr aP0,double aStep,int aSzW)
+{
+    double aMaxCor = -1e9;
+    Pt2dr aPMax(0,0);
+
+    for (int aDx=-aSzW ; aDx<=aSzW ; aDx++)
+    {
+       for (int aDy=-aSzW ; aDy<=aSzW ; aDy++)
+       {
+           Pt2dr aP  =  aP0+ Pt2dr(aDx,aDy) * aStep;
+           double aCor =  Correl(Pt2dr(aP),eInterpolBiLin);
+           if (aCor>aMaxCor)
+           {
+               aMaxCor = aCor;
+               aPMax = aP;
+           }
+       }
+    }
+    return aPMax;
+}
+
+
+
+
+void ReducePackIm( TIm2D<REAL4,REAL8>  ImOut, TIm2D<REAL4,REAL8> ImIn,double aSsRes,double aDil)
+{
+   ELISE_COPY
+   (
+         ImOut.all_pts(),
+         StdFoncChScale(ImIn.in(0),Pt2dr(0,0),Pt2dr(1/aSsRes,1/aSsRes),Pt2dr(aDil,aDil)),
+         ImOut.out()
+   );
+
+}
+
+void cQuickCorrelPackIm::InitByReduce(const cQuickCorrelPackIm & aPack,double aDil)
+{
+    double aSsRes = mResol / aPack.mResol;
+    ReducePackIm(mTIm,aPack.mTIm,aSsRes,aDil);
+    ReducePackIm(mTRef,aPack.mTRef,aSsRes,aDil);
+    ReducePackIm(mTMasq,aPack.mTMasq,aSsRes,aDil);
+}
+
+void cQuickCorrelPackIm::FinishLoad()
+{
+   ELISE_COPY(mTMasq.all_pts(),mTMasq.in(),sigma(mSomPds));
+}
+
+cQuickCorrelPackIm::cQuickCorrelPackIm(Pt2di aSzBuf,Pt2di aSzMarq,double aResol) :
+    mSzIm    (round_ni(Pt2dr(aSzBuf)*aResol)),
+    mSzMarq  (round_ni(Pt2dr(aSzMarq)*aResol)),
+    mResol   (aResol),
+    mTIm     (mSzIm),
+    mTRef    (mSzMarq),
+    mTMasq   (mSzMarq),
+    mW       (0)
+{
+    ELISE_COPY(mTMasq._the_im.all_pts(),1.0,mTMasq._the_im.out());
+}
+
+
+Pt2di cQuickCorrelPackIm::DecFFT(double & aCorr)
+{
+    ElTimer aChrono;
+    Im2D_REAL8 aRes = ElFFTPonderedCorrelNCPadded
+                      (
+                           mTIm.in(0),
+                           mTRef.in(0),
+                           mTIm.sz(),
+                           1.0,
+                           mTMasq.in(0),
+                           1e-5,
+                           mSomPds * 0.99
+                      );
+    TIm2D<REAL8,REAL8> aTRes(aRes);
+    Pt2di aPMax;
+    ELISE_COPY(aRes.all_pts(),aRes.in(),aPMax.WhichMax());
+    aCorr = aTRes.get(aPMax);
+
+/*
+    Pt2di aSz = aRes.sz();
+    Pt2di aP;
+    for (aP.x=0 ; aP.x<aSz.x ; aP.x++)
+    {
+        for (aP.y=0 ; aP.y<aSz.y ; aP.y++)
+        {
+             if (std_isnan(aTRes.get(aP))) std::cout << "NNAAAAn\n";
+        }
+    }
+*/
+
+    bool VisuFFT=false;
+    if (VisuFFT)  // mettre 1 si on veut visualiser les FFT
+    {
+        if (mW==0)
+           mW = Video_Win::PtrWStd(aRes.sz());
+    }
+
+
+    if (VisuFFT &&(mW!=0))
+    {
+         Fonc_Num aF = (1.0+aRes.in())*128;
+         // ELISE_COPY(mW->all_pts(),mTIm.in(0) ,mW->ogray());
+         ELISE_COPY(mW->all_pts(),Max(0.0,Min(255.0,aF)) ,mW->ogray());
+         mW->draw_circle_loc(Pt2dr(aPMax),5.0,mW->pdisc()(P8COL::red));
+         mW->clik_in();
+    }
+    aPMax =  DecFFT2DecIm(aRes,aPMax);
+
+    return aPMax;
+}
+
+
+
+
+
+cQuickCorrelOneFidMark::cQuickCorrelOneFidMark
+(
+              Fonc_Num            aFoncIm,
+              Fonc_Num            aFoncRef,
+              Fonc_Num            aFoncMasq,
+              Box2di              aBoxRef,
+              Pt2di               aIncLoc,
+              int                 aSzFFT
+) :
+    mFoncFileIm     (aFoncIm),
+    mFoncRef        (aFoncRef),
+    mFoncMasqRef    (aFoncMasq),
+    mNoMasq         (mFoncMasqRef.is1()),
+    mBoxRef         (aBoxRef),
+    mSzRef          (mBoxRef.sz()),
+    mIncLoc         (aIncLoc),
+    mSzBuf          (mSzRef + mIncLoc*2),
+    mSzSsResFFT     (aSzFFT),
+    mSsRes          (double(mSzSsResFFT) / dist8(mSzBuf)),
+    mNbNiv          (3),
+    mSsResByNiv     (pow(mSsRes,1.0/(mNbNiv-1)))
+{
+    // Pour l'instant on met en dur une pyram a trois niveau
+    
+    for (int aK=0 ; aK<mNbNiv ; aK++)
+    {
+         mPyram.push_back(cQuickCorrelPackIm(mSzBuf,mSzRef,pow(mSsResByNiv,aK)));
+    }
+}
+
+
+cOneSol_QuickCor  cQuickCorrelOneFidMark::TestCorrel(const Pt2dr & aP0)
+{
+    // Calcul de l'offset de chargement
+    mCurDecRef = round_ni(aP0) + mBoxRef._p0;
+    mCurDecIm = mCurDecRef -mIncLoc;
+
+
+    LoadIm();
+    double aCorFFT;
+    Pt2di aPDec = mPyram[mNbNiv-1].DecFFT(aCorFFT);
+
+    // std::cout << "DECC " << aPDec << "\n";
+    for (int aK=mNbNiv-2 ;  aK>=0 ; aK--)
+    {
+          aPDec = round_ni(Pt2dr(aPDec) /mSsResByNiv);
+          Pt2di aPOpt =  mPyram[aK].OptimizeInt(aPDec,1+round_up(2/mSsResByNiv));
+ 
+          aPDec = aPOpt;
+    }
+
+    Pt2dr aRPDec = Pt2dr(aPDec);
+    for (double aStep=0.5 ; aStep>0.1 ; aStep/=2)
+    {
+       aRPDec =  mPyram[0].OptimizeReel(aRPDec,aStep,2);
+    }
+
+    cOneSol_QuickCor aRes;
+    // aPInc   = aP0 - mCurDecRef + mCurDecIm + aPDec
+    // 
+
+    aRes.mPOut =  aP0 + aRPDec + Pt2dr(mCurDecIm-mCurDecRef) ;
+    return aRes;
+}
+
+void cQuickCorrelOneFidMark::LoadIm()
+{
+    // On charge les fichiers images dans les buffer a pleine resol
+    ELISE_COPY(mPyram[0].mTIm.all_pts() ,trans(mFoncFileIm,mCurDecIm),mPyram[0].mTIm.out());
+    ELISE_COPY(mPyram[0].mTRef.all_pts(),trans(mFoncRef,mCurDecRef),mPyram[0].mTRef.out());
+    ELISE_COPY(mPyram[0].mTMasq.all_pts(),trans(mFoncMasqRef,mCurDecRef),mPyram[0].mTMasq.out());
+
+
+
+    // calcule des images reduite
+   for (int aK=1 ; aK<mNbNiv ; aK++)
+   {
+        mPyram[aK].InitByReduce(mPyram[aK-1],pow(2.0,1.0/(mNbNiv-1)));
+   }
+
+   for (int aK=0 ; aK<mNbNiv ; aK++)
+      mPyram[aK].FinishLoad();
+
+   //     Tiff_Im::Create8BFromFonc("TestKU-Im0.fif",mPyram[0].mTIm.sz(),mPyram[0].mTIm.in());
+   //     Tiff_Im::Create8BFromFonc("TestKU-Im1.fif",mPyram[1].mTIm.sz(),mPyram[1].mTIm.in());
+   //     Tiff_Im::Create8BFromFonc("TestKU-Im2.fif",mPyram[2].mTIm.sz(),mPyram[2].mTIm.in());
+}
+
+
+
+/*****************************************************************************/
+
+
+const std::string cAppli_FFTKugelhupf_main::TheKeyOI = "Key-Assoc-STD-Orientation-Interne";
+
+cAppli_FFTKugelhupf_main::cAppli_FFTKugelhupf_main(int argc,char ** argv) :
+  cAppliWithSetImage      (argc-1,argv+1,TheFlagNoOri),
+  mTargetHalfSzPx         (150,150),
+  mSearchIncertitudePx    (500),
+  mExtMasq                ("NONE")
+{
+    ElInitArgMain
+    (
+         argc,argv,
+         LArgMain()  << EAMC(mFullPattern, "Pattern of scanned images",  eSAM_IsPatFile)
+                     << EAMC(mFiducPtsFileName, "2d fiducial points of an image", eSAM_IsExistFile),
+         LArgMain()  << EAM(mTargetHalfSzPx,"TargetHalfSize",true,"Target half size in pixels (Def=150)")
+                     << EAM(mExtMasq,"Masq",true,"Masq extension for ref image, Def=NONE (means unused)")
+                     << EAM(mSearchIncertitudePx,"SearchIncertitude",true,"Def=500")
+                     << EAM(mSzFFT,"SzFFT",true,"Sz of initial fft research, power of recomanded, Def=256 or 128 depending other")
+/*
+                     << EAM(aSearchIncertitudePx,"SearchIncertitude",true,"Search incertitude in pixels (Def=5)")
+                     << EAM(aSearchStepPx,"SearchStep",true,"Search step in pixels (Def=0.5)")
+                     << EAM(aThreshold,"Threshold",true,"Limit to accept a correlation (Def=0.90)")
+*/
+    );
+
+
+     const cInterfChantierNameManipulateur::tSet * aSetIm = mEASF.SetIm();
+
+     mEASF.mICNM->Assoc2To1(TheKeyOI,"XXX",true);
+
+
+     if (aSetIm->size() ==0)
+     {
+          ELISE_ASSERT(false,"No image in FFTKugelhupf");
+     }
+     else if (aSetIm->size() > 1)
+     {
+         std::cout << "cAppli_FFTKugelhupf_main::cAppli_FFTKugelhupf_main \n";
+         ExpandCommand(2,"",true);
+         return;
+     }
+
+
+     if (! EAMIsInit(&mSzFFT))
+     {
+          double aNb = 2*sqrt(double((mTargetHalfSzPx.x+mSearchIncertitudePx)*(mTargetHalfSzPx.y+mSearchIncertitudePx)));
+          mSzFFT = (aNb > 5200) ? 256 : 128;
+     }
+
+
+     mDico = StdGetFromPCP(mFiducPtsFileName,MesureAppuiFlottant1Im);
+
+     mNameIm2Parse = (*aSetIm)[0]; 
+     mNameImRef    = mDico.NameIm();
+
+     if (mExtMasq != "NONE")
+     {
+        CorrecNameMasq(mEASF.mDir,mNameImRef,mExtMasq);
+        mWithMasq = true;
+        mNameFileMasq = StdPrefix(mNameImRef) + mExtMasq + ".tif";
+     }
+     else
+     {
+        mWithMasq = false;
+     }
+
+     mQCor = new cQuickCorrelOneFidMark
+                 (
+                      Tiff_Im::StdConvGen(mNameIm2Parse,1,true).in(0),
+                      Tiff_Im::StdConvGen(mNameImRef,1,true).in(0),
+                      mWithMasq ?  Tiff_Im::StdConvGen(mNameFileMasq,1,true).in(0) : 1,
+                      Box2di(-mTargetHalfSzPx,mTargetHalfSzPx),
+                      Pt2di(mSearchIncertitudePx,mSearchIncertitudePx),
+                      mSzFFT
+                 );
+
+    DoResearch();
+    // std::cout << "EXTMASQ = " << mExtMasq  << " " << mNameFileMasq<< "\n";
+     // mQCor = new  
+}
+
+void cAppli_FFTKugelhupf_main::DoResearch()
+{
+    cMesureAppuiFlottant1Im aRes;
+    aRes.NameIm() = mNameIm2Parse;
+    
+    for 
+    (
+        std::list<cOneMesureAF1I>::const_iterator itM=mDico.OneMesureAF1I().begin() ;
+        itM!=mDico.OneMesureAF1I().end() ;
+        itM++
+    )
+    {
+        cOneMesureAF1I aMes;
+        aMes.NamePt() = itM->NamePt();
+        cOneSol_FFTKu aSol = Research1(*itM);
+        aMes.PtIm() = aSol.mOut.mPOut;
+        aRes.OneMesureAF1I().push_back(aMes);
+    }
+   
+    double     aResidu;
+    ElAffin2D  anAff = ElAffin2D::L2Fit(mPackH,&aResidu);
+    aRes.PrecPointeByIm().SetVal(aResidu);
+
+    MakeFileXML(aRes,mEASF.mICNM->Assoc2To1(TheKeyOI,mNameIm2Parse,true).second);
+    std::cout << "RESIDU = " << aResidu << " for " << mNameIm2Parse << "\n";
+}
+cOneSol_FFTKu cAppli_FFTKugelhupf_main::Research1(const cOneMesureAF1I & aMes)
+{
+    cOneSol_FFTKu aSol;
+    aSol.mOut = mQCor->TestCorrel(aMes.PtIm());
+    aSol.mIn = aMes;
+
+    mVSols.push_back(aSol);
+    
+    mPackH.Cple_Add(ElCplePtsHomologues(aSol.mOut.mPOut,aSol.mIn.PtIm()));
+    return aSol;
+}
+
+
+int FFTKugelhupf_main(int argc,char ** argv) 
+{
+   cAppli_FFTKugelhupf_main anAppli(argc,argv);
+
+
+   return EXIT_SUCCESS;
+}
+
+
+
 //----------------------------------------------------------------------------
 
-static const double TheDefCorrel = -2.0;
 
-//Image for correlation class
-//all images for correlation have the same size
-class cCorrelImage
-{
-  public :
-    cCorrelImage();
-    Im2D<REAL4,REAL8> * getIm(){return &mIm;}
-    TIm2D<REAL4,REAL8> * getImT(){return &mTIm;}
-    double CrossCorrelation(const cCorrelImage & aIm2);
-    double Covariance(const cCorrelImage & aIm2);
-    static void setSzW(int aSzW);
-
-    void getFromIm(Im2D<U_INT1,INT4> * anIm,double aCenterX,double aCenterY);
-
-  protected:
-    void prepare();//prepare for correlation (when mTifIm is set)
-    Pt2di mSz;
-    static int mSzW;//window size for the correlation
-    TIm2D<REAL4,REAL8> mTIm; //the picture
-    Im2D<REAL4,REAL8>  mIm;
-    TIm2D<REAL4,REAL8> mTImS1; //the sum picture
-    Im2D<REAL4,REAL8>  mImS1;
-    TIm2D<REAL4,REAL8> mTImS2; //the sum² picture
-    Im2D<REAL4,REAL8>  mImS2;
-};
 
 int cCorrelImage::mSzW=8;
-
 void cCorrelImage::setSzW(int aSzW)
 {
   mSzW=aSzW;
 }
 
+int cCorrelImage::getSzW()
+{
+  return this->mSzW;
+}
 
-cCorrelImage::cCorrelImage() :
+Pt2di cCorrelImage::getmSz()
+{
+  return this->mSz;
+}
+
+cCorrelImage::cCorrelImage():
   mSz    (Pt2di(mSzW*2+1,mSzW*2+1)),
   mTIm    (mSz),
   mIm     (mTIm._the_im),
@@ -113,6 +495,27 @@ void cCorrelImage::getFromIm(Im2D<U_INT1,INT4> * anIm,double aCenterX,double aCe
      anIm->in(0)[Virgule(FX+aCenterX-mSzW,FY+aCenterY-mSzW)], //put in (x,y) on destination pic what is in (x+400,y+400) in source pic
      mIm.out()
     );
+
+  //to write to a file:
+  //Tiff_Im(
+  //          "toto.tif",
+  //          Pt2di(400,400),
+  //          GenIm::u_int1,
+  //          Tiff_Im::No_Compr,
+  //          Tiff_Im::BlackIsZero,
+  //          Tiff_Im::Empty_ARG ).out()
+  prepare();
+}
+
+void cCorrelImage::getWholeIm(Im2D<U_INT1,INT4> * anIm)
+{
+  ELISE_COPY
+    (
+     mIm.all_pts(),
+     anIm->in()[Virgule(FX,FY)],
+     mIm.out()
+    );
+
   //to write to a file:
   //Tiff_Im(
   //          "toto.tif",
@@ -169,7 +572,7 @@ double cCorrelImage::CrossCorrelation( const cCorrelImage & aIm2 )
 double cCorrelImage::Covariance( const cCorrelImage & aIm2 )
 {
   Pt2di aPIm1(mSzW,mSzW);
-  if (1) // A test to check the low level access to data
+  if (1) // A test to check the low level access to data - pixel access
   {
     float ** aRaw2 = mIm.data();
     float *  aRaw1 = mIm.data_lin();
@@ -205,35 +608,6 @@ double cCorrelImage::Covariance( const cCorrelImage & aIm2 )
 
 
 // ScannedImage class
-class cScannedImage
-{
-  public:
-    cScannedImage
-      (
-       std::string aNameScannedImage,
-       cInterfChantierNameManipulateur * aICNM,
-       std::string aXmlDir
-      );
-    Pt2di getSize(){return mImgSz;}
-    TIm2D<U_INT1,INT4> * getImT(){return & mImT;}
-    Im2D<U_INT1,INT4> * getIm(){return & mIm;}
-    cMesureAppuiFlottant1Im & getAllFP(){return mAllFP;}//all fiducial points
-    std::string getName(){return mName;}
-    std::string getXmlFileName(){return mXmlFileName;}
-    bool isExistingXmlFile(){return ELISE_fp::exist_file(mXmlFileName);}
-
-
-
-  protected:
-    std::string        mName;
-    std::string        mNameImageTif;
-    cMesureAppuiFlottant1Im mAllFP;//all fiducial points
-    std::string mXmlFileName;
-    Tiff_Im            mTiffIm;
-    Pt2di              mImgSz;
-    TIm2D<U_INT1,INT4> mImT;
-    Im2D<U_INT1,INT4>  mIm;
-};
 
 
 cScannedImage::cScannedImage
@@ -246,10 +620,17 @@ cScannedImage::cScannedImage
   mTiffIm           (mNameImageTif.c_str()),
   mImgSz            (mTiffIm.sz()),
   mImT              (mImgSz),
-  mIm               (mImT._the_im)
+  mIm               (mImT._the_im),
+  mIsLoaded         (false)
 {
   //std::cout<<"ScannedImageName: "<<mName<<std::endl;
-  ELISE_COPY(mIm.all_pts(),mTiffIm.in(),mIm.out());
+  
+}
+
+void cScannedImage::load()
+{
+    ELISE_COPY(mIm.all_pts(),mTiffIm.in(),mIm.out());
+    mIsLoaded=true;
 }
 
 //----------------------------------------------------------------------------
@@ -261,6 +642,7 @@ int Kugelhupf_main(int argc,char ** argv)
   int aTargetHalfSzPx=64;//target size in pixel
   int aSearchIncertitudePx=5;//Search incertitude
   double aSearchStepPx=0.5;//Search step
+  double aThreshold=0.9;//limit to accept a correlation
  
   bool verbose=false;
 
@@ -277,6 +659,7 @@ int Kugelhupf_main(int argc,char ** argv)
      LArgMain()  << EAM(aTargetHalfSzPx,"TargetHalfSize",true,"Target half size in pixels (Def=64)")
      << EAM(aSearchIncertitudePx,"SearchIncertitude",true,"Search incertitude in pixels (Def=5)")
      << EAM(aSearchStepPx,"SearchStep",true,"Search step in pixels (Def=0.5)")
+     << EAM(aThreshold,"Threshold",true,"Limit to accept a correlation (Def=0.90)")
     );
     
   if (MMVisualMode) return EXIT_SUCCESS;
@@ -328,6 +711,7 @@ int Kugelhupf_main(int argc,char ** argv)
   cCorrelImage aTargetIm;
   cCorrelImage aTargetImSearch;
 
+
   std::vector<cScannedImage*> aImgList;
   for (unsigned int i=0;i<aSetIm.size();i++)
   {
@@ -339,6 +723,7 @@ int Kugelhupf_main(int argc,char ** argv)
     if (aImg->isExistingXmlFile())
     {
       std::cout<<"  Already has an xml file."<<std::endl;
+      delete aImg;
       continue;
     }
 
@@ -402,11 +787,12 @@ int Kugelhupf_main(int argc,char ** argv)
       }
       if (verbose)
         std::cout<<"Best: "<<aBestPt.PtIm()<<" ("<<aCoefCorrelMax<<")\n";
-      if (aCoefCorrelMax>0.9)
+      if (aCoefCorrelMax>aThreshold)
       {
         aImg->getAllFP().OneMesureAF1I().push_back(aBestPt);
       }else{
-        std::cout<<"Bad match on "<<itP->NamePt()<<": "<<aCoefCorrelMax<<std::endl;
+        std::cout<<"Bad match on "<<itP->NamePt()<<": "<<aCoefCorrelMax<<"/"<<aThreshold<<std::endl;
+        break;
       }
     }
     std::cout<<"\n";
@@ -416,6 +802,7 @@ int Kugelhupf_main(int argc,char ** argv)
       std::cout<<"  Save xml file."<<std::endl;
       MakeFileXML(aImg->getAllFP(),aImg->getXmlFileName());
     }
+    delete aImg;
   }
 
   return EXIT_SUCCESS;

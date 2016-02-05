@@ -124,16 +124,7 @@ int AsterDestrip_main(int argc, char ** argv)
 
     }
 
-
-
-
-
-
-
-
-
-
-
+	
     Tiff_Im  aTOut
         (
         aFileOut.c_str(),

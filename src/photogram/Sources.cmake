@@ -34,6 +34,7 @@ set(Photogram_Src_Files
 	${PHOTOGR_DIR}/phgr_or_code_gen5.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen6.cpp
 	${PHOTOGR_DIR}/phgr_or_code_gen7.cpp
+	${PHOTOGR_DIR}/phgr_or_code_gen8.cpp
 	${PHOTOGR_DIR}/phgr_or_opt.cpp
 	${PHOTOGR_DIR}/phgr_or_param_extr.cpp
 	${PHOTOGR_DIR}/phgr_or_param_intr.cpp
@@ -52,6 +53,8 @@ set(Photogram_Src_Files
 	${PHOTOGR_DIR}/phgr_mep_cocentrik.cpp
 	${PHOTOGR_DIR}/phgr_mep_patch_plane.cpp
 	${PHOTOGR_DIR}/phgr_quickm33.cpp
+	${PHOTOGR_DIR}/phgr_bundle_gen.cpp
+	${PHOTOGR_DIR}/phgr_vrai_bundle.cpp
 )
 
 SOURCE_GROUP(Photogram FILES ${Photogram_Src_Files})

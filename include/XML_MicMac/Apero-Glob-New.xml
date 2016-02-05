@@ -7,6 +7,17 @@
 
       <DicoLoc>
 
+               <Symb>  HasSinglePoseCalibEstim=false </Symb>
+               <Symb>  PatSinglePose=XXXXX </Symb>
+               <Symb>  PatSingleCalib=XXXXX </Symb>
+<!--
+
+               <Symb>  HasSinglePoseCalibEstim=true </Symb>
+               <Symb>  PatSinglePose=V1_MPD1.jpg</Symb>
+               <Symb>  PatSingleCalib=.*V1 </Symb>
+-->
+               <eSymb> NotHasSinglePoseCalibEstim=! ${HasSinglePoseCalibEstim} </eSymb>
+
 
                <Symb>  TolLinkPPCD=0.2 </Symb> 
                <Symb>  SeuilFE=16.5 </Symb> 
@@ -45,9 +56,13 @@
                <Symb> ValAff=eLiberte_Phgr_Std_Aff </Symb>
                <Symb> RapTxt=""   </Symb>
                <Symb> PoseFigee="HUyZZ9_m@@9hyY" </Symb>
+               <Symb> CalibFigee="HUyZZ9_m@@9hyY" </Symb>
+               <Symb> CalibLibre=.* </Symb>
                <Symb> WithPoseFigee=false </Symb>
+               
+               <Symb> FrozeCalibInit=true </Symb>
 
-               <Symb>   Fast=false </Symb>
+               <Symb>   FastSet=Or ${HasSinglePoseCalibEstim}  ${Fast} </Symb>
                <Symb>   AutoCal=false </Symb>
                <Symb>   CalFigee=false </Symb>
 
@@ -64,6 +79,8 @@
                <Symb>  LibCD=XXXX    </Symb>
                <Symb>  LibDec=XXXX    </Symb>
 
+               <Symb>  EcartMaxInit=100.0 </Symb>
+               <Symb>  SigmaPondInit=5.0 </Symb>
                <Symb>  EcartMaxFin=5.0    </Symb>
                <Symb>  DoSauvAutom=true    </Symb>
     
@@ -92,9 +109,26 @@
 
                <eSymb> WithNoPoseFigee=! ${WithPoseFigee} </eSymb>
                <eSymb> IntrLVM1000=* 1000 ${IntrLVM} </eSymb>
-               <eSymb>  AffineAll=! ${Fast}  </eSymb>
-               <eSymb>  NbMax0=? ${Fast} 3 10  </eSymb>
+               <eSymb>  AffineAll=! ${FastSet}  </eSymb>
+               <eSymb>  NbMax0=? ${FastSet} 3 10  </eSymb>
 
+
+               <!--      Relatif aux problemes de panoramiques -->
+
+                <Symb>  UsePano=false </Symb>
+                <Symb>  CondMaxPano=1e4 </Symb>
+
+                <Symb>  UseSpecialParam0=false </Symb>
+                <Symb>  UseSpecialParam1=false </Symb>
+                <Symb>  SpecialParam0=eLib_PP_CD_10 </Symb>
+                <Symb>  SpecialParam1=eLiberteFocale_1 </Symb>
+
+                <Symb>  UseRegulDist=false </Symb>
+                <Symb>  RegDist0=0.0 </Symb>
+                <Symb>  RegDist1=0.0 </Symb>
+                <Symb>  RegDist2=0.0 </Symb>
+                <Symb>  RegDistNbCase=0.0 </Symb>
+                <Symb>  RegDistSeuil=0.0 </Symb>
        </DicoLoc>
 
        <SectionBDD_Observation>
@@ -233,6 +267,25 @@
               <ModeControleDescDic> ${ModeCDD} </ModeControleDescDic>
 	      <ModeResolution> eSysL2BlocSym </ModeResolution> 
 
+              <#WHEN VTEST=${UsePano}>
+                  <SLMGlob> 
+                      <XmlSLM_RappelOnPt>
+                           <CondMax> ${CondMaxPano} </CondMax> 
+                      </XmlSLM_RappelOnPt>
+                  </SLMGlob>
+              </#WHEN>
+              <#WHEN VTEST=${UseRegulDist}>
+                  <RegDistGlob>
+                        <Pds0> ${RegDist0} </Pds0>  <!-- Valeur force a Id -->
+                        <Pds1> ${RegDist1} </Pds1>  <!-- Grad force a 1 -->
+                        <Pds2> ${RegDist2} </Pds2>  <!-- Derive seconde forcee a 0 -->
+                        <NbCase> ${RegDistNbCase}   </NbCase>
+                        <SeuilNbPtsByCase > ${RegDistSeuil} </SeuilNbPtsByCase>
+                  </RegDistGlob>
+
+              </#WHEN>
+
+
         </SectionSolveur>
 
 
@@ -271,9 +324,11 @@
 
 
                        <SectionContraintes>
-                          <ContraintesCamerasInc>
-                              <Val> eAllParamFiges  </Val>
-                          </ContraintesCamerasInc>
+                          <#WHEN VTEST=${FrozeCalibInit}>
+                              <ContraintesCamerasInc>
+                                   <Val> eAllParamFiges  </Val> 
+                              </ContraintesCamerasInc>
+                           </#WHEN>
                            <ContraintesPoses>
                                    <NamePose>   ${PoseFigee} </NamePose>
                                    <ByPattern>  true </ByPattern>
@@ -317,9 +372,9 @@
                                  <EcartMesureIndiv>  1.0 </EcartMesureIndiv>
                                  <Show> eNSM_Paquet     </Show>
                                  <NbMax>   100    </NbMax>
-                                  <EcartMax> 100 </EcartMax>
-                                  <SigmaPond> 5 </SigmaPond>
-                                  <ModePonderation> eL1Secured </ModePonderation>
+                                     <EcartMax> ${EcartMaxInit} </EcartMax>
+                                     <SigmaPond> ${SigmaPondInit} </SigmaPond>
+                                     <ModePonderation> eL1Secured </ModePonderation>
                               </Pond>
                            </ObsLiaisons>
 		    </SectionObservations>
@@ -333,6 +388,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eAllParamLibres      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <CtrlTimeCompens>
@@ -351,12 +408,46 @@
                     </#WHEN>
 
 
+                    <!-- Liberer la focale qui est souvent assez fausse -->
+
+                    <#WHEN VTEST=${UseSpecialParam0}>
+                         <IterationsCompensation>
+
+                              <SectionContraintes>
+                                    <ContraintesCamerasInc>
+                                        <Val> ${SpecialParam0} </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
+                                    </ContraintesCamerasInc>
+                              </SectionContraintes>
+                              <Messages>   Special param : ${SpecialParam0}  </Messages>
+                         </IterationsCompensation>
+                         <IterationsCompensation> </IterationsCompensation>
+                    </#WHEN>
+                    <#WHEN VTEST=${UseSpecialParam1}>
+                         <IterationsCompensation>
+
+                              <SectionContraintes>
+                                    <ContraintesCamerasInc>
+                                        <Val> ${SpecialParam1} </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
+                                    </ContraintesCamerasInc>
+                              </SectionContraintes>
+                              <Messages>   Special param : ${SpecialParam1}  </Messages>
+                         </IterationsCompensation>
+                         <IterationsCompensation> </IterationsCompensation>
+                    </#WHEN>
+
+
                     <!-- D'abord 2 Coeff radiaux, car souvent focal instable -->
                     <#WHEN VTEST=${DoDR1}>
                          <IterationsCompensation>
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR1      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR1 </Messages>
@@ -368,6 +459,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR2      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR2 </Messages>
@@ -383,6 +476,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteFocale_1   </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  Lib FOC </Messages>
@@ -396,11 +491,15 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLib_PP_CD_10   </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                                     <#WHEN VTEST=${LibCD}>
                                          <ContraintesCamerasInc>
                                               <Val> eLib_PP_CD_Lies      </Val>
                                               <TolContrainte>  1e-5 </TolContrainte>
+                                              <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                              <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                          </ContraintesCamerasInc>
                                      </#WHEN>
                               </SectionContraintes>
@@ -408,6 +507,9 @@
                          </IterationsCompensation>
                          <#WHEN VTEST=${AffineAll}> <IterationsCompensation> </IterationsCompensation> </#WHEN>
                     </#WHEN>
+
+
+
 
                     <#WHEN VTEST=${DoDR3}>
                          <IterationsCompensation>
@@ -420,6 +522,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR3      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR3 </Messages>
@@ -435,6 +539,8 @@
                                              <Val>  eLib_PP_CD_11    </Val>
                                              <Val>  eLib_PP_CD_01    </Val>
                                         </#IF>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  CD </Messages>
@@ -454,6 +560,8 @@
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_Phgr_Std_Aff      </Val>
                                         <Val> eLiberteParamDeg_1      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn1 </Messages>
@@ -466,6 +574,8 @@
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_Dec1      </Val>
                                         <Val> eLiberte_Phgr_Std_Dec      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Decentrik </Messages>
@@ -478,6 +588,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR4      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR4 </Messages>
@@ -489,6 +601,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR5      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR5 </Messages>
@@ -502,6 +616,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_2      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn2 </Messages>
@@ -513,6 +629,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_3      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn3 </Messages>
@@ -524,6 +642,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_4      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn4 </Messages>
@@ -535,6 +655,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_5      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn5 </Messages>
@@ -546,6 +668,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_6      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn6 </Messages>
@@ -557,6 +681,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberteParamDeg_7      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  Polyn7 </Messages>
@@ -569,6 +695,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR6      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR6 </Messages>
@@ -581,6 +709,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR7      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR7 </Messages>
@@ -593,6 +723,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR8      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR8 </Messages>
@@ -605,6 +737,8 @@
                               <SectionContraintes>
                                     <ContraintesCamerasInc>
                                         <Val> eLiberte_DR9      </Val>
+                                        <PatternRefuteur> ${CalibFigee} </PatternRefuteur>
+                                        <PatternNameApply> ${CalibLibre} </PatternNameApply>
                                     </ContraintesCamerasInc>
                               </SectionContraintes>
                               <Messages>  LIB  DR9 </Messages>
@@ -716,8 +850,8 @@
                    <IterationsCompensation> 
                         <#IF VTEST=${AffineAll}>
                               <CtrlTimeCompens>
-                                    <NbMin > 3 </NbMin>
-                                    <NbMax>    10       </NbMax>
+                                    <NbMin > 2 </NbMin>
+                                    <NbMax>    9       </NbMax>
                                     <SeuilEvolMoy > 1e-10  </SeuilEvolMoy>
                                     <AutoAdaptLVM>
                                          <Mult> 1e-2  </Mult>  <!-- MultSLMEtape sera egal a Mult * EvolMoy -->
@@ -726,11 +860,13 @@
                               </CtrlTimeCompens>
                               <CtrlTimeCompens>
                                     <NbMin > 0 </NbMin>
-                                    <NbMax>    5      </NbMax>
+                                    <NbMax>    4      </NbMax>
                                     <SeuilEvolMoy > 1e-5  </SeuilEvolMoy>
                               </CtrlTimeCompens>
                         </#IF>
                    </IterationsCompensation>
+
+                   <IterationsCompensation> </IterationsCompensation>
 
 
 		    <SectionObservations>
@@ -752,7 +888,10 @@
 
                     <SectionExport>
                             <ExportPose>
-                                <PatternSel> (.*) </PatternSel>
+                                <#IF VTEST=${HasSinglePoseCalibEstim}>
+                                    <PatternSel> ${PatSinglePose} </PatternSel>
+                                    <PatternSel> (.*) </PatternSel>
+                                </#IF>
                                 <KeyAssoc> NKS-Assoc-Im2Orient@${AeroOut} </KeyAssoc>
                                 <AddCalib>  true </AddCalib>
                                 <NbVerif>  10 </NbVerif>
@@ -760,11 +899,16 @@
                                 <FileExtern> NKS-Assoc-FromFocMm@Ori${AeroOut}/AutoCal@.xml </FileExtern>
                                 <FileExternIsKey> true </FileExternIsKey>
                             </ExportPose>
-                             <ExportCalib>
+                            <ExportCalib>
+                                 <#WHEN VTEST=${HasSinglePoseCalibEstim}>
+                                       <PatternSel> ${PatSingleCalib} </PatternSel>
+                                 </#WHEN>
                                  <KeyAssoc>  NKS-Assoc-FromKeyCal@Ori${AeroOut}/AutoCal@.xml </KeyAssoc>
                                  <KeyIsName> false </KeyIsName>
                             </ExportCalib>
-                             <ExportResiduXml> Ori${AeroOut}/Residus.xml </ExportResiduXml>
+                            <#WHEN VTEST=${NotHasSinglePoseCalibEstim}>
+                                 <ExportResiduXml> Ori${AeroOut}/Residus.xml </ExportResiduXml>
+                            </#WHEN>
                     </SectionExport>
 	      </EtapeCompensation>
 	</SectionCompensation>

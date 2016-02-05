@@ -228,7 +228,7 @@ void GlCloud::addVertex(const GlVertex &vertex)
 
 int GlCloud::size()
 {
-    return _vertices.size();
+    return (int)_vertices.size();
 }
 
 GlVertex& GlCloud::getVertex(uint nb_vert)
@@ -278,7 +278,7 @@ void GlCloud::draw()
     glColorPointer(3, GL_FLOAT, 0, NULL);
     _vertexColor.release();
 
-    glDrawArrays( GL_POINTS, 0, size()*3 );
+    glDrawArrays( GL_POINTS, 0, size() );
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -305,6 +305,7 @@ void GlCloud::setBufferGl(bool onlyColor)
     {
         GlVertex vert = getVertex(bK);
 		QVector3D  pos  = vert.getPosition();
+
         QColor colo = vert.getColor();
         if(!onlyColor)
         {

@@ -36,12 +36,13 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 template  class ElQT<NS_ParamApero::cOnePtsMult *,Pt2dr,NS_ParamApero::cFctrPtsOfPMul> ;
 
 
-#define VERIF_PackMUL 1
+#define VERIF_PackMUL 0
 
 // bool DebugPM = false;
 
@@ -116,8 +117,8 @@ cOneElemLiaisonMultiple::cOneElemLiaisonMultiple
 (
     const std::string & aNameCam
 )  :
-   mNameCam (aNameCam),
-   mPose    (0)
+   mNameCam    (aNameCam),
+   mGenPose    (0)
 {
 }
 
@@ -128,13 +129,14 @@ const std::string & cOneElemLiaisonMultiple::NameCam()
 
 void  cOneElemLiaisonMultiple::Compile(cAppliApero &  anAppli)
 {
-    if (mPose==0) 
-        mPose  = anAppli.PoseFromName(mNameCam);
+    if (mGenPose==0) 
+        mGenPose  = anAppli.PoseGenFromName(mNameCam);
 }
 
-cPoseCam * cOneElemLiaisonMultiple::Pose()
+
+cGenPoseCam * cOneElemLiaisonMultiple::GenPose()
 {
-   return mPose;
+   return mGenPose;
 }
 
 /**************************************************/
@@ -143,16 +145,39 @@ cPoseCam * cOneElemLiaisonMultiple::Pose()
 /*                                                */
 /**************************************************/
 
+std::vector<cGenPoseCam *> ToVecGP(const std::vector<cPoseCam *> & aVP)
+{
+    std::vector<cGenPoseCam *> aRes;
+    for (int aK=0 ; aK<int(aVP.size()) ; aK++)
+       aRes.push_back(aVP[aK]);
+
+    return aRes;
+}
+
+std::vector<cPoseCam *> ToVecDownCastPoseCamNN(const std::vector<cGenPoseCam *> & aVP)
+{
+    std::vector<cPoseCam *> aRes;
+    for (int aK=0 ; aK<int(aVP.size()) ; aK++)
+       aRes.push_back(aVP[aK]->DownCastPoseCamNN());
+
+    return aRes;
+
+}
+
+
 cOneCombinMult::cOneCombinMult
 (
     cSurfInconnueFormelle  * anEqS,
-    const std::vector<cPoseCam *> & aVP,
-    const std::vector<cCameraFormelle *>  & aVCF ,
+    const std::vector<cGenPoseCam *> & aVP,
+    const std::vector<cGenPDVFormelle *>  & aVCF ,
     const tFixedSetInt & aFlag
 )   :
    mPLiaisTer (new cManipPt3TerInc(aVCF[0]->Set(),anEqS,aVCF)),
-   mVP  (aVP)
+   // mCSVP  (aVP),
+   mGenVP (aVP)
 {
+
+
    for (int aK=0 ; aK<aFlag.Capacite() ; aK++)
    {
        if (aFlag.IsIn(aK))
@@ -160,6 +185,7 @@ cOneCombinMult::cOneCombinMult
           mNumCams.push_back(aK);
        }
    }
+   // std::cout << "JJJJJJJJ : " << aVCF.size()  << " " << mNumCams.size() << "\n"; getchar();
 }
 
 cManipPt3TerInc * cOneCombinMult::LiaisTer()
@@ -172,38 +198,62 @@ const std::vector<int> & cOneCombinMult::NumCams()
    return mNumCams;
 }
 
-const std::vector<cPoseCam *> & cOneCombinMult::VP()
+
+const std::vector<cGenPoseCam *> & cOneCombinMult::GenVP()
 {
-   return mVP;
+   return mGenVP;
 }
 
-int cOneCombinMult::IndOfPose(cPoseCam * aPose) const
+
+
+
+
+int cOneCombinMult::IndOfPose(cGenPoseCam * aPose) const
 {
-    for (int aKP=0; aKP<int(mVP.size()) ; aKP++)
+    for (int aKP=0; aKP<int(mGenVP.size()) ; aKP++)
     {
-         if (mVP[aKP]==aPose)
+         if (mGenVP[aKP]==aPose)
             return aKP;
     }
     return -1;
 }
 
-cPoseCam *  cOneCombinMult::Pose0() const
+cGenPoseCam *  cOneCombinMult::GenPose0() const
 {
-   return mVP.at(0);
+   return mGenVP.at(0);
+}
+cGenPoseCam *  cOneCombinMult::GenPoseK(int aK) const
+{
+   return mGenVP.at(aK);
 }
 
-cPoseCam *  cOneCombinMult::PoseK(int aK) const
+/*
+const std::vector<cPoseCam *> & cOneCombinMult::CSVP()
 {
-   return mVP.at(aK);
+   return mCSVP;
 }
+
+cPoseCam *  cOneCombinMult::CSPose0() const
+{
+   return mCSVP.at(0);
+}
+
+cPoseCam *  cOneCombinMult::CSPoseK(int aK) const
+{
+   return mCSVP.at(aK);
+}
+*/
+
+
+
 
 void cOneCombinMult::AddLink(cAppliApero & anAppli)
 {
-   for (int aKP1=0; aKP1<int(mVP.size()) ; aKP1++)
+   for (int aKP1=0; aKP1<int(mGenVP.size()) ; aKP1++)
    {
-       for (int aKP2=aKP1; aKP2<int(mVP.size()) ; aKP2++)
+       for (int aKP2=aKP1; aKP2<int(mGenVP.size()) ; aKP2++)
        {
-            anAppli.AddLinkCam(mVP[aKP1],mVP[aKP2]);
+            anAppli.AddLinkCamCam(mGenVP[aKP1],mGenVP[aKP2]);
        }
    }
 }
@@ -228,7 +278,7 @@ cOnePtsMult::cOnePtsMult() :
 
 bool cOnePtsMult::OnPRaz() const
 {
-  return mOnPlaneRapOnz;
+  return mOnPlaneRapOnz != 0;
 }
 
 void cOnePtsMult::SetOnPRaz(bool aPRaz)
@@ -238,7 +288,7 @@ void cOnePtsMult::SetOnPRaz(bool aPRaz)
 
 bool cOnePtsMult::MemPtOk() const
 {
-   return mMemPtOk;
+   return mMemPtOk != 0;
 }
 
 void cOnePtsMult::SetMemPtOk(bool aOk)
@@ -269,6 +319,8 @@ void cOnePtsMult::Add(int aNum,const Pt2dr & aP,bool IsFirstSet)
        if (mNPts.NbPts() > 0)
           std::cout << "P0 " << mNPts.PK(0) << "\n";
        ELISE_ASSERT(false,"Multiple add in cOnePtsMult::Add");
+#else
+       return;
 #endif
    }
    mFlagI.Add(aNum);
@@ -319,14 +371,14 @@ const  cNupletPtsHomologues & cOnePtsMult::NPts() const
 int cOnePtsMult::NbPoseOK(bool aFullInitRequired,bool UseZU) const
 {
    int aRes =0;
-   const std::vector<cPoseCam *> & aVP =  mOCM->VP();
+   const std::vector<cGenPoseCam *> & aVP =  mOCM->GenVP();
 
    if (UseZU && (! aVP[0]->IsInZoneU(P0())))
       return 0;
 
    for (int aKPose=1 ; aKPose<int(aVP.size()) ; aKPose++)
    {
-       cPoseCam * aPC = aVP[aKPose];
+       cGenPoseCam * aPC = aVP[aKPose];
        if  (
                  (!UseZU)
              ||  (aPC->IsInZoneU(PK(aKPose)))
@@ -349,7 +401,7 @@ int   cOnePtsMult::InitPdsPMul
       ) const
 {
      aVpds.clear();
-     const std::vector<cPoseCam *> & aVP =  mOCM->VP();
+     const std::vector<cGenPoseCam *> & aVP =  mOCM->GenVP();
      int aNbRInit=0;
 
 
@@ -357,8 +409,8 @@ int   cOnePtsMult::InitPdsPMul
      {
           if ( 
                       aVP[aKPose]->RotIsInit()  
-                  && aVP[0]->Calib()->IsInZoneU(PK(0))
-                  && aVP[aKPose]->Calib()->IsInZoneU(PK(aKPose))
+                  && aVP[0]->IsInZoneU(PK(0))
+                  && aVP[aKPose]->IsInZoneU(PK(aKPose))
              )
          {
                aVpds.push_back(aPds);
@@ -377,8 +429,8 @@ ElSeg3D  cOnePtsMult::GetUniqueDroiteInit(bool UseZU)
 {
    Pt2dr aPtK;
    
-   const std::vector<cPoseCam *> & aVP =  mOCM->VP();
-   cPoseCam * aPcK=0;
+   const std::vector<cGenPoseCam *> & aVP =  mOCM->GenVP();
+   cGenPoseCam * aPcK=0;
    for (int aKPose=0 ; aKPose<int(aVP.size()) ; aKPose++)
    {
        if (
@@ -395,7 +447,7 @@ ElSeg3D  cOnePtsMult::GetUniqueDroiteInit(bool UseZU)
    }
    ELISE_ASSERT(aPcK!=0,"cOnePtsMult::GetUniqueDroiteInit Aucune");
  
-   const CamStenope & aCS =   * (aPcK->CurCam());
+   const cBasicGeomCap3D & aCS =   * (aPcK->GenCurCam());
 
 // std::cout << "ttttt " << aPtK << aCS.CentreOptique() << "\n";
 
@@ -416,7 +468,7 @@ const cResiduP3Inc * cOnePtsMult::ComputeInter
      int aNbRInit= InitPdsPMul(1.0,aVPds);
      if (aNbRInit>=2)
      {
-         const cResiduP3Inc  & aRes =  (mOCM->LiaisTer()->UsePointLiaison(-1,-1,0.0,mNPts,aVPds,false));
+         const cResiduP3Inc  & aRes =  (mOCM->LiaisTer()->UsePointLiaison(cArg_UPL(0),-1,-1,0.0,mNPts,aVPds,false));
 
          if (! aRes.mOKRP3I)
             return 0;
@@ -429,7 +481,7 @@ const cResiduP3Inc * cOnePtsMult::ComputeInter
 Pt3dr InterFaisceaux
       (
            const std::vector<double> & aVPds,
-           const std::vector<cPoseCam *> & aVC,
+           const std::vector<cGenPoseCam *> & aVC,
            const cNupletPtsHomologues  &   aNPt
       )
 {
@@ -439,8 +491,10 @@ Pt3dr InterFaisceaux
          if ( (aKR>=int(aVPds.size())) || (aVPds[aKR] >0))
          {
               // C'EST LA IL FAUT TESTER LA CAMERA NON ORTHO
-             const CamStenope * aCS =   aVC[aKR]->CurCam();
-             ElSeg3D aSeg = aCS->F2toRayonR3(aNPt.PK(aKR));
+             // const CamStenope * aCS =   aVC[aKR]->CurCam();
+             // ElSeg3D aSeg = aCS->F2toRayonR3(aNPt.PK(aKR));
+             const cBasicGeomCap3D * aCS =   aVC[aKR]->GenCurCam();
+             ElSeg3D aSeg = aCS->Capteur2RayTer(aNPt.PK(aKR));
              aVSeg.push_back(aSeg);
          }
     }
@@ -452,7 +506,7 @@ Pt3dr InterFaisceaux
 
 Pt3dr TestInterFaisceaux
       (
-           const std::vector<cPoseCam *> & aVC,
+           const std::vector<cGenPoseCam *> & aVC,
            const cNupletPtsHomologues  &   aNPt,
            double                          aSigma,
            bool                            Show
@@ -465,23 +519,23 @@ Pt3dr TestInterFaisceaux
 
       for (int aK1=0 ; aK1 <int( aVC.size()) ; aK1++)
       {
-          const CamStenope * aCS1 =   aVC[aK1]->CurCam();
+          const cBasicGeomCap3D * aCS1 =   aVC[aK1]->GenCurCam();
           Pt2dr aP1 = aNPt.PK(aK1);
-          ElSeg3D aSeg1 = aCS1->F2toRayonR3(aP1);
+          ElSeg3D aSeg1 = aCS1->Capteur2RayTer(aP1);
           for (int aK2=aK1+1 ; aK2 <int( aVC.size()) ; aK2++)
           {
-              const CamStenope * aCS2 =   aVC[aK2]->CurCam();
+              const cBasicGeomCap3D * aCS2 =   aVC[aK2]->GenCurCam();
               Pt2dr aP2 = aNPt.PK(aK2);
-              ElSeg3D aSeg2 = aCS2->F2toRayonR3(aP2);
+              ElSeg3D aSeg2 = aCS2->Capteur2RayTer(aP2);
 
               Pt3dr aPTest = aSeg1.PseudoInter(aSeg2);
               double aSomP = 0.0;
 
               for (int aK3 = 0 ; aK3<int( aVC.size()) ; aK3++)
               {
-                  const CamStenope * aCS3 =   aVC[aK3]->CurCam();
+                  const cBasicGeomCap3D * aCS3 =   aVC[aK3]->GenCurCam();
                   Pt2dr aP3 = aNPt.PK(aK3);
-                  Pt2dr aQ3 = aCS3->R3toF2(aPTest);
+                  Pt2dr aQ3 = aCS3->Ter2Capteur(aPTest);
                   double aDist = euclid(aP3,aQ3);
 
                   aSomP += exp(-ElSquare(aDist)/ (2*ElSquare(aSigma)));
@@ -499,9 +553,9 @@ Pt3dr TestInterFaisceaux
    {
        for (int aK3 = 0 ; aK3<int( aVC.size()) ; aK3++)
        {
-            const CamStenope * aCS3 =   aVC[aK3]->CurCam();
+            const cBasicGeomCap3D * aCS3 =   aVC[aK3]->GenCurCam();
             Pt2dr aP3 = aNPt.PK(aK3);
-            Pt2dr aQ3 = aCS3->R3toF2(aPMax);
+            Pt2dr aQ3 = aCS3->Ter2Capteur(aPMax);
             double aDist = euclid(aP3,aQ3);
 
             std::cout << "TFI::" << aVC[aK3]->Name() << " Residu Image= " << aDist ; 
@@ -517,7 +571,7 @@ Pt3dr TestInterFaisceaux
 
 Pt3dr cOnePtsMult::QuickInter(std::vector<double> & aVPds) const
 {
-   return InterFaisceaux(aVPds,mOCM->VP(),mNPts);
+   return InterFaisceaux(aVPds,mOCM->GenVP(),mNPts);
 /*
      std::vector<ElSeg3D> aVSeg;
      aVSeg.clear();
@@ -544,19 +598,18 @@ Pt3dr cOnePtsMult::QuickInter(std::vector<double> & aVPds) const
 
 
 
-int cOnePtsMult::IndOfPose(cPoseCam * aPose) const
+int cOnePtsMult::IndOfPose(cGenPoseCam * aPose) const
 {
    return mOCM->IndOfPose(aPose);
 }
 
-cPoseCam *  cOnePtsMult::Pose0() const
-{
-   return mOCM->Pose0();
-}
-cPoseCam *  cOnePtsMult::PoseK(int aK) const
-{
-   return mOCM->PoseK(aK);
-}
+// cPoseCam *  cOnePtsMult::CSPose0() const { return mOCM->CSPose0(); }
+// cPoseCam *  cOnePtsMult::CSPoseK(int aK) const { return mOCM->CSPoseK(aK); }
+cGenPoseCam *  cOnePtsMult::GenPose0() const { return mOCM->GenPose0(); }
+cGenPoseCam *  cOnePtsMult::GenPoseK(int aK) const { return mOCM->GenPoseK(aK); }
+
+
+
 
 /**************************************************/
 
@@ -598,8 +651,9 @@ cObsLiaisonMultiple::cObsLiaisonMultiple
     mLayerImDone (false)
 {
    {
-     mPose1 = mAppli.PoseFromName(aName1);
-     Pt2dr aSz = Pt2dr(mPose1->Calib()->SzIm());
+     mPose1 = mAppli.PoseGenFromName(aName1);
+     // Pt2dr aSz = Pt2dr(mPose1->Calib()->SzIm());
+     Pt2dr aSz = Pt2dr(mPose1->SzCalib());
      double aRab =  euclid(aSz)/60.0;
      Pt2dr aPRab(aRab,aRab);
      cFctrPtsOfPMul aPrim;
@@ -620,7 +674,7 @@ cObsLiaisonMultiple::cObsLiaisonMultiple
    AddPack(aNamePack,aName1,aName2,isFirstSet,packMustBeSwapped);
 }
 
-cPoseCam *  cObsLiaisonMultiple::Pose1() const
+cGenPoseCam *  cObsLiaisonMultiple::Pose1() const
 {
     return mPose1;
 }
@@ -653,8 +707,9 @@ void cObsLiaisonMultiple::AddPack
 
    ElPackHomologue aPack = ElPackHomologue::FromFile(aNamePack);
    if ( packMustBeSwapped ) aPack.SelfSwap();
-   cPoseCam * aC1 =  mAppli.PoseFromName(aName1);
-   cPoseCam * aC2 =  mAppli.PoseFromName(aName2);
+   cGenPoseCam * aC1 =  mAppli.PoseGenFromName(aName1);
+   cGenPoseCam * aC2 =  mAppli.PoseGenFromName(aName2);
+
 
    // CamStenope & aCC1 = aC1->Calib()-> CamInit();
    // CamStenope & aCC2 = aC2->Calib()-> CamInit();
@@ -674,7 +729,7 @@ void cObsLiaisonMultiple::AddPack
    }
    aPack = aNewPack;
 
-   mAppli.AddLinkCam(aC1,aC2);
+   mAppli.AddLinkCamCam(aC1,aC2);
    // aC1->AddLink(aC2);
    // aC2->AddLink(aC1);
 
@@ -734,11 +789,11 @@ int  cObsLiaisonMultiple::GetIndexeOfName(const std::string & aName)
 }
 
 
-int  cObsLiaisonMultiple::IndOfCam(const cPoseCam * aCam) const
+int  cObsLiaisonMultiple::IndOfCam(const cGenPoseCam * aCam) const
 {
     for (int aK=0 ; aK<int(mVPoses.size()) ; aK++)
     {
-        if (mVPoses[aK]->Pose() == aCam)
+        if (mVPoses[aK]->GenPose() == aCam)
 	   return aK;
     }
     return -1;
@@ -750,7 +805,7 @@ Pt3dr cObsLiaisonMultiple::CentreNuage(const cMasqBin3D * aMasq3D,int * aNb) con
 
   std::vector<double> aVPds;
 
-  const CamStenope &   aCS  = *(mPose1->CurCam());
+  const cBasicGeomCap3D &   aCS  = *(mPose1->GenCurCam());
   std::vector<double> aVProf;
   Pt2dr aPMoy(0,0);
 
@@ -771,7 +826,7 @@ Pt3dr cObsLiaisonMultiple::CentreNuage(const cMasqBin3D * aMasq3D,int * aNb) con
 
   if (aNb)
   {
-      *aNb = aVProf.size();
+      *aNb = (int)aVProf.size();
       if (*aNb==0) return Pt3dr(0,0,0);
   }
   else
@@ -786,7 +841,7 @@ Pt3dr cObsLiaisonMultiple::CentreNuage(const cMasqBin3D * aMasq3D,int * aNb) con
   double aProf  = ValPercentile(aVProf,0.5);
   */
   //double aProf = KthVal(aVProf.data(),aVProf.size(),aVProf.size()/2);
-double aProf = KthVal(&aVProf.front(),aVProf.size(),aVProf.size()/2);
+double aProf = KthVal(&aVProf.front(), (int)aVProf.size(), (int)(aVProf.size() / 2));
 
   return aCS.ImEtProf2Terrain(aPMoy,aProf);
 }
@@ -806,6 +861,8 @@ void    cObsLiaisonMultiple::AddPose(const std::string & aName,bool IsFirstSet)
 #if VERIF_PackMUL
          std::cout  << "Name =" << aName << "\n";
          ELISE_ASSERT(false,"cObsLiaisonMultiple::cAddPose");
+#else
+         return;
 #endif
 /*
 */
@@ -855,6 +912,7 @@ const std::vector<cOnePtsMult *> & cObsLiaisonMultiple::VPMul()
 
 void cObsLiaisonMultiple::AddLiaison(const std::string & aNamePack,const std::string & aName2,bool isFirstSet,bool packMustBeSwapped)
 {
+
    AddPose(aName2,isFirstSet);
    AddPack(aNamePack,mVPoses[0]->NameCam(),aName2,isFirstSet,packMustBeSwapped);
 }
@@ -899,7 +957,7 @@ void  cObsLiaisonMultiple::CompilePose()
 
         ELISE_ASSERT
         (
-             mVPMul[aKM]->Pose0()==mVPoses.at(0)->Pose(),
+             mVPMul[aKM]->GenPose0()==mVPoses.at(0)->GenPose(),
              "Coherence in cObsLiaisonMultiple::Compile"
         );
     }
@@ -926,14 +984,14 @@ cOneCombinMult *  cObsLiaisonMultiple::AddAFlag(const cOnePtsMult & aPM)
     if (aRes!=0)
        return aRes;
 
-    std::vector<cCameraFormelle *>  aVCF;
-    std::vector<cPoseCam *>  aVP;
+    std::vector<cGenPDVFormelle *>  aVCF;
+    std::vector<cGenPoseCam *>  aVP;
     for (int aK=0 ; aK <int(mVPoses.size()) ; aK++)
     {
          if (aFlag.IsIn(aK))  // (aFlag & (1<<(aK-1))()
          {
-             aVCF.push_back(mVPoses[aK]->Pose()->CamF());
-	     aVP.push_back(mVPoses[aK]->Pose());
+             aVCF.push_back(mVPoses[aK]->GenPose()->PDVF());
+	     aVP.push_back(mVPoses[aK]->GenPose());
          }
     }
     aRes =  new cOneCombinMult(mEqS,aVP,aVCF,aFlag);
@@ -981,21 +1039,21 @@ class cGlobStatDet
 {
  
      public :
-          void Add(cPoseCam * aCam,Pt2dr aPt,double aPds);
+          void Add(cGenPoseCam * aCam,Pt2dr aPt,double aPds);
           void Show();
      private :
-          std::map<cPoseCam *,cOneStatDet> mMap;
+          std::map<cGenPoseCam *,cOneStatDet> mMap;
           
 };
 
-void cGlobStatDet::Add(cPoseCam * aCam,Pt2dr aPt,double aPds)
+void cGlobStatDet::Add(cGenPoseCam * aCam,Pt2dr aPt,double aPds)
 {
      mMap[aCam].Add(aPt,aPds);
 }
 
 void cGlobStatDet::Show()
 {
-    for (std::map<cPoseCam *,cOneStatDet>::const_iterator  itC=mMap.begin(); itC!=mMap.end(); itC++ )
+    for (std::map<cGenPoseCam *,cOneStatDet>::const_iterator  itC=mMap.begin(); itC!=mMap.end(); itC++ )
     {
        std::cout << itC->first->Name()  << " "
                  << " ErMoy " << itC->second.mSomNormPds / itC->second.mSomPds
@@ -1017,6 +1075,7 @@ double cObsLiaisonMultiple::AddObsLM
        )
 {
 
+
 /*
   static int aCpt = 0 ; aCpt ++;
   bool aBug = false;
@@ -1033,14 +1092,16 @@ double cObsLiaisonMultiple::AddObsLM
 
   for (int aKP=0 ;  aKP<int(mVPoses.size()) ; aKP++)
   {
-     mVPoses[aKP]->Pose()->ResetStatR();
+     mVPoses[aKP]->GenPose()->ResetStatR();
   }
 
   cGlobStatDet  * aGSD = 0;
+/*
   if (mVPoses[0]->NameCam() =="F120_SG1L7916_MpDcraw8B_GR.tif")
   {
      aGSD = new cGlobStatDet;
   }
+*/
 
 
   cCompFilterProj3D * aFiltre3D = 0;
@@ -1052,7 +1113,7 @@ double cObsLiaisonMultiple::AddObsLM
   double aLimBsHP = mAppli.Param().LimBsHProj().Val();
   double aLimBsHRefut = mAppli.Param().LimBsHRefut().Val();
 
-  if (! mVPoses[0]->Pose()->RotIsInit())
+  if (! mVPoses[0]->GenPose()->RotIsInit())
      return 0;
 
    double aSomPSurf = 0;
@@ -1087,6 +1148,7 @@ double cObsLiaisonMultiple::AddObsLM
    double aSomPdsEvol=0;
 
    int aNbNN=0;
+
    for (int aKPm=0 ; aKPm<int(mVPMul.size()) ; aKPm++)
    {
         cOnePtsMult * aPM = mVPMul[aKPm];
@@ -1102,7 +1164,7 @@ double cObsLiaisonMultiple::AddObsLM
 
         cOneCombinMult * aCOM = aPM->OCM();
         const  cNupletPtsHomologues & aNupl = aPM->NPts() ;
-        const std::vector<cPoseCam *> & aVP = aCOM->VP();
+        const std::vector<cGenPoseCam *> & aVP = aCOM->GenVP();
 	std::vector<double> aVpds;
 
         double aPds = aNupl.Pds() * mMultPds;
@@ -1114,7 +1176,8 @@ double cObsLiaisonMultiple::AddObsLM
              static int aCpt=0; aCpt++;
              aNbMult += (aNbRInit>=3);
              const cRapOnZ * aRAZ = aPM->OnPRaz()? aRAZGlob : 0;
-             const cResiduP3Inc & aRes = aCOM->LiaisTer()->UsePointLiaison(aLimBsHP,aLimBsHRefut,0.0,aNupl,aVpds,false,aRAZ);
+             const cResiduP3Inc & aRes = aCOM->LiaisTer()->UsePointLiaison(mAppli.ArgUPL(),aLimBsHP,aLimBsHRefut,0.0,aNupl,aVpds,false,aRAZ);
+
 
              if (aRes.mOKRP3I)
              {
@@ -1126,7 +1189,7 @@ double cObsLiaisonMultiple::AddObsLM
                 }
 
 
-                double aDistPtC0 = euclid(aRes.mPTer-aVP[0]->CurCentre());
+                double aDistPtC0 = euclid(aRes.mPTer-aVP[0]->CurCentreOfPt(aNupl.PK(0)));
                 if (aDistPtC0 >aMaxDistW)
                 {
                     static bool first = true;
@@ -1192,9 +1255,9 @@ double cObsLiaisonMultiple::AddObsLM
                           {
                               Pt2dr anEc = aRes.mEcIm[aKPose];
                               Pt2dr aPIm = aNupl.PK(aKPose);
-                              cPoseCam *  aPC = aVP[aKPose];
-                              const CamStenope * aCS = aPC->CurCam();
-                              Pt3dr aDir = aCS->F2toDirRayonR3(aPIm);
+                              cGenPoseCam *  aPC = aVP[aKPose];
+                              const cBasicGeomCap3D * aCS = aPC->GenCurCam();
+                              Pt3dr aDir = aCS->DirRayonR3(aPIm);
                               // Pt2dr aPIm =  ;
                               fprintf(aFpRT,"%s %f %f %f %f %f %f %f",aPC->Name().c_str(),aPIm.x,aPIm.y,anEc.x,anEc.y,aDir.x,aDir.y,aDir.z);
                               fprintf(aFpRT,"\n");
@@ -1243,14 +1306,14 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                       std::vector<ElSeg3D> aVS;
                       for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                       {
-                          cPoseCam *  aPC = aVP[aK];
-                          const CamStenope * aCS = aPC->CurCam();
+                          cGenPoseCam *  aPC = aVP[aK];
+                          const cBasicGeomCap3D * aCS = aPC->GenCurCam();
 
                           Pt2dr aPIm = aNupl.PK(aK);
 
-                          Pt3dr aC= aCS->VraiOpticalCenter();
-                          Pt3dr aDir = aCS->F2toDirRayonR3(aPIm);
-                          std::cout << aVP[aK]->Name()  << aPIm <<  aCS->F2toC2(aPIm)  << "\n";
+                          Pt3dr aC= aCS->OpticalCenterOfPixel(aPIm);
+                          Pt3dr aDir = aCS->DirRayonR3(aPIm);
+                          std::cout << aVP[aK]->Name()  << aPIm  << "\n";
                           std::cout << "    " <<  aC << " " <<  aDir << "\n";
                           aVS.push_back(ElSeg3D(aC,aC+aDir));
                       }
@@ -1267,7 +1330,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                            for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                            {
                               if (aVpds[aK] > 0)
-                                 std::cout << aVP[aK]->CurCam()->R3toF2(aRes.mPTer) 
+                                 std::cout << aVP[aK]->GenCurCam()->Ter2Capteur(aRes.mPTer) 
                                       <<  aRes.mEcIm[aK] 
                                       << aNupl.PK(aK) << "\n";
                               else
@@ -1285,7 +1348,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                    Pt2dr aP = aNupl.PK(mKIm);
                    aP = aVP[mKIm]->OrIntM2C()(aP);
 // std::cout << "BBBbSh " << aRes.mBSurH << " " << anArgPT->LimBsH() << "\n";
-                   anArgPT->AddAGP(aP,aRes.mPTer,aPdsIm*aPdsBsH,false,&aVpds,&(aCOM->VP()));
+                   anArgPT->AddAGP(aP,aRes.mPTer,aPdsIm*aPdsBsH,false,&aVpds,&(aCOM->GenVP()));
                 }
 
                 if (aPdsIm >0) 
@@ -1300,10 +1363,14 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                     aNbMultPdsNN += (aNbRInit>=3);
 	            for (int aKPose=0 ; aKPose<int(aVpds.size()) ; aKPose++)
                     {
-                        // aVpds[aKPose] *= aPdsIm;
+                        // !!!! !!!!   ???? ACHHTUNNGG
+                        // Cette ligne avait ete commentee (depuis quand ??) , sans que cela semble avoir
+                        // pose de gros problemes .......
+                        aVpds[aKPose] *= aPdsIm;
+// std::cout << "Ppppppppppppppppppppppppppp " << aVpds[aKPose] << " " << aPdsIm << "\n";
                         if (aVpds[aKPose])
                         {
-                            aVP[aKPose]->AddPMoy(aRes.mPTer,aRes.mBSurH);
+                            aVP[aKPose]->AddPMoy(aNupl.PK(aKPose),aRes.mPTer,aRes.mBSurH,aKPose,&aVpds,&aVP);
                         }
                     }
 
@@ -1315,7 +1382,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
 
                      aCOM->LiaisTer()->SetTerrainInit(true);
                      aCOM->LiaisTer()->SetMulPdsGlob(aPdsIm);
-	             const cResiduP3Inc & aRes2 = aCOM->LiaisTer()->UsePointLiaison(aLimBsHP,aLimBsHRefut,aPdsSurf,aNupl,aVpds,aSO.AddEq(),aRAZ);
+	             const cResiduP3Inc & aRes2 = aCOM->LiaisTer()->UsePointLiaison(mAppli.ArgUPL(),aLimBsHP,aLimBsHRefut,aPdsSurf,aNupl,aVpds,aSO.AddEq(),aRAZ);
                      aCOM->LiaisTer()->SetMulPdsGlob(1.0);
                      aCOM->LiaisTer()->SetTerrainInit(false);  // Conservatif
 
@@ -1340,6 +1407,10 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                         }
                      }
                 }
+ 
+
+
+
                 if (anAVA &&  (anAVA->VA().TypeVerif()==eVerifDZ) && (aPdsIm >0) && (aNbRInit>=3))
                 {
                 //  Dz regarde ce qui se passe quand on supprime les points de l'image elle meme
@@ -1348,7 +1419,7 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                     std::vector<double>  aDupV  = aVpds;
                     aDupV[0] = 0;
                     aCOM->LiaisTer()->SetMulPdsGlob(aPdsIm);
-                    const cResiduP3Inc & aRes2 = aCOM->LiaisTer()->UsePointLiaison(aLimBsHP,aLimBsHRefut,0.0,aNupl,aDupV,false,aRAZ);
+                    const cResiduP3Inc & aRes2 = aCOM->LiaisTer()->UsePointLiaison(mAppli.ArgUPL(),aLimBsHP,aLimBsHRefut,0.0,aNupl,aDupV,false,aRAZ);
                     aCOM->LiaisTer()->SetMulPdsGlob(1.0);
                     if (aRes2.mOKRP3I)
                     {
@@ -1358,6 +1429,12 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
                     }
                 }
              }
+             else
+             {
+             }
+        }
+        else
+        {
         }
         BugUPL = false;
    }
@@ -1371,9 +1448,9 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
 
 
    aSEr2 /= aSPds2;
-   int aNbP = mVPMul.size();
+   int aNbP = (int)mVPMul.size();
       
-  mVPoses[0]->Pose()->SetNbPtsMulNN(aNbMultPdsNN+mVPoses[0]->Pose()->NbPtsMulNN());
+  mVPoses[0]->GenPose()->SetNbPtsMulNN(aNbMultPdsNN+mVPoses[0]->GenPose()->NbPtsMulNN());
 
 
 
@@ -1404,13 +1481,18 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
           aXmlE.NbPtsMul() = aNbMult;
           mAppli.CurXmlE().OneIm().push_back(aXmlE);
 
+          bool aIsCS = (mVPoses[0]->GenPose()->DownCastPoseCamSVP() !=0);
+
           mAppli.COUT() << "RES:["  << mVPoses[0]->NameCam() << "]"
+                << "[" << (aIsCS?"C":"g") <<"]"
                 <<  " ER2 " << sqrt(aSEr2)
                 << " Nn " <<  aPercOk
                 << " Of " << aNbP
                 << " Mul " << aNbMult
                 << " Mul-NN " << aNbMultPdsNN
                 <<  " Time " << aT0.uval();
+
+           mAppli.AddStatCam(mVPoses[0]->GenPose(),sqrt(aSEr2),aPercOk);
 
           if (0 && aSomPdsEvol)
           {
@@ -1421,11 +1503,11 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
        }
        cElRegex_Ptr aFilterImAff  = mAppli.Param().Im2Aff().ValWithDef(0);  
        bool aMatchIm0 =   (aFilterImAff==0)
-                       || (aFilterImAff->Match( mVPoses[0]->Pose()->Name()));
+                       || (aFilterImAff->Match( mVPoses[0]->GenPose()->Name()));
 
        if ((int(aImPPM.Show().Val()) >= int(eNSM_Percentile)) &&  aMatchIm0)
        {
-           int aNBV = aVErs.size();
+           int aNBV = (int)aVErs.size();
            if (aNBV>=2)
            {
                std::cout << "----- % % % % % % % % % % -----------\n";
@@ -1457,12 +1539,12 @@ for (int aK=0 ; aK<int(aVpds.size()) ;  aK++)
           for (int aKP=0 ;  aKP<int(mVPoses.size()) ; aKP++)
           {
                bool aMatchImK =   aMatchIm0
-                               || (aFilterImAff->Match( mVPoses[aKP]->Pose()->Name()));
+                               || (aFilterImAff->Match( mVPoses[aKP]->GenPose()->Name()));
                double aSom1,aSomP,aSomPR;
                if ( aMatchImK)
                {
-                   mVPoses[aKP]->Pose()->GetStatR(aSomP,aSomPR,aSom1);
-                   std::cout << "   " << mVPoses[aKP]->Pose()->Name();
+                   mVPoses[aKP]->GenPose()->GetStatR(aSomP,aSomPR,aSom1);
+                   std::cout << "   " << mVPoses[aKP]->GenPose()->Name();
                    if ((aSomP==0)|| (aNbNN==0))
                    {
                        std::cout << " XXX";
@@ -1512,9 +1594,9 @@ void cObsLiaisonMultiple::ClearAggregImage()
 {
     for (int aKP=0 ; aKP<int(mVPoses.size()) ; aKP++)
     {
-         mVPoses[aKP]->Pose()->NbPLiaisCur() = 0;
-         mVPoses[aKP]->Pose()->QualAZL() = 0;
-         mVPoses[aKP]->Pose()->AZL().Reset();
+         mVPoses[aKP]->GenPose()->NbPLiaisCur() = 0;
+         mVPoses[aKP]->GenPose()->QualAZL() = 0;
+         mVPoses[aKP]->GenPose()->AZL().Reset();
     }
 }
 
@@ -1575,7 +1657,7 @@ int cObsLiaisonMultiple::NbRotPreInit() const
     int aRes = 0;
     for (int aKP=0 ; aKP<int(mVPoses.size()) ; aKP++)
     {
-         if (mVPoses[aKP]->Pose()->PreInit())
+         if (mVPoses[aKP]->GenPose()->PreInit())
             aRes ++;
     }
     return aRes;
@@ -1612,16 +1694,16 @@ std::vector<cPoseCam *>  cObsLiaisonMultiple::BestPoseInitStd
 {
     int aNbMinGlob = 10;
     ClearAggregImage();
-    std::vector<cPoseCam *> aRes;
+    std::vector<cGenPoseCam *> aRes;
 
     // Accum de Qual + Mult
     for (int aKPt=0 ; aKPt<int(mVPMul.size()) ; aKPt++)
     {
         cOnePtsMult * aPM = mVPMul[aKPt];
-        const std::vector<cPoseCam *> & aVPose=  aPM->OCM()->VP();
+        const std::vector<cGenPoseCam *> & aVPose=  aPM->OCM()->GenVP();
         for (int aKPose=0 ; aKPose<int(aVPose.size()) ; aKPose++)
         {
-            cPoseCam * aPose = aVPose[aKPose];
+            cGenPoseCam * aPose = aVPose[aKPose];
             // if (OnInit ? aPose->RotIsInit() : aPose->PreInit())
             if (
                     (aPose->CanBeUSedForInit(OnInit))
@@ -1638,13 +1720,13 @@ std::vector<cPoseCam *>  cObsLiaisonMultiple::BestPoseInitStd
         }
     }
 
-    cPoseCam * aBestP=0;
-    cPoseCam * aBestSec=0;
+    cGenPoseCam * aBestP=0;
+    cGenPoseCam * aBestSec=0;
    
     // Calcul de Qual  et select best
     for (int aKP=0 ; aKP<int(mVPoses.size()) ; aKP++)
     {
-         cPoseCam * aPose = mVPoses[aKP]->Pose();
+         cGenPoseCam * aPose = mVPoses[aKP]->GenPose();
 
 
          if (aPose->CanBeUSedForInit(OnInit) && (aPose->NbPLiaisCur()>=aNbMinMul))
@@ -1676,14 +1758,11 @@ std::vector<cPoseCam *>  cObsLiaisonMultiple::BestPoseInitStd
        }
     }
 
-
-
-
     // Calcul de Qual  et select best
 
     ClearAggregImage();
 
-    return aRes;
+    return ToVecDownCastPoseCamNN(aRes);
 }
 
 
@@ -1882,7 +1961,7 @@ void cObsLiaisonMultiple::TestMEPAppuis
 
    CompilePose();
 
-   cPoseCam * aCam0 = mVPoses[0]->Pose();
+   cGenPoseCam * aCam0 = mVPoses[0]->GenPose();
 
    // DebugPM = (aCam0->Name() == "F011_IMG_0435_Gray.tif");
    // CompilePose();
@@ -1925,7 +2004,8 @@ void cObsLiaisonMultiple::TestMEPAppuis
    std::vector<Appar23>    aVS2;
    std::vector<cAppar1Im> aVS1;
 
-   CamStenope & aCS0 =   * (aCam0->Calib()->PIF().CurPIF());
+
+   CamStenope & aCS0 =   * (aCam0->CalibCamNN()->PIF().CurPIF());
 
    for (int aKPt=0 ; aKPt<int(mVPMul.size()) ; aKPt++)
    {
@@ -1960,7 +2040,7 @@ void cObsLiaisonMultiple::TestMEPAppuis
     // std::cout << "Cost " << aCostMin * aFoc << " Time " << aT0.uval() << "\n";
 
     std::set<cIndAppui>  aSetIA;
-    MakeVectIndAppui(aVS2,aSetIA,aVS2.size(),aNbRansac);
+    MakeVectIndAppui(aVS2, aSetIA, (int)aVS2.size(), aNbRansac);
         
     bool RChanged = false; GccUse(RChanged);
     for (std::set<cIndAppui>::const_iterator itI=aSetIA.begin();  itI!=aSetIA.end(); itI++)
@@ -2052,7 +2132,7 @@ void cObsLiaisonMultiple::InitRapOnZ(const cRapOnZ *  aRAZGlob)
    cLayerImage * aLayIm = mAppli.LayersOfName(aNameLayerIm);
    for (int aKP=0 ; aKP<int(mVPoses.size()) ; aKP++)
    {
-       mVPoses[aKP]->Pose()->SetCurLayer(aLayIm);
+       mVPoses[aKP]->GenPose()->SetCurLayer(aLayIm);
    }
    //     std::vector<cOneElemLiaisonMultiple *>     mVPoses;
 
@@ -2065,7 +2145,7 @@ void cObsLiaisonMultiple::InitRapOnZ(const cRapOnZ *  aRAZGlob)
 
         bool isOnPlane = false;
         const  cNupletPtsHomologues & aNupl = aPM->NPts() ;
-        const std::vector<cPoseCam *> &  aVP = aCOM->VP();
+        const std::vector<cGenPoseCam *> &  aVP = aCOM->GenVP();
         for (int aKPose=0 ; aKPose<int(aVP.size()) ; aKPose++)
         {
              Pt2dr aP = aNupl.PK(aKPose);
@@ -2090,7 +2170,7 @@ double cObsLiaisonMultiple::BasicAddObsLM
    double aLimBsHP = mAppli.Param().LimBsHProj().Val();
    double aLimBsHRefut = mAppli.Param().LimBsHRefut().Val();
 
-   if (! mVPoses[0]->Pose()->RotIsInit())
+   if (! mVPoses[0]->GenPose()->RotIsInit())
       return 0;
 
    cPonderateur aPdrtIm(aPPM,mNbPts);
@@ -2114,7 +2194,7 @@ double cObsLiaisonMultiple::BasicAddObsLM
         {
              aPM->InitPdsPMul(aPds*aPMem,aVpds);
 
-	     const cResiduP3Inc & aRes2 =  aCOM->LiaisTer()->UsePointLiaison(aLimBsHP,aLimBsHRefut,0,aNupl,aVpds,aSO.AddEq(),aRAZ);
+	     const cResiduP3Inc & aRes2 =  aCOM->LiaisTer()->UsePointLiaison(mAppli.ArgUPL(),aLimBsHP,aLimBsHRefut,0,aNupl,aVpds,aSO.AddEq(),aRAZ);
              if (aRes2.mOKRP3I)
              {
                 aSO.AddSEP(aRes2.mSomPondEr);
@@ -2136,7 +2216,7 @@ void AddCheck(int & aNbPos,double & aSAng, double aZ, double aDist)
      aNbPos++;
 }
 
-void  cObsLiaisonMultiple::CheckInit()
+void  cObsLiaisonMultiple::OLMCheckInit()
 {
    int aNb = 0 ;
    int aNbPos = 0 ;
@@ -2149,7 +2229,7 @@ void  cObsLiaisonMultiple::CheckInit()
         const  cNupletPtsHomologues & aNupl = aPM->NPts() ;
         // const std::vector<cPoseCam *> & aVP = aCOM->VP();
 
-        const std::vector<cPoseCam *> & aVP =  aCOM->VP();
+        const std::vector<cGenPoseCam *> & aVP =  aCOM->GenVP();
 
 	std::vector<double> aVpds;
         aPM->InitPdsPMul(1,aVpds);
@@ -2160,8 +2240,8 @@ void  cObsLiaisonMultiple::CheckInit()
            {
                // Pt2dr aP0 = aNupl.PK(0);
                // Pt2dr aPK = aNupl.PK(aK);
-               const ElCamera * aCam0 = aVP[0]->CurCam();
-               const ElCamera * aCamK = aVP[aK]->CurCam();
+               const ElCamera * aCam0 = aVP[0]->DownCastPoseCamNN()->CurCam();
+               const ElCamera * aCamK = aVP[aK]->DownCastPoseCamNN()->CurCam();
                Pt3dr aPTer = aCam0->PseudoInter(aNupl.PK(0),*aCamK,aNupl.PK(aK));
 
                Pt3dr aPT0 = aCam0->R3toL3(aPTer);

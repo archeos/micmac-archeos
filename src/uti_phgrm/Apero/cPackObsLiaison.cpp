@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 /**************************************************/
@@ -257,7 +258,7 @@ void  cObservLiaison_1Cple::Compile
     // mCpleR1 = anAppli.SetEq().NewCpleCam(*(mPose1->CF()),*(mPose2->CF()),cNameSpaceEqF::eResiduIm1);
     // mCpleR2 = anAppli.SetEq().NewCpleCam(*(mPose1->CF()),*(mPose2->CF()),cNameSpaceEqF::eResiduIm2);
 
-    std::vector<cCameraFormelle *>  aVCF;
+    std::vector<cGenPDVFormelle *>  aVCF;
     aVCF.push_back(mPose1->CamF());
     aVCF.push_back(mPose2->CamF());
 
@@ -335,7 +336,7 @@ double  cObservLiaison_1Cple::AddObs
 
 
           //const std::vector<Pt2dr> & aPTers = mPLiaisTer->ResiduPointLiaison(*itL,&aPInter);
-	  const cResiduP3Inc & aRes = mPLiaisTer->UsePointLiaison(-1,-1,0.0,*itL,aVPds,false);
+	  const cResiduP3Inc & aRes = mPLiaisTer->UsePointLiaison(cArg_UPL(0),-1,-1,0.0,*itL,aVPds,false);
           double aResidu = (square_euclid(aRes.mEcIm[0])+square_euclid(aRes.mEcIm[1]));
 
 	  ElSetMax(mEcMax,sqrt(aResidu));
@@ -350,7 +351,7 @@ double  cObservLiaison_1Cple::AddObs
              aPdsSurf = aPdrtSurf.PdsOfError(ElAbs(aRes.mEcSurf)) *aNb;
 	  }
 	  aSomPdsSurf += aPdsSurf;
-          mPLiaisTer->UsePointLiaison(-1,-1,aPdsSurf,*itL,aVPds,true);
+          mPLiaisTer->UsePointLiaison(cArg_UPL(0),-1,-1,aPdsSurf,*itL,aVPds,true);
 	  aSEr2 += aResidu * aNb;
           aS1 += aNb;
 
@@ -358,8 +359,8 @@ double  cObservLiaison_1Cple::AddObs
           if (int(aPPM.Show().Val()) >= int(eNSM_Indiv))
             std::cout << "RLiais = " << sqrt(aResidu) << " pour P1 " << itL->P1() << "\n";
 
-	    mPose1->AddPMoy(aRes.mPTer,aRes.mBSurH);
-	    mPose2->AddPMoy(aRes.mPTer,aRes.mBSurH);
+	    mPose1->AddPMoy(itL->P1(),aRes.mPTer,aRes.mBSurH);
+	    mPose2->AddPMoy(itL->P2(),aRes.mPTer,aRes.mBSurH);
       }
 
    }
@@ -397,7 +398,7 @@ void cObservLiaison_1Cple::ImageResidu(cAgglomRRL & anAgl)
    )
    {
       std::vector<double> aVP;
-      const std::vector<Pt2dr> & aPTers = mPLiaisTer->UsePointLiaison(-1,-1,0.0,*itL,aVP,false).mEcIm;
+      const std::vector<Pt2dr> & aPTers = mPLiaisTer->UsePointLiaison(cArg_UPL(0),-1,-1,0.0,*itL,aVP,false).mEcIm;
       double aR1 =0;
       double aR2 = 0;
       if (! isSigne)
@@ -429,23 +430,25 @@ void cObservLiaison_1Cple::ImageResidu(cAgglomRRL & anAgl)
 /*                                                */
 /**************************************************/
 
-void cPackObsLiaison::addFileToObservation( 
-											const string &i_poseName1, const string &i_poseName2,
-											const string &i_packFilename,
-											const cBDD_PtsLiaisons &i_bd_liaison,
-											int i_iPackObs, // index of the current cPackObsLiaison in cAppliApero->mDicoLiaisons
-											bool i_isFirstKeySet,
-											bool i_isReverseFile // couples inside i_packFilename are to be reversed before use
-										  )
+void cPackObsLiaison::addFileToObservation
+(
+	const string &i_poseName1, const string &i_poseName2,
+	const string &i_packFilename,
+	const cBDD_PtsLiaisons &i_bd_liaison,
+	int i_iPackObs, // index of the current cPackObsLiaison in cAppliApero->mDicoLiaisons
+	bool i_isFirstKeySet,
+	bool i_isReverseFile // couples inside i_packFilename are to be reversed before use
+)
 {
 	std::string packFullFilename =  mAppli.OutputDirectory()+i_packFilename;
 	if (
-			( mAppli.NamePoseIsKnown(i_poseName1) && mAppli.NamePoseIsKnown(i_poseName2) ) &&
+			( mAppli.NamePoseGenIsKnown(i_poseName1) && mAppli.NamePoseGenIsKnown(i_poseName2) ) &&
 			( ( i_poseName1!=i_poseName2 ) || ( !i_bd_liaison.AutoSuprReflexif().Val() ) )
 	   )
 	{
-		cPoseCam * aC1 =  mAppli.PoseFromName(i_poseName1);
-		cPoseCam * aC2 =  mAppli.PoseFromName(i_poseName2);
+
+		cGenPoseCam * aC1 =  mAppli.PoseGenFromName(i_poseName1);
+		cGenPoseCam * aC2 =  mAppli.PoseGenFromName(i_poseName2);
 		bool OkGrp = true;
 		if (i_bd_liaison.IdFilterSameGrp().IsInit())
 			OkGrp = mAppli.SameClass(i_bd_liaison.IdFilterSameGrp().Val(),*aC1,*aC2);
@@ -462,9 +465,14 @@ void cPackObsLiaison::addFileToObservation(
 			if (mIsMult)
 			{
 				if (DicBoolFind(mDicoMul,i_poseName1))
+                                {
 					mDicoMul[i_poseName1]->AddLiaison(packFullFilename,i_poseName2,i_isFirstKeySet, i_isReverseFile );
+
+                                }
 				else
+                                {
 					mDicoMul[i_poseName1]  = new  cObsLiaisonMultiple(mAppli,packFullFilename,i_poseName1,i_poseName2,i_isFirstKeySet, i_isReverseFile);
+                                }
 				cObsLiaisonMultiple * anObs = mDicoMul[i_poseName1];
 				ElPackHomologue aPack;
 				anObs->InitPack(aPack,i_poseName2);
@@ -491,11 +499,14 @@ void cPackObsLiaison::addFileToObservation(
 			}
 			if (i_bd_liaison.SplitLayer().IsInit())
 				mAppli.SplitHomFromImageLayer(i_packFilename,i_bd_liaison.SplitLayer().Val(),i_poseName1,i_poseName2);
-			mAppli.AddLinkCam(aC1,aC2);
+			mAppli.AddLinkCamCam(aC1,aC2);
 			if (i_iPackObs==0)
 			{
-				tGrApero::TSom * aS1 =  mAppli.PoseFromName(i_poseName1)->Som();
-				tGrApero::TSom * aS2 =  mAppli.PoseFromName(i_poseName2)->Som();
+// std::cout << "AAAAAAAAAAAAaaaa\n";
+				tGrApero::TSom * aS1 =  mAppli.PoseGenFromName(i_poseName1)->Som();
+// std::cout << "BBBBBBbbbb\n";
+				tGrApero::TSom * aS2 =  mAppli.PoseGenFromName(i_poseName2)->Som();
+// std::cout << "cCCCCC " << aS1 << " " << aS2 << "\n";
 				tGrApero::TArc * anArc = mAppli.Gr().arc_s1s2(*aS1,*aS2);
 				if (!anArc) 
 				{
@@ -504,6 +515,7 @@ void cPackObsLiaison::addFileToObservation(
 				}
 				anArc->attr().Pds() = aPds;
 				anArc->attr().Nb() = aNbHom;
+// std::cout << "EEEEEEEEEE\n";
 			}
 		}
 	}
@@ -537,7 +549,7 @@ cPackObsLiaison::cPackObsLiaison
 		const std::vector<std::string> * aVName = iChantierNM->Get(keyset);
 		if ( isUsingSeparateDirectories() ) iChantierNM->setDir( MMInputDirectory() );
 
-		aNbTot += aVName->size();
+		aNbTot += (int)aVName->size();
 
 		if (1)
 		{
@@ -551,6 +563,7 @@ cPackObsLiaison::cPackObsLiaison
 			)
 			{
 				pair<string,string> filenames = mAppli.ICNM()->Assoc2To1( aBDL.KeyAssoc()[aKS], *itN, false );
+
 				string reversePackname = mAppli.OutputDirectory()+mAppli.ICNM()->Assoc1To2( aBDL.KeyAssoc()[aKS], filenames.second, filenames.first, true );
 				if ( ELISE_fp::exist_file( reversePackname ) )
 				{
@@ -577,6 +590,7 @@ cPackObsLiaison::cPackObsLiaison
 				
 				std::string aN1 = aPair.first;
 				std::string aN2 = aPair.second;
+// std::cout <<" POLLLL " <<  aN1 << aN2 << "\n"; getchar();
 				
 				addFileToObservation( aN1, aN2, *itN, aBDL, aCpt, aKS==0, false );
 				aFirst = false;
@@ -702,9 +716,9 @@ std::list<cPoseCam *> cPackObsLiaison::ListCamInitAvecPtCom
                                      mDicoMul[aName1]-> VPoses();
          for (int aK=0 ; aK<int(aVP.size()) ; aK++)
          {
-             if (aVP[aK]->Pose()->RotIsInit())
+             if (aVP[aK]->GenPose()->RotIsInit())
              {
-                aRes.insert(aVP[aK]->Pose());
+                aRes.insert(aVP[aK]->GenPose()->DownCastPoseCamNN());
              }
          }
       }
@@ -867,6 +881,11 @@ void  cPackObsLiaison::GetPtsTerrain
 }
 
 
+extern double aGlobMaxCond ;
+extern double aSomCond ;
+extern double aNbCond ;
+extern double aNb100 ;
+
 
 double cPackObsLiaison::AddObs
        (
@@ -895,7 +914,7 @@ double cPackObsLiaison::AddObs
           {
 // std::cout << "OOLLM "<< itOML->first << "\n";
              cObsLiaisonMultiple * anOLM = itOML->second;
-             cPoseCam * aPC = anOLM->Pose1() ;
+             cGenPoseCam * aPC = anOLM->Pose1() ;
              bool IsDebug = aRegDebug.Match(aPC->Name());
              bool aDoIt = (aK==0) ? IsDebug : (!IsDebug);
              if (aDoIt)
@@ -939,17 +958,29 @@ double cPackObsLiaison::AddObs
    {
        double aSqrtEr = sqrt(aSEr);
        mAppli.CurXmlE().AverageResidual() = aSqrtEr;
-       mAppli.COUT() << "| | " << " RESIDU LIAISON MOYENS = "  
-                 <<  aSqrtEr << " pour " << mId ;
+       mAppli.COUT() << "| | " << " Residual = "  
+                 <<  aSqrtEr  ;
        if (aSO.PdsEvol())
        {
            mAppli.CurXmlE().EvolMax().SetVal(aSO.MaxEvol());
            mAppli.CurXmlE().EvolMoy().SetVal(aSO.MoyEvol());
-           mAppli.COUT() << " Evol, Moy=" <<  aSO.MoyEvol() << " ,Max=" << aSO.MaxEvol() ;
+           mAppli.COUT() << " ;; Evol, Moy=" <<  aSO.MoyEvol() << " ,Max=" << aSO.MaxEvol() ;
        }
        mAppli.COUT() <<  "\n";
 
+       if (mAppli.mPoseWorstRes)
+       {
+          mAppli.COUT() << "| |  Worst, Res " << mAppli.mWorstRes << " for " << mAppli.mPoseWorstRes->Name();
+          mAppli.COUT() << ",  Perc " << mAppli.mWorstPerc << " for " << mAppli.mPoseWorstPerc->Name();
+          mAppli.COUT() <<  "\n";
+       }
 
+       if (aNbCond)
+       {
+          mAppli.COUT() << "| |  Cond , Aver " <<  aSomCond/aNbCond 
+                                    << " Max " << aGlobMaxCond 
+                                    << " Prop>100 " << aNb100/aNbCond << "\n";
+       }
 
 
        if (TheExitOnNan)
