@@ -1,7 +1,21 @@
-micmac (1.0+hg5647-0archeos1) UNRELEASED; urgency=medium
+micmac (1.0+hg6294-0archeos1) UNRELEASED; urgency=medium
 
+  * Update make_source_archive script
+  * Imported Upstream version 1.0+hg5645+
+  * Re use upstream ANN since change were made...
+  * Imported Upstream version 1.0+hg5647
+  * Added qt4 dependency
+  * Add 'Do not install static lib' patch
+  * Add patch 'Proper Poisson install dir'
+  * Add 'OpenMP flags for Hardening' patch
+  * Add opengl dependency
+  * Add 'XML_MicMac files calls' patch
+  * Add 'XML_GEN files calls' patch
+  * install qt assets
+  * Add 'QT Assets paths' patch
+  * Imported Upstream version 1.0+hg6294
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Fri, 03 Jul 2015 16:45:51 +0200
+ -- Romain Janvier <romain.janvier@hotmail.fr>  Fri, 05 Feb 2016 22:50:55 +0100
 
 micmac (1.0+hg1340-0archeos2) theodoric; urgency=low
 
