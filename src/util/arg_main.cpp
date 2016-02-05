@@ -105,8 +105,10 @@ void OpenFileDebug(const std::string & aName)
 
 std::string TheStringMemoArgOptGlob = "";
 
-static const int TheNbKeyACM=4;
-const char *  TheKeyACM[TheNbKeyACM] ={"ExitOnBrkp","ExitOnNan","MajickFile","EnBoucle"};
+static const int TheNbKeyACM=6;
+int TheNbProcCom = -1;
+std::string TheSpecMess="";
+const char *  TheKeyACM[TheNbKeyACM] ={"ExitOnBrkp","ExitOnNan","MajickFile","EnBoucle","NbMaxProc","SpecMessage"};
 
 void AnalyseContextCom(int argc,char ** argv)
 {
@@ -121,6 +123,9 @@ void AnalyseContextCom(int argc,char ** argv)
        {
            bool ForAction = false;
            std::string ArgK = argv[aK]+1;
+
+           std::string aBeforEq,aAfterEq;
+           SplitIn2ArroundCar(ArgK,'=', aBeforEq,aAfterEq,true);
            if (ArgK ==TheKeyACM[0])
            {
                TheExitOnBrkp = true;
@@ -141,6 +146,20 @@ void AnalyseContextCom(int argc,char ** argv)
                TheNbIterProcess=100000000;
                ForAction = true;
            }
+           else if (aBeforEq==TheKeyACM[4])
+           {
+               bool Ok=FromString(TheNbProcCom,aAfterEq);
+               ELISE_ASSERT(Ok,"Cannot read value in @NbProc");
+               ForAction = true;
+           }
+           else if (aBeforEq==TheKeyACM[5])
+           {
+               TheSpecMess= aAfterEq;
+               ForAction = true;
+           }
+/*
+*/
+
 
 
            if (ForAction)
@@ -163,30 +182,38 @@ std::list<std::string>  TheEmptyListEnum;
 
 bool MMVisualMode = false;
 
-std::string MakeStrFromArgcARgvWithSubst(int  argc,char** argv,int aKSubst,std::string aSubst)
+std::string MakeStrFromArgcARgvWithSubst(int  argc,char** argv,int aKSubst,std::string aSubst, bool aProtect)
 {
-   std::string aRes;
-   for (int aK=0 ; aK<argc ; aK++)
-   {
-      aRes = aRes + ((aK== aKSubst) ? aSubst: std::string(argv[aK])) + " ";
-   }
+	if (aProtect) aSubst = PATTERN_QUOTE(aSubst);
+ 
+	std::string aRes;
+	for (int aK=0 ; aK<argc ; aK++)
+	{
+		if (aK == aKSubst)
+			aRes = aRes + aSubst + " ";
+		else
+		{
+			const string str(argv[aK]);
+			aRes = aRes + (aProtect ? PATTERN_QUOTE(str) : str) + " ";
+		}
+	}
 
-   return aRes;
+	return aRes;
 }
 
-std::string MakeStrFromArgcARgv(int  argc,char** argv)
+std::string MakeStrFromArgcARgv( int argc,char **argv, bool aProtect )
 {
-     return MakeStrFromArgcARgvWithSubst(argc,argv,-1,"");
+     return MakeStrFromArgcARgvWithSubst(argc, argv, -1, "", aProtect);
 }
 
-std::string SubstArgcArvGlob(int aKSubst,std::string aSubst)
+std::string SubstArgcArvGlob(int aKSubst,std::string aSubst, bool aProtect)
 {
-     return MakeStrFromArgcARgvWithSubst(MemoArgc,MemoArgv, aKSubst,aSubst);
+     return MakeStrFromArgcARgvWithSubst(MemoArgc, MemoArgv, aKSubst, aSubst, aProtect);
 }
 
 int MemoArgc=-1;
 char ** MemoArgv=0;
-static std::string GlobArcArgv;
+std::string GlobArcArgv;
 static std::vector<std::string>  GlobMessErrContext;
 void AddMessErrContext(const std::string & aMes)
 {
@@ -404,7 +431,7 @@ INT LArgMain::Init
 }
 
 
-int LArgMain::Size() const {return _larg.size();}
+int LArgMain::Size() const {return (int)_larg.size();}
 
 
 
@@ -867,7 +894,7 @@ bool IsThomFile (const std::string & aName)
 
 std::string StrFromArgMain(const std::string & aStr)
 {
-    int aL= aStr.length();
+    int aL = (int)aStr.length();
     aL--;
     while ((aL>=0) && isspace(aStr.at(aL)))
         aL--;
@@ -917,7 +944,13 @@ int System(const std::string & aComOri,bool aSVP,bool AddOptGlob,bool UseTheNbIt
         else
             aRes = system_call( aCom.c_str() );
     #else
+// std::cout << "SYS " << __FILE__ << __LINE__ << " " << aCom << "\n";
+		#ifdef __TRACE_SYSTEM__
         aRes = system_call(aCom.c_str());
+      #else
+        aRes = system(aCom.c_str());
+      #endif
+// std::cout << "SYS " << __FILE__ << __LINE__ << " " << aRes << " " << aCom << "\n";
     #endif
     if ((aRes != 0) && (!aSVP))
     {
@@ -942,6 +975,7 @@ int System(const std::string & aComOri,bool aSVP,bool AddOptGlob,bool UseTheNbIt
             ElEXIT(-1,(std::string("System-call :") + aCom));
     }
      }
+
 
      return aRes;
 }
@@ -972,6 +1006,7 @@ void ElExit(int aLine,const char * aFile,int aCode,const std::string & aMessage)
       fprintf(aFP,"MM3D-Command=[%s]\n",GlobArcArgv.c_str());
    }
 
+// std::cout << "ELExit " << __FILE__ << __LINE__ << " " << aCode << " " << GlobArcArgv << "\n";
    StdEXIT(aCode);
 }
 
@@ -1150,7 +1185,7 @@ void cAppliBatch::DoAll()
         const std::vector<cCpleString> * aVC = mICNM->GetRel(mPatF1);
         for (int aK=0 ; aK<int(aVC->size()) ; aK++)
         {
-            int aKC = (mReverse ? (aVC->size()-1-aK) : aK);
+            int aKC = (mReverse ? int(aVC->size()) - 1 - aK : aK);
             mCurF1 = (*aVC)[aKC].N1();
             mCurF2 = (*aVC)[aKC].N2();
             DoOne();
@@ -1259,7 +1294,7 @@ bool  cAppliBatch::IsRelancedByThis() const
 
 int cAppliBatch::ARGC()
 {
-    return mArgsNC.size();
+    return (int)mArgsNC.size();
 }
 
 char ** cAppliBatch::ARGV()

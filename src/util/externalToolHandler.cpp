@@ -240,6 +240,32 @@ string printResult( const string &i_tool )
 
 int CheckDependencies_main(int argc,char ** argv)
 {
+	if (argc > 1)
+	{
+		string arg1 = argv[1];
+		tolower(arg1);
+		if (arg1 == "version")
+		{
+			#if ELISE_windows
+				const string os = "Windows";
+			#elif ELISE_Darwin
+				const string os = "OSX";
+			#else
+				const string os = "Linux";
+			#endif
+
+			const string instructionSet = (sizeof(void *) == 8 ? "amd64" : "x86");
+			
+			cout << os << '_' << instructionSet << '_' << "rev" << __HG_REV__ << endl;
+			return EXIT_SUCCESS;
+		}
+		if (arg1 == "rev")
+		{
+			cout << __HG_REV__ << endl;
+			return EXIT_SUCCESS;
+		}
+	}
+
     cout << "mercurial revision : " << __HG_REV__ << endl;
     cout << endl;
     cout << "byte order   : " << ( MSBF_PROCESSOR()?"big-endian":"little-endian" ) << endl;
@@ -255,7 +281,15 @@ int CheckDependencies_main(int argc,char ** argv)
     #endif
 
     #if ELISE_QT_VERSION != 0
-		cout << "--- Qt enabled : " << qVersion() << endl << endl;
+		cout << "--- Qt enabled : " << qVersion() << endl;
+
+		cout << "\tlibrary path: ";
+		QStringList paths = QCoreApplication::libraryPaths();
+		if (paths.size() == 0)
+			cout << "none";
+		else
+			foreach (QString path, paths) cout << " [" << path.toStdString() << ']';
+		cout << endl << endl;
     #endif
 
     #if defined __USE_JP2__
@@ -266,6 +300,8 @@ int CheckDependencies_main(int argc,char ** argv)
         CGpGpuContext<cudaContext>::check_Cuda();
     #endif
 
+	cout << "micmac directory = [" << MMDir() << "]" << endl << endl;
+
     cout << printResult( "make" ) << endl;
     cout << printResult( "exiftool" ) << endl;
     cout << printResult( "exiv2" ) << endl;
@@ -273,8 +309,8 @@ int CheckDependencies_main(int argc,char ** argv)
     cout << printResult( "proj" ) << endl;
     cout << printResult( "cs2cs" ) << endl;
 
-    cout << printResult( TheStrSiftPP ) << endl;
-    cout << printResult( TheStrAnnPP ) << endl;
+    //~ cout << printResult( TheStrSiftPP ) << endl;
+    //~ cout << printResult( TheStrAnnPP ) << endl;
 
     return EXIT_SUCCESS;
 }

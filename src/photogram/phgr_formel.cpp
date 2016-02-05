@@ -51,6 +51,7 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 extern bool DebugCamBil;
 
+
 /************************************************************/
 /*                                                          */
 /*                    cNameSpaceEqF                         */
@@ -201,6 +202,12 @@ void cElemEqFormelle::CloseEEF(bool asIntervBlock)
       std::cout << asIntervBlock << " CLOSE-EEF " << mNumInc0 << " " << mNumIncN <<  " " << mIncInterv.Id() << "\n";
       getchar();
    }
+
+   Virtual_CloseEEF();
+}
+
+void  cElemEqFormelle::Virtual_CloseEEF()
+{
 }
 
 INT cElemEqFormelle::NbInc()
@@ -428,8 +435,8 @@ double cSetEqFormelles::AddEqLineaire
    }
    mSys->GSSR_AddNewEquation_Indexe
    (
-      &aVSsBl,&aCoefFiltre[0],aCoefFiltre.size(),
-      aIndFiltre,aPds,&aCoefFiltre[0],aB
+      &aVSsBl, &aCoefFiltre[0], (int)aCoefFiltre.size(),
+      aIndFiltre, aPds, &aCoefFiltre[0], aB
    );
   
    return aRes;
@@ -528,7 +535,7 @@ bool ShowCholesky = false;
 
 int  cSetEqFormelles::NbBloc() const
 {
-   return mBlocsIncAlloc.size();
+   return (int)mBlocsIncAlloc.size();
 }
 
 const std::vector<cIncIntervale *> &   cSetEqFormelles::BlocsIncAlloc() const
@@ -894,7 +901,7 @@ if (DebugCamBil)
       }
    }
 
-   int aNumBl = mBlocsIncAlloc.size();
+   int aNumBl = (int)mBlocsIncAlloc.size();
    for (int anI = anII->I0Alloc() ; anI<anII->I1Alloc() ; anI++)
        mI02NblAlloc.push_back(aNumBl);
 
@@ -1035,6 +1042,20 @@ void cSetEqFormelles::ShowVar()
 
 void cSetEqFormelles::SolveResetUpdate(double ExpectResidu,bool *OK)
 {
+if (0)
+{
+    std::cout << "cSetEqFormelles::SolveResetUpdate " << ExpectResidu << " " << OK << "\n";
+    ShowVar();
+    ShowSpectrSys(*this);
+    for (INT aK=0 ; aK < mAlloc.CurInc(); aK++)
+    {
+	    std::cout << "DIAG[" << aK <<"]= "  << mSys->GetElemQuad(aK,aK) << "\n";
+    }
+
+    getchar();
+
+}
+ 
     Solve(ExpectResidu,OK);
     ResetUpdate(1.0);
 }
@@ -1794,7 +1815,7 @@ void cMultiContEQF::AddAcontrainte(cElCompiledFonc * aFCtr,double aTol)
 
 int cMultiContEQF::NbC() const
 {
-   return mContraintes.size();
+   return (int)mContraintes.size();
 }
 
 const cContrainteEQF & cMultiContEQF::KthC(int aKth) const

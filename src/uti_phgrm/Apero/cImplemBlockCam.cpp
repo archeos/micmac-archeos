@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 extern bool AllowUnsortedVarIn_SetMappingCur;
 
@@ -547,12 +548,12 @@ cImplemBlockCam::cImplemBlockCam
           if (! DicBoolFind(mName2Cam,aNameCam))
           {
 
-               cIBC_OneCam *  aCam = new cIBC_OneCam(aNameCam,mNum2Cam.size());
+               cIBC_OneCam *  aCam = new cIBC_OneCam(aNameCam, (int)mNum2Cam.size());
                mName2Cam[aNameCam] = aCam;
                mNum2Cam.push_back(aCam); 
           }
     }
-    mNbCam  = mNum2Cam.size();
+    mNbCam  = (int)mNum2Cam.size();
 
     
     // On regroupe les images prises au meme temps
@@ -574,7 +575,7 @@ cImplemBlockCam::cImplemBlockCam
           cIBC_OneCam * aCam = mName2Cam[aNameCam];
           aIms->AddPose(aPC,aCam->Num());
     }
-    mNbTime = mNum2ITime.size();
+    mNbTime = (int)mNum2ITime.size();
     std::sort(mNum2ITime.begin(),mNum2ITime.end(),TheIOTCmp);
 
 

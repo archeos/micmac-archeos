@@ -4,6 +4,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/precompiled_headers.cmake)
 cmake_minimum_required( VERSION 2.8.1 )
 project(MICMAC)
 
+if(POLICY CMP0020)
+	cmake_policy(SET CMP0020 NEW) #windows specific: Automatically link Qt executables to qtmain
+endif()
+
 set(VERBOSE 0)
 
 set (MICMAC_VERSION_MAJOR 1)
@@ -68,6 +72,10 @@ if ( TRACE_SYSTEM )
 	add_definitions(-D__TRACE_SYSTEM__=${TRACE_SYSTEM})
 endif()
 
+if (__DEBUG)
+	add_definitions(-D__DEBUG=${__DEBUG})
+endif()
+
 if ( WITH_OPEN_MP )
 	FIND_PACKAGE(OpenMP REQUIRED)
 	if (${CUDA_ENABLED})
@@ -121,11 +129,15 @@ if(${WITH_QT5} OR ${WITH_QT4})
 		endif()
 
 		if (${WITH_QT5})
-
 			    #find_package(Qt5 COMPONENTS Gui Core Widgets OpenGL LinguistTools Concurrent Xml)
-			    find_package(Qt5 COMPONENTS Gui Core OpenGL Xml)
+			    #~ find_package(Qt5 COMPONENTS Gui Core OpenGL Xml)
+			    find_package(Qt5Widgets REQUIRED)
+			    find_package(Qt5Xml REQUIRED)
+			    find_package(Qt5Concurrent REQUIRED)
+			    #~ find_package(Qt5LinguistTools REQUIRED)
+			    find_package(Qt5OpenGL REQUIRED)
 
-			if (Qt5_FOUND)
+			if (Qt5Widgets_FOUND)
 
 			    message( STATUS "-----> Qt5 found" )
 
@@ -170,6 +182,40 @@ if(${WITH_QT5} OR ${WITH_QT4})
 	else()
 		message( "OpenGL not available, Qt graphical tools disabled" )
 	endif()
+endif()
+
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND qt_version EQUAL 5)
+	if (POLICY CMP0045)
+		cmake_policy(SET CMP0045 NEW) # target of get_target_property must exists or a FATAL_ERROR is issued
+	endif()
+
+	if (NOT QT_QMAKE_EXECUTABLE)
+		get_target_property(QT_QMAKE_EXECUTABLE Qt5::qmake IMPORTED_LOCATION)
+	endif()
+
+	if (NOT QT_INSTALL_LIBS)
+		EXECUTE_PROCESS(
+				COMMAND
+				${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_LIBS
+				RESULT_VARIABLE qmake_install_libs_result
+				OUTPUT_VARIABLE QT_INSTALL_LIBS
+				ERROR_QUIET
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+	endif()
+
+	if (NOT QT_INSTALL_PLUGINS)
+		EXECUTE_PROCESS(
+				COMMAND
+				${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_PLUGINS
+				RESULT_VARIABLE qmake_install_plugins_result
+				OUTPUT_VARIABLE QT_INSTALL_PLUGINS
+				ERROR_QUIET
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+	endif()
+
+	set(CMAKE_INSTALL_RPATH "${QT_INSTALL_LIBS}" "${QT_INSTALL_PLUGINS}" "@executable_path/../Frameworks")
 endif()
 
 if ( NOT ${qt_version} EQUAL 0 )
@@ -406,10 +452,10 @@ IF(${WITH_IGN_ORI} OR ${WITH_IGN_IMAGE})
 		IF (${WITH_IGN_IMAGE})
 			MESSAGE("IgnSocle_FOUND : ${IgnSocle_FOUND}")
 			MESSAGE("TinyXML_FOUND : ${TinyXML_FOUND}")
-	    MESSAGE("GDAL_FOUND : ${GDAL_FOUND}")
-	    MESSAGE("KAKADU_FOUND : ${KAKADU_FOUND}")
-	    MESSAGE("ECWJ2_FOUND : ${ECWJ2_FOUND}")
-	    MESSAGE("Geos_FOUND : ${Geos_FOUND}")
+			MESSAGE("GDAL_FOUND : ${GDAL_FOUND}")
+			MESSAGE("KAKADU_FOUND : ${KAKADU_FOUND}")
+			MESSAGE("ECWJ2_FOUND : ${ECWJ2_FOUND}")
+			MESSAGE("Geos_FOUND : ${Geos_FOUND}")
 			MESSAGE("Boost_FOUND : ${Boost_FOUND}")
 			MESSAGE("Warning! Ign Image not found. Micmac will be built without Ign Image support.")
 		ENDIF()
@@ -491,7 +537,7 @@ if(EXIV2_EXECUTABLE_NOTFOUND)
 endif(EXIV2_EXECUTABLE_NOTFOUND)
 
 if (MINGW)
-	add_definitions(-D__MINGW__)
+	add_definitions(-D__MINGW__ -D__MSVCRT_VERSION__=0x800 -D_WIN32_WINNT=0x0500)
 	set( WINSOCK2_LIBRARY ws2_32 )
 endif()
 
@@ -563,13 +609,15 @@ IF (MSVC)
 				# REPLACE pour eviter le conflit Zm1000 vs ZmXXX
 				string(REPLACE "/Zm1000" ${zm_value} CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 			endif()
+	elseif (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.0.0")) # 19 is visual studio 2015
+		set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm237")
 	elseif ( ${CMAKE_SYSTEM_VERSION} MATCHES "5.1" )
-			set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm131")
+		set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm131") # 5.1 is windows xp
 	else()
-			set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm170")
-		endif()
+		set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zm170")
+	endif()
 
-	if(MSVC80 OR MSVC90 OR MSVC10 OR MSVC11 OR MSVC12 )
+	if(NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8.0.0"))
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	endif()
 
@@ -623,6 +671,7 @@ if ( ${CMAKE_SYSTEM_NAME} STREQUAL "Windows" )
 	configure_file( ${BinAuxWinDir}/proj.exe ${PROJECT_SOURCE_DIR}/binaire-aux/proj.exe COPYONLY )
 	configure_file( ${BinAuxWinDir}/proj.dll ${PROJECT_SOURCE_DIR}/binaire-aux/proj.dll COPYONLY )
 	configure_file( ${BinAuxWinDir}/cs2cs.exe ${PROJECT_SOURCE_DIR}/binaire-aux/cs2cs.exe COPYONLY )
+	configure_file( ${BinAuxWinDir}/msys-1.0.dll ${PROJECT_SOURCE_DIR}/binaire-aux/msys-1.0.dll COPYONLY )
 endif()
 
 # Doxygen
@@ -638,41 +687,3 @@ if ( ${BUILD_BENCH} )
    include(${PROJECT_SOURCE_DIR}/BenchElise/bench/CMakeLists.txt)
    include(${PROJECT_SOURCE_DIR}/BenchElise/bench_mm3d/CMakeLists.txt)
 endif()
-
-IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
-
-    #------------------------------------------------------------------------------------
-    #scripts de configuration et d'installation
-    #------------------------------------------------------------------------------------
-    SET(QT_OLD_PREFIX "")
-    if(qt_version EQUAL 5)
-	    #setting old QT4 variables for installs
-	    get_target_property(QT_QTCORE_LIBRARY 		Qt5::Core			LOCATION_Release)
-	    get_target_property(QT_QTGUI_LIBRARY 		Qt5::Gui			LOCATION_Release)
-	    get_target_property(QT_QTCONCURRENT_LIBRARY Qt5::Concurrent		LOCATION_Release)
-	    get_target_property(QT_QTOPENGL_LIBRARY 	Qt5::OpenGL			LOCATION_Release)
-	    get_target_property(QT_QTWIDGETS_LIBRARY    Qt5::Widgets		LOCATION_Release)
-	    get_target_property(QT_QTXML_LIBRARY        Qt5::Xml            LOCATION_Release)
-
-	    set(QT_COCOA_PLUGIN "platforms/libqcocoa.dylib")
-
-	    get_filename_component(QT_QTCORE_LIBRARY ${QT_QTCORE_LIBRARY} PATH)
-	    get_filename_component(QT_QTGUI_LIBRARY ${QT_QTGUI_LIBRARY} PATH)
-	    get_filename_component(QT_QTCONCURRENT_LIBRARY ${QT_QTCONCURRENT_LIBRARY} PATH)
-	    get_filename_component(QT_QTOPENGL_LIBRARY ${QT_QTOPENGL_LIBRARY} PATH)
-	    get_filename_component(QT_QTWIDGETS_LIBRARY ${QT_QTWIDGETS_LIBRARY} PATH)
-	    get_filename_component(QT_QTXML_LIBRARY ${QT_QTXML_LIBRARY} PATH)
-
-	    SET (QT_OLD_PREFIX "/work/build/______________________________PADDING______________________________/lib/")
-    endif()
-
-    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_LIST_DIR}/setup/)
-
-    configure_file (
-      "${CMAKE_CURRENT_LIST_DIR}/config/MICMAC_MacOSXInstaller.sh.in"
-       "${CMAKE_CURRENT_LIST_DIR}/setup/MICMAC_MacOSXInstaller.sh"
-     )
-
-endif()
-
-

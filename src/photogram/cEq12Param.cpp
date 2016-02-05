@@ -248,12 +248,25 @@ void AffinePose(ElCamera & aCam,const std::vector<Pt2dr> & aVIm,const std::vecto
                         + " DirectoryChantier=" +  aDir
                         + " +Im=" + aNameCam;
 
+/*
+if (MPD_MM())
+{
+    std::cout << "AAAAAjjjjfff \n"; 
+    std::cout << aCom << "\n";
+    getchar();
+}
+*/
     System(aCom.c_str());
+
 
 
     std::string aKeyOriTmpOut =  "NKS-Assoc-Im2Orient@"+aDirOriTmp +"-OUT";
     std::string aNameOriTmpOut = aDir+aICNM->Assoc1To1(aKeyOriTmpOut,aNameCam,true);
+
+
+
     ElCamera * aCamOut =  CamOrientGenFromFile(aNameOriTmpOut,aICNM);
+
 
     aCam.SetOrientation(aCamOut->Orient());
 

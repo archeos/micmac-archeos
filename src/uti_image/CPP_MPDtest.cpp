@@ -51,8 +51,100 @@ void f()
 #include "StdAfx.h"
 #include "hassan/reechantillonnage.h"
 
+#include "../uti_phgrm/NewOri/NewOri.h"
+
 
 #if (ELISE_X11)
+
+
+
+
+/*
+template <class TVal,class tFVal,class tFPds> 
+         void RecursWeightedSplitArrounKthValue(TVal * Data,const tFPds & aFVal,const tFPds & aFPds,int aNb,U_INT8 aPds)
+{
+   if (aNb==0) return;
+   if (aPds<=0) return;
+ // std::cout << " SplitArrounKthValue " << aNb << " " << aKth << "\n";
+   // On calcule la moyenne
+   TVal aMoy(0);
+   U_INT8 aSomP=0;
+
+   for (int aKv=0 ; aKv<aNb ; aKv++)
+   {
+      U_INT8 aCurPds = aFPds(Data[aKv]);
+      aMoy = aMoy+FVal(Data[aKv]) * aCurPds;
+      aSomP += aCurPds;
+   }
+   if (aPds>=aSomP) return;
+
+   aMoy = aMoy / aSomP;
+
+   // On permut de maniere a ce que les valeur du debut soit < Moy  et celle de la fin >=Moy
+   int aK0 =0;
+   int aK1 = aNb-1;
+   U_INT8 aP0Moins = 0;
+   U_INT8 aP0Plus  = 0;
+   while (aK0 < aK1)
+   {
+        while ((aK0<aK1) && (aFVal(Data[aK0]) <  aMoy))
+        {
+            aP0Moins += aFPds(Data[aK0]);
+            aK0++;
+        }
+        while ((aK0<aK1) && (aFVal(Data[aK1]) >= aMoy))
+        {
+            aP0Plus += aFPds(Data[aK1]);
+            aK1--;
+        }
+        if (aK0 < aK1) 
+        {
+           ElSwap(Data[aK0],Data[aK1]);
+        }
+   }
+   ELISE_ASSERT(aK0==aK1,"Verif in SplitArrounKthValue");
+   ELISE_ASSERT((aP0Moins+aP0Plus)==aSomP,"Verif in SplitArrounKthValue");
+
+   // Si le cas, on n'a pas progresse, toute les valeur sont egale
+   if  (aK0==0)
+   {
+       return;
+   }
+
+   if (aK0 == aKth)  
+   {
+      return;
+   }
+
+   if (aK0 < aKth)
+   {
+      RecursWeightedSplitArrounKthValue(Data+aK0,aNb-aK0,aKth-aK0);
+   }
+   else           
+   {
+      RecursWeightedSplitArrounKthValue(Data,aK0,aKth);
+   }
+}
+*/
+
+
+/*
+template <class TVal> void WeightedSplitArrounKthValue(TVal * Data,int aNb,int aKth)
+{
+}
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -96,8 +188,6 @@ void Bench_Rank()
          ELISE_ASSERT(ElAbs(aVK-aVK2)<1e-10,"Bench rnk");
 
 /*
-   Ne marche pas : la valeur RrnK est n'importe ou
-
          SplitArrounKthValue(VData(aV3),aNb,aRnk);
          double aVK3 = aV3[aRnk];
          std::cout << "Bench Rank " << aVK-aVK2 << " " << aVK-aVK3<< "\n";
@@ -726,11 +816,305 @@ void PdBump()
 }
 
 
+void TestMax(int argc,char** argv)
+{
+    std::string aNameIm; 
+    int aSzW = 32;
+
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  << EAMC(aNameIm,"Name Input"),
+        LArgMain() <<  EAM(aSzW,"SzW",true,"Taille de la fenetre")
+    );
+
+    Tiff_Im aTIn = Tiff_Im::StdConvGen(aNameIm,1,true);
+    Pt2di aSz = aTIn.sz();
+
+    Im2D_U_INT2 aIm(aSz.x,aSz.y);
+    ELISE_COPY(aTIn.all_pts(),aTIn.in(),aIm.out());
+
+
+    Im2D_U_INT1 aImMax(aSz.x,aSz.y,0);
+    Im2D_U_INT1 aImMin(aSz.x,aSz.y,0);
+    
+
+    Fonc_Num aF = aIm.in(-10000) + FX/100.0 + FY/1000.0;
+
+    ELISE_COPY(aImMax.all_pts(),aF==rect_max(aF,aSzW),aImMax.out());
+
+     
+    Tiff_Im aTIn8B = Tiff_Im::StdConvGen(aNameIm,1,false);
+
+
+    std::string aNameMax ="Max-" + aNameIm;
+    Tiff_Im aResMax
+            (
+                aNameMax.c_str(),
+                aSz,
+                GenIm::u_int1,
+                Tiff_Im::No_Compr,
+                Tiff_Im::RGB
+            );
+
+   ELISE_COPY
+   (
+        aResMax.all_pts(),
+        Virgule
+        (
+            aTIn8B.in(),
+            aTIn8B.in(),
+            255*dilat_32(aImMax.in(0),5)
+        ),
+        aResMax.out()
+   );
+
+
+}
+
+extern void TestBGC3M2D();
+
+void TestGridCam()
+{
+    /// std::string aNameCam = "/home/marc/TMP/VolSozo2/Ori-MEP/Orientation-IMG_1577.CR2.xml";
+
+    std::string aDir = "/home/marc/TMP/VolSozo2/";
+    std::string aNameIm =  "IMG_1577.CR2";
+    std::string aNameOri =  "MEP";
+    cInterfChantierNameManipulateur*  anICNM = cInterfChantierNameManipulateur::BasicAlloc(aDir);
+    std::string aFullName = anICNM->NameOriStenope(aNameOri,aNameIm);
+
+    CamStenope * aCS0 =   anICNM->StdCamOfNames(aNameIm,aNameOri);
+    CamStenope *aCSGrid =   CamStenope::StdCamFromFile(true,aFullName,anICNM);
+
+    std::cout << "SZ " << aCS0->Sz() << " " << aCSGrid->Sz() << " ISGR " << aCSGrid->IsGrid() << "\n";
+
+    int aNb = 10;
+    for (int aK = 0 ; aK<=aNb ; aK++)
+    {
+        Pt2dr aP = Pt2dr(aCS0->Sz()) * (aK/double(aNb));
+        Pt2dr aUD1 = aCS0->F2toC2(aP);
+        Pt2dr aUD2 = aCSGrid->F2toC2(aP);
+
+        std::cout << aP << aUD1 << aUD2 << "\n";
+    }
+
+}
+
+
+// Test de fit de courbe analytique sur un polynome 
+class cTestCircleFit
+{
+    public :
+
+cTestCircleFit()
+{
+    mTetaMax = 0.5;
+    mNbEch = 100;
+    mDegre = 4;
+    L2SysSurResol mSys(mDegre+1);
+
+    for (int aK=0 ; aK<mNbEch ; aK++)
+    {
+        double aTeta = Teta(aK);
+        std::vector<double> aVC;
+        for (int aD=0 ; aD<=mDegre ; aD++)
+        {
+            aVC.push_back(pow(aTeta,aD));
+        }
+        mSys.V_GSSR_AddNewEquation(1.0,VData(aVC),F(aTeta));
+    }
+
+    bool Ok;
+    Im1D_REAL8  aSol = mSys.V_GSSR_Solve(&Ok);
+    double * aDS = aSol.data();
+
+    
+    for (int aK=0 ; aK<mNbEch ; aK++)
+    {
+        double aTeta = Teta(aK);
+        std::vector<double> aVC;
+        double aRes = 0.0;
+        for (int aD=0 ; aD<=mDegre ; aD++)
+        {
+             aRes += pow(aTeta,aD) * aDS[aD];
+        }
+        aRes -= F(aTeta);
+
+        std::cout << "RES " << ((aRes>0) ? "+" : "-" ) << "\n";
+    }
+
+    getchar();
+}
+
+    double F(double aTeta)
+    {
+          return sqrt(1-aTeta*aTeta + aTeta);
+    }
+
+
+    double Teta(int aK) { return ((mTetaMax) /mNbEch) * aK;}
+
+    double mTetaMax ;
+    int    mNbEch;
+    int    mDegre;
+};
+
+
+
+
+
+
+void TestBitmFont(const std::string & aStr,Pt2di aSpace,Pt2di aRab,int aCenter)
+{
+    cElBitmFont & aFont=  cElBitmFont::BasicFont_10x8();
+    Im2D_Bits<1> anIm = aFont.MultiLineImageString(aStr,aSpace,aRab,aCenter);
+    Tiff_Im::Create8BFromFonc("toto.tif",anIm.sz(),255*anIm.in());
+    std::cout << "DONE " << aStr << "\n";
+    getchar();
+}
+
+void TestFont()
+{
+    // cElBitmFont & aFont=  cElBitmFont::BasicFont_10x8();
+    //TestSplitStrings("Abcd");
+	    //TestSplitStrings("");
+	    // TestSplitStrings("Ab\ncd");
+    // TestSplitStrings("Ab\n\ncd");
+    // TestSplitStrings("Ab\n\ncd\n");
+
+    // Im2D_Bits<1> anIm = ImageString(aFont,"01AB",2);
+    TestBitmFont("01AB\n1\n\n1234567",Pt2di(2,10),Pt2di(5,5),0);
+exit(0);
+}
+
+
+void TestFoncReelle(Fonc_Num aF,const std::string & aName,Pt2di aSz)
+{
+    Im2D_REAL8 anIm(aSz.x,aSz.y);
+    ELISE_COPY(anIm.all_pts(),aF,anIm.out());
+    std::vector<Im2DGen> aV;
+    aV.push_back(anIm);
+    Tiff_Im::CreateFromIm(aV,aName);
+
+}
+
+
+void TestcFixedMergeStruct()
+{
+    cStructMergeTieP< cFixedSizeMergeTieP<3,Pt2dr> >  aFMS(3,false);
+
+    aFMS.AddArc(Pt2dr(0,0),0,Pt2dr(1,1),1);
+    aFMS.AddArc(Pt2dr(1,1),1,Pt2dr(1,2),2);
+    aFMS.AddArc(Pt2dr(1,2),2,Pt2dr(0,0),0);
+
+    aFMS.AddArc(Pt2dr(10,10),0,Pt2dr(11,11),1);
+    aFMS.AddArc(Pt2dr(11,11),1,Pt2dr(12,12),2);
+    aFMS.AddArc(Pt2dr(12,12),2,Pt2dr(11,11),1);
+//    aFMS.AddArc(Pt2dr(12,12),1,Pt2dr(10,10),0);
+    aFMS.AddArc(Pt2dr(11,11),1,Pt2dr(10,10),0);
+//    aFMS.AddArc(Pt2dr(12,12),1,Pt2dr(10,10),0);
+
+    aFMS.AddArc(Pt2dr(7,7),0,Pt2dr(8,8),1);
+    aFMS.AddArc(Pt2dr(8,8),1,Pt2dr(7,7),0);
+
+    aFMS.AddArc(Pt2dr(4,4),0,Pt2dr(5,5),1);
+    aFMS.AddArc(Pt2dr(5,5),1,Pt2dr(4,4),0);
+    aFMS.AddArc(Pt2dr(5,5),1,Pt2dr(6,6),2);
+
+    aFMS.AddArc(Pt2dr(77,77),0,Pt2dr(88,88),2);
+    aFMS.AddArc(Pt2dr(88,88),2,Pt2dr(99,99),1);
+
+    aFMS.AddArc(Pt2dr(777,777),0,Pt2dr(888,888),1);
+    aFMS.AddArc(Pt2dr(888,888),1,Pt2dr(999,999),2);
+
+    aFMS.DoExport();
+
+    const std::list<cFixedSizeMergeTieP<3,Pt2dr> *> &  aLM = aFMS.ListMerged();
+ 
+    std::cout << "NB ITEM " << aLM.size() << "\n";
+
+    for
+    (
+        std::list<cFixedSizeMergeTieP<3,Pt2dr> *>::const_iterator itM=aLM.begin();
+        itM != aLM.end();
+        itM++
+    )
+    {
+          std::cout << "NbS=" << (*itM)->NbSom() << " NbA=" << (*itM)->NbArc()<<endl;
+          for (int i=0; i<(*itM)->NbSom(); i++)
+          {
+            std::cout << (*itM)->IsInit(i)<<" " ;
+            std::cout << " " << (*itM)->GetVal(i) ;
+            std::cout << "\n";
+          }
+
+    }
+}
+
+
+void TestXmlX11();
+
 
 int MPDtest_main (int argc,char** argv)
 {
-    PdBump();
+    ELISE_fp::PurgeDir("BUG-Mehdi/Masq-TieP-D0002831.JPG/",true);
+    ELISE_fp::PurgeDir("BUG-Mehdi/Masq-TieP-D0002832.JPG/",true);
+    ELISE_fp::PurgeDir("BUG-Mehdi/Masq-TieP-D0002833.JPG/",true);
+    // TestXmlX11();
+    // TestcFixedMergeStruct();
+    // TestFoncReelle(FX/100.0,"FXDiv100.tif",Pt2di(500,500));
+
+   // TestFoncReelle(FY/10.0,"FYDiv10.tif");
+
+   // TestFoncReelle(FX-1000,"FX.tif");
+   // TestFoncReelle(500*sin(FX/50.0)*sin(FY/70.0),"SinSin.tif");
+
+    // TestFoncReelle(500*sin(FX/50.0 + 20*sin((FY+(FX*FY)*1e-5)/500.0)),"SinPer.tif", Pt2di (8000,12000));
+    exit(1);
+    // cTestCircleFit aTCF;
 /*
+     TestFont();
+   for (int aK=0 ; aK< 100 ; aK++)
+   {
+        Pt3dr anAxe(NRrandom3(),NRrandom3(),NRrandom3());
+        anAxe = vunit(anAxe);
+        ElMatrix<REAL>  aRot = VectRotationArroundAxe(anAxe,10*NRrandom3());
+        Pt3dr  anAxe2 = AxeRot(aRot);
+        if (scal(anAxe2,anAxe) < 0) anAxe2 = - anAxe2;
+
+        std::cout << anAxe -anAxe2 << "\n";
+ 
+   }
+*/
+
+   ElTimer aChrono;
+   int aCpt=0;
+   while (1)
+   {
+       if (ELISE_fp::exist_file("toto" + ToString(aCpt)))
+       {
+             std::cout << "GET ONE " << aCpt << "\n";
+             getchar();
+       }
+       if ((aCpt%100000) ==1) std::cout << "TIME " << aChrono.uval() << " " << aCpt << " " << 1e6*(aChrono.uval() / aCpt)<< "\n";
+       aCpt ++;
+   }
+
+/*
+   TestMax(argc,argv);
+   cXml_ScanLineSensor  aSensor = StdGetFromSI("/home/marc/TMP/EPI/TestSens.xml",Xml_ScanLineSensor);
+
+   MakeFileXML(aSensor,"/home/marc/TMP/EPI/TestSens.dmp");
+
+   aSensor =  StdGetFromSI("/home/marc/TMP/EPI/TestSens.dmp",Xml_ScanLineSensor);
+
+
+   std::cout <<  aSensor.Lines().begin()->Rays().begin()->P1() << "\n";
+*/
+
+/*
+    PdBump();
 cXml_Ori2Im aXmlOri0;
 MakeFileXML(aXmlOri0,aName);
 std::string aName = "Test.xml";
@@ -841,7 +1225,43 @@ cXml_Ori2Im  aXmlOri = StdGetFromSI(aName,Xml_Ori2Im);
 
 std_unique_ptr<char> toto;
 
+
+
+
 #endif
+
+
+int SysCalled_main (int argc,char** argv)
+{
+    int aResul;
+    bool ByExit= true;
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  << EAMC(aResul,"result val"),
+        LArgMain()  << EAM(ByExit,"BE",true,"By Exit")
+    );
+
+    if (ByExit)
+       exit(aResul);
+
+    return aResul;
+}
+
+int SysCall_main (int argc,char** argv)
+{
+    for (int aK=-2 ; aK<= 2 ; aK++)
+    {
+        for (int aBE=0 ; aBE<=1 ; aBE++)
+        {
+            std::string aCom = "mm3d TestLib SysCalled "+ ToString(aK) + " BE=" + ToString(aBE!=0);
+            int aV = system(aCom.c_str());
+            std::cout << "aK= " << aK << " Got=" << aV  << " " << (int)((char*)&aV)[1] << "  BE=" << aBE << "\n";
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
 
 /*Footer-MicMac-eLiSe-25/06/2007
 

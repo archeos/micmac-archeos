@@ -1,6 +1,9 @@
 #include "StdAfx.h"
 #include "RPC.h"
 
+
+/*OLD : from multiple txt files*/
+/*
 //reads the txt file with lattice point in im coordinates (unit : pixels)
 vector<vector<Pt2dr> > ReadLatticeIm(string aTxtImage)
 {
@@ -206,79 +209,125 @@ vector<vector<Pt3dr> > ReadSatPos(string aTxtSatPos)
 
 	return aSatPos;
 }
+*/
 
 int Aster2Grid_main(int argc, char ** argv)
 {
 	//GET PSEUDO-RPC2D FOR ASTER FROM LATTICE POINTS
-	std::string aTxtImage, aTxtLong, aTxtLat, aTxtSatPos, aNameIm;
+	std::string aAsterMetaDataXML;
+	//std::string aTxtImage, aTxtLong, aTxtLat, aTxtSatPos, aNameIm;
 	std::string inputSyst = "+proj=longlat +datum=WGS84 "; //input syst proj4
 	std::string targetSyst;//output syst proj4
 	std::string refineCoef = "";
 	bool binaire = true;
+	bool expGrid = true;
 	bool expDIMAP = false;
 	int nbLayers;
 	double aHMin = 0, aHMax = 3000;
-	double stepPixel = 25.f;
-	double stepCarto = 500.f;//equals to image resolution in cm
+	double stepPixel = 100.f;
+	double stepCarto = 1500.f;//equals to 100*image resolution in m
 
 	//Object being worked on
-	RPC aRPC3D;
+	RPC aRPC;
 
 	//Reading the arguments
 	ElInitArgMain
 		(
 		argc, argv,
 		LArgMain()
-		<< EAMC(aNameIm, "name of AsterIm")
+		<< EAMC(aAsterMetaDataXML, "XML file conatining the meta data", eSAM_IsPatFile)
 		<< EAMC(nbLayers, "number of layers (min 4)")
-		<< EAMC(targetSyst, "targetSyst - target system in Proj4 format (ex : \"+proj=utm +zone=32 +north +datum=WGS84 +units=m +no_defs\"")
-		<< EAMC(aTxtImage, "txt file contaning the lattice pointd in image coordinates", eSAM_IsPatFile)
-		<< EAMC(aTxtLong, "txt file contaning the longitude of the lattice points", eSAM_IsPatFile)
-		<< EAMC(aTxtLat, "txt file contaning the geocentric latitude of the lattice points", eSAM_IsPatFile)
-		<< EAMC(aTxtSatPos, "txt file contaning the satellite position in ECEF", eSAM_IsPatFile),
+		<< EAMC(targetSyst, "targetSyst - target system in Proj4 format (ex : \"+proj=utm +zone=32 +north +datum=WGS84 +units=m +no_defs\""),
 		LArgMain()
-		<< EAM(aHMin, "HMin", true, "Min elipsoid height of scene (default=0)")
-		<< EAM(aHMax, "HMax", true, "Max elipsoid height of scene (default=3000)")
+		<< EAM(aHMin, "HMin", true, "Min elipsoid height of scene (Def=0)")
+		<< EAM(aHMax, "HMax", true, "Max elipsoid height of scene (Def=3000)")
 		<< EAM(stepPixel, "stepPixel", true, "Step in pixel (Def=100pix)")
-		<< EAM(stepCarto, "stepCarto", true, "Step in m (carto) (Def=50m)")
+		<< EAM(stepCarto, "stepCarto", true, "Step in m (carto) (Def=1500m, GSD*100)")
 		<< EAM(refineCoef, "refineCoef", true, "File of Coef to refine Grid")
-		<< EAM(binaire, "Bin", true, "Export Grid in binaries (Def=True)")
+		<< EAM(expGrid, "expGrid", true, "Export Grid (Def=True)")
+		<< EAM(binaire, "Bin", true, "Convert Grid to binary format (Def=True)")
 		<< EAM(expDIMAP, "expDIMAP", true, "Export RPC file in DIMAP format (Def=False)")
 		);
 
+	//Read from AsterMetaDataXML
 	////TODO : READ THIS FROM HDF
+	aRPC.AsterMetaDataXML(aAsterMetaDataXML);
+	std::string aNameIm=StdPrefix(aAsterMetaDataXML) + ".tif";
+
+	/*OLD : from multiple txt files*/
+	/*
 	//Reading files
 	vector<vector<Pt2dr> > aMatPtsIm = ReadLatticeIm(aTxtImage);// cout << aMatPtsIm << endl;
 	vector<vector<Pt3dr> > aMatPtsECEF = ReadLatticeGeo(aTxtLong, aTxtLat);// cout << aMatPtsGeo << endl;
 	vector<vector<Pt3dr> > aMatSatPos = ReadSatPos(aTxtSatPos);
 	////END TODO
+	*/
 
 	//Find Validity and normalization values
-	aRPC3D.ComputeNormFactors(aMatPtsIm, aMatPtsECEF, aHMin, aHMax);
+	aRPC.ComputeNormFactors(aHMin, aHMax);
+	cout << "Normalization factors computed" << endl;
 
 	//Generate 2 vectors :
 	//1 - vectorized nbLayers grids in lon lat z
 	//2 - associated image coordinates
-	vector<vector<Pt3dr> > aGridNorm = aRPC3D.GenerateNormLineOfSightGrid(aMatPtsIm, aMatPtsECEF, aMatSatPos, nbLayers, aHMin, aHMax);
+	vector<vector<Pt3dr> > aGridNorm = aRPC.GenerateNormLineOfSightGrid(nbLayers, aHMin, aHMax);
 
 	//Compute Direct and Inverse RPC
-	aRPC3D.GCP2Direct(aGridNorm[0], aGridNorm[1]);
-	cout << "Direct RPC estimated" << endl;
-	aRPC3D.GCP2Inverse(aGridNorm[0], aGridNorm[1]);
-	cout << "Inverse RPC estimated" << endl;
-	aRPC3D.info();
+
+	//Method 1 : Using the same grid for direct and inverse
+		aRPC.GCP2Direct(aGridNorm[0], aGridNorm[1]);
+		cout << "Direct RPC estimated" << endl;
+		aRPC.GCP2Inverse(aGridNorm[0], aGridNorm[1]);
+		cout << "Inverse RPC estimated" << endl;
+
+	/*Method 2 : Using a new generated grid from Direct to get inverse
+		aRPC.GCP2Direct(aGridNorm[0], aGridNorm[1]);
+		cout << "Direct RPC estimated" << endl;
+		//Generating a 50*50*50 grid on the normalized space with random normalized heights
+		Pt3di aGridSz(50, 50, 50);
+		vector<Pt3dr> aGridImNorm = aRPC.GenerateNormGrid(aGridSz);//50 is the size of grid for generated GCPs (50*50)
+
+		//Converting the points to image space
+		vector<Pt3dr> aGridGeoNorm;
+		for (u_int i = 0; i < aGridImNorm.size(); i++)
+		{
+			aGridGeoNorm.push_back(aRPC.DirectRPCNorm(aGridImNorm[i]));
+		}
+	
+		aRPC.GCP2Inverse(aGridGeoNorm, aGridImNorm);
+		cout << "Inverse RPC estimated" << endl;*/
+
+		/*Method 3 : Using a new generated grid from Direct to get inverse
+		aRPC.GCP2Inverse(aGridNorm[0], aGridNorm[1]);
+		cout << "Inverse RPC estimated" << endl;
+		//Generating a 50*50*50 grid on the normalized space with random normalized heights
+		Pt3di aGridSz(50, 50, 50);
+		vector<Pt3dr> aGridGeoNorm = aRPC.GenerateNormGrid(aGridSz);//50 is the size of grid for generated GCPs (50*50)
+
+		//Converting the points to image space
+		vector<Pt3dr> aGridImNorm;
+		for (u_int i = 0; i < aGridGeoNorm.size(); i++)
+		{
+			aGridImNorm.push_back(aRPC.InverseRPCNorm(aGridGeoNorm[i]));
+		}
+
+		aRPC.GCP2Direct(aGridGeoNorm, aGridImNorm);
+		cout << "Direct RPC estimated" << endl;*/
+
+	aRPC.info();
 
 	//Export RPC
 	if (expDIMAP == true)
 	{
-		std::string aNameDIMAP = "RPC_" + StdPrefix(aNameIm) + ".xml";
-		aRPC3D.WriteAirbusRPC(aNameDIMAP);
+		std::string aNameDIMAP = "RPC_" + StdPrefix(aAsterMetaDataXML) + ".xml";
+		aRPC.WriteAirbusRPC(aNameDIMAP);
 		cout << "RPC exported in DIMAP format as : " << aNameDIMAP << endl;
 	}
 
 	//Computing Grid
-	aRPC3D.RPC2Grid(nbLayers, aHMin, aHMax, refineCoef, aNameIm, stepPixel, stepCarto, targetSyst, inputSyst, binaire);
-
+	if (expGrid == true)
+	aRPC.RPC2Grid(nbLayers, aHMin, aHMax, refineCoef, aNameIm, stepPixel, stepCarto, targetSyst, inputSyst, binaire);
+	
 
 	
 	/*OLD METHOD*/

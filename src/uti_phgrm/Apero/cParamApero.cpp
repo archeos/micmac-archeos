@@ -246,6 +246,10 @@ eTypeCalibAutom  Str2eTypeCalibAutom(const std::string & aName)
       return eCalibAutomFour15x2;
    else if (aName=="eCalibAutomFour19x2")
       return eCalibAutomFour19x2;
+   else if (aName=="eCalibAutomEbner")
+      return eCalibAutomEbner;
+   else if (aName=="eCalibAutomBrown")
+      return eCalibAutomBrown;
    else if (aName=="eCalibAutomNone")
       return eCalibAutomNone;
   else
@@ -281,6 +285,10 @@ std::string  eToString(const eTypeCalibAutom & anObj)
       return  "eCalibAutomFour15x2";
    if (anObj==eCalibAutomFour19x2)
       return  "eCalibAutomFour19x2";
+   if (anObj==eCalibAutomEbner)
+      return  "eCalibAutomEbner";
+   if (anObj==eCalibAutomBrown)
+      return  "eCalibAutomBrown";
    if (anObj==eCalibAutomNone)
       return  "eCalibAutomNone";
  std::cout << "Enum = eTypeCalibAutom\n";
@@ -305,7 +313,7 @@ void  BinaryUnDumpFromFile(eTypeCalibAutom & anObj,ELISE_fp & aFp)
    anObj=(eTypeCalibAutom) aIVal;
 }
 
-std::string  Mangling( eTypeCalibAutom *) {return "52FAC59EDA950EB6FD3F";};
+std::string  Mangling( eTypeCalibAutom *) {return "53FA1EF823E1F48BFE3F";};
 
 eTypeContraintePoseCamera  Str2eTypeContraintePoseCamera(const std::string & aName)
 {
@@ -1372,6 +1380,17 @@ const cTplValGesInit< double > & cParamEstimPlan::LimBSurH()const
    return mLimBSurH;
 }
 
+
+cTplValGesInit< bool > & cParamEstimPlan::AcceptDefPlanIfNoPoint()
+{
+   return mAcceptDefPlanIfNoPoint;
+}
+
+const cTplValGesInit< bool > & cParamEstimPlan::AcceptDefPlanIfNoPoint()const 
+{
+   return mAcceptDefPlanIfNoPoint;
+}
+
 void  BinaryUnDumpFromFile(cParamEstimPlan & anObj,ELISE_fp & aFp)
 {
    { bool IsInit;
@@ -1400,6 +1419,14 @@ void  BinaryUnDumpFromFile(cParamEstimPlan & anObj,ELISE_fp & aFp)
         }
         else  anObj.LimBSurH().SetNoInit();
   } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.AcceptDefPlanIfNoPoint().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.AcceptDefPlanIfNoPoint().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.AcceptDefPlanIfNoPoint().SetNoInit();
+  } ;
 }
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cParamEstimPlan & anObj)
@@ -1412,6 +1439,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cParamEstimPlan & anObj)
     BinaryDumpInFile(aFp,anObj.Pond());
     BinaryDumpInFile(aFp,anObj.LimBSurH().IsInit());
     if (anObj.LimBSurH().IsInit()) BinaryDumpInFile(aFp,anObj.LimBSurH().Val());
+    BinaryDumpInFile(aFp,anObj.AcceptDefPlanIfNoPoint().IsInit());
+    if (anObj.AcceptDefPlanIfNoPoint().IsInit()) BinaryDumpInFile(aFp,anObj.AcceptDefPlanIfNoPoint().Val());
 }
 
 cElXMLTree * ToXMLTree(const cParamEstimPlan & anObj)
@@ -1426,6 +1455,8 @@ cElXMLTree * ToXMLTree(const cParamEstimPlan & anObj)
    aRes->AddFils(ToXMLTree(anObj.Pond())->ReTagThis("Pond"));
    if (anObj.LimBSurH().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("LimBSurH"),anObj.LimBSurH().Val())->ReTagThis("LimBSurH"));
+   if (anObj.AcceptDefPlanIfNoPoint().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("AcceptDefPlanIfNoPoint"),anObj.AcceptDefPlanIfNoPoint().Val())->ReTagThis("AcceptDefPlanIfNoPoint"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -1445,9 +1476,11 @@ void xml_init(cParamEstimPlan & anObj,cElXMLTree * aTree)
    xml_init(anObj.Pond(),aTree->Get("Pond",1)); //tototo 
 
    xml_init(anObj.LimBSurH(),aTree->Get("LimBSurH",1),double(1e-2)); //tototo 
+
+   xml_init(anObj.AcceptDefPlanIfNoPoint(),aTree->Get("AcceptDefPlanIfNoPoint",1),bool(false)); //tototo 
 }
 
-std::string  Mangling( cParamEstimPlan *) {return "9A59C707570890BEFE3F";};
+std::string  Mangling( cParamEstimPlan *) {return "A0BF187C3947119CFB3F";};
 
 
 double & cRigidBlockWeighting::PondOnTr()
@@ -2090,6 +2123,47 @@ void xml_init(cRappelOnIntrinseque & anObj,cElXMLTree * aTree)
 std::string  Mangling( cRappelOnIntrinseque *) {return "754E5035B214CC95FE3F";};
 
 
+double & cXmlSLM_RappelOnPt::CondMax()
+{
+   return mCondMax;
+}
+
+const double & cXmlSLM_RappelOnPt::CondMax()const 
+{
+   return mCondMax;
+}
+
+void  BinaryUnDumpFromFile(cXmlSLM_RappelOnPt & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.CondMax(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlSLM_RappelOnPt & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.CondMax());
+}
+
+cElXMLTree * ToXMLTree(const cXmlSLM_RappelOnPt & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlSLM_RappelOnPt",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("CondMax"),anObj.CondMax())->ReTagThis("CondMax"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cXmlSLM_RappelOnPt & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.CondMax(),aTree->Get("CondMax",1)); //tototo 
+}
+
+std::string  Mangling( cXmlSLM_RappelOnPt *) {return "0C90024C4E4431F8FB3F";};
+
+
 std::list< cRappelOnAngles > & cSectionLevenbergMarkard::RappelOnAngles()
 {
    return mRappelOnAngles;
@@ -2122,6 +2196,28 @@ const std::list< cRappelOnIntrinseque > & cSectionLevenbergMarkard::RappelOnIntr
    return mRappelOnIntrinseque;
 }
 
+
+double & cSectionLevenbergMarkard::CondMax()
+{
+   return XmlSLM_RappelOnPt().Val().CondMax();
+}
+
+const double & cSectionLevenbergMarkard::CondMax()const 
+{
+   return XmlSLM_RappelOnPt().Val().CondMax();
+}
+
+
+cTplValGesInit< cXmlSLM_RappelOnPt > & cSectionLevenbergMarkard::XmlSLM_RappelOnPt()
+{
+   return mXmlSLM_RappelOnPt;
+}
+
+const cTplValGesInit< cXmlSLM_RappelOnPt > & cSectionLevenbergMarkard::XmlSLM_RappelOnPt()const 
+{
+   return mXmlSLM_RappelOnPt;
+}
+
 void  BinaryUnDumpFromFile(cSectionLevenbergMarkard & anObj,ELISE_fp & aFp)
 {
    { int aNb;
@@ -2151,6 +2247,14 @@ void  BinaryUnDumpFromFile(cSectionLevenbergMarkard & anObj,ELISE_fp & aFp)
               anObj.RappelOnIntrinseque().push_back(aVal);
         }
   } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.XmlSLM_RappelOnPt().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.XmlSLM_RappelOnPt().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.XmlSLM_RappelOnPt().SetNoInit();
+  } ;
 }
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionLevenbergMarkard & anObj)
@@ -2173,6 +2277,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionLevenbergMarkard & anObj)
           iT++
     )
         BinaryDumpInFile(aFp,*iT);
+    BinaryDumpInFile(aFp,anObj.XmlSLM_RappelOnPt().IsInit());
+    if (anObj.XmlSLM_RappelOnPt().IsInit()) BinaryDumpInFile(aFp,anObj.XmlSLM_RappelOnPt().Val());
 }
 
 cElXMLTree * ToXMLTree(const cSectionLevenbergMarkard & anObj)
@@ -2197,6 +2303,8 @@ cElXMLTree * ToXMLTree(const cSectionLevenbergMarkard & anObj)
       it++
   ) 
       aRes->AddFils(ToXMLTree((*it))->ReTagThis("RappelOnIntrinseque"));
+   if (anObj.XmlSLM_RappelOnPt().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.XmlSLM_RappelOnPt().Val())->ReTagThis("XmlSLM_RappelOnPt"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -2212,9 +2320,11 @@ void xml_init(cSectionLevenbergMarkard & anObj,cElXMLTree * aTree)
    xml_init(anObj.RappelOnCentres(),aTree->GetAll("RappelOnCentres",false,1));
 
    xml_init(anObj.RappelOnIntrinseque(),aTree->GetAll("RappelOnIntrinseque",false,1));
+
+   xml_init(anObj.XmlSLM_RappelOnPt(),aTree->Get("XmlSLM_RappelOnPt",1)); //tototo 
 }
 
-std::string  Mangling( cSectionLevenbergMarkard *) {return "807C30A68BB488E6FABF";};
+std::string  Mangling( cSectionLevenbergMarkard *) {return "48BA5FEF1A4B43A3FE3F";};
 
 
 std::string & cSetOrientationInterne::KeyFile()
@@ -2429,6 +2539,111 @@ void xml_init(cExportAsNewGrid & anObj,cElXMLTree * aTree)
 }
 
 std::string  Mangling( cExportAsNewGrid *) {return "E6D3B778CA74C3EEFD3F";};
+
+
+double & cXmlPondRegDist::Pds0()
+{
+   return mPds0;
+}
+
+const double & cXmlPondRegDist::Pds0()const 
+{
+   return mPds0;
+}
+
+
+double & cXmlPondRegDist::Pds1()
+{
+   return mPds1;
+}
+
+const double & cXmlPondRegDist::Pds1()const 
+{
+   return mPds1;
+}
+
+
+double & cXmlPondRegDist::Pds2()
+{
+   return mPds2;
+}
+
+const double & cXmlPondRegDist::Pds2()const 
+{
+   return mPds2;
+}
+
+
+double & cXmlPondRegDist::NbCase()
+{
+   return mNbCase;
+}
+
+const double & cXmlPondRegDist::NbCase()const 
+{
+   return mNbCase;
+}
+
+
+double & cXmlPondRegDist::SeuilNbPtsByCase()
+{
+   return mSeuilNbPtsByCase;
+}
+
+const double & cXmlPondRegDist::SeuilNbPtsByCase()const 
+{
+   return mSeuilNbPtsByCase;
+}
+
+void  BinaryUnDumpFromFile(cXmlPondRegDist & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.Pds0(),aFp);
+    BinaryUnDumpFromFile(anObj.Pds1(),aFp);
+    BinaryUnDumpFromFile(anObj.Pds2(),aFp);
+    BinaryUnDumpFromFile(anObj.NbCase(),aFp);
+    BinaryUnDumpFromFile(anObj.SeuilNbPtsByCase(),aFp);
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlPondRegDist & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Pds0());
+    BinaryDumpInFile(aFp,anObj.Pds1());
+    BinaryDumpInFile(aFp,anObj.Pds2());
+    BinaryDumpInFile(aFp,anObj.NbCase());
+    BinaryDumpInFile(aFp,anObj.SeuilNbPtsByCase());
+}
+
+cElXMLTree * ToXMLTree(const cXmlPondRegDist & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlPondRegDist",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("Pds0"),anObj.Pds0())->ReTagThis("Pds0"));
+   aRes->AddFils(::ToXMLTree(std::string("Pds1"),anObj.Pds1())->ReTagThis("Pds1"));
+   aRes->AddFils(::ToXMLTree(std::string("Pds2"),anObj.Pds2())->ReTagThis("Pds2"));
+   aRes->AddFils(::ToXMLTree(std::string("NbCase"),anObj.NbCase())->ReTagThis("NbCase"));
+   aRes->AddFils(::ToXMLTree(std::string("SeuilNbPtsByCase"),anObj.SeuilNbPtsByCase())->ReTagThis("SeuilNbPtsByCase"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cXmlPondRegDist & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.Pds0(),aTree->Get("Pds0",1)); //tototo 
+
+   xml_init(anObj.Pds1(),aTree->Get("Pds1",1)); //tototo 
+
+   xml_init(anObj.Pds2(),aTree->Get("Pds2",1)); //tototo 
+
+   xml_init(anObj.NbCase(),aTree->Get("NbCase",1)); //tototo 
+
+   xml_init(anObj.SeuilNbPtsByCase(),aTree->Get("SeuilNbPtsByCase",1)); //tototo 
+}
+
+std::string  Mangling( cXmlPondRegDist *) {return "5D81B7440ADB498DFD3F";};
 
 
 cTplValGesInit< bool > & cShowSection::ShowMes()
@@ -4843,7 +5058,7 @@ void xml_init(cCalibAutomNoDist & anObj,cElXMLTree * aTree)
    xml_init(anObj.PositionRelPP(),aTree->Get("PositionRelPP",1),Pt2dr(Pt2dr(0.5,0.5))); //tototo 
 }
 
-std::string  Mangling( cCalibAutomNoDist *) {return "D5DFBFD0547580A8FE3F";};
+std::string  Mangling( cCalibAutomNoDist *) {return "D6F5DBABFA324CC2FD3F";};
 
 
 cTplValGesInit< cCalibrationInternConique > & cCalValueInit::CalFromValues()
@@ -5012,7 +5227,7 @@ void xml_init(cCalValueInit & anObj,cElXMLTree * aTree)
    xml_init(anObj.CalibAutomNoDist(),aTree->Get("CalibAutomNoDist",1)); //tototo 
 }
 
-std::string  Mangling( cCalValueInit *) {return "98065B72AFA8AC82FD3F";};
+std::string  Mangling( cCalValueInit *) {return "9CAD1B247F2C4380FC3F";};
 
 
 std::vector< double > & cAddParamAFocal::Coeffs()
@@ -5565,7 +5780,7 @@ void xml_init(cCalibrationCameraInc & anObj,cElXMLTree * aTree)
    xml_init(anObj.CalibPerPose(),aTree->Get("CalibPerPose",1)); //tototo 
 }
 
-std::string  Mangling( cCalibrationCameraInc *) {return "AAC44BE824CC6ED4FE3F";};
+std::string  Mangling( cCalibrationCameraInc *) {return "4B0AFE084B646EAAFC3F";};
 
 
 bool & cUseForBundle::GlobalBundle()
@@ -5736,6 +5951,113 @@ void xml_init(cBlockCamera & anObj,cElXMLTree * aTree)
 }
 
 std::string  Mangling( cBlockCamera *) {return "6BC54E2177D48BFEFE3F";};
+
+
+cElRegex_Ptr & cCamGenInc::PatterName()
+{
+   return mPatterName;
+}
+
+const cElRegex_Ptr & cCamGenInc::PatterName()const 
+{
+   return mPatterName;
+}
+
+
+std::string & cCamGenInc::Orient()
+{
+   return mOrient;
+}
+
+const std::string & cCamGenInc::Orient()const 
+{
+   return mOrient;
+}
+
+
+cTplValGesInit< bool > & cCamGenInc::ErrorWhenEmpytPat()
+{
+   return mErrorWhenEmpytPat;
+}
+
+const cTplValGesInit< bool > & cCamGenInc::ErrorWhenEmpytPat()const 
+{
+   return mErrorWhenEmpytPat;
+}
+
+
+cTplValGesInit< bool > & cCamGenInc::ErrorWhenNoFileOrient()
+{
+   return mErrorWhenNoFileOrient;
+}
+
+const cTplValGesInit< bool > & cCamGenInc::ErrorWhenNoFileOrient()const 
+{
+   return mErrorWhenNoFileOrient;
+}
+
+void  BinaryUnDumpFromFile(cCamGenInc & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.PatterName(),aFp);
+    BinaryUnDumpFromFile(anObj.Orient(),aFp);
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ErrorWhenEmpytPat().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ErrorWhenEmpytPat().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ErrorWhenEmpytPat().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.ErrorWhenNoFileOrient().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.ErrorWhenNoFileOrient().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.ErrorWhenNoFileOrient().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cCamGenInc & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.PatterName());
+    BinaryDumpInFile(aFp,anObj.Orient());
+    BinaryDumpInFile(aFp,anObj.ErrorWhenEmpytPat().IsInit());
+    if (anObj.ErrorWhenEmpytPat().IsInit()) BinaryDumpInFile(aFp,anObj.ErrorWhenEmpytPat().Val());
+    BinaryDumpInFile(aFp,anObj.ErrorWhenNoFileOrient().IsInit());
+    if (anObj.ErrorWhenNoFileOrient().IsInit()) BinaryDumpInFile(aFp,anObj.ErrorWhenNoFileOrient().Val());
+}
+
+cElXMLTree * ToXMLTree(const cCamGenInc & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"CamGenInc",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("PatterName"),anObj.PatterName())->ReTagThis("PatterName"));
+   aRes->AddFils(::ToXMLTree(std::string("Orient"),anObj.Orient())->ReTagThis("Orient"));
+   if (anObj.ErrorWhenEmpytPat().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ErrorWhenEmpytPat"),anObj.ErrorWhenEmpytPat().Val())->ReTagThis("ErrorWhenEmpytPat"));
+   if (anObj.ErrorWhenNoFileOrient().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("ErrorWhenNoFileOrient"),anObj.ErrorWhenNoFileOrient().Val())->ReTagThis("ErrorWhenNoFileOrient"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cCamGenInc & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.PatterName(),aTree->Get("PatterName",1)); //tototo 
+
+   xml_init(anObj.Orient(),aTree->Get("Orient",1)); //tototo 
+
+   xml_init(anObj.ErrorWhenEmpytPat(),aTree->Get("ErrorWhenEmpytPat",1),bool(true)); //tototo 
+
+   xml_init(anObj.ErrorWhenNoFileOrient(),aTree->Get("ErrorWhenNoFileOrient",1),bool(true)); //tototo 
+}
+
+std::string  Mangling( cCamGenInc *) {return "8A8C5C1816652EFDFD3F";};
 
 
 cTplValGesInit< bool > & cMEP_SPEC_MST::Show()
@@ -9025,6 +9347,17 @@ const cTplValGesInit< cSetOrientationInterne > & cSectionInconnues::GlobOrIntern
 }
 
 
+std::list< cCamGenInc > & cSectionInconnues::CamGenInc()
+{
+   return mCamGenInc;
+}
+
+const std::list< cCamGenInc > & cSectionInconnues::CamGenInc()const 
+{
+   return mCamGenInc;
+}
+
+
 std::list< cPoseCameraInc > & cSectionInconnues::PoseCameraInc()
 {
    return mPoseCameraInc;
@@ -9149,6 +9482,15 @@ void  BinaryUnDumpFromFile(cSectionInconnues & anObj,ELISE_fp & aFp)
     BinaryUnDumpFromFile(aNb,aFp);
         for(  int aK=0 ; aK<aNb ; aK++)
         {
+             cCamGenInc aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.CamGenInc().push_back(aVal);
+        }
+  } ;
+  { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
              cPoseCameraInc aVal;
               BinaryUnDumpFromFile(aVal,aFp);
               anObj.PoseCameraInc().push_back(aVal);
@@ -9215,6 +9557,12 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionInconnues & anObj)
         BinaryDumpInFile(aFp,*iT);
     BinaryDumpInFile(aFp,anObj.GlobOrInterne().IsInit());
     if (anObj.GlobOrInterne().IsInit()) BinaryDumpInFile(aFp,anObj.GlobOrInterne().Val());
+    BinaryDumpInFile(aFp,(int)anObj.CamGenInc().size());
+    for(  std::list< cCamGenInc >::const_iterator iT=anObj.CamGenInc().begin();
+         iT!=anObj.CamGenInc().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
     BinaryDumpInFile(aFp,(int)anObj.PoseCameraInc().size());
     for(  std::list< cPoseCameraInc >::const_iterator iT=anObj.PoseCameraInc().begin();
          iT!=anObj.PoseCameraInc().end();
@@ -9276,6 +9624,12 @@ cElXMLTree * ToXMLTree(const cSectionInconnues & anObj)
    if (anObj.GlobOrInterne().IsInit())
       aRes->AddFils(ToXMLTree(anObj.GlobOrInterne().Val())->ReTagThis("GlobOrInterne"));
   for
+  (       std::list< cCamGenInc >::const_iterator it=anObj.CamGenInc().begin();
+      it !=anObj.CamGenInc().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("CamGenInc"));
+  for
   (       std::list< cPoseCameraInc >::const_iterator it=anObj.PoseCameraInc().begin();
       it !=anObj.PoseCameraInc().end();
       it++
@@ -9327,6 +9681,8 @@ void xml_init(cSectionInconnues & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.GlobOrInterne(),aTree->Get("GlobOrInterne",1)); //tototo 
 
+   xml_init(anObj.CamGenInc(),aTree->GetAll("CamGenInc",false,1));
+
    xml_init(anObj.PoseCameraInc(),aTree->GetAll("PoseCameraInc",false,1));
 
    xml_init(anObj.GroupeDePose(),aTree->GetAll("GroupeDePose",false,1));
@@ -9336,7 +9692,7 @@ void xml_init(cSectionInconnues & anObj,cElXMLTree * aTree)
    xml_init(anObj.PointFlottantInc(),aTree->GetAll("PointFlottantInc",false,1));
 }
 
-std::string  Mangling( cSectionInconnues *) {return "C886663C298C9BAFFBBF";};
+std::string  Mangling( cSectionInconnues *) {return "24385D29D194A090FF3F";};
 
 
 double & cTimeLinkage::DeltaMax()
@@ -9378,6 +9734,28 @@ void xml_init(cTimeLinkage & anObj,cElXMLTree * aTree)
 }
 
 std::string  Mangling( cTimeLinkage *) {return "BEB337D7A41F8CD1FD3F";};
+
+
+cTplValGesInit< bool > & cSectionChantier::GBCamSupresStenCam()
+{
+   return mGBCamSupresStenCam;
+}
+
+const cTplValGesInit< bool > & cSectionChantier::GBCamSupresStenCam()const 
+{
+   return mGBCamSupresStenCam;
+}
+
+
+cTplValGesInit< bool > & cSectionChantier::StenCamSupresGBCam()
+{
+   return mStenCamSupresGBCam;
+}
+
+const cTplValGesInit< bool > & cSectionChantier::StenCamSupresGBCam()const 
+{
+   return mStenCamSupresGBCam;
+}
 
 
 cTplValGesInit< bool > & cSectionChantier::IsAperiCloud()
@@ -9604,6 +9982,22 @@ void  BinaryUnDumpFromFile(cSectionChantier & anObj,ELISE_fp & aFp)
    { bool IsInit;
        BinaryUnDumpFromFile(IsInit,aFp);
         if (IsInit) {
+             anObj.GBCamSupresStenCam().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.GBCamSupresStenCam().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.GBCamSupresStenCam().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.StenCamSupresGBCam().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.StenCamSupresGBCam().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.StenCamSupresGBCam().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
              anObj.IsAperiCloud().SetInitForUnUmp();
              BinaryUnDumpFromFile(anObj.IsAperiCloud().ValForcedForUnUmp(),aFp);
         }
@@ -9757,6 +10151,10 @@ void  BinaryUnDumpFromFile(cSectionChantier & anObj,ELISE_fp & aFp)
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionChantier & anObj)
 {
+    BinaryDumpInFile(aFp,anObj.GBCamSupresStenCam().IsInit());
+    if (anObj.GBCamSupresStenCam().IsInit()) BinaryDumpInFile(aFp,anObj.GBCamSupresStenCam().Val());
+    BinaryDumpInFile(aFp,anObj.StenCamSupresGBCam().IsInit());
+    if (anObj.StenCamSupresGBCam().IsInit()) BinaryDumpInFile(aFp,anObj.StenCamSupresGBCam().Val());
     BinaryDumpInFile(aFp,anObj.IsAperiCloud().IsInit());
     if (anObj.IsAperiCloud().IsInit()) BinaryDumpInFile(aFp,anObj.IsAperiCloud().Val());
     BinaryDumpInFile(aFp,anObj.IsChoixImSec().IsInit());
@@ -9801,6 +10199,10 @@ cElXMLTree * ToXMLTree(const cSectionChantier & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"SectionChantier",eXMLBranche);
+   if (anObj.GBCamSupresStenCam().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("GBCamSupresStenCam"),anObj.GBCamSupresStenCam().Val())->ReTagThis("GBCamSupresStenCam"));
+   if (anObj.StenCamSupresGBCam().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("StenCamSupresGBCam"),anObj.StenCamSupresGBCam().Val())->ReTagThis("StenCamSupresGBCam"));
    if (anObj.IsAperiCloud().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("IsAperiCloud"),anObj.IsAperiCloud().Val())->ReTagThis("IsAperiCloud"));
    if (anObj.IsChoixImSec().IsInit())
@@ -9849,6 +10251,10 @@ void xml_init(cSectionChantier & anObj,cElXMLTree * aTree)
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
+   xml_init(anObj.GBCamSupresStenCam(),aTree->Get("GBCamSupresStenCam",1),bool(true)); //tototo 
+
+   xml_init(anObj.StenCamSupresGBCam(),aTree->Get("StenCamSupresGBCam",1),bool(false)); //tototo 
+
    xml_init(anObj.IsAperiCloud(),aTree->Get("IsAperiCloud",1),bool(false)); //tototo 
 
    xml_init(anObj.IsChoixImSec(),aTree->Get("IsChoixImSec",1),bool(false)); //tototo 
@@ -9888,7 +10294,7 @@ void xml_init(cSectionChantier & anObj,cElXMLTree * aTree)
    xml_init(anObj.ThresholdWarnPointsBehind(),aTree->Get("ThresholdWarnPointsBehind",1),double(0.01)); //tototo 
 }
 
-std::string  Mangling( cSectionChantier *) {return "4F2EF2C4DB4B58DFFE3F";};
+std::string  Mangling( cSectionChantier *) {return "68E8D10740B49A8AFF3F";};
 
 
 cTplValGesInit< bool > & cSectionSolveur::AllMatSym()
@@ -10110,6 +10516,17 @@ const cTplValGesInit< cElRegex_Ptr > & cSectionSolveur::Im2Aff()const
    return mIm2Aff;
 }
 
+
+cTplValGesInit< cXmlPondRegDist > & cSectionSolveur::RegDistGlob()
+{
+   return mRegDistGlob;
+}
+
+const cTplValGesInit< cXmlPondRegDist > & cSectionSolveur::RegDistGlob()const 
+{
+   return mRegDistGlob;
+}
+
 void  BinaryUnDumpFromFile(cSectionSolveur & anObj,ELISE_fp & aFp)
 {
    { bool IsInit;
@@ -10265,6 +10682,14 @@ void  BinaryUnDumpFromFile(cSectionSolveur & anObj,ELISE_fp & aFp)
         }
         else  anObj.Im2Aff().SetNoInit();
   } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.RegDistGlob().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.RegDistGlob().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.RegDistGlob().SetNoInit();
+  } ;
 }
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionSolveur & anObj)
@@ -10308,6 +10733,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionSolveur & anObj)
     if (anObj.MultSLMGlob().IsInit()) BinaryDumpInFile(aFp,anObj.MultSLMGlob().Val());
     BinaryDumpInFile(aFp,anObj.Im2Aff().IsInit());
     if (anObj.Im2Aff().IsInit()) BinaryDumpInFile(aFp,anObj.Im2Aff().Val());
+    BinaryDumpInFile(aFp,anObj.RegDistGlob().IsInit());
+    if (anObj.RegDistGlob().IsInit()) BinaryDumpInFile(aFp,anObj.RegDistGlob().Val());
 }
 
 cElXMLTree * ToXMLTree(const cSectionSolveur & anObj)
@@ -10353,6 +10780,8 @@ cElXMLTree * ToXMLTree(const cSectionSolveur & anObj)
       aRes->AddFils(::ToXMLTree(std::string("MultSLMGlob"),anObj.MultSLMGlob().Val())->ReTagThis("MultSLMGlob"));
    if (anObj.Im2Aff().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("Im2Aff"),anObj.Im2Aff().Val())->ReTagThis("Im2Aff"));
+   if (anObj.RegDistGlob().IsInit())
+      aRes->AddFils(ToXMLTree(anObj.RegDistGlob().Val())->ReTagThis("RegDistGlob"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -10402,9 +10831,11 @@ void xml_init(cSectionSolveur & anObj,cElXMLTree * aTree)
    xml_init(anObj.MultSLMGlob(),aTree->Get("MultSLMGlob",1)); //tototo 
 
    xml_init(anObj.Im2Aff(),aTree->Get("Im2Aff",1)); //tototo 
+
+   xml_init(anObj.RegDistGlob(),aTree->Get("RegDistGlob",1)); //tototo 
 }
 
-std::string  Mangling( cSectionSolveur *) {return "72470B15A77312E9FE3F";};
+std::string  Mangling( cSectionSolveur *) {return "CC1E52859DF6A480FE3F";};
 
 
 double & cAutoAdaptLVM::Mult()
@@ -11461,7 +11892,7 @@ void xml_init(cBasculeLiaisonOnPlan & anObj,cElXMLTree * aTree)
    xml_init(anObj.OrientInPlane(),aTree->Get("OrientInPlane",1)); //tototo 
 }
 
-std::string  Mangling( cBasculeLiaisonOnPlan *) {return "4079C7DFACF18385FCBF";};
+std::string  Mangling( cBasculeLiaisonOnPlan *) {return "FE56783381A4FFB0FDBF";};
 
 
 cTplValGesInit< std::string > & cModeBascule::PoseCentrale()
@@ -11668,7 +12099,7 @@ void xml_init(cModeBascule & anObj,cElXMLTree * aTree)
    xml_init(anObj.BasculeLiaisonOnPlan(),aTree->Get("BasculeLiaisonOnPlan",1)); //tototo 
 }
 
-std::string  Mangling( cModeBascule *) {return "5A22EE77C0542EE8FE3F";};
+std::string  Mangling( cModeBascule *) {return "1A15DEEFED85FFDAFE3F";};
 
 
 cTplValGesInit< bool > & cBasculeOrientation::AfterCompens()
@@ -11938,7 +12369,7 @@ void xml_init(cBasculeOrientation & anObj,cElXMLTree * aTree)
    xml_init(anObj.ModeBascule(),aTree->Get("ModeBascule",1)); //tototo 
 }
 
-std::string  Mangling( cBasculeOrientation *) {return "78CA29DB946412E0FB3F";};
+std::string  Mangling( cBasculeOrientation *) {return "742750714A322285FC3F";};
 
 
 std::vector< cAperoPointeStereo > & cStereoFE::HomFE()
@@ -15590,7 +16021,7 @@ void xml_init(cIterationsCompensation & anObj,cElXMLTree * aTree)
    xml_init(anObj.TestInteractif(),aTree->Get("TestInteractif",1)); //tototo 
 }
 
-std::string  Mangling( cIterationsCompensation *) {return "F5CCAF025DB43583FF3F";};
+std::string  Mangling( cIterationsCompensation *) {return "FF2EA49C9C7100B5FE3F";};
 
 
 std::string & cTraceCpleHom::Id()
@@ -15807,6 +16238,131 @@ void xml_init(cSectionTracage & anObj,cElXMLTree * aTree)
 }
 
 std::string  Mangling( cSectionTracage *) {return "7D80059324CDBA80FF3F";};
+
+
+cTplValGesInit< std::string > & cContrCamGenInc::PatternApply()
+{
+   return mPatternApply;
+}
+
+const cTplValGesInit< std::string > & cContrCamGenInc::PatternApply()const 
+{
+   return mPatternApply;
+}
+
+
+cTplValGesInit< double > & cContrCamGenInc::PdsAttachToId()
+{
+   return mPdsAttachToId;
+}
+
+const cTplValGesInit< double > & cContrCamGenInc::PdsAttachToId()const 
+{
+   return mPdsAttachToId;
+}
+
+
+cTplValGesInit< double > & cContrCamGenInc::PdsAttachToLast()
+{
+   return mPdsAttachToLast;
+}
+
+const cTplValGesInit< double > & cContrCamGenInc::PdsAttachToLast()const 
+{
+   return mPdsAttachToLast;
+}
+
+
+cTplValGesInit< double > & cContrCamGenInc::PdsAttachRGLob()
+{
+   return mPdsAttachRGLob;
+}
+
+const cTplValGesInit< double > & cContrCamGenInc::PdsAttachRGLob()const 
+{
+   return mPdsAttachRGLob;
+}
+
+void  BinaryUnDumpFromFile(cContrCamGenInc & anObj,ELISE_fp & aFp)
+{
+   { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PatternApply().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PatternApply().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PatternApply().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PdsAttachToId().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PdsAttachToId().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PdsAttachToId().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PdsAttachToLast().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PdsAttachToLast().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PdsAttachToLast().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.PdsAttachRGLob().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.PdsAttachRGLob().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.PdsAttachRGLob().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cContrCamGenInc & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.PatternApply().IsInit());
+    if (anObj.PatternApply().IsInit()) BinaryDumpInFile(aFp,anObj.PatternApply().Val());
+    BinaryDumpInFile(aFp,anObj.PdsAttachToId().IsInit());
+    if (anObj.PdsAttachToId().IsInit()) BinaryDumpInFile(aFp,anObj.PdsAttachToId().Val());
+    BinaryDumpInFile(aFp,anObj.PdsAttachToLast().IsInit());
+    if (anObj.PdsAttachToLast().IsInit()) BinaryDumpInFile(aFp,anObj.PdsAttachToLast().Val());
+    BinaryDumpInFile(aFp,anObj.PdsAttachRGLob().IsInit());
+    if (anObj.PdsAttachRGLob().IsInit()) BinaryDumpInFile(aFp,anObj.PdsAttachRGLob().Val());
+}
+
+cElXMLTree * ToXMLTree(const cContrCamGenInc & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"ContrCamGenInc",eXMLBranche);
+   if (anObj.PatternApply().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("PatternApply"),anObj.PatternApply().Val())->ReTagThis("PatternApply"));
+   if (anObj.PdsAttachToId().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("PdsAttachToId"),anObj.PdsAttachToId().Val())->ReTagThis("PdsAttachToId"));
+   if (anObj.PdsAttachToLast().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("PdsAttachToLast"),anObj.PdsAttachToLast().Val())->ReTagThis("PdsAttachToLast"));
+   if (anObj.PdsAttachRGLob().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("PdsAttachRGLob"),anObj.PdsAttachRGLob().Val())->ReTagThis("PdsAttachRGLob"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cContrCamGenInc & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.PatternApply(),aTree->Get("PatternApply",1)); //tototo 
+
+   xml_init(anObj.PdsAttachToId(),aTree->Get("PdsAttachToId",1)); //tototo 
+
+   xml_init(anObj.PdsAttachToLast(),aTree->Get("PdsAttachToLast",1)); //tototo 
+
+   xml_init(anObj.PdsAttachRGLob(),aTree->Get("PdsAttachRGLob",1)); //tototo 
+}
+
+std::string  Mangling( cContrCamGenInc *) {return "A8AE434A1F7E7894FE3F";};
 
 
 std::string & cObsBlockCamRig::Id()
@@ -17286,6 +17842,17 @@ void xml_init(cObsRelGPS & anObj,cElXMLTree * aTree)
 std::string  Mangling( cObsRelGPS *) {return "900F479610F790BFFC3F";};
 
 
+std::list< cContrCamGenInc > & cSectionObservations::ContrCamGenInc()
+{
+   return mContrCamGenInc;
+}
+
+const std::list< cContrCamGenInc > & cSectionObservations::ContrCamGenInc()const 
+{
+   return mContrCamGenInc;
+}
+
+
 std::list< cObsBlockCamRig > & cSectionObservations::ObsBlockCamRig()
 {
    return mObsBlockCamRig;
@@ -17390,6 +17957,15 @@ void  BinaryUnDumpFromFile(cSectionObservations & anObj,ELISE_fp & aFp)
     BinaryUnDumpFromFile(aNb,aFp);
         for(  int aK=0 ; aK<aNb ; aK++)
         {
+             cContrCamGenInc aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.ContrCamGenInc().push_back(aVal);
+        }
+  } ;
+  { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
              cObsBlockCamRig aVal;
               BinaryUnDumpFromFile(aVal,aFp);
               anObj.ObsBlockCamRig().push_back(aVal);
@@ -17461,6 +18037,12 @@ void  BinaryUnDumpFromFile(cSectionObservations & anObj,ELISE_fp & aFp)
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cSectionObservations & anObj)
 {
+    BinaryDumpInFile(aFp,(int)anObj.ContrCamGenInc().size());
+    for(  std::list< cContrCamGenInc >::const_iterator iT=anObj.ContrCamGenInc().begin();
+         iT!=anObj.ContrCamGenInc().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
     BinaryDumpInFile(aFp,(int)anObj.ObsBlockCamRig().size());
     for(  std::list< cObsBlockCamRig >::const_iterator iT=anObj.ObsBlockCamRig().begin();
          iT!=anObj.ObsBlockCamRig().end();
@@ -17511,6 +18093,12 @@ cElXMLTree * ToXMLTree(const cSectionObservations & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"SectionObservations",eXMLBranche);
+  for
+  (       std::list< cContrCamGenInc >::const_iterator it=anObj.ContrCamGenInc().begin();
+      it !=anObj.ContrCamGenInc().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("ContrCamGenInc"));
   for
   (       std::list< cObsBlockCamRig >::const_iterator it=anObj.ObsBlockCamRig().begin();
       it !=anObj.ObsBlockCamRig().end();
@@ -17565,6 +18153,8 @@ void xml_init(cSectionObservations & anObj,cElXMLTree * aTree)
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
+   xml_init(anObj.ContrCamGenInc(),aTree->GetAll("ContrCamGenInc",false,1));
+
    xml_init(anObj.ObsBlockCamRig(),aTree->GetAll("ObsBlockCamRig",false,1));
 
    xml_init(anObj.ObsAppuis(),aTree->GetAll("ObsAppuis",false,1));
@@ -17582,7 +18172,7 @@ void xml_init(cSectionObservations & anObj,cElXMLTree * aTree)
    xml_init(anObj.ObsRelGPS(),aTree->GetAll("ObsRelGPS",false,1));
 }
 
-std::string  Mangling( cSectionObservations *) {return "7135C9CE7F79E2CAFE3F";};
+std::string  Mangling( cSectionObservations *) {return "D428638686C357C2FF3F";};
 
 
 cTplValGesInit< bool > & cExportAsGrid::DoExport()
@@ -18113,6 +18703,17 @@ const std::string & cExportPose::KeyAssoc()const
 }
 
 
+cTplValGesInit< std::string > & cExportPose::StdNameMMDir()
+{
+   return mStdNameMMDir;
+}
+
+const cTplValGesInit< std::string > & cExportPose::StdNameMMDir()const 
+{
+   return mStdNameMMDir;
+}
+
+
 cTplValGesInit< bool > & cExportPose::AddCalib()
 {
    return mAddCalib;
@@ -18274,6 +18875,14 @@ void  BinaryUnDumpFromFile(cExportPose & anObj,ELISE_fp & aFp)
   { bool IsInit;
        BinaryUnDumpFromFile(IsInit,aFp);
         if (IsInit) {
+             anObj.StdNameMMDir().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.StdNameMMDir().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.StdNameMMDir().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
              anObj.AddCalib().SetInitForUnUmp();
              BinaryUnDumpFromFile(anObj.AddCalib().ValForcedForUnUmp(),aFp);
         }
@@ -18378,6 +18987,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cExportPose & anObj)
     BinaryDumpInFile(aFp,anObj.ChCForceRot().IsInit());
     if (anObj.ChCForceRot().IsInit()) BinaryDumpInFile(aFp,anObj.ChCForceRot().Val());
     BinaryDumpInFile(aFp,anObj.KeyAssoc());
+    BinaryDumpInFile(aFp,anObj.StdNameMMDir().IsInit());
+    if (anObj.StdNameMMDir().IsInit()) BinaryDumpInFile(aFp,anObj.StdNameMMDir().Val());
     BinaryDumpInFile(aFp,anObj.AddCalib().IsInit());
     if (anObj.AddCalib().IsInit()) BinaryDumpInFile(aFp,anObj.AddCalib().Val());
     BinaryDumpInFile(aFp,anObj.ExportAsNewGrid().IsInit());
@@ -18415,6 +19026,8 @@ cElXMLTree * ToXMLTree(const cExportPose & anObj)
    if (anObj.ChCForceRot().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("ChCForceRot"),anObj.ChCForceRot().Val())->ReTagThis("ChCForceRot"));
    aRes->AddFils(::ToXMLTree(std::string("KeyAssoc"),anObj.KeyAssoc())->ReTagThis("KeyAssoc"));
+   if (anObj.StdNameMMDir().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("StdNameMMDir"),anObj.StdNameMMDir().Val())->ReTagThis("StdNameMMDir"));
    if (anObj.AddCalib().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("AddCalib"),anObj.AddCalib().Val())->ReTagThis("AddCalib"));
    if (anObj.ExportAsNewGrid().IsInit())
@@ -18457,6 +19070,8 @@ void xml_init(cExportPose & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.KeyAssoc(),aTree->Get("KeyAssoc",1)); //tototo 
 
+   xml_init(anObj.StdNameMMDir(),aTree->Get("StdNameMMDir",1)); //tototo 
+
    xml_init(anObj.AddCalib(),aTree->Get("AddCalib",1),bool(true)); //tototo 
 
    xml_init(anObj.ExportAsNewGrid(),aTree->Get("ExportAsNewGrid",1)); //tototo 
@@ -18482,7 +19097,7 @@ void xml_init(cExportPose & anObj,cElXMLTree * aTree)
    xml_init(anObj.TolWhenVerif(),aTree->Get("TolWhenVerif",1),double(1e-3)); //tototo 
 }
 
-std::string  Mangling( cExportPose *) {return "900EF2DB6039A1B6FD3F";};
+std::string  Mangling( cExportPose *) {return "EE750CF0C96C05F1FD3F";};
 
 
 std::string & cExportAttrPose::KeyAssoc()
@@ -18589,7 +19204,7 @@ void xml_init(cExportAttrPose & anObj,cElXMLTree * aTree)
    xml_init(anObj.ExportDirVerticaleLocale(),aTree->Get("ExportDirVerticaleLocale",1)); //tototo 
 }
 
-std::string  Mangling( cExportAttrPose *) {return "325FF075CE21BFE6FD3F";};
+std::string  Mangling( cExportAttrPose *) {return "10C43B70FF363AE2FA3F";};
 
 
 cTplValGesInit< bool > & cExportOrthoCyl::UseIt()
@@ -18818,6 +19433,17 @@ const cTplValGesInit< bool > & cExportRepereLoc::P1P2Hor()const
 }
 
 
+cTplValGesInit< bool > & cExportRepereLoc::P1P2HorYVert()
+{
+   return mP1P2HorYVert;
+}
+
+const cTplValGesInit< bool > & cExportRepereLoc::P1P2HorYVert()const 
+{
+   return mP1P2HorYVert;
+}
+
+
 cTplValGesInit< bool > & cExportRepereLoc::UseIt()
 {
    return ExportOrthoCyl().Val().UseIt();
@@ -18922,6 +19548,14 @@ void  BinaryUnDumpFromFile(cExportRepereLoc & anObj,ELISE_fp & aFp)
   { bool IsInit;
        BinaryUnDumpFromFile(IsInit,aFp);
         if (IsInit) {
+             anObj.P1P2HorYVert().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.P1P2HorYVert().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.P1P2HorYVert().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
              anObj.ExportOrthoCyl().SetInitForUnUmp();
              BinaryUnDumpFromFile(anObj.ExportOrthoCyl().ValForcedForUnUmp(),aFp);
         }
@@ -18946,6 +19580,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cExportRepereLoc & anObj)
     if (anObj.NameImOri().IsInit()) BinaryDumpInFile(aFp,anObj.NameImOri().Val());
     BinaryDumpInFile(aFp,anObj.P1P2Hor().IsInit());
     if (anObj.P1P2Hor().IsInit()) BinaryDumpInFile(aFp,anObj.P1P2Hor().Val());
+    BinaryDumpInFile(aFp,anObj.P1P2HorYVert().IsInit());
+    if (anObj.P1P2HorYVert().IsInit()) BinaryDumpInFile(aFp,anObj.P1P2HorYVert().Val());
     BinaryDumpInFile(aFp,anObj.ExportOrthoCyl().IsInit());
     if (anObj.ExportOrthoCyl().IsInit()) BinaryDumpInFile(aFp,anObj.ExportOrthoCyl().Val());
 }
@@ -18969,6 +19605,8 @@ cElXMLTree * ToXMLTree(const cExportRepereLoc & anObj)
       aRes->AddFils(::ToXMLTree(std::string("NameImOri"),anObj.NameImOri().Val())->ReTagThis("NameImOri"));
    if (anObj.P1P2Hor().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("P1P2Hor"),anObj.P1P2Hor().Val())->ReTagThis("P1P2Hor"));
+   if (anObj.P1P2HorYVert().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("P1P2HorYVert"),anObj.P1P2HorYVert().Val())->ReTagThis("P1P2HorYVert"));
    if (anObj.ExportOrthoCyl().IsInit())
       aRes->AddFils(ToXMLTree(anObj.ExportOrthoCyl().Val())->ReTagThis("ExportOrthoCyl"));
   aRes->mGXml = anObj.mGXml;
@@ -19001,10 +19639,12 @@ void xml_init(cExportRepereLoc & anObj,cElXMLTree * aTree)
 
    xml_init(anObj.P1P2Hor(),aTree->Get("P1P2Hor",1),bool(false)); //tototo 
 
+   xml_init(anObj.P1P2HorYVert(),aTree->Get("P1P2HorYVert",1),bool(false)); //tototo 
+
    xml_init(anObj.ExportOrthoCyl(),aTree->Get("ExportOrthoCyl",1)); //tototo 
 }
 
-std::string  Mangling( cExportRepereLoc *) {return "88F8722F90367AB3FCBF";};
+std::string  Mangling( cExportRepereLoc *) {return "146E069118A724D9FB3F";};
 
 
 std::string & cExportBlockCamera::Id()
@@ -20325,6 +20965,17 @@ const cTplValGesInit< double > & cNuagePutCam::StepImage()const
    return mStepImage;
 }
 
+
+cTplValGesInit< std::string > & cNuagePutCam::KeyCalName()
+{
+   return mKeyCalName;
+}
+
+const cTplValGesInit< std::string > & cNuagePutCam::KeyCalName()const 
+{
+   return mKeyCalName;
+}
+
 void  BinaryUnDumpFromFile(cNuagePutCam & anObj,ELISE_fp & aFp)
 {
      BinaryUnDumpFromFile(anObj.ColCadre(),aFp);
@@ -20346,6 +20997,14 @@ void  BinaryUnDumpFromFile(cNuagePutCam & anObj,ELISE_fp & aFp)
         }
         else  anObj.StepImage().SetNoInit();
   } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.KeyCalName().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.KeyCalName().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.KeyCalName().SetNoInit();
+  } ;
 }
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cNuagePutCam & anObj)
@@ -20357,6 +21016,8 @@ void  BinaryDumpInFile(ELISE_fp & aFp,const cNuagePutCam & anObj)
     BinaryDumpInFile(aFp,anObj.StepSeg());
     BinaryDumpInFile(aFp,anObj.StepImage().IsInit());
     if (anObj.StepImage().IsInit()) BinaryDumpInFile(aFp,anObj.StepImage().Val());
+    BinaryDumpInFile(aFp,anObj.KeyCalName().IsInit());
+    if (anObj.KeyCalName().IsInit()) BinaryDumpInFile(aFp,anObj.KeyCalName().Val());
 }
 
 cElXMLTree * ToXMLTree(const cNuagePutCam & anObj)
@@ -20370,6 +21031,8 @@ cElXMLTree * ToXMLTree(const cNuagePutCam & anObj)
    aRes->AddFils(::ToXMLTree(std::string("StepSeg"),anObj.StepSeg())->ReTagThis("StepSeg"));
    if (anObj.StepImage().IsInit())
       aRes->AddFils(::ToXMLTree(std::string("StepImage"),anObj.StepImage().Val())->ReTagThis("StepImage"));
+   if (anObj.KeyCalName().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("KeyCalName"),anObj.KeyCalName().Val())->ReTagThis("KeyCalName"));
   aRes->mGXml = anObj.mGXml;
   XMLPopContext(anObj.mGXml);
   return aRes;
@@ -20389,9 +21052,11 @@ void xml_init(cNuagePutCam & anObj,cElXMLTree * aTree)
    xml_init(anObj.StepSeg(),aTree->Get("StepSeg",1)); //tototo 
 
    xml_init(anObj.StepImage(),aTree->Get("StepImage",1),double(-1.0)); //tototo 
+
+   xml_init(anObj.KeyCalName(),aTree->Get("KeyCalName",1)); //tototo 
 }
 
-std::string  Mangling( cNuagePutCam *) {return "E65582236D701783FE3F";};
+std::string  Mangling( cNuagePutCam *) {return "17BAEBC11A614C88FF3F";};
 
 
 std::string & cExportNuage::NameOut()
@@ -20603,6 +21268,17 @@ const cTplValGesInit< double > & cExportNuage::StepImage()const
 }
 
 
+cTplValGesInit< std::string > & cExportNuage::KeyCalName()
+{
+   return NuagePutCam().Val().KeyCalName();
+}
+
+const cTplValGesInit< std::string > & cExportNuage::KeyCalName()const 
+{
+   return NuagePutCam().Val().KeyCalName();
+}
+
+
 cTplValGesInit< cNuagePutCam > & cExportNuage::NuagePutCam()
 {
    return mNuagePutCam;
@@ -20800,7 +21476,7 @@ void xml_init(cExportNuage & anObj,cElXMLTree * aTree)
    xml_init(anObj.NuagePutCam(),aTree->Get("NuagePutCam",1)); //tototo 
 }
 
-std::string  Mangling( cExportNuage *) {return "1D1246AE13F3CB95FF3F";};
+std::string  Mangling( cExportNuage *) {return "7AC802516E8905CBFF3F";};
 
 
 cTplValGesInit< std::string > & cChoixImSec::KeyExistingFile()
@@ -22277,7 +22953,7 @@ void xml_init(cSectionExport & anObj,cElXMLTree * aTree)
    xml_init(anObj.ExportResiduXml(),aTree->Get("ExportResiduXml",1)); //tototo 
 }
 
-std::string  Mangling( cSectionExport *) {return "77D1265CDB02ECA1FF3F";};
+std::string  Mangling( cSectionExport *) {return "5C34421AB8371185FD3F";};
 
 
 std::vector< cIterationsCompensation > & cEtapeCompensation::IterationsCompensation()
@@ -22365,6 +23041,17 @@ cTplValGesInit< double > & cEtapeCompensation::MultSLMGlob()
 const cTplValGesInit< double > & cEtapeCompensation::MultSLMGlob()const 
 {
    return mMultSLMGlob;
+}
+
+
+std::list< cContrCamGenInc > & cEtapeCompensation::ContrCamGenInc()
+{
+   return SectionObservations().ContrCamGenInc();
+}
+
+const std::list< cContrCamGenInc > & cEtapeCompensation::ContrCamGenInc()const 
+{
+   return SectionObservations().ContrCamGenInc();
 }
 
 
@@ -23008,7 +23695,7 @@ void xml_init(cEtapeCompensation & anObj,cElXMLTree * aTree)
    xml_init(anObj.SectionExport(),aTree->Get("SectionExport",1)); //tototo 
 }
 
-std::string  Mangling( cEtapeCompensation *) {return "A0C34D425742C0DBFE3F";};
+std::string  Mangling( cEtapeCompensation *) {return "E27200D243E503A3FE3F";};
 
 
 std::list< cEtapeCompensation > & cSectionCompensation::EtapeCompensation()
@@ -23067,7 +23754,7 @@ void xml_init(cSectionCompensation & anObj,cElXMLTree * aTree)
    xml_init(anObj.EtapeCompensation(),aTree->GetAll("EtapeCompensation",false,1));
 }
 
-std::string  Mangling( cSectionCompensation *) {return "4C5E3127AD83F8C4FDBF";};
+std::string  Mangling( cSectionCompensation *) {return "A0A92EE9DA718FB7FABF";};
 
 
 cTplValGesInit< cChantierDescripteur > & cParamApero::DicoLoc()
@@ -23367,6 +24054,17 @@ const cTplValGesInit< cSetOrientationInterne > & cParamApero::GlobOrInterne()con
 }
 
 
+std::list< cCamGenInc > & cParamApero::CamGenInc()
+{
+   return SectionInconnues().CamGenInc();
+}
+
+const std::list< cCamGenInc > & cParamApero::CamGenInc()const 
+{
+   return SectionInconnues().CamGenInc();
+}
+
+
 std::list< cPoseCameraInc > & cParamApero::PoseCameraInc()
 {
    return SectionInconnues().PoseCameraInc();
@@ -23419,6 +24117,28 @@ cSectionInconnues & cParamApero::SectionInconnues()
 const cSectionInconnues & cParamApero::SectionInconnues()const 
 {
    return mSectionInconnues;
+}
+
+
+cTplValGesInit< bool > & cParamApero::GBCamSupresStenCam()
+{
+   return SectionChantier().GBCamSupresStenCam();
+}
+
+const cTplValGesInit< bool > & cParamApero::GBCamSupresStenCam()const 
+{
+   return SectionChantier().GBCamSupresStenCam();
+}
+
+
+cTplValGesInit< bool > & cParamApero::StenCamSupresGBCam()
+{
+   return SectionChantier().StenCamSupresGBCam();
+}
+
+const cTplValGesInit< bool > & cParamApero::StenCamSupresGBCam()const 
+{
+   return SectionChantier().StenCamSupresGBCam();
 }
 
 
@@ -23873,6 +24593,17 @@ const cTplValGesInit< cElRegex_Ptr > & cParamApero::Im2Aff()const
 }
 
 
+cTplValGesInit< cXmlPondRegDist > & cParamApero::RegDistGlob()
+{
+   return SectionSolveur().RegDistGlob();
+}
+
+const cTplValGesInit< cXmlPondRegDist > & cParamApero::RegDistGlob()const 
+{
+   return SectionSolveur().RegDistGlob();
+}
+
+
 cSectionSolveur & cParamApero::SectionSolveur()
 {
    return mSectionSolveur;
@@ -24023,7 +24754,7 @@ void xml_init(cParamApero & anObj,cElXMLTree * aTree)
    xml_init(anObj.SectionCompensation(),aTree->Get("SectionCompensation",1)); //tototo 
 }
 
-std::string  Mangling( cParamApero *) {return "0CD15C71A7111FCBFD3F";};
+std::string  Mangling( cParamApero *) {return "7B0E464113A9B8E0FE3F";};
 
 
 std::string & cXmlSauvExportAperoOneIm::Name()
@@ -24131,6 +24862,183 @@ void xml_init(cXmlSauvExportAperoOneIm & anObj,cElXMLTree * aTree)
 std::string  Mangling( cXmlSauvExportAperoOneIm *) {return "029F800C8A9FB184FF3F";};
 
 
+std::string & cXmlSauvExportAperoOneAppuis::Name()
+{
+   return mName;
+}
+
+const std::string & cXmlSauvExportAperoOneAppuis::Name()const 
+{
+   return mName;
+}
+
+
+cTplValGesInit< Pt3dr > & cXmlSauvExportAperoOneAppuis::EcartFaiscTerrain()
+{
+   return mEcartFaiscTerrain;
+}
+
+const cTplValGesInit< Pt3dr > & cXmlSauvExportAperoOneAppuis::EcartFaiscTerrain()const 
+{
+   return mEcartFaiscTerrain;
+}
+
+
+cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::DistFaiscTerrain()
+{
+   return mDistFaiscTerrain;
+}
+
+const cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::DistFaiscTerrain()const 
+{
+   return mDistFaiscTerrain;
+}
+
+
+cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::EcartImMoy()
+{
+   return mEcartImMoy;
+}
+
+const cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::EcartImMoy()const 
+{
+   return mEcartImMoy;
+}
+
+
+cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::EcartImMax()
+{
+   return mEcartImMax;
+}
+
+const cTplValGesInit< double > & cXmlSauvExportAperoOneAppuis::EcartImMax()const 
+{
+   return mEcartImMax;
+}
+
+
+cTplValGesInit< std::string > & cXmlSauvExportAperoOneAppuis::NameImMax()
+{
+   return mNameImMax;
+}
+
+const cTplValGesInit< std::string > & cXmlSauvExportAperoOneAppuis::NameImMax()const 
+{
+   return mNameImMax;
+}
+
+void  BinaryUnDumpFromFile(cXmlSauvExportAperoOneAppuis & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.Name(),aFp);
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.EcartFaiscTerrain().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.EcartFaiscTerrain().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.EcartFaiscTerrain().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.DistFaiscTerrain().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.DistFaiscTerrain().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.DistFaiscTerrain().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.EcartImMoy().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.EcartImMoy().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.EcartImMoy().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.EcartImMax().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.EcartImMax().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.EcartImMax().SetNoInit();
+  } ;
+  { bool IsInit;
+       BinaryUnDumpFromFile(IsInit,aFp);
+        if (IsInit) {
+             anObj.NameImMax().SetInitForUnUmp();
+             BinaryUnDumpFromFile(anObj.NameImMax().ValForcedForUnUmp(),aFp);
+        }
+        else  anObj.NameImMax().SetNoInit();
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlSauvExportAperoOneAppuis & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Name());
+    BinaryDumpInFile(aFp,anObj.EcartFaiscTerrain().IsInit());
+    if (anObj.EcartFaiscTerrain().IsInit()) BinaryDumpInFile(aFp,anObj.EcartFaiscTerrain().Val());
+    BinaryDumpInFile(aFp,anObj.DistFaiscTerrain().IsInit());
+    if (anObj.DistFaiscTerrain().IsInit()) BinaryDumpInFile(aFp,anObj.DistFaiscTerrain().Val());
+    BinaryDumpInFile(aFp,anObj.EcartImMoy().IsInit());
+    if (anObj.EcartImMoy().IsInit()) BinaryDumpInFile(aFp,anObj.EcartImMoy().Val());
+    BinaryDumpInFile(aFp,anObj.EcartImMax().IsInit());
+    if (anObj.EcartImMax().IsInit()) BinaryDumpInFile(aFp,anObj.EcartImMax().Val());
+    BinaryDumpInFile(aFp,anObj.NameImMax().IsInit());
+    if (anObj.NameImMax().IsInit()) BinaryDumpInFile(aFp,anObj.NameImMax().Val());
+}
+
+cElXMLTree * ToXMLTree(const cXmlSauvExportAperoOneAppuis & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlSauvExportAperoOneAppuis",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("Name"),anObj.Name())->ReTagThis("Name"));
+   if (anObj.EcartFaiscTerrain().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("EcartFaiscTerrain"),anObj.EcartFaiscTerrain().Val())->ReTagThis("EcartFaiscTerrain"));
+   if (anObj.DistFaiscTerrain().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("DistFaiscTerrain"),anObj.DistFaiscTerrain().Val())->ReTagThis("DistFaiscTerrain"));
+   if (anObj.EcartImMoy().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("EcartImMoy"),anObj.EcartImMoy().Val())->ReTagThis("EcartImMoy"));
+   if (anObj.EcartImMax().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("EcartImMax"),anObj.EcartImMax().Val())->ReTagThis("EcartImMax"));
+   if (anObj.NameImMax().IsInit())
+      aRes->AddFils(::ToXMLTree(std::string("NameImMax"),anObj.NameImMax().Val())->ReTagThis("NameImMax"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cXmlSauvExportAperoOneAppuis & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.Name(),aTree->Get("Name",1)); //tototo 
+
+   xml_init(anObj.EcartFaiscTerrain(),aTree->Get("EcartFaiscTerrain",1)); //tototo 
+
+   xml_init(anObj.DistFaiscTerrain(),aTree->Get("DistFaiscTerrain",1)); //tototo 
+
+   xml_init(anObj.EcartImMoy(),aTree->Get("EcartImMoy",1)); //tototo 
+
+   xml_init(anObj.EcartImMax(),aTree->Get("EcartImMax",1)); //tototo 
+
+   xml_init(anObj.NameImMax(),aTree->Get("NameImMax",1)); //tototo 
+}
+
+std::string  Mangling( cXmlSauvExportAperoOneAppuis *) {return "0008E3516AB32481FD3F";};
+
+
+std::list< cXmlSauvExportAperoOneAppuis > & cXmlSauvExportAperoOneIter::OneAppui()
+{
+   return mOneAppui;
+}
+
+const std::list< cXmlSauvExportAperoOneAppuis > & cXmlSauvExportAperoOneIter::OneAppui()const 
+{
+   return mOneAppui;
+}
+
+
 std::list< cXmlSauvExportAperoOneIm > & cXmlSauvExportAperoOneIter::OneIm()
 {
    return mOneIm;
@@ -24202,6 +25110,15 @@ void  BinaryUnDumpFromFile(cXmlSauvExportAperoOneIter & anObj,ELISE_fp & aFp)
     BinaryUnDumpFromFile(aNb,aFp);
         for(  int aK=0 ; aK<aNb ; aK++)
         {
+             cXmlSauvExportAperoOneAppuis aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.OneAppui().push_back(aVal);
+        }
+  } ;
+  { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
              cXmlSauvExportAperoOneIm aVal;
               BinaryUnDumpFromFile(aVal,aFp);
               anObj.OneIm().push_back(aVal);
@@ -24230,6 +25147,12 @@ void  BinaryUnDumpFromFile(cXmlSauvExportAperoOneIter & anObj,ELISE_fp & aFp)
 
 void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlSauvExportAperoOneIter & anObj)
 {
+    BinaryDumpInFile(aFp,(int)anObj.OneAppui().size());
+    for(  std::list< cXmlSauvExportAperoOneAppuis >::const_iterator iT=anObj.OneAppui().begin();
+         iT!=anObj.OneAppui().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
     BinaryDumpInFile(aFp,(int)anObj.OneIm().size());
     for(  std::list< cXmlSauvExportAperoOneIm >::const_iterator iT=anObj.OneIm().begin();
          iT!=anObj.OneIm().end();
@@ -24249,6 +25172,12 @@ cElXMLTree * ToXMLTree(const cXmlSauvExportAperoOneIter & anObj)
 {
   XMLPushContext(anObj.mGXml);
   cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlSauvExportAperoOneIter",eXMLBranche);
+  for
+  (       std::list< cXmlSauvExportAperoOneAppuis >::const_iterator it=anObj.OneAppui().begin();
+      it !=anObj.OneAppui().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("OneAppui"));
   for
   (       std::list< cXmlSauvExportAperoOneIm >::const_iterator it=anObj.OneIm().begin();
       it !=anObj.OneIm().end();
@@ -24272,6 +25201,8 @@ void xml_init(cXmlSauvExportAperoOneIter & anObj,cElXMLTree * aTree)
    if (aTree==0) return;
    anObj.mGXml = aTree->mGXml;
 
+   xml_init(anObj.OneAppui(),aTree->GetAll("OneAppui",false,1));
+
    xml_init(anObj.OneIm(),aTree->GetAll("OneIm",false,1));
 
    xml_init(anObj.AverageResidual(),aTree->Get("AverageResidual",1)); //tototo 
@@ -24285,7 +25216,7 @@ void xml_init(cXmlSauvExportAperoOneIter & anObj,cElXMLTree * aTree)
    xml_init(anObj.EvolMoy(),aTree->Get("EvolMoy",1)); //tototo 
 }
 
-std::string  Mangling( cXmlSauvExportAperoOneIter *) {return "3699F30AC428459AFF3F";};
+std::string  Mangling( cXmlSauvExportAperoOneIter *) {return "42AEB634EF4BC494FDBF";};
 
 
 std::list< cXmlSauvExportAperoOneIter > & cXmlSauvExportAperoGlob::Iters()
@@ -24344,6 +25275,188 @@ void xml_init(cXmlSauvExportAperoGlob & anObj,cElXMLTree * aTree)
    xml_init(anObj.Iters(),aTree->GetAll("Iters",false,1));
 }
 
-std::string  Mangling( cXmlSauvExportAperoGlob *) {return "D0E6B5EC893BD587FDBF";};
+std::string  Mangling( cXmlSauvExportAperoGlob *) {return "A062DF60E1604FC4FB3F";};
+
+
+double & cXmlOneResultRTA::Mult()
+{
+   return mMult;
+}
+
+const double & cXmlOneResultRTA::Mult()const 
+{
+   return mMult;
+}
+
+
+double & cXmlOneResultRTA::MoyErr()
+{
+   return mMoyErr;
+}
+
+const double & cXmlOneResultRTA::MoyErr()const 
+{
+   return mMoyErr;
+}
+
+
+std::list< cXmlSauvExportAperoOneAppuis > & cXmlOneResultRTA::OneAppui()
+{
+   return mOneAppui;
+}
+
+const std::list< cXmlSauvExportAperoOneAppuis > & cXmlOneResultRTA::OneAppui()const 
+{
+   return mOneAppui;
+}
+
+void  BinaryUnDumpFromFile(cXmlOneResultRTA & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.Mult(),aFp);
+    BinaryUnDumpFromFile(anObj.MoyErr(),aFp);
+  { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
+             cXmlSauvExportAperoOneAppuis aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.OneAppui().push_back(aVal);
+        }
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlOneResultRTA & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.Mult());
+    BinaryDumpInFile(aFp,anObj.MoyErr());
+    BinaryDumpInFile(aFp,(int)anObj.OneAppui().size());
+    for(  std::list< cXmlSauvExportAperoOneAppuis >::const_iterator iT=anObj.OneAppui().begin();
+         iT!=anObj.OneAppui().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
+}
+
+cElXMLTree * ToXMLTree(const cXmlOneResultRTA & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlOneResultRTA",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("Mult"),anObj.Mult())->ReTagThis("Mult"));
+   aRes->AddFils(::ToXMLTree(std::string("MoyErr"),anObj.MoyErr())->ReTagThis("MoyErr"));
+  for
+  (       std::list< cXmlSauvExportAperoOneAppuis >::const_iterator it=anObj.OneAppui().begin();
+      it !=anObj.OneAppui().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("OneAppui"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cXmlOneResultRTA & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.Mult(),aTree->Get("Mult",1)); //tototo 
+
+   xml_init(anObj.MoyErr(),aTree->Get("MoyErr",1)); //tototo 
+
+   xml_init(anObj.OneAppui(),aTree->GetAll("OneAppui",false,1));
+}
+
+std::string  Mangling( cXmlOneResultRTA *) {return "BEB73333D759BCBAFD3F";};
+
+
+double & cXmlResultRTA::BestMult()
+{
+   return mBestMult;
+}
+
+const double & cXmlResultRTA::BestMult()const 
+{
+   return mBestMult;
+}
+
+
+double & cXmlResultRTA::BestMoyErr()
+{
+   return mBestMoyErr;
+}
+
+const double & cXmlResultRTA::BestMoyErr()const 
+{
+   return mBestMoyErr;
+}
+
+
+std::list< cXmlOneResultRTA > & cXmlResultRTA::RTA()
+{
+   return mRTA;
+}
+
+const std::list< cXmlOneResultRTA > & cXmlResultRTA::RTA()const 
+{
+   return mRTA;
+}
+
+void  BinaryUnDumpFromFile(cXmlResultRTA & anObj,ELISE_fp & aFp)
+{
+     BinaryUnDumpFromFile(anObj.BestMult(),aFp);
+    BinaryUnDumpFromFile(anObj.BestMoyErr(),aFp);
+  { int aNb;
+    BinaryUnDumpFromFile(aNb,aFp);
+        for(  int aK=0 ; aK<aNb ; aK++)
+        {
+             cXmlOneResultRTA aVal;
+              BinaryUnDumpFromFile(aVal,aFp);
+              anObj.RTA().push_back(aVal);
+        }
+  } ;
+}
+
+void  BinaryDumpInFile(ELISE_fp & aFp,const cXmlResultRTA & anObj)
+{
+    BinaryDumpInFile(aFp,anObj.BestMult());
+    BinaryDumpInFile(aFp,anObj.BestMoyErr());
+    BinaryDumpInFile(aFp,(int)anObj.RTA().size());
+    for(  std::list< cXmlOneResultRTA >::const_iterator iT=anObj.RTA().begin();
+         iT!=anObj.RTA().end();
+          iT++
+    )
+        BinaryDumpInFile(aFp,*iT);
+}
+
+cElXMLTree * ToXMLTree(const cXmlResultRTA & anObj)
+{
+  XMLPushContext(anObj.mGXml);
+  cElXMLTree * aRes = new cElXMLTree((cElXMLTree *)0,"XmlResultRTA",eXMLBranche);
+   aRes->AddFils(::ToXMLTree(std::string("BestMult"),anObj.BestMult())->ReTagThis("BestMult"));
+   aRes->AddFils(::ToXMLTree(std::string("BestMoyErr"),anObj.BestMoyErr())->ReTagThis("BestMoyErr"));
+  for
+  (       std::list< cXmlOneResultRTA >::const_iterator it=anObj.RTA().begin();
+      it !=anObj.RTA().end();
+      it++
+  ) 
+      aRes->AddFils(ToXMLTree((*it))->ReTagThis("RTA"));
+  aRes->mGXml = anObj.mGXml;
+  XMLPopContext(anObj.mGXml);
+  return aRes;
+}
+
+void xml_init(cXmlResultRTA & anObj,cElXMLTree * aTree)
+{
+   if (aTree==0) return;
+   anObj.mGXml = aTree->mGXml;
+
+   xml_init(anObj.BestMult(),aTree->Get("BestMult",1)); //tototo 
+
+   xml_init(anObj.BestMoyErr(),aTree->Get("BestMoyErr",1)); //tototo 
+
+   xml_init(anObj.RTA(),aTree->GetAll("RTA",false,1));
+}
+
+std::string  Mangling( cXmlResultRTA *) {return "BAE07F625BE4E1EBFE3F";};
 
 // };

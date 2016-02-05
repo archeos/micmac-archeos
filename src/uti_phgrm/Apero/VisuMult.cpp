@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 cInterpolateurIm2D<U_INT2>* cOneVisuPMul::Interp() const { return mInterp; }
@@ -227,7 +228,7 @@ void cOneVisuPMul::DoOnePMul(cOnePtsMult & aPM )
                  );
 
 
-    const CamStenope * aCS0 = aPM.Pose0()->CurCam();
+    const CamStenope * aCS0 = aPM.GenPose0()->DownCastPoseCamNN()->CurCam();
 
     // cInterpolBilineaire<U_INT2> anIB;
     // cRecorrel aRC(anIB,aPM.Pose0()
@@ -283,11 +284,12 @@ void cOneVisuPMul::DoOnePMul(cOnePtsMult & aPM )
 
    int aSzV0 = 5;
    double aStep0 = 1.0;
-   cRecorrel aRC0(*this,aPM.Pose0(),aSzV0,aStep0);
+    // const CamStenope * aCS0 = aPM.GenPose0()->DownCastPoseCamNN()->CurCam();
+   cRecorrel aRC0(*this,aPM.GenPose0()->DownCastPoseCamNN(),aSzV0,aStep0);
 
 
    double                    aDistPdsErr = 0.25;
-   std::vector<CamStenope *> aVCS;
+   std::vector<cBasicGeomCap3D *> aVCS;
    cNupletPtsHomologues      aNewNuple(0,1.0);
    std::vector<double>       aVPdsNew;
    std::vector<double>       aVCorrel;
@@ -409,7 +411,7 @@ ElTimer aChr;
        bool OkPts = true;
        bool IsSift = false;
 
-       Pt2dr aPImAbs = aVCS[aKPose]->R3toF2(aNewP);
+       Pt2dr aPImAbs = aVCS[aKPose]->Ter2Capteur(aNewP);
 
        double aDistProj = euclid(aPImAbs,aNewNuple.PK(aKPose));
        if (aDistProj > mVMP.MaxDistReproj().Val())

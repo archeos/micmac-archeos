@@ -214,7 +214,8 @@ Pt3dr cGeoc_WGS4::FromGeoC(const Pt3dr & aP) const
    double h = 0;
 
    int maxiter=500;
-   double epsilon=1e-10;
+   // MPD modif 1e-10 => 1e-15 ; car influence sur la precision des RPC
+   double epsilon=1e-15;
    int i=0;
    double delta_lat=1234;
    
@@ -228,6 +229,8 @@ Pt3dr cGeoc_WGS4::FromGeoC(const Pt3dr & aP) const
       i=i+1;
       delta_lat=abs(lat-oldlat);
    }
+
+   // std::cout << "NB ITER " << i << " " << delta_lat * 1e20  << "\n";
 
    if (X < 0)  longit=longit+ PI;
 
@@ -313,7 +316,7 @@ std::vector<Pt3dr> cProj4::FromGeoC(const std::vector<Pt3dr> & aV) const
 std::vector<Pt3dr> cProj4::Chang(const std::vector<Pt3dr> & aPtsIn, bool Sens2GeoC) const
 {
    cGeoc_WGS4 aWD(eUniteAngleDegre);
-   std::string aTmpIn = "Proj4Input.txt";
+   std::string aTmpIn = "Proj4Input"+GetUnikId() +".txt";  // Pour exe en //
    FILE * aFPin = FopenNN(aTmpIn,"w","cProj4::Chang");
    for (int aK= 0 ; aK< int(aPtsIn.size()) ; aK++)
    {
@@ -328,7 +331,7 @@ std::vector<Pt3dr> cProj4::Chang(const std::vector<Pt3dr> & aPtsIn, bool Sens2Ge
    }
    ElFclose(aFPin);
 
-   std::string aTmpOut = "Proj4Output.txt";
+   std::string aTmpOut = "Proj4Output" + GetUnikId() + ".txt";
 
 	#if ELISE_windows
 	   std::string aCom =  g_externalToolHandler.get("proj").callName() + (Sens2GeoC?" -I ":" ")
@@ -581,7 +584,7 @@ cOneCoorSysPolyn::cOneCoorSysPolyn
    mPX     (1+aDeg.x),
    mPY     (1+aDeg.y),
    mPZ     (1+aDeg.z),
-   mNbDeg  (mPX.size()*mPY.size()*mPZ.size()),
+   mNbDeg  ((int)(mPX.size() * mPY.size() * mPZ.size())),
    mDeg    (aDeg),
    mCoord  (mNbDeg),
    mSys    (0),
@@ -1033,14 +1036,14 @@ cSysCoord * cSysCoord::FromXML
    {
 
       const int    * aDI = &(aVBSC[0].AuxI()[0]);
-      int      aNbI = aVBSC[0].AuxI().size();
+      int aNbI = (int)aVBSC[0].AuxI().size();
       ELISE_ASSERT(aNbI==9,"Bad int size in  cSysCoord::FromXML  eTC_Polyn");
       Pt3di aNbX(aDI[0],aDI[1],aDI[2]);
       Pt3di aNbY(aDI[3],aDI[4],aDI[5]);
       Pt3di aNbZ(aDI[6],aDI[7],aDI[8]);
 
       const double * aDR = &(aVBSC[0].AuxR()[0]);
-      int      aNbR = aVBSC[0].AuxR().size();
+      int aNbR = (int)aVBSC[0].AuxR().size();
 
       aVBSC++; aNbB--;
       cSysCoord * aSysIn = cSysCoord::FromXML(aVBSC,aNbB,aDir);
@@ -1064,7 +1067,7 @@ cSysCoord * cSysCoord::FromXML(const cSystemeCoord & aSC,const char * aDir)
 {
    
    const cBasicSystemeCoord * aVBSC = &(aSC.BSC()[0]);
-   int  aNbB = aSC.BSC().size();
+   int aNbB = (int)aSC.BSC().size();
  
 // std::cout << "NB IN " << aNbB<< "\n";
    cSysCoord * aRes = cSysCoord::FromXML(aVBSC,aNbB,aDir);

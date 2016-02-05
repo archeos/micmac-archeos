@@ -167,9 +167,10 @@ class cElNuage3DMaille : public cCapture3D
         // return 0 si pas de pb
         virtual double SeuilDistPbTopo() const;
 
+        Pt2di    SzBasicCapt3D() const;
         bool  CaptHasData(const Pt2dr &) const ;
         Pt2dr    Ter2Capteur   (const Pt3dr & aP) const;
-         bool     PIsVisibleInImage   (const Pt3dr & aP) const ;
+         bool     PIsVisibleInImage   (const Pt3dr & aP,const cArgOptionalPIsVisibleInImage  * =0) const ;
         ElSeg3D  Capteur2RayTer(const Pt2dr & aP) const;
         bool  HasRoughCapteur2Terrain() const ;
         Pt2dr ImRef2Capteur   (const Pt2dr & aP) const ;
@@ -757,7 +758,7 @@ cElNuage3DMaille *  BasculeNuageAutoReSize
 template <class Type> void WriteType(FILE * aFP,Type f)
 {
     size_t  size = sizeof(Type);
-    TheIntFuckingReturnValue=fwrite(&f,size,1,aFP);
+    TheIntFuckingReturnValue = (int)fwrite(&f,size,1,aFP);
 }
 
 
@@ -788,7 +789,6 @@ class cMasqBin3D
 
      private :
 };
-
 
 
 #endif // _ELISE_NUAGE_3D_MAILLE_

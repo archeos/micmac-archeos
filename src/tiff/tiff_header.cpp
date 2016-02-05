@@ -124,7 +124,11 @@ std::string StdFileCalibOfImage
    if (aMDP.IsNoMTD())
        aMDP = cMetaDataPhoto::CreateExiv2(aFullName);
 
-   cCameraEntry * aCE = CamOfName(aMDP.Cam() );
+// std::cout << "AAA " << aPrefix << "#"<< aPrefix << "#" << aDef << "#" << aMDP.Cam(true) << "\n"; getchar();
+
+   cCameraEntry * aCE = CamOfName(aMDP.Cam(true) );
+   // MPD => sinon blocage qd pas de camera ds xif
+   // cCameraEntry * aCE = CamOfName(aMDP.Cam() );
 
    if (aCE==0)
       return aDef;
@@ -1088,6 +1092,9 @@ void DATA_Tiff_Ifd::post_init(const char * name)
    // std::cout << "ghgjYujg " << mSzFileTile << _sz_tile << mNbTTByTF <<  name << "\n";
 }
 
+Pt2di DATA_Tiff_Ifd::SzFileTile() const {return mSzFileTile;}
+Pt2di DATA_Tiff_Ifd::NbTTByTF() const  {return mNbTTByTF;}
+
 DATA_Tiff_Ifd::~DATA_Tiff_Ifd()
 {
      _maxs.flush();
@@ -1248,7 +1255,7 @@ GenIm::type_el  DATA_Tiff_Ifd::type_el()
               case 64 : return GenIm::real8;
         }
     }
-    else if (_data_format[0] == Tiff_Im::Unsigned_int)
+    else if (_data_format[0] == Tiff_Im::Unsigned_int) 
     {
          switch (_nbb_ch0)
          {
@@ -1281,6 +1288,11 @@ GenIm::type_el  DATA_Tiff_Ifd::type_el()
                case 32 : return GenIm::int4;
          }
     }
+
+    std::cout << " TIFF DATA FORMAT " << _data_format[0]   << " NbBits " << _nbb_ch0
+              << " Float=" << Tiff_Im::IEEE_float 
+              << " Unsigned=" <<  Tiff_Im::Unsigned_int 
+              << " Signed="<< Tiff_Im::Signed_int << "\n";
 
     elise_internal_error
     (
@@ -1560,6 +1572,10 @@ Tiff_Im::COMPR_TYPE Tiff_Im::mode_compr()
 {
     return (Tiff_Im::COMPR_TYPE) dtifd()->_mode_compr;
 }
+Pt2di Tiff_Im::SzFileTile() {return dtifd()->SzFileTile();}
+Pt2di Tiff_Im::NbTTByTF()   {return dtifd()->NbTTByTF();}
+std::string Tiff_Im::NameTileFile(Pt2di aTile)   {return dtifd()->NameTileFile(aTile);}
+
 
 
 
@@ -1990,6 +2006,23 @@ std::vector<Im2DGen *>  Tiff_Im::VecOfIm(Pt2di aSz)
 }
 
 
+std::vector<Im2D_REAL4>  Tiff_Im::VecOfImFloat(Pt2di aSz)
+{
+   std::vector<Im2D_REAL4> aRes;
+   int aNbC = nb_chan();
+   for (int aK=0 ; aK<aNbC ; aK++)
+   {
+       aRes.push_back(Im2D_REAL4(aSz.x,aSz.y));
+   }
+   return aRes;
+}
+
+
+
+
+
+
+
 std::vector<Im2DGen *> Tiff_Im::ReadVecOfIm()
 {
     std::vector<Im2DGen *> aRes = VecOfIm(this->sz());
@@ -2018,7 +2051,7 @@ Fonc_Num StdInput(const std::vector<Im2DGen *> & aV)
 }
 
 
-L_Arg_Opt_Tiff  ArgOpTiffMDP(const cMetaDataPhoto & aMDP)
+L_Arg_Opt_Tiff  ArgOpTiffMDP(const cMetaDataPhoto & aMDP,bool SVP)
 {
    if (aMDP.IsNoMTD())
    {
@@ -2026,12 +2059,12 @@ L_Arg_Opt_Tiff  ArgOpTiffMDP(const cMetaDataPhoto & aMDP)
    }
 
    return     Tiff_Im::Empty_ARG
-           +  Arg_Tiff(Tiff_Im::AExifTiff_FocalLength(aMDP.FocMm()))
-           +  Arg_Tiff(Tiff_Im::AExifTiff_FocalEqui35Length(aMDP.Foc35()))
+           +  Arg_Tiff(Tiff_Im::AExifTiff_FocalLength(aMDP.FocMm(SVP)))
+           +  Arg_Tiff(Tiff_Im::AExifTiff_FocalEqui35Length(aMDP.Foc35(SVP)))
            +  Arg_Tiff(Tiff_Im::AExifTiff_Aperture(aMDP.Diaph(true)))
            +  Arg_Tiff(Tiff_Im::AExifTiff_IsoSpeed(aMDP.IsoSpeed(true)))
            +  Arg_Tiff(Tiff_Im::AExifTiff_ShutterSpeed(aMDP.ExpTime(true)))
-           +  Arg_Tiff(Tiff_Im::AExifTiff_Camera(aMDP.Cam()))
+           +  Arg_Tiff(Tiff_Im::AExifTiff_Camera(aMDP.Cam(SVP)))
            +  Arg_Tiff(Tiff_Im::AExifTiff_Date(cElDate(aMDP.Date(true))));
 
 }

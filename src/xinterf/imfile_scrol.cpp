@@ -442,8 +442,12 @@ IFL_LineWindow::~IFL_LineWindow()
 
 template <class Type> void ImFileLoader<Type>::init_LW()
 {
+/*
    for (INT k=0 ; k<12 ; k++)
       mBufLW.push_back(new IFL_LineWindow(_SzW.x,_nb_chan));
+*/
+   for (INT k=0 ; k<12 ; k++)
+      mBufLW.push_back(new IFL_LineWindow(this->_SzW.x,_nb_chan));
 }
 
 template <class Type> INT ** ImFileLoader<Type>::GetLineWindow(INT x0U,INT x1U,INT yU)
@@ -475,7 +479,7 @@ template <class Type> INT ** ImFileLoader<Type>::GetLineWindow(INT x0U,INT x1U,I
    for (INT c=0; c<_nb_chan ; c++)
    {
        INT * lc = Res->mLine[c];
-       for (INT aWxCur = _pW0.x ; aWxCur< _pW1.x ; aWxCur++)
+       for (INT aWxCur = this->_pW0.x ; aWxCur< this->_pW1.x ; aWxCur++)
        {
            const ElIntervPixelUPond &  anXInterv = mXTabIntervales.IntervPixelPond(aWxCur);
            lc[aWxCur] = 0;
@@ -504,17 +508,17 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
 	ImFileLoader  & Big,
 	INT             zoom
 )  :
-	GenScaleIm<INT> ((Big._SzU+Pt2di(zoom-1,zoom-1))/zoom,Big.SzW(),Big._nb_chan),
+	GenScaleIm<tGSI> ((Big._SzU+Pt2di(zoom-1,zoom-1))/zoom,Big.SzW(),Big._nb_chan),
     mByteOrdered    (true),
     _tiff           (0),
 	_nb_chan  		(Big._nb_chan),
-    _fp             (0),
+    mFPGlob             (0),
     _nb_tile        (1,1),
-    _sz_tile        (_SzU),
-	_uline          (NEW_VECTEUR(-RAB*Big._nb_chan,(_SzU.x+RAB)*Big._nb_chan,Type)),
+    _sz_tile        (this->_SzU),
+    _uline          (NEW_VECTEUR(-this->RAB*Big._nb_chan,(this->_SzU.x+this->RAB)*Big._nb_chan,Type)),
     _dynamic        (false),
-    mXTabIntervales (Big.SzW().x,Big._SzU.x,RAB,XTransfo),
-    mYTabIntervales (Big.SzW().y,Big._SzU.y,RAB,YTransfo)
+    mXTabIntervales (Big.SzW().x,Big._SzU.x,this->RAB,this->XTransfo),
+    mYTabIntervales (Big.SzW().y,Big._SzU.y,this->RAB,this->YTransfo)
 {
     init_LW();
     _own_alloc =  true;
@@ -522,7 +526,7 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
 
 
 	_tiles.push_back(ElSTDNS vector<TilesIMFL<Type> *>());
-	_tiles[0].push_back(CLASS_NEW_ONE(TilesIMFL<Type>,(_SzU,_nb_chan)));
+	_tiles[0].push_back(CLASS_NEW_ONE(TilesIMFL<Type>,(this->_SzU,_nb_chan)));
 
 
 	Type ** dglob = _tiles[0][0]->_loaded->data();
@@ -578,15 +582,32 @@ template <class Type> ImFileLoader<Type>::~ImFileLoader()
                 DELETE_ONE (_tiles[y][x]);
 	if (_own_alloc)
 		DELETE_ONE(_alloc);
-	DELETE_VECTOR(_uline,-RAB*_nb_chan);
-    if (_fp)
-		delete _fp;
+	DELETE_VECTOR(_uline,-this->RAB*_nb_chan);
+    if (mFPGlob)
+		delete mFPGlob;
     if (_tiff)
 		delete _tiff;
 
     for (INT k=0; k<(INT)mBufLW.size() ; k++)
         delete mBufLW[k];
 }
+
+template <class Type> ELISE_fp * ImFileLoader<Type>::FileOfTile(Pt2di aTile)
+{
+   if (!mHasTileFile) return  mFPGlob;
+
+    Pt2di aNumTF (aTile.x/mNbTTByF.x,aTile.y/mNbTTByF.y);
+   
+    if (aNumTF==mCurTileOfFT) return mFPOfFileTile;
+
+    delete mFPOfFileTile;
+    mCurTileOfFT = aNumTF;
+    mFPOfFileTile = new ELISE_fp(_tiff->NameTileFile(mCurTileOfFT).c_str(),ELISE_fp::READ);
+
+    return mFPOfFileTile;
+}
+
+
 
 
 template <class Type> ImFileLoader<Type>::ImFileLoader
@@ -595,17 +616,22 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
 	Pt2di SzW,
 	ImFileLoader * IMFalloc
 ) :
-    GenScaleIm<INT>(tiff.sz(),SzW,tiff.NbChannel()),
+    GenScaleIm<tGSI>(tiff.sz(),SzW,tiff.NbChannel()),
     mByteOrdered (tiff.byte_ordered()),
 	_tiff     (new Tiff_Im (tiff)),
 	_nb_chan  (tiff.NbChannel()),
-	_fp		  (new ELISE_fp(tiff.name(),ELISE_fp::READ)),
+	mFPGlob	  (new ELISE_fp(tiff.name(),ELISE_fp::READ)),
 	_nb_tile  (tiff.nb_tile()),
 	_sz_tile  (tiff.sz_tile()),
-	_uline    (NEW_VECTEUR(-RAB*_nb_chan,(_SzU.x+RAB)*_nb_chan,Type)),
+	_uline    (NEW_VECTEUR(-this->RAB*_nb_chan,(this->_SzU.x+this->RAB)*_nb_chan,Type)),
    _dynamic    (true),
-    mXTabIntervales (SzW.x,_SzU.x,RAB,XTransfo),
-    mYTabIntervales (SzW.y,_SzU.y,RAB,YTransfo)
+    mXTabIntervales (SzW.x,this->_SzU.x,this->RAB,this->XTransfo),
+    mYTabIntervales (SzW.y,this->_SzU.y,this->RAB,this->YTransfo),
+    mSzTileFile     (tiff.SzFileTile()),
+    mHasTileFile    (mSzTileFile.x > 0),
+    mFPOfFileTile   (0),
+    mCurTileOfFT    (-1,-1),
+    mNbTTByF        (tiff.NbTTByTF())
 {
     init_LW();
     _own_alloc =  (IMFalloc == 0);
@@ -630,7 +656,7 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
   	Tjs_El_User.ElAssert
     (
         tiff.plan_conf()  == Tiff_Im::Chunky_conf,
-        EEM0 << "ImFileLoader, handle 8 bits images"
+        EEM0 << "ImFileLoader, handle Chunky_conf as plan_conf"
             << "Tiff File = " << tiff.name()
     );             
 
@@ -640,9 +666,28 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
 	   _tiles.push_back(ElSTDNS vector<TilesIMFL<Type> *>());
 	   for (INT x=0; x<_nb_tile.x ; x++)
 	   {
+//  mSzFileTile
+//  mUseFileTile
+
+// std::cout << "HHHHHH " << _nb_tile << " " << tiff.name() << " " << tiff.sz_tile()  << "\n";
+// std::cout << "GGGGGG " << tiff.SzFileTile()  << " " << tiff.NbTTByTF()   << "\n";
+                 
+                 Tiff_Im aTiff2Load = tiff;
+                 Pt2di    aTileInside(x,y);
+                 if (mHasTileFile)
+                 {
+                      aTileInside = Pt2di(x%mNbTTByF.x,y%mNbTTByF.y);
+                      Pt2di aNumTTF(x/mNbTTByF.x,y/mNbTTByF.y);
+                      std::string aNameTTF = tiff.NameTileFile(aNumTTF);
+                      aTiff2Load = Tiff_Im(aNameTTF.c_str());
+                 }
+
+
+
 		 _tiles[y].push_back
                  (
-                     CLASS_NEW_ONE(TilesIMFL<Type>,(tiff,Pt2di(x,y),_nb_chan))
+                     CLASS_NEW_ONE(TilesIMFL<Type>,(aTiff2Load,aTileInside,_nb_chan))
+                     // CLASS_NEW_ONE(TilesIMFL<Type>,(tiff,Pt2di(x,y),_nb_chan))
                  );
 	}
     }
@@ -650,11 +695,16 @@ template <class Type> ImFileLoader<Type>::ImFileLoader
 
 template <class Type> void ImFileLoader<Type>::ImFReInitTifFile(Tiff_Im aTif)
 {
+    if ( mHasTileFile)
+    {
+         
+         ELISE_ASSERT(false,"::ImFReInitTifFile with Tile File");
+    }
     put_tiles_in_alloc(true);
     delete _tiff;
-    delete _fp;
+    delete mFPGlob;
     _tiff = new Tiff_Im (aTif);
-    _fp	  = new ELISE_fp(aTif.name(),ELISE_fp::READ);
+    mFPGlob	  = new ELISE_fp(aTif.name(),ELISE_fp::READ);
 }
 
 
@@ -692,7 +742,7 @@ template <class Type> void ImFileLoader<Type>::load_this_tile(INT x,INT y)
 {
 	if ( ! _tiles[y][x]->_loaded)
         {
-	   _alloc->load_it(_tiles[y][x],*_fp);
+	   _alloc->load_it(_tiles[y][x],*FileOfTile(Pt2di(x,y)));
         }
 }
 
@@ -701,8 +751,8 @@ template <class Type> bool ImFileLoader<Type>::load_all(Pt2dr tr,REAL sc,Pt2di p
 
 
 
-	_tiles_0 = Pt2di(_xU0/_sz_tile.x,_yU0/_sz_tile.y);
-	_tiles_1 = Pt2di((_xU1-1)/_sz_tile.x+1+2*RAB_XD,(_yU1-1)/_sz_tile.y+1);
+	_tiles_0 = Pt2di(this->_xU0/_sz_tile.x,this->_yU0/_sz_tile.y);
+	_tiles_1 = Pt2di((this->_xU1-1)/_sz_tile.x+1+2*RAB_XD,(this->_yU1-1)/_sz_tile.y+1);
 
 	_tiles_0.SetSup(Pt2di(0,0));
 	_tiles_1.SetInf(_nb_tile);
@@ -736,6 +786,7 @@ template <class Type> bool ImFileLoader<Type>::load_all(Pt2dr tr,REAL sc,Pt2di p
 						_alloc->get_if_loaded(_tiles[y][x]);
 				}
 			}
+// std::cout << "Ppppppppppppp\n";
 
 			// Cette fois, on force le load
 
@@ -744,6 +795,7 @@ template <class Type> bool ImFileLoader<Type>::load_all(Pt2dr tr,REAL sc,Pt2di p
 				for (INT x=_tiles_0.x; x<_tiles_1.x ; x++)
 					load_this_tile(x,y);
 			}
+// std::cout << "GGgggggggggg\n";
     }
 
 	return true;
@@ -809,9 +861,12 @@ template <class Type>  void ImFileLoader<Type>::MakeOneLineZooPPV()
     Type * ul = get_line_user(_ux0cur,_ux1cur,_uy0cur);
     for (INT c=0; c<_nb_chan ; c++)
     {
-       INT * lc = _line[c];
-       for (INT wx = _pW0.x ; wx< _pW1.x ; wx++)
-          lc[wx] = CAST2INT(ul[_Cw2uX[wx]*_nb_chan+c]);
+       tGSI * lc = this->_line[c];
+       for (INT wx = this->_pW0.x ; wx< this->_pW1.x ; wx++)
+       {
+          lc[wx] = (ul[this->_Cw2uX[wx]*_nb_chan+c]);
+          // lc[wx] = CAST2INT(ul[this->_Cw2uX[wx]*_nb_chan+c]);
+       }
     }
 }
 
@@ -821,8 +876,8 @@ template <class Type>  void ImFileLoader<Type>::MakeOneLineReduceSomPPV()
 
     for (INT c=0; c<_nb_chan ; c++)
     {
-       INT * lc = _line[c];
-       for (INT wx = _pW0.x ; wx< _pW1.x ; wx++)
+       tGSI * lc = this->_line[c];
+       for (INT wx = this->_pW0.x ; wx< this->_pW1.x ; wx++)
           lc[wx] = 0;
     }
 
@@ -831,14 +886,17 @@ template <class Type>  void ImFileLoader<Type>::MakeOneLineReduceSomPPV()
          Type * ul = get_line_user(_ux0cur,_ux1cur,yu);
          for (INT c=0; c<_nb_chan ; c++)
          {
-              INT * lc = _line[c];
-              for (INT wx = _pW0.x ; wx< _pW1.x ; wx++)
+              tGSI * lc = this->_line[c];
+              for (INT wx = this->_pW0.x ; wx< this->_pW1.x ; wx++)
               {
-                 INT UX0 = _Cw2uX[wx];
-                 INT UX1 = _Cw2uX[wx+1];
+                 INT UX0 = this->_Cw2uX[wx];
+                 INT UX1 = this->_Cw2uX[wx+1];
 
                  for (INT UX = UX0 ; UX < UX1 ; UX++)
-                     lc[wx] += CAST2INT(ul[UX*_nb_chan+c]);
+                 {
+                     // lc[wx] += CAST2INT(ul[UX*_nb_chan+c]);
+                     lc[wx] += (ul[UX*_nb_chan+c]);
+                 }
               }
          }
     }
@@ -847,10 +905,10 @@ template <class Type>  void ImFileLoader<Type>::MakeOneLineReduceSomPPV()
 	{
     for (INT c=0; c<_nb_chan ; c++)
     {
-        INT * lc = _line[c];
-        for (INT wx = _pW0.x ; wx< _pW1.x ; wx++)
+        tGSI * lc = this->_line[c];
+        for (INT wx = this->_pW0.x ; wx< this->_pW1.x ; wx++)
         {
-            lc[wx] /= ElMax(1,(_Cw2uX[wx+1]-_Cw2uX[wx])) * NbY;
+            lc[wx] /= ElMax(1,(this->_Cw2uX[wx+1]-this->_Cw2uX[wx])) * NbY;
         }
     }
 	}
@@ -863,8 +921,8 @@ template <class Type> void ImFileLoader<Type>::MakeOneLinePixelPond()
 
     for (INT c=0; c<_nb_chan ; c++)
     {
-       INT * lc = _line[c];
-       for (INT wx = _pW0.x ; wx< _pW1.x ; wx++)
+       tGSI * lc = this->_line[c];
+       for (INT wx = this->_pW0.x ; wx< this->_pW1.x ; wx++)
           lc[wx] = 0;
     }
 
@@ -877,21 +935,21 @@ template <class Type> void ImFileLoader<Type>::MakeOneLinePixelPond()
 
          for (INT c=0; c<_nb_chan ; c++)
          {
-              INT * lc = _line[c];
+              tGSI * lc = this->_line[c];
               INT * lWc = lW[c];
-              for (INT aWxCur = _pW0.x ; aWxCur< _pW1.x ; aWxCur++)
+              for (INT aWxCur = this->_pW0.x ; aWxCur< this->_pW1.x ; aWxCur++)
               {
                   lc[aWxCur] += lWc[aWxCur] * anYPds;
               }
          }
     }
 
-    INT P2 = ElSquare(_CoeffPds);
+    INT P2 = ElSquare(this->_CoeffPds);
 	{
     for (INT c=0; c<_nb_chan ; c++)
     {
-        INT * lc = _line[c];
-        for (INT aWxCur = _pW0.x ; aWxCur< _pW1.x ; aWxCur++)
+        tGSI * lc = this->_line[c];
+        for (INT aWxCur = this->_pW0.x ; aWxCur< this->_pW1.x ; aWxCur++)
         {
             lc[aWxCur] /= P2;
         }
@@ -903,14 +961,13 @@ template <class Type> void ImFileLoader<Type>::MakeOneLinePixelPond()
 
 template <class Type>  void ImFileLoader<Type>::MakeOneLine(bool quick)
 {
-mPixReplic =true;
     if (mPixReplic)
     {
        MakeOneLineZooPPV();
     }
     else
     {
-	   MakeOneLinePixelPond();
+       MakeOneLinePixelPond();
     }
 }
 
@@ -920,13 +977,12 @@ mPixReplic =true;
 template <class Type> void ImFileLoader<Type>::do_it(Pt2dr tr,REAL sc,Pt2di p0,Pt2di p1,bool quick)
 {
 
-
    mPixReplic = quick;
    mReduc = (sc<=1);
 
 
 
-   if (! do_it_gen(tr,sc,p0,p1))
+   if (! this->do_it_gen(tr,sc,p0,p1))
       return ;
 
    mUpToDate_LastXY_GLU = false;
@@ -935,8 +991,8 @@ template <class Type> void ImFileLoader<Type>::do_it(Pt2dr tr,REAL sc,Pt2di p0,P
        mBufLW[k]->reinit();
 
 
-    _ux0cur = _Cw2uX[_pW0.x];
-    _ux1cur = ElMin(_Cw2uX[_pW1.x]+RAB_XD,_SzU.x-1);     
+    _ux0cur = this->_Cw2uX[this->_pW0.x];
+    _ux1cur = ElMin(this->_Cw2uX[this->_pW1.x]+RAB_XD,this->_SzU.x-1);     
 
 
 
@@ -946,44 +1002,44 @@ template <class Type> void ImFileLoader<Type>::do_it(Pt2dr tr,REAL sc,Pt2di p0,P
     else
         Mode = ElTabIntervPUP::Lin ; 
 
-    _CoeffPds = 100;
-    mXTabIntervales.Actualise(_CoeffPds,Mode);
-    mYTabIntervales.Actualise(_CoeffPds,Mode);
+    this->_CoeffPds = 100;
+    mXTabIntervales.Actualise(this->_CoeffPds,Mode);
+    mYTabIntervales.Actualise(this->_CoeffPds,Mode);
 
 
     {
        INT U0,U1;
-       mXTabIntervales.IntervalW2U(U0,U1,_pW0.x,_pW1.x);
+       mXTabIntervales.IntervalW2U(U0,U1,this->_pW0.x,this->_pW1.x);
        U0 -= RAB_XD;
        ElSetMax(U0,0);
        ElSetMin(_ux0cur ,U0);
        ElSetMax(_ux1cur ,U1);
-       ElSetMin(_xU0,U0);
-       ElSetMax(_xU1,U1);
+       ElSetMin(this->_xU0,U0);
+       ElSetMax(this->_xU1,U1);
     }
     {
        INT U0,U1;
-       mYTabIntervales.IntervalW2U(U0,U1,_pW0.y,_pW1.y);
-       ElSetMin(_yU0,U0);
-       ElSetMax(_yU1,U1);
+       mYTabIntervales.IntervalW2U(U0,U1,this->_pW0.y,this->_pW1.y);
+       ElSetMin(this->_yU0,U0);
+       ElSetMax(this->_yU1,U1);
     }
 
 
     if (! load_all(tr,sc,p0,p1))
        return;
 
-    for (mWyCur0=_pW0.y;  mWyCur0<_pW1.y; )
+    for (mWyCur0=this->_pW0.y;  mWyCur0<this->_pW1.y; )
     {
-        _uy0cur = _Cw2uY[ mWyCur0];
+        _uy0cur = this->_Cw2uY[ mWyCur0];
 
         mWyCur1 =  mWyCur0+1;
  
         if (mPixReplic)
         {
-            while ( (mWyCur1<_pW1.y) && (_uy0cur==_Cw2uY[mWyCur1]))
+            while ( (mWyCur1<this->_pW1.y) && (_uy0cur==this->_Cw2uY[mWyCur1]))
                 mWyCur1++;
         }
-        _uy1cur = _Cw2uY[ mWyCur1];
+        _uy1cur = this->_Cw2uY[ mWyCur1];
  
 
         MakeOneLine(quick);
@@ -992,9 +1048,10 @@ template <class Type> void ImFileLoader<Type>::do_it(Pt2dr tr,REAL sc,Pt2di p0,P
 
         RasterUseLine
         (
-            Pt2di(_pW0.x, mWyCur0),
-            Pt2di(_pW1.x, mWyCur1),
-            _line
+            Pt2di(this->_pW0.x, mWyCur0),
+            Pt2di(this->_pW1.x, mWyCur1),
+            this->_line,
+            _nb_chan
         );
 	    mWyCur0 =  mWyCur1;
     }                                            
@@ -1023,6 +1080,11 @@ template <class Type> void ImFileScroller<Type>::ReInitTifFile(Tiff_Im aTif)
 template <class Type> Fonc_Num ImFileScroller<Type>::in()
 {
    return this->Tiff().in(0);
+}
+
+template <class Type> Pt2di ImFileScroller<Type>::SzIn()
+{
+   return this->Tiff().sz();
 }
 
 template <class Type> ImFileScroller<Type>:: ImFileScroller
@@ -1066,8 +1128,20 @@ template <class Type> ImFileScroller<Type>::ImFileScroller
 	ImFileLoader<Type>(tif,V.SzW(),alloc),
 	ElImScroller(V,tif.nb_chan(),tif.sz(),sc_im)
 {
+
+/*
+if (MPD_MM())
+{
+    std::cout << "ImFileScroller<Type>::ImFil " << tif.name() 
+              << " " << type_elToString(tif.type_el())
+              << " " << sc_im << " " << this << "\n";
+}
+*/
+
+/*
    if (! El_CTypeTraits<Type>::IsIntType())
       WarnIntConversion(tif);
+*/
 }
 
 
@@ -1075,15 +1149,24 @@ template <class Type> ImFileScroller<Type>::ImFileScroller
 
 template <class Type> void ImFileScroller<Type>::LoadXImage(Pt2di p0,Pt2di p1,bool quick)
 {
+/*
+  mm3d Vino VeryBig.tif Bilin=1
+
+   LLL::LoadXImage 1 0.569406 0 0
+   LLL::LoadXImage 0 0.569406 0 0
+
+std::cout << "LLL::LoadXImage " << quick << " " << this->sc() << " " << this->AlwaysQuickZoom() << " " << this->AlwaysQuick() << "\n";
+*/
+
 	this->do_it(ElImScroller::tr(),ElImScroller::sc(),p0,p1,quick);
 }
 
-template <class Type> void ImFileScroller<Type>::RasterUseLine(Pt2di p0,Pt2di p1,INT ** l)
+template <class Type> void ImFileScroller<Type>::RasterUseLine(Pt2di p0,Pt2di p1,tGSI ** l,int aNbChanIn)
 {
      for (INT y= p0.y ; y<p1.y ; y++)
      {
  
-          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,l);        
+          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,l,aNbChanIn);        
      }             
 }
 

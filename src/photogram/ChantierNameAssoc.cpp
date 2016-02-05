@@ -39,9 +39,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 #include "general/CMake_defines.h"
 #if (ELISE_QT_VERSION >= 4)
-#ifdef Int
-   #undef Int
-#endif
+    #ifdef Int
+        #undef Int
+    #endif
     #include "QCoreApplication"
     #include "QStringList"
     #include "QDir"
@@ -575,9 +575,12 @@ int CalcNbProcSys()
 #endif
 }
 
+extern int TheNbProcCom;
 int NbProcSys()
 {
-    static int aRes = ElMin(CalcNbProcSys(),MMUserEnv().NbMaxProc().Val());
+    if (TheNbProcCom>0) return TheNbProcCom;
+    static int aRes = CalcNbProcSys();
+    if ( MMUserEnv().NbMaxProc().IsInit() ) ElSetMin( aRes, MMUserEnv().NbMaxProc().Val() );
 
     return aRes;
 }
@@ -603,15 +606,19 @@ const cMMUserEnvironment & MMUserEnv()
     {
         std::string aName = XML_User_Or_MicMac("MM-Environment.xml");
 
-        cMMUserEnvironment aMME =  StdGetObjFromFile<cMMUserEnvironment>
+        if ( !ELISE_fp::exist_file(aName) )
+             aRes = new cMMUserEnvironment;
+        else
+        {
+             cMMUserEnvironment aMME =  StdGetObjFromFile<cMMUserEnvironment>
                                    (
                                        aName,
                                        StdGetFileXMLSpec("ParamChantierPhotogram.xml"),
                                        "MMUserEnvironment",
                                        "MMUserEnvironment"
-                    );
-        aRes = new cMMUserEnvironment(aMME);
-
+                                   );
+             aRes = new cMMUserEnvironment(aMME);
+        }
     }
     return *aRes;
 }
@@ -1176,7 +1183,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
                    itL++
             )
             {
-                cListOfName aLON = StdGetFromPCP(*itL,ListOfName);
+                cListOfName aLON = StdGetFromPCP(mDir+*itL,ListOfName);
                 InternalAddList(aLON.Name());
             }
 
@@ -1661,7 +1668,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
         }\
         const tType  * cStdChantierMultiManipulateur::SvpGet##tEntry(const std::string& anIdBase,const std::string& anIdVal) const\
     {\
-    for (int aK=mVM.size()-1 ; aK>=0 ; aK--)\
+    for (int aK = (int)(mVM.size() - 1) ; aK>=0 ; aK--)\
     {\
     const tType * aRes = mVM[aK]->SvpGet##tEntry(anIdBase,anIdVal);\
     if (aRes)  \
@@ -1877,14 +1884,37 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     }
 
 
-    std::string cInterfChantierNameManipulateur::StdKeyOrient(const tKey & aKeyOri)
-    {
-        if (AssocHasKey(aKeyOri)) return aKeyOri;
+std::string cInterfChantierNameManipulateur::StdKeyOrient(const tKey & aKeyOri)
+{
+   if (AssocHasKey(aKeyOri)) return aKeyOri;
 
-                std::string aKey = aKeyOri;
-                if (aKey.c_str()[0] != '-') aKey = "-" + aKey ;
-        return "NKS-Assoc-Im2Orient@" + aKey;
-    }
+   std::string aKey = aKeyOri;
+   if (aKey.c_str()[0] != '-') aKey = "-" + aKey ;
+   return "NKS-Assoc-Im2Orient@" + aKey;
+}
+
+
+std::string StdNameGBOrient(const std::string & anOri,const std::string & aName,bool AddMinus)
+{
+   return "Ori" + std::string(AddMinus?"-":"")+ anOri +"/GB-Orientation-" + aName  + ".xml";
+}
+std::string StdNameCSOrient(const std::string & anOri,const std::string & aName,bool AddMinus)
+{
+   return "Ori" + std::string(AddMinus?"-":"")+ anOri +"/Orientation-" + aName  + ".xml";
+}
+
+
+
+
+
+
+
+std::string cInterfChantierNameManipulateur::NameOriStenope(const tKey & aKeyOri,const std::string & aNameIm)
+{
+           std::string aKey = StdKeyOrient(aKeyOri);
+           return Assoc1To1(aKey,aNameIm,true);
+}
+ 
 
 
     std::vector<std::string>  cInterfChantierNameManipulateur::GetSetOfRel(const tKey & aKey,const std::string & aStr0,bool Sym)
@@ -2049,7 +2079,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     const cInterfChantierNameManipulateur::tSet *  cStdChantierMultiManipulateur::Get(const tKey & aKey)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1) ; aK>=0 ; aK--)
         {
             const tSet * aSet = mVM[aK]->Get(aKey);
             if (aSet!=0)
@@ -2073,7 +2103,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     const cBatchChantDesc *
         cStdChantierMultiManipulateur::BatchDesc(const tKey & aKey) const
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1) ; aK>=0 ; aK--)
         {
             const cBatchChantDesc  * aL = mVM[aK]->BatchDesc(aKey);
             if (aL!=0)
@@ -2087,7 +2117,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     const cShowChantDesc *
         cStdChantierMultiManipulateur::ShowChant(const tKey & aKey) const
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             const cShowChantDesc  * aL = mVM[aK]->ShowChant(aKey);
             if (aL!=0)
@@ -2101,7 +2131,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     cSetName *  cStdChantierMultiManipulateur::GetSet(const tKey & aKey)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             cSetName * aRes =  mVM[aK]->GetSet(aKey);
             if (aRes) return aRes;
@@ -2120,7 +2150,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
         cInterfChantierNameManipulateur  * ancetre
         )
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             cContenuAPrioriImage  * aRes = mVM[aK]->GetAPriori(aName,aKey,ancetre);
             if (aRes != 0)
@@ -2131,7 +2161,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     cStrRelEquiv *  cStdChantierMultiManipulateur::GetEquiv(const tKey & aKey)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             cStrRelEquiv * aRes = mVM[aK]->GetEquiv(aKey);
             if (aRes)
@@ -2146,7 +2176,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     const cInterfChantierNameManipulateur::tRel *
         cStdChantierMultiManipulateur::GetRel(const tKey & aKey)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             if ( mVM[aK]->RelHasKey(aKey))
                 return mVM[aK]->GetRel(aKey);
@@ -2337,7 +2367,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     {
         cTplValGesInit<cResBoxMatr> aRes;
 
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             aRes = mVM[aK]->GetBoxOfMatr(aKey,aName);
             if (aRes.IsInit())
@@ -2353,7 +2383,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     bool  cStdChantierMultiManipulateur::AssocHasKey(const tKey & aKey) const
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             if ( mVM[aK]->AssocHasKey(aKey))
                 return true;
@@ -2364,7 +2394,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     bool  cStdChantierMultiManipulateur::SetHasKey(const tKey & aKey) const
     {
 
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             if ( mVM[aK]->SetHasKey(aKey))
                 return true;
@@ -2373,7 +2403,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
         std::string aKeySsArb,aNameSubDir;
         SplitIn2ArroundCar(aKey,'@',aKeySsArb,aNameSubDir,true);
 
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             if ( mVM[aK]->SetHasKey(aKeySsArb))
                 return true;
@@ -2383,7 +2413,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     bool  cStdChantierMultiManipulateur::RelHasKey(const tKey & aKey)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             if ( mVM[aK]->RelHasKey(aKey))
                 return true;
@@ -2396,7 +2426,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
 
     const bool  *  cStdChantierMultiManipulateur::SetIsIn(const tKey & aKey,const std::string & aName)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1) ; aK>=0 ; aK--)
         {
             const bool * aRes = mVM[aK]->SetIsIn(aKey,aName);
             if (aRes!=0)
@@ -2410,7 +2440,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     cInterfChantierNameManipulateur::tNuplet
         cStdChantierMultiManipulateur::Direct(const tKey & aKey,const tNuplet& aNuple)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             tNuplet  aRes = mVM[aK]->Direct(aKey,aNuple);
             if (cInterfNameCalculator::IsDefined(aRes))
@@ -2436,7 +2466,7 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     cInterfChantierNameManipulateur::tNuplet
         cStdChantierMultiManipulateur::Inverse(const tKey & aKey,const tNuplet& aNuple)
     {
-        for (int aK=mVM.size()-1 ; aK>=0 ; aK--)
+        for (int aK = (int)(mVM.size() - 1); aK>=0 ; aK--)
         {
             tNuplet  aRes = mVM[aK]->Inverse(aKey,aNuple);
             if (cInterfNameCalculator::IsDefined(aRes))
@@ -2487,12 +2517,17 @@ const cInterfChantierSetNC::tSet  * cSetName::Get()
     std::string current_program_fullname()   { return CurrentProgramFullName;}
     std::string current_program_subcommand() { return CurrentProgramSubcommand;}
 
-    bool MPD_MM()
+    bool (MPD_MM())
     {
-        //static bool aRes = ELISE_fp::exist_file(MMDir()+"MPD.txt");
         static bool aRes = MMUserEnv().UserName().Val() == "MPD";
         return aRes;
     }
+    bool ERupnik_MM()
+    {
+        static bool aRes = MMUserEnv().UserName().Val() == "ERupnik";
+        return aRes;
+    }
+
 
 bool DebugConvCal() {return false;}
 
@@ -2500,7 +2535,7 @@ bool DebugConvCal() {return false;}
     string MMQtLibraryPath()
     {
         #if defined(__APPLE__) || defined(__MACH__)
-            return MMDir()+"Frameworks";
+            return MMDir() + "Frameworks";
 		#elif ELISE_windows
 			return MMBin();
         #endif
@@ -2508,10 +2543,11 @@ bool DebugConvCal() {return false;}
     }
 
     // there is alway one path in the list to avoid multiple library loading
-    void setQtLibraryPath( const string &i_path )
-    {
+    void setQtLibraryPath(const string &i_path)
+	{
         QString path( i_path.c_str() );
         if ( !QDir(path).exists() ) cerr << "WARNING: setQtLibraryPath(" << i_path << "): path does not exist" << endl;
+
         QCoreApplication::setLibraryPaths( QStringList(path) );
     }
 
@@ -2519,8 +2555,17 @@ bool DebugConvCal() {return false;}
     // used by mm3d and SaisieQT
     void initQtLibraryPath()
     {
+        // set to install plugins directory if it exists
+        const string installPlugins = QT_INSTALL_PLUGINS;
+        if ( !installPlugins.empty() && QDir( QString(installPlugins.c_str())).exists() )
+        {
+            setQtLibraryPath(installPlugins);
+            return;
+        }
+
         // set to deployment path if it exists
-        string deploymentPath = MMQtLibraryPath();
+        const string deploymentPath = MMQtLibraryPath();
+
         if ( !deploymentPath.empty() && QDir( QString(deploymentPath.c_str())).exists() )
         {
             setQtLibraryPath(deploymentPath);
@@ -2592,7 +2637,7 @@ bool DebugConvCal() {return false;}
 
         std::string aPref = aSplit[0];
         std::string aStrNum1 = aSplit[1];
-        int aNbDig = aStrNum1.size();
+        int aNbDig = (int)aStrNum1.size();
         int aVMax = round_ni(pow(10.0,aNbDig));
         int aNum1;
         FromString(aNum1,aStrNum1);
@@ -2701,11 +2746,11 @@ aKeyOrFile         :
 
 
 
-std::list<std::string>
-        cInterfChantierNameManipulateur::StdGetListOfFile
+std::list<std::string> cInterfChantierNameManipulateur::StdGetListOfFile
         (
            const std::string & aKeyOrPat,
-           int aProf
+           int aProf,
+           bool ErrorWhenEmpty
         )
 {
         if (SetHasKey(aKeyOrPat))
@@ -2736,8 +2781,11 @@ std::list<std::string>
                 aRes.push_back(aKeyOrPat);
                 return aRes;
             }
-            std::cout << "For Key-Or-Pat=" << aKeyOrPat << " Dir= " << mDir << "\n";
-            ELISE_ASSERT(false,"Empty list for StdGetListOfFile");
+            if (ErrorWhenEmpty)
+            {
+               std::cout << "For Key-Or-Pat=" << aKeyOrPat << " Dir= " << mDir << "\n";
+               ELISE_ASSERT(false,"Empty list for StdGetListOfFile");
+            }
         }
         return aRes;
 }
@@ -2807,7 +2855,8 @@ cInterfChantierNameManipulateur* cInterfChantierNameManipulateur::BasicAlloc(con
       cTplValGesInit<std::string> aNoName;
       aRes =  StdAlloc(0,0,aDir,aNoName);
       TheMap[aDir] = aRes;
-   } 
+   }
+
    return aRes;
 }
 
@@ -3138,7 +3187,7 @@ void cStdChantierRel::AddAllCpleKeySet
                 */
 
                 for (int  aKB= aKB0 ;aKB<=aKB1 ; aKB++)
-                    aVKB.push_back(mod(aKB,aSetB->size()));
+                    aVKB.push_back(mod(aKB, (int)aSetB->size()));
             }
             else
             {
@@ -3444,7 +3493,7 @@ void cStdChantierRel::AddAllCpleKeySet
             cComputeFiltreRelOr aCFO(itA->Filtre(),mICNM);
 
             // cComputeFiltreRelSsEch * aFSsEch = 0;
-            int aNbSet = itA->KeySets().size();
+            int aNbSet = (int)itA->KeySets().size();
             int aDefDeltaMin = (aNbSet==2) ? -1000000 : 0;
             int aDeltaMin = itA->DeltaMin().ValWithDef(IntSubst(aDefDeltaMin)).Val();
             int aDeltaMax = itA->DeltaMax().Val().Val();
@@ -3930,7 +3979,7 @@ Tiff_Im PastisTif(const std::string &  aNameOri)
     ElCamera * & cResulMSO::Cam()           {return mCam;}
     cElNuage3DMaille * & cResulMSO::Nuage() {return mNuage;}
     bool   & cResulMSO::IsKeyOri()          {return mIsKeyOri;}
-    cCapture3D * & cResulMSO::Capt3d()      {return mCapt3d;}
+    cBasicGeomCap3D * & cResulMSO::Capt3d()      {return mCapt3d;}
 
 
 bool  cInterfChantierNameManipulateur::TestStdOrient
@@ -3947,7 +3996,7 @@ bool  cInterfChantierNameManipulateur::TestStdOrient
 
         string inputDirectory = ( isUsingSeparateDirectories()?MMOutputDirectory():mDir );
         std::string aDir = inputDirectory + aManquant + anOri + ELISE_CAR_DIR;
-        std::list<std::string> aL = RegexListFileMatch(aDir,"(Orientation-|AutoCal).*\\.xml",2,false);
+        std::list<std::string> aL = RegexListFileMatch(aDir,".*(GB-Orientation-|Orientation-|AutoCal).*\\.(xml|XML)",2,false);
         // std::list<std::string> aL = RegexListFileMatch(mDir,aManquant + anOri+ "(Orientation-|AutoCal).*\\.xml",2);
 
         // std::cout << "3-ttTEST " <<  aDir  << " " << aL.size() << "\n";
@@ -3966,7 +4015,7 @@ void cInterfChantierNameManipulateur::CorrecNameOrient(std::string & aNameOri)
 {
     if (aNameOri=="NONE") return;
 
-    int aL = strlen(aNameOri.c_str());
+    int aL = (int)strlen(aNameOri.c_str());
     if (aL && (aNameOri[aL-1]==ELISE_CAR_DIR))
     {
         aNameOri = aNameOri.substr(0,aL-1);
@@ -3989,6 +4038,8 @@ void cInterfChantierNameManipulateur::CorrecNameOrient(std::string & aNameOri)
 
 cResulMSO cInterfChantierNameManipulateur::MakeStdOrient(std::string & anOri,bool AccepNone,std::string * aNameIm)
 {
+       std::string anOriInit = anOri;
+
         cResulMSO  aResult;
         if (AccepNone && (anOri=="NONE"))
             return aResult;
@@ -4032,7 +4083,7 @@ cResulMSO cInterfChantierNameManipulateur::MakeStdOrient(std::string & anOri,boo
 
 
         const char * aC = anOri.c_str();
-        int aL = strlen(aC);
+        int aL = (int)strlen(aC);
         if ((aL!=0) &&  (aC[aL-1] == ELISE_CAR_DIR))
         {
             anOri = anOri.substr(0,aL-1);
@@ -4048,6 +4099,21 @@ cResulMSO cInterfChantierNameManipulateur::MakeStdOrient(std::string & anOri,boo
             aResult.IsKeyOri() = true;
             return aResult;
         }
+
+
+       if (aNameIm)
+       {
+            // On recoit NKS-Assoc-Im2Orient@-BundleCorrec-Deg2
+            static cElRegex aSuprNKS("NKS-Assoc-Im2Orient@-(.*)",10);
+            if (aSuprNKS.Match(anOriInit))
+            {
+                 std::string anOri = aSuprNKS.KIemeExprPar(1);
+                 cBasicGeomCap3D * aBGC = StdCamGenOfNames(anOri,*aNameIm);
+                 
+                 aResult.Capt3d() = aBGC;
+                 return aResult;
+            }
+       }
 
         std::cout << "For Key = " << anOri << "\n";
         ELISE_ASSERT
@@ -4101,7 +4167,7 @@ std::vector<std::string> cInterfChantierNameManipulateur::StdGetVecStr(const std
 void StdCorrecNameHomol(std::string & aNameH,const std::string & aDir)
 {
 
-    int aL = strlen(aNameH.c_str());
+    int aL = (int)strlen(aNameH.c_str());
     if (aL && (aNameH[aL-1]==ELISE_CAR_DIR))
     {
         aNameH = aNameH.substr(0,aL-1);

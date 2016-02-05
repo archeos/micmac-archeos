@@ -53,6 +53,7 @@ template <class Type> class El_CTypeTraits
         public :
                 typedef Type  tVal;
                 typedef Type  tBase;
+                typedef Type  tBase4Bytes;
                 enum   {eSizeOf = 1111};
                 static tVal  RawDataToVal(U_INT1 *);
         private :
@@ -71,6 +72,7 @@ static std::string   Name() {return "U_INT1";}
 
                 typedef U_INT1  tVal;
                 typedef INT     tBase;
+                typedef INT     tBase4Bytes;
                        static tVal Tronque(tBase aVal) {return ElMax(tBase(eVMin),ElMin(tBase(eVMax),aVal));}
 static tVal TronqueR(double aVal)
 {
@@ -97,6 +99,7 @@ template <> class El_CTypeTraits<U_INT2>
 static std::string   Name() {return "U_INT2";}
                 typedef U_INT2  tVal;
                 typedef INT     tBase;
+                typedef INT     tBase4Bytes;
                 static bool IsIntType() {return true;}
                        static tVal Tronque(tBase aVal) {return ElMax(tBase(eVMin),ElMin(tBase(eVMax),aVal));}
 static tVal TronqueR(double aVal)
@@ -144,6 +147,7 @@ static std::string   Name() {return "INT2";}
                      static Fonc_Num TronqueF(Fonc_Num aFonc) {return Max(tBase(eVMin),Min(tBase(eVMax),aFonc));}
                 typedef INT2  tVal;
                 typedef INT     tBase;
+                typedef INT     tBase4Bytes;
                 static bool IsIntType() {return true;}
                        static tVal Tronque(tBase aVal) {return ElMax(tBase(eVMin),ElMin(tBase(eVMax),aVal));}
 static tVal TronqueR(double aVal)
@@ -172,6 +176,7 @@ static std::string   Name() {return "INT1";}
 
                 typedef INT1   tVal;
                 typedef INT    tBase;
+                typedef INT     tBase4Bytes;
                 static bool IsIntType() {return true;}
                        static tVal Tronque(tBase aVal) {return ElMax(tBase(eVMin),ElMin(tBase(eVMax),aVal));}
 static tVal TronqueR(double aVal)
@@ -197,6 +202,7 @@ template <> class El_CTypeTraits<INT>
 static std::string   Name() {return "INT";}
                 typedef INT   tVal;
                 typedef INT   tBase;
+                typedef INT     tBase4Bytes;
                 static bool IsIntType() {return true;}
                        static tVal Tronque(tBase aVal) {return aVal;}
 static tVal TronqueR(double aVal) { return round_ni(aVal); }
@@ -220,6 +226,7 @@ template <> class El_CTypeTraits<REAL4>
 static std::string   Name() {return "REAL4";}
                 typedef REAL4   tVal;
                 typedef REAL8   tBase;
+                typedef REAL4   tBase4Bytes;
                 static bool IsIntType() {return false;}
                                 enum   {
                                           eSizeOf = 4,
@@ -242,6 +249,7 @@ template <> class El_CTypeTraits<REAL8>
 static std::string   Name() {return "REAL8";}
                 typedef REAL8   tVal;
                 typedef REAL8   tBase;
+                typedef REAL4   tBase4Bytes;
                 static bool IsIntType() {return false;}
                                 enum   {
                                           eSizeOf = 8,
@@ -260,6 +268,7 @@ template <> class El_CTypeTraits<REAL16>
 static std::string   Name() {return "REAL16";}
                 typedef REAL16   tVal;
                 typedef REAL16   tBase;
+                typedef REAL4    tBase4Bytes;
                 static bool IsIntType() {return false;}
                                 enum   {
                                           eSizeOf = 16,
@@ -1283,6 +1292,11 @@ ElMatrix<REAL>  VectRotationArroundAxe(const Pt3dr &,double aTeta);
 ElRotation3D  AffinRotationArroundAxe(const ElSeg3D &,double aTeta);
 ElRotation3D RotationOfInvariantPoint(const Pt3dr & ,const ElMatrix<double> &);
 
+ElMatrix<REAL> VecKern ( const ElMatrix<REAL> & aMat);
+ElMatrix<REAL> VecOfValP(const ElMatrix<REAL> & aMat,REAL aVP);
+Pt3dr AxeRot(const ElMatrix<REAL> & aMat);
+
+
 double ProfFromCam(const ElRotation3D & anOr,const Pt3dr & aP);  // anOr M->C
 
 
@@ -1995,6 +2009,10 @@ class cElBitmFont
        static  cElBitmFont & BasicFont_10x8();
        virtual Im2D_Bits<1> ImChar(char) = 0;
        virtual ~cElBitmFont();
+
+       Im2D_Bits<1> BasicImageString(const std::string & ,int aSpace);
+       Im2D_Bits<1> MultiLineImageString(const std::string & aStrInit,Pt2di  aSpace,Pt2di aRab,int Centering);
+
     private :
       static class cElImplemBitmFont * theFont_10x8;
 };
@@ -2008,6 +2026,34 @@ class cIm2DInter
        virtual int  SzKernel() const = 0;
        virtual ~cIm2DInter(){}
 };
+
+
+// Calcul robuste d'un element moyen comme etant celui qui minimise la somme des distance
+class cComputecKernelGraph
+{
+    public :
+         cComputecKernelGraph();
+         void SetN(int aN);
+         void AddCost(int aK1,int aK2,double aPds1,double aPds2,double aDist);
+
+
+         int GetKernel();
+         int GetKernelGen();
+
+         // void DupIn(const cComputecKernelGraph & );
+    private :
+         Im2D_REAL8      mPdsArc;
+         Im2D_REAL8      mCostArc;
+         Im1D_REAL8      mPdsSom;
+         Im1D_REAL8      mCostSom;
+
+         double **       mDPdsArc;
+         double **       mDCostArc;
+         double *        mDPdsSom;
+         double *        mDCostSom;
+         int             mNb;
+};
+
 
 
 #define TBASE typename El_CTypeTraits<tData>::tBase

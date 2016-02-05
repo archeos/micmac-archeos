@@ -1,12 +1,10 @@
 #include "StdAfx.h"
 
-#include <fstream>
-
 using namespace std;
 
 unsigned char DigeoPoint::sm_uchar_descriptor[DIGEO_DESCRIPTOR_SIZE];
 REAL8 DigeoPoint::sm_real8_descriptor[DIGEO_DESCRIPTOR_SIZE];
-unsigned int DigeoPoint::nbDetectTypes = (int)DigeoPoint::DETECT_UNKNOWN+1; // this is why DETECT_UNKNOWN must stay the last of the enum
+const unsigned int DigeoPoint::nbDetectTypes = 3; // this is why DETECT_UNKNOWN must stay the last of the enum
 
 /*
 class DigeoFileHeader : public VersionedFileHeader
@@ -242,11 +240,21 @@ bool DigeoPoint::readDigeoFile( const string &i_filename, bool i_allowMultipleAn
 	if ( o_header!=NULL ) *o_header=header;
 	bool reverseByteOrder = ( header.isMSBF()!=MSBF_PROCESSOR() );
 
-	switch ( header.version() ){
-	case 0: readDigeoFile_v0( f, i_allowMultipleAngles, o_list ); break;
-	case 1: readDigeoFile_v1( f, reverseByteOrder, i_allowMultipleAngles, o_list ); break;
-	default: cerr << "ERROR: writeDigeoFile : unkown version number " << header.version() << endl; return false;
+	try
+	{
+		switch ( header.version() )
+		{
+		case 0: readDigeoFile_v0( f, i_allowMultipleAngles, o_list ); break;
+		case 1: readDigeoFile_v1( f, reverseByteOrder, i_allowMultipleAngles, o_list ); break;
+		default: cerr << "ERROR: writeDigeoFile : unkown version number " << header.version() << endl; return false;
+		}
 	}
+	catch ( const bad_alloc & )
+	{
+		ELISE_DEBUG_ERROR(true, "DigeoPoint::readDigeoFile", "not enough memory to load file [" << i_filename << ']');
+		return false;
+	}
+
 	return true;
 }
 
@@ -320,7 +328,7 @@ bool DigeoPoint::writeDigeoFile( const string &i_filename, const vector<DigeoPoi
 
 	switch( i_version ){
 	case 0: writeDigeoFile_v0( f, i_list ); break;
-	case 1: writeDigeoFile_v1( f, i_list, i_writeBigEndian ); break;
+	case 1: writeDigeoFile_v1( f, i_list, i_writeBigEndian!=MSBF_PROCESSOR() ); break;
 	default: cerr << "ERROR: writeDigeoFile : unkown version number " << i_version << endl; return false;
 	};
 
@@ -343,7 +351,7 @@ void DigeoPoint::uniqueToMultipleAngles( vector<DigeoPoint> &io_points )
 {
 	DigeoPoint *itPrevious = io_points.data(),
 	           *itCurrent = io_points.data()+1;
-	unsigned int nbPoints = io_points.size(),
+	unsigned int nbPoints = (unsigned int)io_points.size(),
 	             i = nbPoints-1;
 	if ( nbPoints==0 ) return;
 	while ( i-- )
@@ -529,6 +537,35 @@ void DigeoPoint::removePointsOfType( DetectType i_type, vector<DigeoPoint> &io_p
 	}
 	io_points.swap( res );
 }
+
+double distance2_128( const REAL8 *a, const REAL8 *b )
+{
+	double result = 0., d;
+	int i = 128;
+	while ( i-- )
+	{
+		d = (*a++)-(*b++);
+		result += d*d;
+	}
+	return result;
+}
+
+double DigeoPoint::minDescriptorDistance2( const DigeoPoint &aPoint ) const
+{
+	double minDistance2 = numeric_limits<double>::max();
+	const Entry *itEntry0 = aPoint.entries.data();
+	size_t iEntry0 = aPoint.entries.size();
+	while ( iEntry0-- )
+	{
+		const REAL8 *descriptor0 = itEntry0->descriptor;
+		const Entry *itEntry1 = entries.data();
+		size_t iEntry1 = entries.size();
+		while ( iEntry1-- )
+			ElSetMin( minDistance2, distance2_128( (*itEntry1++).descriptor, descriptor0 ) );
+	}
+	return minDistance2;
+}
+
 
 // --------------------------------------------------------------
 // DigeoPoint related functions

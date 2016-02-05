@@ -22,8 +22,9 @@ INCLUDE_DIRECTORIES(${SAISIE_DIR}/include_QT)
                     ${SAISIE_DIR}/Settings.cpp
                     ${SAISIE_DIR}/QT_interface_Elise.cpp
                     ${SAISIE_DIR}/Tree.cpp
-		    ${SAISIE_DIR}/mmglu.cpp
-		    ${SAISIE_DIR}/WorkbenchWidget.cpp
+                    ${SAISIE_DIR}/mmglu.cpp
+                    ${SAISIE_DIR}/WorkbenchWidget.cpp
+                    ${SAISIE_DIR}/MipmapHandler.cpp
 )
 
 if ( ${qt_version} EQUAL 4)
@@ -94,7 +95,9 @@ endif()
          add_definitions(${Qt5Widgets_DEFINITIONS})
 
         # Add compiler flags for building executables (-fPIE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+        if (NOT MSVC)
+           set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+        endif()
 
       endif()
 

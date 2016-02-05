@@ -2,12 +2,14 @@
 
 set(SAN_DIR "SAN")
 set(AMD_DIR "AMD")
+set(XERES_DIR "Xeres")
 set(HASSA_DIR "HassanArrangt")
 set(XINTER_DIR "xinterf")
 set(VECTO_DIR "vectorize")
 set(UTIL_DIR "util")
 set(DocEx "doc_ex")
 set(TDPPMD_DIR "TpMMPD")
+set(TNR_DIR "TNR")
 set(TIFF_DIR "tiff")
 set(SIMULPH_DIR "SimulPhgr")
 set(PSC_DIR "post_script")
@@ -47,6 +49,7 @@ set(UTI_ETAPOLY_DIR "EtalonnagePolygone")
 set(POISSON_DIR ${PROJECT_SOURCE_DIR}/CodeExterne/Poisson/)
 
 INCLUDE (${AMD_DIR}/Sources.cmake)
+INCLUDE (${XERES_DIR}/Sources.cmake)
 INCLUDE (${HASSA_DIR}/Sources.cmake)
 INCLUDE (${SAN_DIR}/Sources.cmake)
 INCLUDE (${SIMULPH_DIR}/Sources.cmake)
@@ -86,6 +89,7 @@ INCLUDE (${TIFF_DIR}/Sources.cmake)
 INCLUDE (${TOP_DIR}/Sources.cmake)
 INCLUDE (${UTIL_DIR}/Sources.cmake)
 INCLUDE (${TDPPMD_DIR}/Sources.cmake)
+INCLUDE (${TNR_DIR}/Sources.cmake)
 INCLUDE (${DocEx}/Sources.cmake)
 INCLUDE (${VECTO_DIR}/Sources.cmake)
 INCLUDE (${XINTER_DIR}/Sources.cmake)
@@ -123,7 +127,6 @@ enable_precompiled_headers_msvc(StdAfx.h Elise_Src_Files)
 # fichiers qui n'utilisent pas les en tetes precompilées
 set(Elise_Src_Files
 	${Elise_Src_Files}
-	${UTIL_DIR}/win_regex.c
 	${TIFF_DIR}/el_dcraw.c
 	${OPTIM_DIR}/opt_mat_creuse.cpp
 	${OPTIM_DIR}/opt_sysl2.cpp
@@ -133,6 +136,10 @@ set(Elise_Src_Files
 	${MULLGES_DIR}/muvmblock.cpp
 	${ORIPHO_DIR}/cOriMntCarto.cpp
 )
+
+if ( ${CMAKE_SYSTEM_NAME} STREQUAL "Windows" )
+	set(Elise_Src_Files ${Elise_Src_Files} ${UTIL_DIR}/win_regex.c)
+endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
 

@@ -29,7 +29,7 @@
        VerticaleStandard="${XVertStd} ${YVertStd} ${ZVertStd}"
 
        PNumCV2="[0-9]{2,3}_[0-9]{4,5}"
-       PostFixImPoly="(|\.tif|_8Bits\.tif)"
+       PostFixImPoly="($|\.tif|_8Bits\.tif)"
        PostFix8BImPoly="_8Bits\.tif"
        EF=" *-?[0-9]+\\.?[0-9]*"
        EIU="[0-9]+"
@@ -51,6 +51,19 @@
 *                                                               *
 *                                                               *
  *********************************************************** -->
+
+    <KeyedNamesAssociations>
+             <IsParametrized>  true </IsParametrized>
+            <Calcs>
+                 <Arrite>  1 1 </Arrite>
+                 <Direct>
+                       <PatternTransform> (.*) </PatternTransform>
+                       <CalcName> DepX_Zoom#1.tif </CalcName>
+                       <CalcName> DepY_Zoom#1.tif </CalcName>
+                 </Direct>
+             </Calcs>
+             <Key>   NKS-NameMapsDeplacement </Key>
+      </KeyedNamesAssociations>
 
 <!--   HOMOGRAPHY-COMPUTING
 
@@ -298,6 +311,19 @@
         <Key>   NKS-Assoc-SFS </Key>
     </KeyedNamesAssociations>
 
+    <!-- Cas des images devant etre tournee au devlpt -->
+    <KeyedNamesAssociations>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> .* </PatternTransform>
+                <CalcName>  0 </CalcName>
+            </Direct>
+        </Calcs>
+        <Key>   NKS-Assoc-DevlptAutoRot </Key>
+    </KeyedNamesAssociations>
+
+
 
     <KeyedNamesAssociations>
         <Calcs>
@@ -476,6 +502,75 @@
         <Key>   NKS-Assoc-Im2Orient </Key>
 	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
     </KeyedNamesAssociations>
+
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  Ori#1/UnCorMM-Orientation-$1.xml  </CalcName>
+             </Direct>
+             <Inverse>
+                  <PatternTransform> Ori#1/UnCorMM-Orientation-(.*).xml  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
+             </Inverse>
+        </Calcs>
+
+
+        <Key>   NKS-Assoc-Im2UnCorMMOrient </Key>
+	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
+    </KeyedNamesAssociations>
+
+
+    <KeyedNamesAssociations>
+        <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  Ori#1/GB-Orientation-$1.xml  </CalcName>
+             </Direct>
+             <Inverse>
+                  <PatternTransform> Ori#1/GB-Orientation-(.*).xml  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
+             </Inverse>
+        </Calcs>
+
+
+        <Key>   NKS-Assoc-Im2GBOrient </Key>
+	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
+    </KeyedNamesAssociations>
+
+
+
+
+
+
+
+    <KeyedNamesAssociations>
+    <IsParametrized>  true </IsParametrized>
+        <Calcs>
+            <Arrite>  1 1 </Arrite>
+            <Direct>
+                <PatternTransform> (.*) </PatternTransform>
+                <CalcName>  Ori#1/UnCorExtern-Orientation-$1.xml  </CalcName>
+             </Direct>
+             <Inverse>
+                  <PatternTransform> Ori#1/UnCorExtern-Orientation-(.*).xml  </PatternTransform>
+                   <CalcName>  $1  </CalcName>
+             </Inverse>
+        </Calcs>
+
+
+        <Key>   NKS-Assoc-Im2UnCorExternOrient </Key>
+	<SubDirAutoMake> Ori#1 </SubDirAutoMake>
+    </KeyedNamesAssociations>
+
+
+
+
+
 
     <!-- C'est quasiment la meme qie NKS-Assoc-Im2Orient,  mais pas SubDirAutoMake
         pas tres elegant comme duplication, mais bon ....  -->
@@ -2592,12 +2687,23 @@
             <Calcs>
                  <Arrite>  1 1 </Arrite>
                  <Direct>
+                       <PatternTransform> OIS-Reech_.*  </PatternTransform>
+                       <CalcName> NONE </CalcName>
+                       <CalcName> NONE </CalcName>
+                 </Direct>
+             </Calcs>
+            <Calcs>
+                 <Arrite>  1 1 </Arrite>
+                 <Direct>
                        <PatternTransform> .*  </PatternTransform>
                        <CalcName> Ori-InterneScan/MeasuresCamera.xml </CalcName>
                        <CalcName> Ori-InterneScan/MeasuresIm-$0.xml </CalcName>
                  </Direct>
              </Calcs>
+
+
              <Key>   Key-Assoc-STD-Orientation-Interne </Key>
+             <SubDirAutoMake> Ori-InterneScan </SubDirAutoMake>
     </KeyedNamesAssociations>
 
 
@@ -2969,6 +3075,8 @@
         <Key>  KeyStd-Assoc-H2H-SplitBin </Key>
         <SubDirAutoMakeRec> true </SubDirAutoMakeRec>
     </KeyedNamesAssociations>
+
+
 
 
 

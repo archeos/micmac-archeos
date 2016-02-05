@@ -3524,7 +3524,7 @@ cDistFromCIC::cDistFromCIC
 
 
     const std::vector<cCalibDistortion> &aVCD = aCIC.CalibDistortion();
-    int aNbD = aVCD.size();
+    int aNbD = (int)aVCD.size();
 
 
     std::vector<ElDistortion22_Gen *> aV2D;
@@ -4233,12 +4233,13 @@ int XML_orlit_fictexte_orientation (const char *fic, or_orientation *ori,bool Qu
            double aDDiscr = ElMin(aDMinGrid,euclid(anOI.SzIm())/aNbGrid);
           ori->mCorrDistM2C = new cDbleGrid
                          (
-                      true,
-                      aBoxMonde._p0 - aRab,
+                                false,  // P0P1 DIrect : false car Monde 2 Cam
+                             true,
+                             aBoxMonde._p0 - aRab,
                               aBoxMonde._p1 + aRab,
-                  Pt2dr(aDDiscr,aDDiscr),
-                               aDFC  ,// aC2.mDistC2M,
-                  "toto"
+                              Pt2dr(aDDiscr,aDDiscr),
+                              aDFC  ,// aC2.mDistC2M,
+                              "toto"
                  );
      }
      else
@@ -4487,7 +4488,15 @@ CamStenope * CamOrientGenFromFile(const std::string & aNameFile, cInterfChantier
    if ( isUsingSeparateDirectories() )
       aFullFileName = MMOutputDirectory()+aNameFile;
    else
+   {
+      std::string aName0 = aNameFile;
       aFullFileName = (anICNM ? anICNM->Dir() : "") + aNameFile;
+      if ( (!ELISE_fp::exist_file(aFullFileName)) && (ELISE_fp::exist_file(aName0)))
+      {
+         aFullFileName = aName0;
+      }
+   }
+
 
     cElXMLTree aTree(aFullFileName);
     cElXMLTree * aF1 = aTree.Get("CalibrationInternConique");
@@ -4574,6 +4583,7 @@ ElCamera * Gen_Cam_Gen_From_XML (bool CanUseGr,const cOrientationConique  & anOC
 
          if (CanUseGr && (! aCS->IsGrid()))
          {
+// MPD_MM_BRK("GRID CREATEEEEE");
              Pt2dr aStepGr (20,20);
              if (aCIC.ParamForGrid().IsInit())
              {
@@ -4590,11 +4600,13 @@ ElCamera * Gen_Cam_Gen_From_XML (bool CanUseGr,const cOrientationConique  & anOC
           ELISE_ASSERT(anOC.FileInterne().IsInit(),"Cam_Gen_From_XML, Interne :  ni Val ni File");
           std::string  aName = anOC.FileInterne().Val();
 
+
           if (anICNM)
           {
-                 string outputDirectory = ( isUsingSeparateDirectories()?MMOutputDirectory():anICNM->Dir() );
+             string outputDirectory = ( isUsingSeparateDirectories()?MMOutputDirectory():anICNM->Dir() );
              if (anOC.RelativeNameFI().Val())
              {
+
                 std::string aNewName = outputDirectory+aName;
                 if (ELISE_fp::exist_file(aNewName))
                 {
@@ -4609,8 +4621,16 @@ ElCamera * Gen_Cam_Gen_From_XML (bool CanUseGr,const cOrientationConique  & anOC
                    }
                    else
                    {
-                       std::cout << "With dir = " <<  outputDirectory  << " and file = " << aName << "\n";
-                       ELISE_ASSERT(false,"Cannot get internal file");
+                       aNewName = outputDirectory + aDir + NameWithoutDir(aName);
+                       if (ELISE_fp::exist_file(aNewName))
+                       {
+                             aName = aNewName;
+                       }
+                       else
+                       {
+                           std::cout << "With dir = " <<  outputDirectory  << " and file = " << aName  << " and Dir Subst " << aDir << "\n";
+                           ELISE_ASSERT(false,"Cannot get internal file");
+                       }
                    }
                 }
              }

@@ -1,6 +1,11 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+//~ #define USE_MIPMAP_HANDLER
+
+#ifdef USE_MIPMAP_HANDLER
+	#include "MipmapHandler.h"
+#endif
 
 #include "cgldata.h"
 
@@ -76,9 +81,14 @@ public:
 
     GlCloud*    loadCloud(string i_ply_file , int *incre = NULL);
 
-	void        loadImage(QString aNameFile, QMaskedImage *maskedImg, float scaleFactor = 1.f);
-
-	void        loadMask(QString aNameFile, QMaskedImage *maskedImg, float scaleFactor = 1.f);
+#ifdef USE_MIPMAP_HANDLER
+	bool        reloadImage( MipmapHandler::Mipmap &aImage );
+	bool        loadImage( MipmapHandler::Mipmap &aImage );
+	MipmapHandler::Mipmap * loadImage( const std::string &aFilename, float scaleFactor = 1.f);
+#else
+	void loadImage(QString aNameFile, QMaskedImage *maskedImg, float scaleFactor = 1.f);
+	void loadMask(QString aNameFile, QMaskedImage *maskedImg, float scaleFactor = 1.f);
+#endif
 
     void        setFilenames(QStringList const &strl);
     void        setFilenameOut(QString str);
@@ -97,11 +107,24 @@ public:
 	deviceIOImage* devIOImageAlter() const;
 	void setDevIOImageAlter(deviceIOImage* devIOImageAlter);
 
+#ifdef USE_MIPMAP_HANDLER
+	void setMaxLoadMipmap( size_t aMaxLoadedMipmap ){ _mipmapHandler.setMaxLoaded(aMaxLoadedMipmap); }
+	
+	void setForceGrayMipmap( bool aForceGray ){ _forceGrayMipmap = aForceGray; }
+	
+	std::string getMaskFilename( const string &aImageFilename ) const;
+#endif
+
 private:
 	QStringList _FilenamesIn;
 	QStringList _FilenamesOut; //binary masks
 	QStringList _SelectionOut; //selection infos
     QString     _postFix;
+
+#ifdef USE_MIPMAP_HANDLER
+	MipmapHandler _mipmapHandler;
+	bool _forceGrayMipmap;
+#endif
 
 	deviceIOCamera* _devIOCamera;
 
@@ -129,7 +152,11 @@ public:
     ~cEngine();
 
     //! Set appli params
-    void    setParams(cParameters *params){ _params = params; }
+	#ifdef USE_MIPMAP_HANDLER
+		void    setParams(cParameters *params);
+	#else
+		void    setParams(cParameters *params){ _params = params; }
+	#endif
 
     //! Set input filenames
     void    setFilenames(QStringList const &strl){ _Loader->setFilenames(strl); }
@@ -188,8 +215,9 @@ public:
 
     //!sends GLObjects to GLWidget
     cGLData* getGLData(int WidgetIndex);
+    const cGLData * getGLData(int WidgetIndex) const;
 
-    int     nbGLData(){return (int)_vGLData.size();}
+    int     nbGLData() const {return _vGLData.size();}
 
 	float	computeScaleFactor(QStringList &filenames);
     bool    extGLIsSupported(const char *strExt);
@@ -197,6 +225,18 @@ public:
 
 	cLoader* Loader() const;
 	void setLoader(cLoader* Loader);
+
+#ifdef USE_MIPMAP_HANDLER
+	int nbImages()
+	{
+		ELISE_DEBUG_ERROR(_Data == NULL, "Engine::nbImages", "_Data == NULL");
+		return _Data->getNbImages();
+	}
+
+	int minLoadedGLDataId() const;
+
+	void getGLDataIdSet( int aI0, int aI1, bool aIsLoaded, size_t aNbRequestedWidgets, std::vector<int> &oIds ) const;
+#endif
 
 private:
 

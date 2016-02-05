@@ -61,6 +61,11 @@ ostream & operator << (ostream & ofs,const Pt2df  &p)
       return ofs;
 }                        
 
+ostream & operator << (ostream & ofs,const Pt2dUi2  &p)
+{
+      ofs << "[" << p.x << "," << p.y <<"]";
+      return ofs;
+}                        
 
 
 ostream & operator << (ostream & ofs,const Pt3dr  &aPt)
@@ -95,6 +100,23 @@ template <class Type> Pt2d<Type> Pt2d<Type>::FromTab(const std::vector<Type> & a
 {
     return FromTab(&(aV[0]));
 }
+
+
+template <class Type>   std::vector<Type> Pt2d<Type>::ToTab() const
+{
+    std::vector<Type> aV;
+    aV.push_back(x);
+    aV.push_back(y);
+
+    return aV;
+}
+
+
+
+
+
+
+
 REAL  average_euclid_line_seed (Pt2di p)
 {
       return euclid(p) / dist8(p);
@@ -588,8 +610,15 @@ template <class Type> Pt3d<Type> Pt3d<Type>::FromTab(const std::vector<Type> & a
     return FromTab(&(aV[0]));
 }
 
+template <class Type>   std::vector<Type> Pt3d<Type>::ToTab() const
+{
+    std::vector<Type> aV;
+    aV.push_back(x);
+    aV.push_back(y);
+    aV.push_back(z);
 
-
+    return aV;
+}
 
 
 template <class Type> Type  Pt3d<Type>::instantiate()
@@ -1224,7 +1253,7 @@ Pt3dr PMoyFromEchant(const std::vector<Pt3dr> & anEch)
 std::vector<Pt3dr>  GetDistribRepreBySort(std::vector<Pt2dr> & aVP,const Pt2di & aNbOut,Pt3dr & aPRep)
 {
     Pt2dr * aAdr0 = VData(aVP);
-    int aNbIn0 = aVP.size();
+    int aNbIn0 = (int)aVP.size();
     std::vector<Pt3dr> aRes;
 
     cCmpPtOnX aCmpX;

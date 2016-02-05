@@ -72,8 +72,28 @@ ElImScroller::ElImScroller
      mSetInit            (false)
 {
 
-// std::cout << "DIMOUT " << aDimOut  << " " << sc_im << "\n"; getchar();
+ // std::cout << "DIMOUT " << aDimOut  << " " << sc_im  << " " << this << "\n"; 
 } 
+
+
+/*
+*/
+
+void ElImScroller::write_image(INT x0src,Pt2di p0dest,INT nb,INT ** data,int aNbChanelIn)
+{
+   mVisuCur->write_image(x0src,p0dest,nb,data,aNbChanelIn);
+}
+void ElImScroller::write_image(INT x0src,Pt2di p0dest,INT nb,double ** data,int aNbChanelIn)
+{
+
+   mVisuCur->write_image(x0src,p0dest,nb,data,aNbChanelIn);
+}
+
+
+ElImScroller * ElImScroller::CurScale() 
+{
+   return this;
+}
 
 bool  ElImScroller::CanReinitTif()
 {
@@ -88,6 +108,11 @@ void ElImScroller::ReInitTifFile(Tiff_Im aTif)
 void ElImScroller::SetAlwaysQuickInZoom()
 {
    mAlwaysQuickInZoom = true;
+}
+
+void ElImScroller::SetAlwaysQuickInZoom(bool aVal)
+{
+   mAlwaysQuickInZoom = aVal;
 }
 
 void ElImScroller::SetAlwaysQuick(bool aVal)
@@ -106,6 +131,10 @@ bool ElImScroller::AlwaysQuick() const
     return mAlwaysQuick || (mAlwaysQuickInZoom && (_sc>1.0));
 }
 
+bool ElImScroller::AlwaysQuickZoom() const
+{
+   return mAlwaysQuickInZoom;
+}
 
 void ElImScroller::LoadAndVerifXImage(Pt2di p0W,Pt2di p1W,bool quick)
 {
@@ -368,6 +397,7 @@ void ElImScroller::LoadXImageInVisu(Visu_ElImDest & aTmpVisu,Pt2di p0W,Pt2di p1W
 
 void ElImScroller::SetVisuCur(Visu_ElImDest * pVEID)
 { 
+
     mVisuCur = pVEID;
     ReflexSetVisuCur(pVEID);
 }
@@ -450,7 +480,8 @@ ElImScroller * ElImScroller::StdFileGenerique
        const std::string & aName,
        INT InvScale,
        bool VisuAdaptPal ,
-       bool ForceGray 
+       bool ForceGray ,
+       cElScrCalcNameSsResol * aCalcName
 )
 {
     static std::string Reduc("Reduc");
@@ -463,6 +494,19 @@ ElImScroller * ElImScroller::StdFileGenerique
     ElSTDNS string Scale(CScale);
 
     ElImScroller * res =0;
+
+   // ===================
+    if (aCalcName)
+    {
+        std::string aNewName = aCalcName->CalculName(aName,InvScale);
+        res = ElImScroller::StdScrollIfExist(aVisu,aNewName,aScale,VisuAdaptPal,ForceGray);
+
+        if (res)
+        {
+            return res;
+        }
+    }
+
 
     // Test fichier tif "Reduc"
     res = ElImScroller::StdScrollIfExist(aVisu,aName+Reduc+Scale+tif,aScale,VisuAdaptPal,ForceGray);
@@ -497,8 +541,8 @@ ElPyramScroller * ElImScroller::StdPyramide
                          const std::string & aName,
                          std::vector<INT> * EchAcc,
                          bool VisuAdaptPal ,
-                         bool ForceGray 
-                        
+                         bool ForceGray ,
+                         cElScrCalcNameSsResol *  aCalcName
                   )
 {
      ElSTDNS vector <ElImScroller *>  VScrol; 
@@ -512,7 +556,7 @@ ElPyramScroller * ElImScroller::StdPyramide
           }
           if (OkScale)
           {
-             ElImScroller * aScr = StdFileGenerique(aVisu,aName,InvScale,VisuAdaptPal,ForceGray);
+             ElImScroller * aScr = StdFileGenerique(aVisu,aName,InvScale,VisuAdaptPal,ForceGray,aCalcName);
              if (aScr)
              {
                 VScrol.push_back(aScr);
@@ -584,12 +628,12 @@ REAL ElImScroller::TimeReformat() const { return mTimeReformat;}
 /*                                                              */
 /****************************************************************/
 
-void PckBitImScroller::RasterUseLine(Pt2di p0,Pt2di p1,INT ** l)
+void PckBitImScroller::RasterUseLine(Pt2di p0,Pt2di p1,INT ** l,int aNbChan)
 {
      ElTimer aTimer;
      for (INT y= p0.y ; y<p1.y ; y++)
      {
-          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,l);
+          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,l,aNbChan);
      }                      
      mTimeLoadXIm += aTimer.uval();
 }
@@ -621,6 +665,12 @@ Fonc_Num PckBitImScroller::in()
 {
    return _pbim.in();
 }
+
+Pt2di  PckBitImScroller::SzIn() 
+{
+   return _pbim.sz();
+}
+
 
 REAL PckBitImScroller::TimeUnCompr() const
 {
@@ -671,6 +721,12 @@ RGB_PckbImScr::RGB_PckbImScr
 {
 }
 
+Pt2di RGB_PckbImScr::SzIn() 
+{
+   return mP1Im-mP0Im;
+}
+                      
+
 
 RGB_PckbImScr::~RGB_PckbImScr()
 {
@@ -694,7 +750,7 @@ void  RGB_PckbImScr::WriteRGBImage(Pt2di p0,Pt2di p1,RGB_Int ** Tl)
      aTimer.reinit();
      for (INT y= p0.y ; y<p1.y ; y++)
      {
-          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,mIm);
+          write_image (p0.x,Pt2di(p0.x,y),p1.x-p0.x,mIm,3);
      }                      
      mTimeLoadXIm += aTimer.uval();
 }
@@ -732,7 +788,7 @@ Fonc_Num RGBLut_PckbImScr::in()
    return _pbim.in();
 }
 
-void  RGBLut_PckbImScr::RasterUseLine(Pt2di p0,Pt2di p1,RGB_Int ** Tl)
+void  RGBLut_PckbImScr::RasterUseLine(Pt2di p0,Pt2di p1,RGB_Int ** Tl,int aNbChanIn)
 {
     WriteRGBImage(p0,p1,Tl);
 }
@@ -772,7 +828,7 @@ Fonc_Num RGBTrue16Col_PckbImScr::in()
    return _pbim.in();
 }
 
-void  RGBTrue16Col_PckbImScr::RasterUseLine(Pt2di p0,Pt2di p1,RGB_Int ** Tl)
+void  RGBTrue16Col_PckbImScr::RasterUseLine(Pt2di p0,Pt2di p1,RGB_Int ** Tl,int aNbChanIn)
 {
     WriteRGBImage(p0,p1,Tl);
 }
@@ -818,13 +874,23 @@ ElPyramScroller::ElPyramScroller
         );
 }
 
+ElImScroller * ElPyramScroller::CurScale()
+{
+   if (_cur) return _cur;
+   return this;
+}
+
+
+
 void ElPyramScroller::LoadXImage(Pt2di p0,Pt2di p1,bool quick)
 {
 
         ElImScroller  * ScrClosest  = 0;
 
+   // Recherche de la plus basse resolution > a la resolution demandee
         for (INT k=0; k<(INT)_subs.size(); k++)
         {
+// std::cout << "ElPyramScroller::LoadXImage  " << _subs[k]->sc_im()  << " " <<  sc_abs() << "\n";
             if (_subs[k]->sc_im() > sc_abs())
             {
                 if (
@@ -835,6 +901,8 @@ void ElPyramScroller::LoadXImage(Pt2di p0,Pt2di p1,bool quick)
             }
         }
 
+
+   // Si pas trouvee Recherche de la plus haute resolution < a la resolution demandee
         if (! ScrClosest)
         {
             ScrClosest = _subs[0];
@@ -842,6 +910,7 @@ void ElPyramScroller::LoadXImage(Pt2di p0,Pt2di p1,bool quick)
                  if (_subs[k]->sc_im() > ScrClosest->sc_im())
                     ScrClosest = _subs[k];
         }
+ // std::cout << "ElPyramScroller::LoadXImage " << _cur << " => " <<   ScrClosest << "\n";
 
         if ((_cur!=0) && (_cur != ScrClosest))
            _cur->no_use();
@@ -907,6 +976,47 @@ Fonc_Num ElPyramScroller::in()
 {
    return _subs[0]->in(); 
 }
+Pt2di ElPyramScroller::SzIn()
+{
+   return _subs[0]->SzIn(); 
+}
+
+void  ElPyramScroller::SetAlwaysQuick(bool aVal)
+{
+   ElImScroller::SetAlwaysQuick(aVal);
+   for (int aK=0 ; aK<int(_subs.size()) ; aK++)
+   {
+       _subs[aK]->SetAlwaysQuick(aVal);
+   }
+}
+
+void  ElPyramScroller::SetAlwaysQuickInZoom(bool aVal)
+{
+   ElImScroller::SetAlwaysQuickInZoom(aVal);
+   for (int aK=0 ; aK<int(_subs.size()) ; aK++)
+   {
+       _subs[aK]->SetAlwaysQuickInZoom(aVal);
+   }
+}
+
+void  ElPyramScroller::SetAlwaysQuickInZoom()
+{
+   ElImScroller::SetAlwaysQuickInZoom();
+   for (int aK=0 ; aK<int(_subs.size()) ; aK++)
+   {
+       _subs[aK]->SetAlwaysQuickInZoom();
+   }
+}
+
+void  ElPyramScroller::SetAlwaysQuick()
+{
+   ElImScroller::SetAlwaysQuick();
+   for (int aK=0 ; aK<int(_subs.size()) ; aK++)
+   {
+       _subs[aK]->SetAlwaysQuick();
+   }
+}
+
 
 /****************************************************************/
 /*                                                              */

@@ -1820,10 +1820,14 @@ class cOneAppuisDAF
 
         Pt3dr & Incertitude();
         const Pt3dr & Incertitude()const ;
+
+        cTplValGesInit< bool > & UseForRTA();
+        const cTplValGesInit< bool > & UseForRTA()const ;
     private:
         Pt3dr mPt;
         std::string mNamePt;
         Pt3dr mIncertitude;
+        cTplValGesInit< bool > mUseForRTA;
 };
 cElXMLTree * ToXMLTree(const cOneAppuisDAF &);
 
@@ -1952,10 +1956,14 @@ class cMesureAppuiFlottant1Im
         std::string & NameIm();
         const std::string & NameIm()const ;
 
+        cTplValGesInit< double > & PrecPointeByIm();
+        const cTplValGesInit< double > & PrecPointeByIm()const ;
+
         std::list< cOneMesureAF1I > & OneMesureAF1I();
         const std::list< cOneMesureAF1I > & OneMesureAF1I()const ;
     private:
         std::string mNameIm;
+        cTplValGesInit< double > mPrecPointeByIm;
         std::list< cOneMesureAF1I > mOneMesureAF1I;
 };
 cElXMLTree * ToXMLTree(const cMesureAppuiFlottant1Im &);
@@ -2301,6 +2309,9 @@ class cCalibrationInterneRadiale
         std::vector< double > & CoeffDist();
         const std::vector< double > & CoeffDist()const ;
 
+        std::vector< double > & CoeffDistInv();
+        const std::vector< double > & CoeffDistInv()const ;
+
         cTplValGesInit< double > & RatioDistInv();
         const cTplValGesInit< double > & RatioDistInv()const ;
 
@@ -2309,6 +2320,7 @@ class cCalibrationInterneRadiale
     private:
         Pt2dr mCDist;
         std::vector< double > mCoeffDist;
+        std::vector< double > mCoeffDistInv;
         cTplValGesInit< double > mRatioDistInv;
         cTplValGesInit< bool > mPPaEqPPs;
 };
@@ -6757,6 +6769,208 @@ void  BinaryDumpInFile(ELISE_fp &,const corientation &);
 void  BinaryUnDumpFromFile(corientation &,ELISE_fp &);
 
 std::string  Mangling( corientation *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+typedef enum
+{
+  eDynVinoModulo,
+  eDynVinoColCirc,
+  eDynVinoMaxMin,
+  eDynVinoStat2,
+  eDynVinoEqual,
+  eDynVinoNbVals
+} eTypeDynVino;
+void xml_init(eTypeDynVino & aVal,cElXMLTree * aTree);
+std::string  eToString(const eTypeDynVino & aVal);
+
+eTypeDynVino  Str2eTypeDynVino(const std::string & aName);
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const eTypeDynVino & anObj);
+
+void  BinaryDumpInFile(ELISE_fp &,const eTypeDynVino &);
+
+std::string  Mangling( eTypeDynVino *);
+
+void  BinaryUnDumpFromFile(eTypeDynVino &,ELISE_fp &);
+
+class cXml_StatVino
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_StatVino & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameFile();
+        const std::string & NameFile()const ;
+
+        eTypeDynVino & Type();
+        const eTypeDynVino & Type()const ;
+
+        bool & IsInit();
+        const bool & IsInit()const ;
+
+        double & Nb();
+        const double & Nb()const ;
+
+        std::vector< double > & Soms();
+        const std::vector< double > & Soms()const ;
+
+        std::vector< double > & Soms2();
+        const std::vector< double > & Soms2()const ;
+
+        std::vector< double > & ECT();
+        const std::vector< double > & ECT()const ;
+
+        std::vector< double > & VMax();
+        const std::vector< double > & VMax()const ;
+
+        std::vector< double > & VMin();
+        const std::vector< double > & VMin()const ;
+
+        Pt2dr & IntervDyn();
+        const Pt2dr & IntervDyn()const ;
+
+        double & MulDyn();
+        const double & MulDyn()const ;
+
+        double & VMinHisto();
+        const double & VMinHisto()const ;
+
+        double & StepHisto();
+        const double & StepHisto()const ;
+    private:
+        std::string mNameFile;
+        eTypeDynVino mType;
+        bool mIsInit;
+        double mNb;
+        std::vector< double > mSoms;
+        std::vector< double > mSoms2;
+        std::vector< double > mECT;
+        std::vector< double > mVMax;
+        std::vector< double > mVMin;
+        Pt2dr mIntervDyn;
+        double mMulDyn;
+        double mVMinHisto;
+        double mStepHisto;
+};
+cElXMLTree * ToXMLTree(const cXml_StatVino &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_StatVino &);
+
+void  BinaryUnDumpFromFile(cXml_StatVino &,ELISE_fp &);
+
+std::string  Mangling( cXml_StatVino *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_EnvVino
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_EnvVino & anObj,cElXMLTree * aTree);
+
+
+        Pt2di & SzW();
+        const Pt2di & SzW()const ;
+
+        cTplValGesInit< double > & SzLimSsEch();
+        const cTplValGesInit< double > & SzLimSsEch()const ;
+
+        int & LargAsc();
+        const int & LargAsc()const ;
+
+        Pt2di & SzIncr();
+        const Pt2di & SzIncr()const ;
+
+        bool & ZoomBilin();
+        const bool & ZoomBilin()const ;
+
+        double & SpeedZoomGrab();
+        const double & SpeedZoomGrab()const ;
+
+        double & SpeedZoomMolette();
+        const double & SpeedZoomMolette()const ;
+
+        std::list< cXml_StatVino > & Stats();
+        const std::list< cXml_StatVino > & Stats()const ;
+    private:
+        Pt2di mSzW;
+        cTplValGesInit< double > mSzLimSsEch;
+        int mLargAsc;
+        Pt2di mSzIncr;
+        bool mZoomBilin;
+        double mSpeedZoomGrab;
+        double mSpeedZoomMolette;
+        std::list< cXml_StatVino > mStats;
+};
+cElXMLTree * ToXMLTree(const cXml_EnvVino &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_EnvVino &);
+
+void  BinaryUnDumpFromFile(cXml_EnvVino &,ELISE_fp &);
+
+std::string  Mangling( cXml_EnvVino *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_ParamBoxReducTieP
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_ParamBoxReducTieP & anObj,cElXMLTree * aTree);
+
+
+        Box2dr & Box();
+        const Box2dr & Box()const ;
+
+        Box2dr & BoxRab();
+        const Box2dr & BoxRab()const ;
+
+        std::vector< std::string > & Ims();
+        const std::vector< std::string > & Ims()const ;
+    private:
+        Box2dr mBox;
+        Box2dr mBoxRab;
+        std::vector< std::string > mIms;
+};
+cElXMLTree * ToXMLTree(const cXml_ParamBoxReducTieP &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_ParamBoxReducTieP &);
+
+void  BinaryUnDumpFromFile(cXml_ParamBoxReducTieP &,ELISE_fp &);
+
+std::string  Mangling( cXml_ParamBoxReducTieP *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_ParamGlobReducTieP
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_ParamGlobReducTieP & anObj,cElXMLTree * aTree);
+
+
+        double & Resol();
+        const double & Resol()const ;
+    private:
+        double mResol;
+};
+cElXMLTree * ToXMLTree(const cXml_ParamGlobReducTieP &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_ParamGlobReducTieP &);
+
+void  BinaryUnDumpFromFile(cXml_ParamGlobReducTieP &,ELISE_fp &);
+
+std::string  Mangling( cXml_ParamGlobReducTieP *);
 
 /******************************************************/
 /******************************************************/

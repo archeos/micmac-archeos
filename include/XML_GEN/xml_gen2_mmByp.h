@@ -41,7 +41,11 @@ Header-MicMac-eLiSe-25/06/2007*/
 #ifndef _ELISE_XML_GEN_MMBY_P_
 #define _ELISE_XML_GEN_MMBY_P_
 
-void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur * aICNM);
+std::string StdMetaDataFilename(const std::string &aBasename, bool aBinary);
+
+cXmlXifInfo MDT2Xml(const cMetaDataPhoto & aMTD);
+
+void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur * aICNM,bool toForce=false);
 
 const std::string  DirFusMMInit();
 const std::string  DirFusStatue();
@@ -164,7 +168,8 @@ class cAppliWithSetImage
       void operator()(tSomAWSI*,tSomAWSI*,bool);   // Delaunay call back
 
     // Remplace la commande argc-argc par N command avec les image indiv, aNumPat est necessaire car peut varier (TestLib ou non)
-      std::list<std::pair<std::string,std::string> > ExpandCommand(int aNumPat,std::string ArgSup,bool Exe=false);
+      // Probably WithDir=true in most case, but for perfect backward compatibility set it to false
+      std::list<std::pair<std::string,std::string> > ExpandCommand(int aNumPat,std::string ArgSup,bool Exe=false,bool WithDir=false);
 
       static const int  TheFlagDev8BGray      = 1;
       static const int  TheFlagDev16BGray     = 2;
@@ -181,6 +186,8 @@ class cAppliWithSetImage
 
       static const std::string TheMMByPairNameCAWSI;
       static const std::string TheMMByPairNameFiles;
+      cElemAppliSetFile & EASF();
+      const cElemAppliSetFile & EASF() const;
 
    protected :
 
@@ -203,8 +210,8 @@ class cAppliWithSetImage
       void MakeStripStruct(const std::string & aPairByStrip,bool StripFirst);
       void AddDelaunayCple();
       void AddFilePair(const std::string & aFilePair);
-      void AddCoupleMMImSec(bool ExeApero,bool SupressImInNoMasq,bool AddCple);
-	  void AddLinePair(int);
+      void AddCoupleMMImSec(bool ExeApero,bool SupressImInNoMasq,bool AddCple,bool ExpTxt);
+      void AddLinePair(int aDif, bool ExpTxt);
 
 
       void DoPyram();
@@ -302,6 +309,36 @@ class cChantierAppliWithSetImage;
 class cCWWSImage;
 const cCWWSImage * GetFromCAWSI(const cChantierAppliWithSetImage & ,const std::string & );
 
+
+class cVirtInterf_NewO_NameManager
+{
+       public :
+           
+           virtual CamStenope * OutPutCamera(const std::string & aName) const = 0;
+           // for a given image "aName", return the list of images having homolgous data (tieP + orientaion)
+
+           virtual std::list<std::string>  ListeImOrientedWith(const std::string & aName) const = 0;
+
+           // for a given pair of image, load the tie points (in two vector of point)
+           //  !! => they are "photogrametric" tie points, i.e they have been corrected of focal, PP and distorsion
+           //  for a given 2d point (U,V)  the (U,V,1) 3d point is a direction in the camera repair
+           virtual void LoadHomFloats(std::string,std::string,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2,bool SVP=false) = 0;
+
+
+
+           virtual bool LoadTriplet(const std::string &,const std::string &,const std::string &,std::vector<Pt2df> * aVP1,std::vector<Pt2df> * aVP2,std::vector<Pt2df> * aVP3) = 0;
+
+
+           // for a given pair of image, return the structure containg the orientation
+           virtual cXml_Ori2Im GetOri2Im(const std::string & aN1,const std::string & aN2) = 0;
+
+
+           static cVirtInterf_NewO_NameManager * StdAlloc(
+                                                            const std::string  & aDir,   // Global Dir
+                                                            const std::string  & anOri,  // Dir where is stored calibration
+                                                            bool  Quick  = true  // Mean that accelarated computation where done
+                                                );
+};
 
 
 

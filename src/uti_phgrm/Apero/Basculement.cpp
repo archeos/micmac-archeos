@@ -36,7 +36,7 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
 
 
 /*******************************************/
@@ -125,7 +125,7 @@ void cArgGetPtsTerrain::AddAGP
            double aPds,
            bool aReduc,
            const std::vector<double> * aVPds ,
-           const std::vector<cPoseCam *> * aVPose
+           const std::vector<cGenPoseCam *> * aVPose
      )
 {
    if (mMasq)
@@ -140,7 +140,7 @@ void cArgGetPtsTerrain::AddAGP
       mPds.push_back(aPds);
       if (mDoByIm && aVPose)
       {
-          int aNb = mSymDoByIm ? aVPose->size() : ElMin(1,int(aVPose->size()));
+          int aNb = mSymDoByIm ? (int)aVPose->size() : ElMin(1,int(aVPose->size()));
           for (int aK=0 ; aK<aNb ; aK++)
               (*aVPose)[aK]->AddPtsVu(aPts);
       }
@@ -187,8 +187,9 @@ void cArgGetPtsTerrain::AddAGP
                double aPds = (*aVPds)[aK];
                if (aPds > 0)
                {
-                   const CamStenope  * aCS = (*aVPose)[aK]->CurCam();
-                   Pt3dr aC = aCS->PseudoOpticalCenter();
+                   const cBasicGeomCap3D  * aCS = (*aVPose)[aK]->GenCurCam();
+                   // Pt3dr aC = aCS->PseudoOpticalCenter();
+                   Pt3dr aC = aCS->OpticalCenterOfPixel(aPIm);
                    aSomP +=  aPds;
                    aNorm  = aNorm + vunit(aC-aPts) * aPds;
                }
@@ -310,7 +311,7 @@ void TestBasc
 {
    Pt3dr aC1(0,0,0);
    Pt3dr aC2(0,0,0);
-   int aNb = aV1.size();
+   int aNb = (int)aV1.size();
    for (int aK=0 ; aK<aNb ; aK++)
    {
        aC1 = aC1 + aV1[aK];
@@ -526,7 +527,7 @@ cCompBascNonLin::cCompBascNonLin
    mSBR  (aSBR),
    mADLN (anADLN),
    mShow (mADLN.Show().Val()),
-   mNb   (mBasc.PAvant().size()),
+   mNb   ((int)mBasc.PAvant().size()),
    mMQX  (mShow,"X",anADLN.FlagX().Val()),
    mMQY  (mShow,"Y",anADLN.FlagY().Val()),
    mMQZ  (mShow,"Z",anADLN.FlagZ().Val()),
@@ -928,8 +929,20 @@ cElPlan3D cAppliApero::EstimPlan
 
    aPOL->GetPtsTerrain (aPEP, aSelectorEstim, aAGPt,anAttr);
 
-   const std::vector<Pt3dr>  &  aVPts = aAGPt.Pts();
-   const std::vector<double> &  aVPds = aAGPt.Pds();
+   // const std::vector<Pt3dr>  &  aVPts = aAGPt.Pts();
+   // const std::vector<double> &  aVPds = aAGPt.Pds();
+   std::vector<Pt3dr>   aVPts = aAGPt.Pts();
+   std::vector<double>  aVPds = aAGPt.Pds();
+
+   if ((aVPts.size() == 0) && (aPEP.AcceptDefPlanIfNoPoint().Val()))
+   {
+       aVPts.push_back(Pt3dr(0,0,0));
+       aVPts.push_back(Pt3dr(1,0,0));
+       aVPts.push_back(Pt3dr(0,1,0));
+       aVPds.push_back(1.0);
+       aVPds.push_back(1.0);
+       aVPds.push_back(1.0);
+   }
 
 /*
 {
@@ -1041,10 +1054,13 @@ void cAppliApero::BasculePlan
         const cOrientInPlane & anOIP = aBL.OrientInPlane().Val();
         cSetOfMesureAppuisFlottants aSMAF = StdGetMAF(anOIP.FileMesures());
 
+         Pt3dr aP1 = aRP2E.ImAff(Pt3dr(1,0,0));
+         aP1 = CreatePtFromPointeMonoOrStereo(aSMAF,"Line1",&aPlan,"USEDEF",&aP1);
 
-         Pt3dr aP1 = CreatePtFromPointeMonoOrStereo(aSMAF,"Line1",&aPlan);
-         Pt3dr aP2 = CreatePtFromPointeMonoOrStereo(aSMAF,"Line2",&aPlan);
-         aPOrig    = CreatePtFromPointeMonoOrStereo(aSMAF,"Origine",&aPlan,"Line1");
+         Pt3dr aP2 = aRP2E.ImAff(Pt3dr(2,0,0));
+         aP2 = CreatePtFromPointeMonoOrStereo(aSMAF,"Line2",&aPlan,"USEDEF",&aP2);
+
+         aPOrig    = CreatePtFromPointeMonoOrStereo(aSMAF,"Origine",&aPlan,"USEDEF",&aP1);
 
 /*
         cAperoPointeMono aPt1 =  CreatePointeMono(aSMAF,"Line1");
@@ -1068,9 +1084,11 @@ void cAppliApero::BasculePlan
         Pt3dr aNorm = aRP2E.ImVect(Pt3dr(0,0,1));
 
         std::vector<cOneMesureAF1I>  aVM = GetMesureOfPts(aSMAF,"Line1");
-        cPoseCam * aPose1 = PoseFromName  (aVM[0].NamePt());
-        // const CamStenope * aCS1 =  aPose1->CurCam();
-        AjustNormalSortante(true,aNorm,aPose1->CurCam(),aVM[0].PtIm());
+        if (aVM.size())
+        {
+           cPoseCam * aPose1 = PoseFromName  (aVM[0].NamePt());
+           AjustNormalSortante(true,aNorm,aPose1->CurCam(),aVM[0].PtIm());
+        }
 
 // void AjustNormalSortante(Pt3dr & aNorm, const ElCamera * aCS1,const Pt2dr &aPIm)
 
@@ -1279,7 +1297,8 @@ Pt3dr cAppliApero::CreatePtFromPointeMonoOrStereo
             const cSetOfMesureAppuisFlottants & aMAF,
             const std::string & aNamePt,
             const cElPlan3D  * aPlan,
-            const std::string & aNameSec
+            const std::string & aNameSec,
+            const Pt3dr * aPDef
       )
 {
    Pt3dr aRes(0,0,0);
@@ -1292,6 +1311,8 @@ Pt3dr cAppliApero::CreatePtFromPointeMonoOrStereo
 
    if (int(aV.size()) <1)
    {
+      if (aPDef!=0)
+          return *aPDef; 
       std::cout << "For name point = " << aNamePt << "\n";
       ELISE_ASSERT(false,"cAppliApero::CreatePtFromPointe No Pointe");
    }
@@ -1622,7 +1643,7 @@ cArgVerifAero::~cArgVerifAero()
            {
                 if (aPHS.mPDS[aKP] >0)
                 {
-                    fprintf(aFP,"  -%s\n",aPHS.mPM->PoseK(aKP)->Name().c_str());
+                    fprintf(aFP,"  -%s\n",aPHS.mPM->GenPoseK(aKP)->Name().c_str());
                 }
            }
        }
@@ -1788,14 +1809,14 @@ void  cAppliApero::BlocBasculeOneWay
         {
             cOnePtsMult * aPM = aVMul[aKPm];
             cOneCombinMult * aCOM = aPM->OCM();
-            const std::vector<cPoseCam *> & aVP =  aCOM->VP();
+            const std::vector<cGenPoseCam *> & aVP =  aCOM->GenVP();
 
             int aNb1=0;
             int aNb2=0;
   //  Recherche rapide des mesures potentiellement valides
             for (int aKP=0 ; aKP<int (aVP.size()) ; aKP++)
             {
-                  cPoseCam & aPC = *(aVP[aKP]);
+                  cGenPoseCam & aPC = *(aVP[aKP]);
                   if (aPC.NumTmp() == aNum1) aNb1++;
                   if (aPC.NumTmp() == aNum2) aNb2++;
             }
@@ -1809,10 +1830,10 @@ void  cAppliApero::BlocBasculeOneWay
                 const cNupletPtsHomologues & aNP = aPM->NPts();
                 for (int aKP=0 ; aKP<int (aVP.size()) ; aKP++)
                 {
-                      cPoseCam & aPC = *(aVP[aKP]);
-                      const CamStenope * aCS =   aPC.CurCam();
-                      if (aPC.NumTmp() == aNum1) aV1.push_back(aCS->F2toRayonR3(aNP.PK(aKP)));
-                      if (aPC.NumTmp() == aNum2) aV2.push_back(aCS->F2toRayonR3(aNP.PK(aKP)));
+                      cGenPoseCam & aPC = *(aVP[aKP]);
+                      const cBasicGeomCap3D * aCS =   aPC.GenCurCam ();
+                      if (aPC.NumTmp() == aNum1) aV1.push_back(aCS->Capteur2RayTer(aNP.PK(aKP)));
+                      if (aPC.NumTmp() == aNum2) aV2.push_back(aCS->Capteur2RayTer(aNP.PK(aKP)));
 
                       double aBH1 = BSurH(aV1);
                       if (aBH1 > aSeuilBSurH)

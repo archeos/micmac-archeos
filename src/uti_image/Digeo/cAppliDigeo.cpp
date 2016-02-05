@@ -73,10 +73,13 @@ template <class tData>
 void cAppliDigeo::allocateConvolutionHandler( ConvolutionHandler<tData> *&o_convolutionHandler )
 {
 	o_convolutionHandler = new ConvolutionHandler<tData>;
-	unsigned int nbCompiledConvolutions = o_convolutionHandler->nbConvolutions();
-	if ( isVerbose() )
+
+	if (isVerbose())
+	{
+		const size_t nbCompiledConvolutions = o_convolutionHandler->nbConvolutions();
 		cout << "--- " << nbCompiledConvolutions << " compiled convolution" << (nbCompiledConvolutions>1?'s':'\0')
 		     << " of type " << El_CTypeTraits<tData>::Name() << endl;
+	}
 }
 
 string cAppliDigeo::defaultParameterFile(){ return Basic_XML_MM_File("Digeo-Parameters.xml"); }
@@ -189,7 +192,7 @@ cAppliDigeo::cAppliDigeo( const string &i_parametersFilename ):
 
 GenIm::type_el cAppliDigeo::octaveType( int iOctave ) const
 {
-	__elise_debug_error( iOctave<0 || iOctave>=(int)mOctaveTypes.size(), "cAppliDigeo::octaveType: iOctave out of range: " << iOctave << "(max " << mOctaveTypes.size() );
+	ELISE_DEBUG_ERROR( iOctave<0 || iOctave>=(int)mOctaveTypes.size(), "cAppliDigeo::octaveType", "iOctave out of range: " << iOctave << "(max " << mOctaveTypes.size() );
 	return mOctaveTypes[iOctave];
 }
 
@@ -672,12 +675,12 @@ void cAppliDigeo::createGaussianKernel( double aSigma, ConvolutionKernel1D<T> &o
 template <class tData>
 void cAppliDigeo::convolve( const Im2D<tData,TBASE> &aSrc, double aSigma, const Im2D<tData,TBASE> &oDst )
 {
-	__elise_debug_error( aSrc.tx()!=oDst.tx() || aSrc.ty()!=oDst.ty(), "cAppliDigeo::convolve<" << El_CTypeTraits<tData>::Name() << ">: aSrc.sz() = " << aSrc.sz() << " != oDst.sz() = " << oDst.sz() );
+	ELISE_DEBUG_ERROR( aSrc.tx()!=oDst.tx() || aSrc.ty()!=oDst.ty(), "cAppliDigeo::convolve<" << El_CTypeTraits<tData>::Name() << ">", "aSrc.sz() = " << aSrc.sz() << " != oDst.sz() = " << oDst.sz() );
 
 	ConvolutionKernel1D<TBASE> kernel;
 	createGaussianKernel(aSigma,kernel);
 
-	__elise_debug_error( convolutionHandler<tData>()==NULL, "cAppliDigeo::convolve<" << El_CTypeTraits<tData>::Name() << ">: convolutionHandler<tData>()==NULL" );
+	ELISE_DEBUG_ERROR( convolutionHandler<tData>()==NULL, "cAppliDigeo::convolve<" << El_CTypeTraits<tData>::Name() << ">", "convolutionHandler<tData>()==NULL" );
 
 	cConvolSpec<tData> *convolution1d = convolutionHandler<tData>()->getConvolution(kernel);
 
@@ -698,7 +701,7 @@ bool cAppliDigeo::generateConvolutionCode( const ConvolutionHandler<tData> &aCon
 		return true;
 	}
 
-	__elise_warning( "an error occured while generating convolution code for type " << El_CTypeTraits<tData>::Name() );
+	ELISE_WARNING( "an error occured while generating convolution code for type " << El_CTypeTraits<tData>::Name() );
 
 	return false;
 }
@@ -706,7 +709,7 @@ bool cAppliDigeo::generateConvolutionCode( const ConvolutionHandler<tData> &aCon
 template <class T>
 ConvolutionHandler<T> * cAppliDigeo::convolutionHandler()
 {
-	__elise_debug_error(true, "cAppliDigeo::convolutionHandler<" << El_CTypeTraits<T>::Name() << ">: unhandled type " );
+	ELISE_DEBUG_ERROR(true, "cAppliDigeo::convolutionHandler<" << El_CTypeTraits<T>::Name() << ">", "unhandled type " );
 	return NULL;
 }
 

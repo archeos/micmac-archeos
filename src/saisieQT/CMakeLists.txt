@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.1)
 project(saisieQT)
 
+if(POLICY CMP0020)
+	cmake_policy(SET CMP0020 NEW) #windows specific: Automatically link Qt executables to qtmain
+endif()
+
 IF ( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
     add_definitions(-DELISE_Darwin)
 endif()
@@ -42,19 +46,19 @@ if ( NOT ${qt_version} EQUAL 0 )
         install(FILES ${QM_FILES} DESTINATION ${translation_dir})
     endif()
 
-    if (WIN32)	
-		if(${qt_version} EQUAL 5 AND POLICY CMP0020)
-				cmake_policy(SET CMP0020 NEW)
-		endif()		
+    if (WIN32)
 		add_executable(SaisieQT WIN32 ${saisieQT_SRCS} ${QM_FILES})
     else()
       add_executable(SaisieQT ${saisieQT_SRCS} ${QM_FILES})
     endif()
 
     if ( ${qt_version} EQUAL 5 )
-        target_link_libraries(SaisieQT elise ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Xml_LIBRARIES} ${Qt5OpenGL_LIBRARIES} ${X11_LIBRARIES})
+        target_link_libraries(SaisieQT elise ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Xml_LIBRARIES} ${Qt5OpenGL_LIBRARIES} ${X11_LIBRARIES} ${KAKADU_LIBRARIES})
+        if (UNIX)
+            target_link_libraries(SaisieQT dl pthread)
+        endif()
     else()
-        target_link_libraries(SaisieQT elise ${X11_LIBRARIES})
+        target_link_libraries(SaisieQT elise ${X11_LIBRARIES} ${KAKADU_LIBRARIES})
     endif()
 
     install(TARGETS SaisieQT DESTINATION ${Install_Dir})

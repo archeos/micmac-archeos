@@ -107,10 +107,10 @@ class El_Window  : public PRC0        ,
 
 
         virtual ~El_Window();
-        Output out(Elise_Palette);
+        Output out(Elise_Palette,bool OnYDif=false);
         Output ogray();
         Output orgb();
-        Output odisc();
+        Output odisc(bool OnYDif=false);
         Output obicol();
         Output ocirc();
         Output olin1();
@@ -189,7 +189,7 @@ class El_Window  : public PRC0        ,
         class Data_Elise_Gra_Win * degraw() const; 
 
     private :
-        Output out(TYOFPAL::t);
+        Output out(TYOFPAL::t,bool OnYDif=false);
         Elise_Palette palette(TYOFPAL::t);
 };
 
@@ -275,7 +275,11 @@ class Video_Win   :  public El_Window
 
 
 
-        std::string GetString(const Pt2dr & aP,Col_Pal aColDr,Col_Pal aColErase);
+        std::string GetString(const Pt2dr & aP,Col_Pal aColDr,Col_Pal aColErase,const std::string & aStr0="");
+        Pt2di SizeFixedString(const std::string aStr);
+        // Pos <0 => gauchen Pos >0 => droite , 0 middle
+        Pt2di fixed_string_middle(const Box2di & aBox,int aPos,const std::string &  name, Col_Pal,bool draw_im = false);
+        Pt2di fixed_string_middle(int aPos,const std::string &  name, Col_Pal,bool draw_im = false);
         Clik   clik_in();
         ElList<Pt2di> GetPolyg(Line_St,INT aButonEnd);
 		void grab(Grab_Untill_Realeased &);

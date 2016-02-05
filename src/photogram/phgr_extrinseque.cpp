@@ -52,6 +52,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 
 const bool AFocalAcceptNoDist = false;
 
+
+
+
 /************************************************************/
 /*                                                          */
 /*                 cPolynome1VarFormel                      */
@@ -600,6 +603,24 @@ ElRotation3D cRotationFormelle::CurRot(REAL aT)
            );
 }
 
+/************************************************************/
+/*                                                          */
+/*                 cGenPDVFormelle                          */
+/*                                                          */
+/************************************************************/
+
+cSetEqFormelles & cGenPDVFormelle::Set()
+{
+   return mSet;
+}
+
+
+cGenPDVFormelle::cGenPDVFormelle(cSetEqFormelles & aSet) :
+   mSet  (aSet)
+{
+}
+
+
 
 /************************************************************/
 /*                                                          */
@@ -943,9 +964,9 @@ cCameraFormelle::cCameraFormelle
      bool  GenCodeAppui,
      bool  HasEqDroite
 )  :
+   cGenPDVFormelle(*(anIntr.Set())),
    pCamAttach  (aCamAtt),
    mIntr       (anIntr),
-   mSet        (*(mIntr.Set())),
    mRot        (mSet.NewRotation(aMode,aRot, ((pCamAttach==0) ? 0 : pCamAttach->mRot),aName)),
    mName       (aName),
 
@@ -965,15 +986,18 @@ cCameraFormelle::cCameraFormelle
    mCameraCourante(NULL),
    mHasEqDroite   (HasEqDroite)
 {
-        for (int aKEqDr=0 ; aKEqDr<TheNbEqDr; aKEqDr++)
-        {
+   for (int aKEqDr=0 ; aKEqDr<TheNbEqDr; aKEqDr++)
+   {
             mEqAppuiDroite[aKEqDr] = 0;
-        }
+   }
 	// NO_WARN
-	mEqAppuiTerNoGL = new cEqAppui(true,false,false,true,CompEqAppui,*this,GenCodeAppui,false);
-	mEqAppuiTerGL	 = new cEqAppui(true,true ,false,true,CompEqAppui,*this,GenCodeAppui,false);
-	mCameraCourante	 = CalcCameraCourante();
+   mEqAppuiTerNoGL = new cEqAppui(true,false,false,true,CompEqAppui,*this,GenCodeAppui,false);
+   mEqAppuiTerGL	 = new cEqAppui(true,true ,false,true,CompEqAppui,*this,GenCodeAppui,false);
+   mCameraCourante	 = CalcCameraCourante();
+
 }
+
+
 
 cCameraFormelle::~cCameraFormelle(){
 	// we should delete mEqAppuiTerNoGL and mEqAppuiTerGL but it makes apero crash
@@ -1003,6 +1027,7 @@ Pt2dr cCameraFormelle::AddEqAppuisInc(const Pt2dr & aPIm,double aPds,cParamPtPro
 
      cEqAppui*  anEq = AddForUseFctrEqAppuisInc ( false, aPPP.mProjIsInit, aPPP.wDist,IsEqDroite);
      Pt2dr aRes = anEq->ResiduPInc(CorrigePFromDAdd(aPIm,true,IsEqDroite),aPds,aPPP);
+
 
 
      if ( std_isnan(aRes.x) || std_isnan(aRes.y))
@@ -1258,10 +1283,6 @@ void cCameraFormelle::SetModeRot(eModeContrRot aMode)
      mRot->SetModeRot(aMode);
 }
 
-cSetEqFormelles & cCameraFormelle::Set()
-{
-   return mSet;
-}
 
 Pt3d<Fonc_Num> cCameraFormelle::COptF()
 {
@@ -1301,6 +1322,17 @@ CamStenope * cCameraFormelle::NC_CameraCourante()
 }
 
 
+const cBasicGeomCap3D * cCameraFormelle::GPF_CurBGCap3D() const 
+{
+    return CameraCourante();
+}
+
+cBasicGeomCap3D * cCameraFormelle::GPF_NC_CurBGCap3D() 
+{
+    return NC_CameraCourante();
+}
+
+
 
 void  cCameraFormelle::Update_0F2D()
 {
@@ -1312,7 +1344,6 @@ void     cCameraFormelle::SetCurRot(const ElRotation3D & aR2CM)
      mRot->SetCurRot(aR2CM);
      mCameraCourante->SetOrientation(mRot->CurRot().inv());
      // mCameraCourante->SetOrientation(aR2CM.inv());
-// std::cout << "IIIIIIIIIIIIIIII " << mCameraCourante->CentreOptique() << "\n";
      Update_0F2D();
 }
 

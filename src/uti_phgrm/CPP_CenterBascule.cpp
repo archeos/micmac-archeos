@@ -110,6 +110,97 @@ int CentreBascule_main(int argc,char ** argv)
 }
 
 
+/*********************************************************************/
+/*                                                                   */
+/*                                                                   */
+/*                                                                   */
+/*********************************************************************/
+
+class cAppli_CmpOriCam : public cAppliWithSetImage
+{
+    public :
+
+        cAppli_CmpOriCam(int argc, char** argv);
+
+        std::string mPat,mOri1,mOri2;
+        std::string mDirOri2;
+        std::string mXmlG;
+        cInterfChantierNameManipulateur * mICNM2;
+};
+
+cAppli_CmpOriCam::cAppli_CmpOriCam(int argc, char** argv) :
+    cAppliWithSetImage(argc-1,argv+1,0)
+{
+
+   ElInitArgMain
+   (
+        argc,argv,
+        LArgMain()  << EAMC(mPat,"Full Name (Dir+Pattern)",eSAM_IsPatFile)
+                    << EAMC(mOri1,"Orientation 1", eSAM_IsExistDirOri)
+                    << EAMC(mOri2,"Orientation 2"),
+        LArgMain()  << EAM(mDirOri2,"DirOri2", true,"Orientation 2")
+					<< EAM(mXmlG,"XmlG",true,"Generate Xml")
+   );
+
+   mICNM2 = mEASF.mICNM;
+   if (EAMIsInit(&mDirOri2))
+   {
+       mICNM2 = cInterfChantierNameManipulateur::BasicAlloc(mDirOri2);
+   }
+/*
+*/
+
+
+   mICNM2->CorrecNameOrient(mOri2);
+
+
+   double aSomDC = 0;
+   double aSomDM = 0;
+
+   for (int aK=0 ; aK<int(mVSoms.size()) ; aK++)
+   {
+       cImaMM * anIm = mVSoms[aK]->attr().mIma;
+       CamStenope * aCam1 =  anIm->mCam;
+       CamStenope * aCam2 = mICNM2->StdCamOfNames(anIm->mNameIm,mOri2);
+
+       Pt3dr aC1 = aCam1->PseudoOpticalCenter();
+       Pt3dr aC2 = aCam2->PseudoOpticalCenter();
+
+       ElRotation3D aR1= aCam1->Orient();
+       ElRotation3D aR2= aCam2->Orient();
+
+       double aDC = euclid(aC1-aC2);
+       double aDM = aR1.Mat().L2(aR2.Mat());
+       aSomDC += aDC;
+       aSomDM += aDM;
+       std::cout << anIm->mNameIm << "\n";
+   }
+	
+   std::cout << "Aver;  DistC= " << aSomDC/mVSoms.size()
+             << " DistM= " << aSomDM/mVSoms.size()
+             << "\n";
+   if(mXmlG!="")
+   {
+	   cXmlTNR_TestOriReport aCmpOri;
+	   aCmpOri.OriName() = mOri2;
+	   aCmpOri.DistCenter() = aSomDC/mVSoms.size();
+	   aCmpOri.DistMatrix() = aSomDM/mVSoms.size();
+	   if(aSomDC/mVSoms.size()==0&&aSomDM/mVSoms.size()==0)
+	   {
+		   aCmpOri.TestOriDiff() = true;
+	   }
+	   else{aCmpOri.TestOriDiff() = false;}
+	   MakeFileXML(aCmpOri, mXmlG);
+   }
+}
+
+int CPP_CmpOriCam_main(int argc, char** argv)
+{
+    cAppli_CmpOriCam anApplu(argc,argv);
+
+    return EXIT_SUCCESS;
+}
+
 
 
 

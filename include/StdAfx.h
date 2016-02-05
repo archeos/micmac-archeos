@@ -1,6 +1,8 @@
 #ifndef _ELISE_STDAFX_H
 #define _ELISE_STDAFX_H
 
+#include "disable_msvc_warnings.h"
+
 #define NS_ParamMICMAC
 #define NS_ParamApero
 #define NS_Casa
@@ -57,38 +59,7 @@ extern bool BugDG;
 
 #define ELISE_INSERT_CODE_GEN 1
 
-#ifndef ELISE_unix
-    #ifdef _WIN32
-        #define USE_NOYAU 0
-        #define ELISE_unix 0
-        #define ELISE_windows 1
-        #define ELISE_MacOs 0
-        #define ELISE_POSIX 0
-        #if __MINGW__
-            #define ELISE_MinGW 1
-        #else
-            #define ELISE_MinGW 0
-        #endif
-    #elif __APPLE__
-        #define USE_NOYAU 0
-        #define ELISE_unix 0
-        #define ELISE_MacOs 1
-        #define ELISE_windows 0
-        #define ELISE_MinGW 0
-        #define ELISE_POSIX 1
-    #else
-        #define USE_NOYAU 0
-        #define ELISE_unix 1
-        #define ELISE_MacOs 0
-        #define ELISE_windows 0
-        #define ELISE_MinGW 0
-        #define ELISE_POSIX 1
-    #endif
-#endif
-
-//  =================
-
-   class cOrientationConique;
+class cOrientationConique;
 
 using namespace std;
 
@@ -122,6 +93,7 @@ using namespace std;
 #include "general/mullgesuhlig.h"
 #include "general/optim.h"
 #include "general/error.h"
+#include "general/errors.h"
 #include "general/arg_main.h"
 #include "general/cMMSpecArg.h"
 #include "general/compr_im.h"
@@ -275,7 +247,7 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 // #include "../src/uti_phgrm/ReducHom/ReducHom.h"
 
 #include "../src/uti_phgrm/Apero/cParamApero.h"
-#include "../src/uti_phgrm/Apero/Apero.h"
+// #include "../src/uti_phgrm/Apero/Apero.h"
 
 
 #include "../src/uti_phgrm/MICMAC/cParamMICMAC.h"
@@ -286,6 +258,7 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #include "../src/uti_phgrm/SaisiePts/SaisiePts.h"
 
 #include "../src/uti_phgrm/MICMAC/cOrientationGrille.h"
+#include "../src/uti_phgrm/MICMAC/CameraRPC.h"
 
 #include "private/externalToolHandler.h"
 
@@ -328,7 +301,9 @@ Im2DGen AllocImGen(Pt2di aSz,const std::string & aName);
 #endif
 
 #include "../src/uti_image/Ann/AnnSearcher.h"
+#include "../src/uti_image/Ann/PointMatch.h"
 #include "../src/uti_image/Digeo/DigeoPoint.h"
+#include "general/cElCommand.h"
 
 #include <stdarg.h>
 #include "XML_GEN/xml_gen2_mmByp.h"

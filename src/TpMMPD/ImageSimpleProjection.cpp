@@ -46,18 +46,18 @@ Header-MicMac-eLiSe-25/06/2007*/
 	These aerial images are not devoted to mapping (no sufficient overlap for Structure form Motion, by exemple)
 	Operator are willing to measure the size of animals, a georectification of the images is thus required.
 	 
-   exemple :
+   example :
 	cd /media/jo/Data/Project_Photogrammetry/Exo_MM/Ex1_Felenne
-       mm3d TestLib ImageRectification R00418.*.JPG Ori-sub-BL72/ Show=1 DeZoom=2
+       mm3d TestLib ImageRectification R00418.*.JPG Ori-sub-BL72/ Show=1
      
-     to do: commenter, vérifier cohérence des résultats avec ortho, améliorer le Dezoom (plus efficient de le faire à la volée, et non pas apres le redressement).
+     to do: generate shp polygon with image footprint, improve integration of OriConvert, choice RGB or blackandwhite.
 */
 
 // List  of classes
 
 // Class to store the application of Image Simple Rectification
 class cISR_Appli;
-// Contains the information about each image : Geometry (radiometric is handled by cISR_ColorImg
+// Contains the information about each image : Geometry (radiometric is handled by cISR_ColorImg)
 class cISR_Ima;
 // for each images, 2 colorImg instance; one for the image itself, one for the Rectified image
 class cISR_ColorImg;
@@ -75,58 +75,75 @@ class cISR_Appli
         bool ShowArgs() const {return mShowArgs;}
         std::string NameIm2NameOri(const std::string &) const;
         cInterfChantierNameManipulateur * ICNM() const {return mICNM;}
-		int mFlightAlti;
-		int mDeZoom;
+	int mFlightAlti;
+	int mDeZoom;
+	std::string mOri;
+	std::string mOCOut; // oriconvert target orientation
+	std::string mOCChangeSysCo; // oriconvert change coordinate system
+	std::string mOCFormat; // OC text file format
   
-        void InitGeomTerrain();
+        void Appli_InitGeomTerrain();
+	void Appli_InitHomography();
+	void Appli_ChangeGeomTerrain();
+	void Appli_ApplyImProj(bool aShow);
+	void Appli_ApplyImHomography(bool aShow);
      
     private :
         cISR_Appli(const cISR_Appli &); // To avoid unwanted copies
 
         void DoShowArgs1();
         void DoShowArgs2(int aKIm);
-		
+	void DoOriConvert();
         std::string mFullName;
         std::string mDir;
         std::string mPat;
-        std::string mOri;
         std::string mPrefixOut;
+	bool				 mDoOC;
         std::list<std::string> mLFile;
         cInterfChantierNameManipulateur * mICNM;
         std::vector<cISR_Ima *>           mIms;
         bool                              mShowArgs;
-        
+	bool				  mByHomography;
+        bool				mQuickResampling;
 };
 
 
 class cISR_Ima
 {
     public:
-       cISR_Ima(cISR_Appli & anAppli,const std::string & aName,int aAlti,int aDZ, std::string & aPrefix);
-    
-       void InitMemImProj();
-	   void InitGeom();
-	   void GenTFW();
-       void CalculImProj();
-       Pt2di SzUV(){return mSzIm;}
-       Pt2di SzXY(){return mSzImRect;}
-       bool  DepthIsDefined(){return mCam->ProfIsDef();}
-	   int 			   mAlti;
-       int			   mZTerrain;
-       int			   mDeZoom;
-       int			   mBorder[4]; // the extent border of the rectified image
-	   double		   mIGSD; // Initial ground sample distance 
-	   double		   mFGSD; // Final ground sample distance, after resample (goal= decrease the size of the resulting rectified image)
+	cISR_Ima(cISR_Appli & anAppli,const std::string & aName,int aAlti,int aDZ, std::string & aPrefix,bool aQuick);
+    	void InitGeomTerrain();
+	void InitGeom();
+	void ApplyImProj();
+	void GenTFW();
+	void WriteImage(cISR_ColorImg & aImage);
+	//void InitMemImProjHomography();
+	void InitHomography();
+	void ApplyImHomography();
+	void ChangeGeomTerrain();
+	Pt2di SzUV(){return mSzIm;}
+	Pt2di SzXY(){return mSzImRect;}
+	std::string Name(){return mName;}
+	bool  DepthIsDefined(){return mCam->ProfIsDef();}
+	int 			   mAlti;
+	int			   mZTerrain;
+	int			   mDeZoom;
+	int			   mBorder[4]; // the extent border of the rectified image
+	double		   mIGSD; // Initial ground sample distance 
+	double		   mFGSD; // Final ground sample distance, after resample (goal= decrease the size of the resulting rectified image)
+	double		   mLoopGSD; // The GSD used during the rectification in the loop, = IGSD if QuickResampling=0, =FGSD if QuickResampling=1
+	bool		mQuickResampling;
 
     private :
        cISR_Appli &    mAppli;
        std::string     mName;
        std::string     mNameTiff;
-	   Pt2di           mSzIm;	
-	   Pt2di           mSzImRect;				
+	Pt2di       mSzIm;	
+	Pt2di           mSzImRect;				
        std::string     mNameOri;
        std::string	   mPrefix;
        CamStenope *    mCam;
+	cElHomographie	mH;
 };
 
 //Color image
@@ -281,22 +298,26 @@ cISR_ColorImg  cISR_ColorImg::ResampleColorImg(double aFact)
 /********************************************************************/
 
 // constructor of class ISR Image
-cISR_Ima::cISR_Ima(cISR_Appli & anAppli,const std::string & aName,int aAlti,int aDZ, std::string & aPrefix) :
+cISR_Ima::cISR_Ima(cISR_Appli & anAppli,const std::string & aName,int aAlti,int aDZ, std::string & aPrefix,bool aQuick) :
    mAlti   (aAlti),
    mZTerrain (0),
    mDeZoom (aDZ),
+	mQuickResampling(aQuick),
+	//private
    mAppli  (anAppli),
    mName   	(aName), // Jpg image for e.g.
    mNameTiff (NameFileStd(mName,3,false,true,true,true)), // associated tif 3 channel image
    //mTifIm  (Tiff_Im::StdConvGen(mAppli.Dir() + mNameTiff,3,true)),
    mNameOri  (mAppli.NameIm2NameOri(mName)),
-   mPrefix   (aPrefix),
-   mCam      (CamOrientGenFromFile(mNameOri,mAppli.ICNM()))
+ mPrefix   (aPrefix),
+   mCam      (CamOrientGenFromFile(mNameOri,mAppli.ICNM())),
+	mH	(cElHomographie::Id())
+	
 {
    
 }
 
-void cISR_Ima::CalculImProj()
+void cISR_Ima::ApplyImProj()
 {
 	//  For a given ground surface elevation, compute the rectified image (rectification==redressement)
 	Pt2di aSz = this->SzXY();
@@ -309,12 +330,12 @@ void cISR_Ima::CalculImProj()
     for (aP.x=0 ; aP.x<aSz.x; aP.x++)
     {
 		// compute X coordinate in ground/object geometry
-		double aX=mBorder[0]+mIGSD * aP.x;
+		double aX=mBorder[0]+mLoopGSD * aP.x;
 		
         for (aP.y=0 ; aP.y<aSz.y; aP.y++)
 			{
 			// compute Y coordinate in ground/object geometry
-			double aY=mBorder[3]-mIGSD * aP.y;
+			double aY=mBorder[3]-mLoopGSD * aP.y;
 			// define the point position in ground geometry
 			Pt3dr aPTer(aX,aY,mZTerrain);
 			// project this point in the initial image
@@ -330,18 +351,7 @@ void cISR_Ima::CalculImProj()
     }
 
 	// write the rectified image in the working directory
-	
-	
-    std::string aNameImProj= mPrefix+"-"+this->mName+".tif";
-    
-    // performed a resample of the rectified image.
-    if (mDeZoom!=1)
-		{
-		cISR_ColorImg ImResampled = ImColRect.ResampleColorImg(mDeZoom);
-		ImResampled.write(aNameImProj);
-		std::cout << "Resampling of rectified image (dezoom factor of " << mDeZoom << ") \n";
-		}
-    else ImColRect.write(aNameImProj);
+	this->WriteImage(ImColRect);	
     
     // write the tfw file
     this->GenTFW();
@@ -349,9 +359,49 @@ void cISR_Ima::CalculImProj()
     std::cout << "End of rectification for oblique image " << this->mName  << "  ------------------- \n \n"; 
 }
 
+void cISR_Ima::ApplyImHomography()
+{
+	//  generat the rectified image by using an homography, faster than with R3toF2
+	Pt2di aSz = this->SzXY();
+	cISR_ColorImg ImCol(mNameTiff.c_str());
+	cISR_ColorImg ImColRect(aSz);
+    Pt2di aP;
+	std::cout << "Beginning of rectification by homography for oblique image " << this->mName  << "   -------------- \n";
+	
+	// Loop on every column and line of the rectified image
+    for (aP.x=0 ; aP.x<aSz.x; aP.x++)
+    {
+		// compute X coordinate in ground/object geometry
+		double aX=mBorder[0]+mLoopGSD * aP.x;
+		
+        for (aP.y=0 ; aP.y<aSz.y; aP.y++)
+			{
+			// compute Y coordinate in ground/object geometry
+			double aY=mBorder[3]-mLoopGSD * aP.y;
+			// define the point planimetric position in ground geometry
+			Pt2dr aPTerPlani(aX,aY);
+			// project this point in the initial image using the homography relationship
+			Pt2dr aPIm0=mH.Direct(aPTerPlani);
+			//std::cout << " point 2D image  :: " << aPIm0 <<"    \n";
+			//std::cout << " point 3D terrain :: " << aPTerPlani <<"    \n";
+			
+			// get the radiometric value at this position
+			cISR_Color aCol=ImCol.getr(aPIm0);
+			// write the value on the rectified image
+			ImColRect.set(aP,aCol);
+			}
+    }
+
+	this->WriteImage(ImColRect);	    
+    // write the tfw file
+    this->GenTFW();
+    
+    std::cout << "End of rectification by homography for oblique image " << this->mName  << "  ------------------- \n \n"; 
+}
+
 
 void cISR_Ima::GenTFW()
-           {
+{
                std::string aNameTFW = mPrefix+"-"+this->mName + ".tfw";
                std::ofstream aFtfw(aNameTFW.c_str());
                aFtfw.precision(10);
@@ -359,9 +409,24 @@ void cISR_Ima::GenTFW()
                aFtfw << 0 << "\n" << -mFGSD << "\n";
                aFtfw << mBorder[0] << "\n" << mBorder[3] << "\n";
                aFtfw.close();
-           }
+}
 
-void cISR_Ima::InitMemImProj()
+void cISR_Ima::WriteImage(cISR_ColorImg & aImage)
+{
+	// write the rectified image in the working directory
+    	std::string aNameImProj= mPrefix+"-"+this->mName+".tif";
+    
+    	// performed a resample of the rectified image.
+    	if ((mDeZoom!=1) & (mQuickResampling!=1))
+		{
+		cISR_ColorImg ImResampled = aImage.ResampleColorImg(mDeZoom);
+		ImResampled.write(aNameImProj);
+		std::cout << "Resampling of rectified image (dezoom factor of " << mDeZoom << ") \n";
+		}
+    	else aImage.write(aNameImProj);
+}
+
+void cISR_Ima::InitGeomTerrain()
 {
 	// if the user has defined a Flight altitude, we assume the soil elevetion to be at Z=position of the camera-flight altitude.
 	// else, the information of camera depth is used instead of flight altitude.
@@ -369,7 +434,11 @@ void cISR_Ima::InitMemImProj()
 	// get the pseudo optical center of the camera (position XYZ of the optical center)
 	Pt3dr OC=mCam->PseudoOpticalCenter();
 	mZTerrain=static_cast<int>(OC.z-mAlti);
-	if (mZTerrain<0) ELISE_ASSERT(false,"Ground Surface Elevation is below 0 (check FAlti)."); 
+	// des fois l'info alti est notée dans mCam mais pas l'info Profondeur. c'est peut-etre uniquement le cas pour les mauvais orientation
+	//if (mZTerrain<0) (mZTerrain=static_cast<int>(OC.z-mCam->GetAlti()));
+	if (mZTerrain<0) {
+			 std::cout << "For Image  " << this->mName  << " \n"; 
+			 ELISE_ASSERT(false,"Ground Surface Elevation is below 0 (check FAlti)."); }
 	// declare the 4 3Dpoints used for determining the XYZ coordinates of the 4 corners of the camera
 	Pt3dr P1;
 	Pt3dr P2;
@@ -380,6 +449,7 @@ void cISR_Ima::InitMemImProj()
 	// determine the ground sample distance.
 	mIGSD=std::abs (mCam->ResolutionSol(Pt3dr(OC.x,OC.y,mZTerrain))); //initial ground sample distance
 	mFGSD=mIGSD*mDeZoom; // final ground sample distance , different from Initial if dezoom is applied
+	mLoopGSD=mIGSD;
 
 	// determine  xmin,xmax,ymin, ymax
 	double x[4]={P1.x,P2.x,P3.x,P4.x};
@@ -394,12 +464,56 @@ void cISR_Ima::InitMemImProj()
 	mBorder[2]=static_cast<int>(*miny);
 	mBorder[3]=static_cast<int>(*maxy);
 	// determine the size in pixel of the projected image - without dezoom
-	int SzX=(mBorder[1]-mBorder[0])/mIGSD;
-	int SzY=(mBorder[3]-mBorder[2])/mIGSD;
+	int SzX=(mBorder[1]-mBorder[0])/mLoopGSD;
+	int SzY=(mBorder[3]-mBorder[2])/mLoopGSD;
 	
 	mSzImRect = Pt2di(SzX,SzY);
+	
+	
 }
 
+void cISR_Ima::InitHomography()
+{
+	
+	// generate 100 homol couples linking image geometry and planimetric (terrain) geometry, distributed accros the image, used for determing the homography
+	ElPackHomologue  aPackHomImTer;
+	Pt2di aP;
+	// Loop through the terrain space, 10 times (x) x 10 times (y)
+    	for (aP.x=0 ; aP.x<mCam->Sz().x; aP.x += (mCam->Sz().x/10))
+	{
+		// compute X coordinate in ground/object geometry
+		double aX=mBorder[0]+mIGSD * aP.x;
+
+        for (aP.y=0 ; aP.y<mCam->Sz().y; aP.y += (mCam->Sz().y/10))
+			{
+			// compute Y coordinate in ground/object geometry
+			double aY=mBorder[3]-mIGSD * aP.y;
+			// define the point position in ground geometry
+			Pt3dr aPTer(aX,aY,mZTerrain);
+			// project this point in the initial image
+			Pt2dr aPIm0 = mCam->R3toF2(aPTer); 
+			//std::cout << " point 2D image  :: " << aPIm0 <<"    \n";
+			//std::cout << " point 3D terrain :: " << aPTer <<"    \n";
+			
+			ElCplePtsHomologues Homol(aPIm0,Pt2dr (aX,aY));
+			// add the homol cple in the homol pack
+			aPackHomImTer.Cple_Add(Homol);
+			}
+	}
+    
+	// define the homography
+	cElHomographie H(aPackHomImTer,true);
+	//H = cElHomographie::RobustInit(qual,aPackHomImTer,bool Ok(1),1, 1.0,4);
+	// keep the inverse of the homography, as it this used to transform terrain coordinates to image coordinates
+	mH=H.Inverse();
+}
+
+void cISR_Ima::ChangeGeomTerrain()
+{
+	// used when QuickResampling=1
+	mSzImRect = mSzImRect/mDeZoom;
+	mLoopGSD = mLoopGSD*mDeZoom;
+}
 
 /********************************************************************/
 /*                                                                  */
@@ -411,18 +525,28 @@ void cISR_Ima::InitMemImProj()
 cISR_Appli::cISR_Appli(int argc, char** argv){
     // Reading parameter : check and  convert strings to low level objects
     mShowArgs=false;
+ 	bool mDoOC=0;
     int mFlightAlti = 0;
-    int mDeZoom=1;
+    int mDeZoom=4;
     std::string mPrefixOut="Rectified";
+	bool mByHomography=true;
+	bool mQuickResampling=true;
     ElInitArgMain
     (
         argc,argv,
         LArgMain()  << EAMC(mFullName,"Full Name (Dir+Pat)")
-                    << EAMC(mOri,"Used orientation, must be a projected coordinate system (no WGS, relative or RTL orientation)"),
+                    << EAMC(mOri,"Used orientation, must be a projected coordinate system (no WGS, relative or RTL orientation). If DoOC=1, give text file here"),
         LArgMain()  << EAM(mPrefixOut,"PrefixOut",true,"Prefix for the name of the resulting rectified image (ex 'toto' --> toto-R000567.JPG.tif), by default == 'Rectified'")
                     << EAM(mFlightAlti,"FAlti",true,"The flight altitude Above Ground Level. By default, use the flight alti computed by aerotriangulation")
-                    << EAM(mDeZoom,"DeZoom",true,"DeZoom of the original image, by default no dezoom")
+                    << EAM(mDeZoom,"DeZoom",true,"DeZoom of the original image, by default dezoom 4")
+ 		    << EAM(mByHomography,"ByHomography",true,"Perform the image rectification by homography? Default true, quicker but less accurate")
+		<< EAM(mQuickResampling,"QuickResampling",true,"Handle the resampling with a quick but non-adequate resample technique (default=true)")
+
                     << EAM(mShowArgs,"Show",true,"Print details during the processing")
+		<< EAM(mDoOC,"DoOC",true,"Convert text file into micmac orientation prior to image rectification, default false")
+		<< EAM(mOCFormat,"OriConvertFormat",true,"Format specification of the text file (ex.'#F=N_X_Y_Z_W_P_K') (by default read the colum header)")
+		<< EAM(mOCOut,"OriConvertOut",true,"Name of orientation database generated by Oriconvert, default 'Converted'")
+		<< EAM(mOCChangeSysCo,"OriConvertChangeSysCo",true,"OriConvert change coordinate file")
     );
     // Initialize name manipulator & files
     SplitDirAndFile(mDir,mPat,mFullName);
@@ -430,6 +554,8 @@ cISR_Appli::cISR_Appli(int argc, char** argv){
     mICNM = cInterfChantierNameManipulateur::BasicAlloc(mDir);
     // create the list of images starting from the regular expression (Pattern)
     mLFile = mICNM->StdGetListOfFile(mPat);
+
+	if (mDoOC) DoOriConvert();
 
     StdCorrecNameOrient(mOri,mDir);
 
@@ -443,7 +569,7 @@ cISR_Appli::cISR_Appli(int argc, char** argv){
               itS++
               )
      {
-           cISR_Ima * aNewIm = new  cISR_Ima(*this,*itS,mFlightAlti,mDeZoom,mPrefixOut);
+           cISR_Ima * aNewIm = new  cISR_Ima(*this,*itS,mFlightAlti,mDeZoom,mPrefixOut,mQuickResampling);
            mIms.push_back(aNewIm);   
            
            //test if there are enough information about flight altitude (either given by the aerotriangulation or the user with FAlti)
@@ -451,25 +577,73 @@ cISR_Appli::cISR_Appli(int argc, char** argv){
            if (mFlightAlti==0 && (aNewIm->DepthIsDefined()==0)) ELISE_ASSERT(false,"Flight Altitude not known (use FAlti)");
      }
 	
+	long start=time(NULL);
+
 	// Define the ground footprint (image swath) of every rectified images
-	InitGeomTerrain();
-	
+	Appli_InitGeomTerrain();
+	if (mQuickResampling) Appli_ChangeGeomTerrain();
+
+	if (mByHomography){
+	// compute the homography relation
+	Appli_InitHomography();
 	// Compute all rectified images
-         for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
-         {
-            // print details if asked:
-			if (mShowArgs) DoShowArgs2(aKIm);
-             mIms[aKIm]->CalculImProj();
-		  }
+	Appli_ApplyImHomography(mShowArgs);
+
+	} else {
+	// Compute all rectified images		
+	Appli_ApplyImProj(mShowArgs);
+	}
+
+	long end = time(NULL);
+        if (mShowArgs) cout<<"Rectification computed in "<<end-start<<" sec"<<endl;
 }
 
-void cISR_Appli::InitGeomTerrain()
+void cISR_Appli::Appli_InitGeomTerrain()
 {
     for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
     {
         cISR_Ima * anIm = mIms[aKIm];
 		// Define the ground footprint of each georectified images
-        anIm->InitMemImProj() ;
+        anIm->InitGeomTerrain() ;
+    }
+}
+
+void cISR_Appli::Appli_InitHomography()
+{
+    for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
+    {
+        cISR_Ima * anIm = mIms[aKIm];
+		// Define the ground footprint of each georectified images and compute the Homography
+	anIm->InitHomography();
+    }
+}
+
+void cISR_Appli::Appli_ApplyImProj(bool aShow)
+{
+    for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
+    {
+	if (aShow) DoShowArgs2(aKIm);
+        cISR_Ima * anIm = mIms[aKIm];
+	anIm->ApplyImProj();
+    }
+}
+
+void cISR_Appli::Appli_ApplyImHomography(bool aShow)
+{
+    for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
+    {
+	if (aShow) DoShowArgs2(aKIm);
+        cISR_Ima * anIm = mIms[aKIm];
+	anIm->ApplyImHomography();
+    }
+}
+
+void cISR_Appli::Appli_ChangeGeomTerrain()
+{
+    for (int aKIm=0 ; aKIm<int(mIms.size()) ; aKIm++)
+    {
+        cISR_Ima * anIm = mIms[aKIm];
+	anIm->ChangeGeomTerrain();
     }
 }
 
@@ -500,11 +674,14 @@ void cISR_Appli::DoShowArgs1()
 void cISR_Appli::DoShowArgs2(int aKIm)
 {
 				cISR_Ima * anIm = mIms[aKIm];
+				std::cout << "Image : " << anIm->Name() << " --------- \n";
+				std::cout << "DeZoom : " << anIm->mDeZoom << "\n";
+				//std::cout << "QuickResampling :	" << mQuickResampling << "\n";
    				std::cout << "Flight altitude [m]: 	" << anIm->mAlti << "  \n";
 				std::cout << "Altitude of the gound surface  : 	" << anIm->mZTerrain << " \n";
 				std::cout << "Initial Ground Sample Distance :	" << anIm->mIGSD << " \n";
 				std::cout << "Ground Sample Distance of Rectified images : " << anIm->mFGSD << " \n";
-				std::cout << "Rectified image size in pixel (before Resample) : " <<  anIm->SzXY() <<"  \n";		
+				std::cout << "Rectified image size in pixel : " <<  anIm->SzXY() <<"  \n";		
 				std::cout << "Rectified image X coverage [m] : 	" <<  anIm->mBorder[1]-anIm->mBorder[0] << "  \n";
 }
 
@@ -513,6 +690,28 @@ int ImageRectification(int argc,char ** argv)
      cISR_Appli anAppli(argc,argv);
 	
    return EXIT_SUCCESS;
+}
+
+void cISR_Appli::DoOriConvert()
+{
+	if (!EAMIsInit(&mOCOut)) mOCOut="Converted";
+	if (!EAMIsInit(&mOCFormat)) mOCFormat="OriTxtInFile";
+	else mOCFormat="'"+mOCFormat+"'";
+
+   std::string aCom =     MMBinFile("mm3d OriConvert")
+                        + mOCFormat + BLANK
+			+ mOri + BLANK
+                        + mOCOut + BLANK
+			+ std::string("MTD1=1 ")
+                    ;
+    
+   if (EAMIsInit(&mOCChangeSysCo))
+        aCom =   aCom
+                  + " ChSys=" + mOCChangeSysCo
+              ;
+	std::cout << "OriConvert call : " <<  aCom << "  \n";
+	System(aCom);
+	mOri=mOCOut;
 }
 
 

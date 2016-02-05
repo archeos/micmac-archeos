@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 /*******************************************/
@@ -156,7 +157,7 @@ void cAppliApero::ExportNuage(const cExportNuage & anEN)
        )
        {
            cObsLiaisonMultiple * anOLM = itDM->second;
-           cPoseCam *  aPC =  anOLM->Pose1();
+           cGenPoseCam *  aPC =  anOLM->Pose1();
            std::string aNameFile = mICNM->Assoc1To1(anEN.KeyFileColImage(),aPC->Name(),true);
            eModeAGP aMode = eModeAGPIm;
 
@@ -257,7 +258,13 @@ void cAppliApero::ExportNuage(const cExportNuage & anEN)
 
             {
                 cElBitmFont & aFont =  cElBitmFont::BasicFont_10x8();
-                std::string   aNum = ExtractDigit(StdPrefixGen(aPC->Name()),"0000");
+                std::string   aNum ;
+                if (aNPC.KeyCalName().IsInit())
+                   aNum =  mICNM->Assoc1To1(aNPC.KeyCalName().Val(),aPC->Name(),true);
+                else
+                    aNum = ExtractDigit(StdPrefixGen(aPC->Name()),"0000");
+
+// std::cout << "GGGGGGG " << aNum << "\n";
 
                 const char * aC = aNum.c_str();
 
@@ -355,7 +362,7 @@ void cAppliApero::ExportNuage(const cExportNuage & anEN)
          const std::vector<Pt3di>  &   aVNorm = anAGP.Cols();
          if ((aLastMode==eModeAGPNoAttr) && aModeBin)
          {
-             int aNb = aVPts.size();
+             int aNb = (int)aVPts.size();
              fwrite(&aNb,sizeof(aNb),1,aFP);
          }
 
@@ -399,7 +406,7 @@ void cAppliApero::ExportNuage(const cExportNuage & anEN)
              
              if (aModeBin)
              {
-                 int aNb = aVPts.size();
+                 int aNb = (int)aVPts.size();
                  fwrite(&aNb,sizeof(aNb),1,aFP);
              }
              for (int aK=0; aK<int(aVPts.size()) ; aK++)

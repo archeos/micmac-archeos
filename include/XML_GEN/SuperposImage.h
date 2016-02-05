@@ -70,6 +70,30 @@ std::string  Mangling( eQualCloud *);
 
 void  BinaryUnDumpFromFile(eQualCloud &,ELISE_fp &);
 
+typedef enum
+{
+  eTIGB_Unknown,
+  eTIGB_MMSten,
+  eTIGB_MMDimap2,
+  eTIGB_MMDimap1,
+  eTIGB_MMDGlobe,
+  eTIGB_MMIkonos,
+  eTIGB_MMASTER,
+  eTIGB_NbVals
+} eTypeImporGenBundle;
+void xml_init(eTypeImporGenBundle & aVal,cElXMLTree * aTree);
+std::string  eToString(const eTypeImporGenBundle & aVal);
+
+eTypeImporGenBundle  Str2eTypeImporGenBundle(const std::string & aName);
+
+cElXMLTree * ToXMLTree(const std::string & aNameTag,const eTypeImporGenBundle & anObj);
+
+void  BinaryDumpInFile(ELISE_fp &,const eTypeImporGenBundle &);
+
+std::string  Mangling( eTypeImporGenBundle *);
+
+void  BinaryUnDumpFromFile(eTypeImporGenBundle &,ELISE_fp &);
+
 class cIntervLutConvertion
 {
     public:
@@ -5015,6 +5039,9 @@ class cParamAlgoFusionMNT
         cTplValGesInit< std::string > & KeyPdsNuage();
         const cTplValGesInit< std::string > & KeyPdsNuage()const ;
 
+        cTplValGesInit< int > & SzBoucheTrou();
+        const cTplValGesInit< int > & SzBoucheTrou()const ;
+
         double & SigmaPds();
         const double & SigmaPds()const ;
 
@@ -5069,6 +5096,7 @@ class cParamAlgoFusionMNT
         double mFMNTSeuilCorrel;
         double mFMNTGammaCorrel;
         cTplValGesInit< std::string > mKeyPdsNuage;
+        cTplValGesInit< int > mSzBoucheTrou;
         cSpecAlgoFMNT mSpecAlgoFMNT;
 };
 cElXMLTree * ToXMLTree(const cParamAlgoFusionMNT &);
@@ -5116,6 +5144,9 @@ class cSectionGestionChantier
 
         cTplValGesInit< Box2di > & BoxTest();
         const cTplValGesInit< Box2di > & BoxTest()const ;
+
+        cTplValGesInit< bool > & ShowCom();
+        const cTplValGesInit< bool > & ShowCom()const ;
     private:
         cTplValGesInit< int > mSzDalles;
         cTplValGesInit< int > mRecouvrtDalles;
@@ -5126,6 +5157,7 @@ class cSectionGestionChantier
         cTplValGesInit< int > mInterneSingleBox;
         cTplValGesInit< std::string > mWorkDirPFM;
         cTplValGesInit< Box2di > mBoxTest;
+        cTplValGesInit< bool > mShowCom;
 };
 cElXMLTree * ToXMLTree(const cSectionGestionChantier &);
 
@@ -5202,6 +5234,9 @@ class cParamFusionMNT
 
         cTplValGesInit< std::string > & KeyPdsNuage();
         const cTplValGesInit< std::string > & KeyPdsNuage()const ;
+
+        cTplValGesInit< int > & SzBoucheTrou();
+        const cTplValGesInit< int > & SzBoucheTrou()const ;
 
         double & SigmaPds();
         const double & SigmaPds()const ;
@@ -5289,6 +5324,9 @@ class cParamFusionMNT
 
         cTplValGesInit< Box2di > & BoxTest();
         const cTplValGesInit< Box2di > & BoxTest()const ;
+
+        cTplValGesInit< bool > & ShowCom();
+        const cTplValGesInit< bool > & ShowCom()const ;
 
         cSectionGestionChantier & SectionGestionChantier();
         const cSectionGestionChantier & SectionGestionChantier()const ;
@@ -6451,6 +6489,1002 @@ void  BinaryDumpInFile(ELISE_fp &,const cXml_TopoTriplet &);
 void  BinaryUnDumpFromFile(cXml_TopoTriplet &,ELISE_fp &);
 
 std::string  Mangling( cXml_TopoTriplet *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_SLSRay
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_SLSRay & anObj,cElXMLTree * aTree);
+
+
+        double & IndCol();
+        const double & IndCol()const ;
+
+        Pt3dr & P1();
+        const Pt3dr & P1()const ;
+
+        Pt3dr & P2();
+        const Pt3dr & P2()const ;
+    private:
+        double mIndCol;
+        Pt3dr mP1;
+        Pt3dr mP2;
+};
+cElXMLTree * ToXMLTree(const cXml_SLSRay &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_SLSRay &);
+
+void  BinaryUnDumpFromFile(cXml_SLSRay &,ELISE_fp &);
+
+std::string  Mangling( cXml_SLSRay *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_OneLineSLS
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_OneLineSLS & anObj,cElXMLTree * aTree);
+
+
+        double & IndLine();
+        const double & IndLine()const ;
+
+        std::vector< cXml_SLSRay > & Rays();
+        const std::vector< cXml_SLSRay > & Rays()const ;
+    private:
+        double mIndLine;
+        std::vector< cXml_SLSRay > mRays;
+};
+cElXMLTree * ToXMLTree(const cXml_OneLineSLS &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_OneLineSLS &);
+
+void  BinaryUnDumpFromFile(cXml_OneLineSLS &,ELISE_fp &);
+
+std::string  Mangling( cXml_OneLineSLS *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_ScanLineSensor
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_ScanLineSensor & anObj,cElXMLTree * aTree);
+
+
+        cTplValGesInit< bool > & LineImIsScanLine();
+        const cTplValGesInit< bool > & LineImIsScanLine()const ;
+
+        cTplValGesInit< bool > & GroundSystemIsEuclid();
+        const cTplValGesInit< bool > & GroundSystemIsEuclid()const ;
+
+        Pt2di & ImSz();
+        const Pt2di & ImSz()const ;
+
+        bool & P1P2IsAltitude();
+        const bool & P1P2IsAltitude()const ;
+
+        Pt2di & GridSz();
+        const Pt2di & GridSz()const ;
+
+        Pt2dr & StepGrid();
+        const Pt2dr & StepGrid()const ;
+
+        cTplValGesInit< Pt2dr > & OriGrid();
+        const cTplValGesInit< Pt2dr > & OriGrid()const ;
+
+        std::vector< cXml_OneLineSLS > & Lines();
+        const std::vector< cXml_OneLineSLS > & Lines()const ;
+    private:
+        cTplValGesInit< bool > mLineImIsScanLine;
+        cTplValGesInit< bool > mGroundSystemIsEuclid;
+        Pt2di mImSz;
+        bool mP1P2IsAltitude;
+        Pt2di mGridSz;
+        Pt2dr mStepGrid;
+        cTplValGesInit< Pt2dr > mOriGrid;
+        std::vector< cXml_OneLineSLS > mLines;
+};
+cElXMLTree * ToXMLTree(const cXml_ScanLineSensor &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_ScanLineSensor &);
+
+void  BinaryUnDumpFromFile(cXml_ScanLineSensor &,ELISE_fp &);
+
+std::string  Mangling( cXml_ScanLineSensor *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_PolynXY
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_PolynXY & anObj,cElXMLTree * aTree);
+
+
+        std::vector< cMonomXY > & Monomes();
+        const std::vector< cMonomXY > & Monomes()const ;
+    private:
+        std::vector< cMonomXY > mMonomes;
+};
+cElXMLTree * ToXMLTree(const cXml_PolynXY &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_PolynXY &);
+
+void  BinaryUnDumpFromFile(cXml_PolynXY &,ELISE_fp &);
+
+std::string  Mangling( cXml_PolynXY *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_CamGenPolBundle
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_CamGenPolBundle & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameCamSsCor();
+        const std::string & NameCamSsCor()const ;
+
+        std::string & NameIma();
+        const std::string & NameIma()const ;
+
+        cTplValGesInit< cSystemeCoord > & SysCible();
+        const cTplValGesInit< cSystemeCoord > & SysCible()const ;
+
+        int & DegreTot();
+        const int & DegreTot()const ;
+
+        Pt2dr & Center();
+        const Pt2dr & Center()const ;
+
+        double & Ampl();
+        const double & Ampl()const ;
+
+        cXml_PolynXY & CorX();
+        const cXml_PolynXY & CorX()const ;
+
+        cXml_PolynXY & CorY();
+        const cXml_PolynXY & CorY()const ;
+    private:
+        std::string mNameCamSsCor;
+        std::string mNameIma;
+        cTplValGesInit< cSystemeCoord > mSysCible;
+        int mDegreTot;
+        Pt2dr mCenter;
+        double mAmpl;
+        cXml_PolynXY mCorX;
+        cXml_PolynXY mCorY;
+};
+cElXMLTree * ToXMLTree(const cXml_CamGenPolBundle &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_CamGenPolBundle &);
+
+void  BinaryUnDumpFromFile(cXml_CamGenPolBundle &,ELISE_fp &);
+
+std::string  Mangling( cXml_CamGenPolBundle *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestExistFile
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestExistFile & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameFile();
+        const std::string & NameFile()const ;
+    private:
+        std::string mNameFile;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestExistFile &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestExistFile &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestExistFile &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestExistFile *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestExistDir
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestExistDir & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameDir();
+        const std::string & NameDir()const ;
+    private:
+        std::string mNameDir;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestExistDir &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestExistDir &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestExistDir &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestExistDir *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestDiffCalib
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestDiffCalib & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameTestCalib();
+        const std::string & NameTestCalib()const ;
+    private:
+        std::string mNameTestCalib;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestDiffCalib &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestDiffCalib &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestDiffCalib &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestDiffCalib *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestDiffOri
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestDiffOri & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameTestOri();
+        const std::string & NameTestOri()const ;
+
+        std::string & PatternTestOri();
+        const std::string & PatternTestOri()const ;
+    private:
+        std::string mNameTestOri;
+        std::string mPatternTestOri;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestDiffOri &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestDiffOri &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestDiffOri &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestDiffOri *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestDiffImg
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestDiffImg & anObj,cElXMLTree * aTree);
+
+
+        std::string & NameTestImg();
+        const std::string & NameTestImg()const ;
+    private:
+        std::string mNameTestImg;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestDiffImg &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestDiffImg &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestDiffImg &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestDiffImg *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_FileCopy
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_FileCopy & anObj,cElXMLTree * aTree);
+
+
+        std::string & FilePath();
+        const std::string & FilePath()const ;
+    private:
+        std::string mFilePath;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_FileCopy &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_FileCopy &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_FileCopy &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_FileCopy *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_DirCopy
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_DirCopy & anObj,cElXMLTree * aTree);
+
+
+        std::string & DirPath();
+        const std::string & DirPath()const ;
+    private:
+        std::string mDirPath;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_DirCopy &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_DirCopy &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_DirCopy &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_DirCopy *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_OneTest
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_OneTest & anObj,cElXMLTree * aTree);
+
+
+        std::string & Cmd();
+        const std::string & Cmd()const ;
+
+        cTplValGesInit< bool > & TestReturnValue();
+        const cTplValGesInit< bool > & TestReturnValue()const ;
+
+        std::list< cXmlTNR_TestExistFile > & TestFiles();
+        const std::list< cXmlTNR_TestExistFile > & TestFiles()const ;
+
+        std::list< cXmlTNR_TestExistDir > & TestDir();
+        const std::list< cXmlTNR_TestExistDir > & TestDir()const ;
+
+        std::list< cXmlTNR_TestDiffCalib > & TestCalib();
+        const std::list< cXmlTNR_TestDiffCalib > & TestCalib()const ;
+
+        std::list< cXmlTNR_TestDiffOri > & TestOri();
+        const std::list< cXmlTNR_TestDiffOri > & TestOri()const ;
+
+        std::list< cXmlTNR_TestDiffImg > & TestImg();
+        const std::list< cXmlTNR_TestDiffImg > & TestImg()const ;
+
+        std::list< cXmlTNR_FileCopy > & FileCopy();
+        const std::list< cXmlTNR_FileCopy > & FileCopy()const ;
+
+        std::list< cXmlTNR_DirCopy > & DirCopy();
+        const std::list< cXmlTNR_DirCopy > & DirCopy()const ;
+    private:
+        std::string mCmd;
+        cTplValGesInit< bool > mTestReturnValue;
+        std::list< cXmlTNR_TestExistFile > mTestFiles;
+        std::list< cXmlTNR_TestExistDir > mTestDir;
+        std::list< cXmlTNR_TestDiffCalib > mTestCalib;
+        std::list< cXmlTNR_TestDiffOri > mTestOri;
+        std::list< cXmlTNR_TestDiffImg > mTestImg;
+        std::list< cXmlTNR_FileCopy > mFileCopy;
+        std::list< cXmlTNR_DirCopy > mDirCopy;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_OneTest &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_OneTest &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_OneTest &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_OneTest *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_GlobTest
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_GlobTest & anObj,cElXMLTree * aTree);
+
+
+        std::list< cXmlTNR_OneTest > & Tests();
+        const std::list< cXmlTNR_OneTest > & Tests()const ;
+
+        std::string & Name();
+        const std::string & Name()const ;
+
+        std::list< std::string > & PatFileInit();
+        const std::list< std::string > & PatFileInit()const ;
+
+        std::list< std::string > & DirInit();
+        const std::list< std::string > & DirInit()const ;
+    private:
+        std::list< cXmlTNR_OneTest > mTests;
+        std::string mName;
+        std::list< std::string > mPatFileInit;
+        std::list< std::string > mDirInit;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_GlobTest &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_GlobTest &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_GlobTest &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_GlobTest *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestCmdReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestCmdReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & CmdName();
+        const std::string & CmdName()const ;
+
+        bool & TestCmd();
+        const bool & TestCmd()const ;
+    private:
+        std::string mCmdName;
+        bool mTestCmd;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestCmdReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestCmdReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestCmdReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestCmdReport *);
+
+class cXmlTNR_TestFileReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestFileReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & FileName();
+        const std::string & FileName()const ;
+
+        bool & TestFileDiff();
+        const bool & TestFileDiff()const ;
+
+        bool & TestExeFile();
+        const bool & TestExeFile()const ;
+
+        bool & TestRefFile();
+        const bool & TestRefFile()const ;
+
+        int & ExeFileSize();
+        const int & ExeFileSize()const ;
+
+        int & RefFileSize();
+        const int & RefFileSize()const ;
+    private:
+        std::string mFileName;
+        bool mTestFileDiff;
+        bool mTestExeFile;
+        bool mTestRefFile;
+        int mExeFileSize;
+        int mRefFileSize;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestFileReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestFileReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestFileReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestFileReport *);
+
+class cFileDiff
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cFileDiff & anObj,cElXMLTree * aTree);
+
+
+        string & Name();
+        const string & Name()const ;
+
+        int & DiffSize();
+        const int & DiffSize()const ;
+    private:
+        string mName;
+        int mDiffSize;
+};
+cElXMLTree * ToXMLTree(const cFileDiff &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cFileDiff &);
+
+void  BinaryUnDumpFromFile(cFileDiff &,ELISE_fp &);
+
+std::string  Mangling( cFileDiff *);
+
+class cXmlTNR_TestDirReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestDirReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & DirName();
+        const std::string & DirName()const ;
+
+        bool & TestDirDiff();
+        const bool & TestDirDiff()const ;
+
+        bool & TestExeDir();
+        const bool & TestExeDir()const ;
+
+        bool & TestRefDir();
+        const bool & TestRefDir()const ;
+
+        int & ExeDirSize();
+        const int & ExeDirSize()const ;
+
+        int & RefDirSize();
+        const int & RefDirSize()const ;
+
+        std::list< string > & MissingRefFile();
+        const std::list< string > & MissingRefFile()const ;
+
+        std::list< string > & MissingExeFile();
+        const std::list< string > & MissingExeFile()const ;
+
+        std::list< cFileDiff > & FileDiff();
+        const std::list< cFileDiff > & FileDiff()const ;
+    private:
+        std::string mDirName;
+        bool mTestDirDiff;
+        bool mTestExeDir;
+        bool mTestRefDir;
+        int mExeDirSize;
+        int mRefDirSize;
+        std::list< string > mMissingRefFile;
+        std::list< string > mMissingExeFile;
+        std::list< cFileDiff > mFileDiff;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestDirReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestDirReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestDirReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestDirReport *);
+
+class crEcartsPlani
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(crEcartsPlani & anObj,cElXMLTree * aTree);
+
+
+        Pt2dr & CoordPx();
+        const Pt2dr & CoordPx()const ;
+
+        Pt3dr & UxUyE();
+        const Pt3dr & UxUyE()const ;
+    private:
+        Pt2dr mCoordPx;
+        Pt3dr mUxUyE;
+};
+cElXMLTree * ToXMLTree(const crEcartsPlani &);
+
+void  BinaryDumpInFile(ELISE_fp &,const crEcartsPlani &);
+
+void  BinaryUnDumpFromFile(crEcartsPlani &,ELISE_fp &);
+
+std::string  Mangling( crEcartsPlani *);
+
+class cXmlTNR_CalibReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_CalibReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & CalibName();
+        const std::string & CalibName()const ;
+
+        bool & TestCalibDiff();
+        const bool & TestCalibDiff()const ;
+
+        std::list< Pt2dr > & EcartsRadiaux();
+        const std::list< Pt2dr > & EcartsRadiaux()const ;
+
+        std::list< crEcartsPlani > & rEcartsPlani();
+        const std::list< crEcartsPlani > & rEcartsPlani()const ;
+    private:
+        std::string mCalibName;
+        bool mTestCalibDiff;
+        std::list< Pt2dr > mEcartsRadiaux;
+        std::list< crEcartsPlani > mrEcartsPlani;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_CalibReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_CalibReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_CalibReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_CalibReport *);
+
+class cXmlTNR_OriReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_OriReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & OriName();
+        const std::string & OriName()const ;
+
+        bool & TestOriDiff();
+        const bool & TestOriDiff()const ;
+
+        double & DistCenter();
+        const double & DistCenter()const ;
+
+        double & DistMatrix();
+        const double & DistMatrix()const ;
+    private:
+        std::string mOriName;
+        bool mTestOriDiff;
+        double mDistCenter;
+        double mDistMatrix;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_OriReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_OriReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_OriReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_OriReport *);
+
+class cXmlTNR_ImgReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_ImgReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & ImgName();
+        const std::string & ImgName()const ;
+
+        bool & TestImgDiff();
+        const bool & TestImgDiff()const ;
+
+        double & NbPxDiff();
+        const double & NbPxDiff()const ;
+
+        double & SumDiff();
+        const double & SumDiff()const ;
+
+        double & MoyDiff();
+        const double & MoyDiff()const ;
+
+        Pt3dr & DiffMaxi();
+        const Pt3dr & DiffMaxi()const ;
+    private:
+        std::string mImgName;
+        bool mTestImgDiff;
+        double mNbPxDiff;
+        double mSumDiff;
+        double mMoyDiff;
+        Pt3dr mDiffMaxi;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_ImgReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_ImgReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_ImgReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_ImgReport *);
+
+class cXmlTNR_OneTestReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_OneTestReport & anObj,cElXMLTree * aTree);
+
+
+        bool & TestOK();
+        const bool & TestOK()const ;
+
+        std::list< cXmlTNR_TestCmdReport > & XmlTNR_TestCmdReport();
+        const std::list< cXmlTNR_TestCmdReport > & XmlTNR_TestCmdReport()const ;
+
+        std::list< cXmlTNR_TestFileReport > & XmlTNR_TestFileReport();
+        const std::list< cXmlTNR_TestFileReport > & XmlTNR_TestFileReport()const ;
+
+        std::list< cXmlTNR_TestDirReport > & XmlTNR_TestDirReport();
+        const std::list< cXmlTNR_TestDirReport > & XmlTNR_TestDirReport()const ;
+
+        std::list< cXmlTNR_CalibReport > & XmlTNR_CalibReport();
+        const std::list< cXmlTNR_CalibReport > & XmlTNR_CalibReport()const ;
+
+        std::list< cXmlTNR_OriReport > & XmlTNR_OriReport();
+        const std::list< cXmlTNR_OriReport > & XmlTNR_OriReport()const ;
+
+        std::list< cXmlTNR_ImgReport > & XmlTNR_ImgReport();
+        const std::list< cXmlTNR_ImgReport > & XmlTNR_ImgReport()const ;
+    private:
+        bool mTestOK;
+        std::list< cXmlTNR_TestCmdReport > mXmlTNR_TestCmdReport;
+        std::list< cXmlTNR_TestFileReport > mXmlTNR_TestFileReport;
+        std::list< cXmlTNR_TestDirReport > mXmlTNR_TestDirReport;
+        std::list< cXmlTNR_CalibReport > mXmlTNR_CalibReport;
+        std::list< cXmlTNR_OriReport > mXmlTNR_OriReport;
+        std::list< cXmlTNR_ImgReport > mXmlTNR_ImgReport;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_OneTestReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_OneTestReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_OneTestReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_OneTestReport *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_GlobTestReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_GlobTestReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & Name();
+        const std::string & Name()const ;
+
+        bool & Bilan();
+        const bool & Bilan()const ;
+
+        int & NbTest();
+        const int & NbTest()const ;
+
+        int & NbTestOk();
+        const int & NbTestOk()const ;
+
+        std::list< cXmlTNR_OneTestReport > & XmlTNR_OneTestReport();
+        const std::list< cXmlTNR_OneTestReport > & XmlTNR_OneTestReport()const ;
+    private:
+        std::string mName;
+        bool mBilan;
+        int mNbTest;
+        int mNbTestOk;
+        std::list< cXmlTNR_OneTestReport > mXmlTNR_OneTestReport;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_GlobTestReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_GlobTestReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_GlobTestReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_GlobTestReport *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cEcartsPlani
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cEcartsPlani & anObj,cElXMLTree * aTree);
+
+
+        Pt2dr & CoordPx();
+        const Pt2dr & CoordPx()const ;
+
+        Pt3dr & UxUyE();
+        const Pt3dr & UxUyE()const ;
+    private:
+        Pt2dr mCoordPx;
+        Pt3dr mUxUyE;
+};
+cElXMLTree * ToXMLTree(const cEcartsPlani &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cEcartsPlani &);
+
+void  BinaryUnDumpFromFile(cEcartsPlani &,ELISE_fp &);
+
+std::string  Mangling( cEcartsPlani *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestCalibReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestCalibReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & CalibName();
+        const std::string & CalibName()const ;
+
+        bool & TestCalibDiff();
+        const bool & TestCalibDiff()const ;
+
+        std::list< Pt2dr > & EcartsRadiaux();
+        const std::list< Pt2dr > & EcartsRadiaux()const ;
+
+        std::list< cEcartsPlani > & EcartsPlani();
+        const std::list< cEcartsPlani > & EcartsPlani()const ;
+    private:
+        std::string mCalibName;
+        bool mTestCalibDiff;
+        std::list< Pt2dr > mEcartsRadiaux;
+        std::list< cEcartsPlani > mEcartsPlani;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestCalibReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestCalibReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestCalibReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestCalibReport *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestOriReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestOriReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & OriName();
+        const std::string & OriName()const ;
+
+        bool & TestOriDiff();
+        const bool & TestOriDiff()const ;
+
+        double & DistCenter();
+        const double & DistCenter()const ;
+
+        double & DistMatrix();
+        const double & DistMatrix()const ;
+    private:
+        std::string mOriName;
+        bool mTestOriDiff;
+        double mDistCenter;
+        double mDistMatrix;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestOriReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestOriReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestOriReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestOriReport *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXmlTNR_TestImgReport
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXmlTNR_TestImgReport & anObj,cElXMLTree * aTree);
+
+
+        std::string & ImgName();
+        const std::string & ImgName()const ;
+
+        bool & TestImgDiff();
+        const bool & TestImgDiff()const ;
+
+        double & NbPxDiff();
+        const double & NbPxDiff()const ;
+
+        double & SumDiff();
+        const double & SumDiff()const ;
+
+        double & MoyDiff();
+        const double & MoyDiff()const ;
+
+        Pt3dr & DiffMaxi();
+        const Pt3dr & DiffMaxi()const ;
+    private:
+        std::string mImgName;
+        bool mTestImgDiff;
+        double mNbPxDiff;
+        double mSumDiff;
+        double mMoyDiff;
+        Pt3dr mDiffMaxi;
+};
+cElXMLTree * ToXMLTree(const cXmlTNR_TestImgReport &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXmlTNR_TestImgReport &);
+
+void  BinaryUnDumpFromFile(cXmlTNR_TestImgReport &,ELISE_fp &);
+
+std::string  Mangling( cXmlTNR_TestImgReport *);
+
+/******************************************************/
+/******************************************************/
+/******************************************************/
+class cXml_ParamRTI
+{
+    public:
+        cGlobXmlGen mGXml;
+
+        friend void xml_init(cXml_ParamRTI & anObj,cElXMLTree * aTree);
+
+
+        std::string & MasterIm();
+        const std::string & MasterIm()const ;
+
+        std::string & Pattern();
+        const std::string & Pattern()const ;
+
+        double & ScaleSSRes();
+        const double & ScaleSSRes()const ;
+
+        cTplValGesInit< double > & SeuilSat();
+        const cTplValGesInit< double > & SeuilSat()const ;
+    private:
+        std::string mMasterIm;
+        std::string mPattern;
+        double mScaleSSRes;
+        cTplValGesInit< double > mSeuilSat;
+};
+cElXMLTree * ToXMLTree(const cXml_ParamRTI &);
+
+void  BinaryDumpInFile(ELISE_fp &,const cXml_ParamRTI &);
+
+void  BinaryUnDumpFromFile(cXml_ParamRTI &,ELISE_fp &);
+
+std::string  Mangling( cXml_ParamRTI *);
 
 /******************************************************/
 /******************************************************/

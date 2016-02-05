@@ -191,7 +191,116 @@ int TestCam_main(int argc,char ** argv)
 }
 
 
+// ========================================
 
+class cAppliTestARCam 
+{
+     public :
+        cAppliTestARCam(int argc,char ** argv);
+        std::string mName;
+
+        cBasicGeomCap3D *mCam;
+        Pt2di           mSz;
+        double          mZ0;
+
+        void TestAR();
+        void TestAR(double aZ);
+        double TestAR(const Pt2dr & aP,const double & aZ);
+};
+
+
+double cAppliTestARCam::TestAR(const Pt2dr & aPI0,const double & aZ)
+{
+     Pt3dr aPTer = mCam->ImEtZ2Terrain(aPI0,aZ);
+     Pt2dr aPI1 = mCam->Ter2Capteur(aPTer);
+
+     return euclid(aPI0-aPI1) + ElAbs(aZ-aPTer.z);
+}
+
+void cAppliTestARCam::TestAR(double aZ)
+{
+    Pt2di aP;
+    double aMaxD = 0;
+    double aMoyD = 0;
+    Pt2di  aPMax;
+    int aNb1=0;
+    for (aP.x=0 ; aP.x<=mSz.x ; aP.x++)
+    {
+        for (aP.y=0 ; aP.y<=mSz.y ; aP.y++)
+        {
+             double aD = TestAR(Pt2dr(aP),aZ);
+             aMoyD += aD;
+             if (aD>aMaxD)
+             {
+                 aMaxD = aD;
+                 aPMax = aP;
+             }
+             if (aD>1) aNb1++;
+        }
+    }
+    aMoyD /= double(mSz.x*mSz.y);
+    std::cout << "MaxD " << aMaxD <<" ; MoyD " << aMoyD << " ; PMax " << aPMax  << " ; Nb>1 " << aNb1 << "\n";
+}
+
+void cAppliTestARCam::TestAR()
+{
+    TestAR(mZ0);
+}
+
+
+
+cAppliTestARCam::cAppliTestARCam(int argc,char ** argv)  :
+    mZ0(0.0)
+{
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  << EAMC(mName,"Name Ori"),
+        LArgMain()  << EAM(mZ0,"Z0")
+    );
+
+    int aType = eTIGB_Unknown;
+
+    mCam = cBasicGeomCap3D::StdGetFromFile(mName,aType);
+
+    mSz  = mCam->SzBasicCapt3D();
+    std::cout << "Sz " << mSz << " Z0 " << mZ0 << "\n";
+
+}
+
+int TestARCam_main(int argc,char ** argv)
+{
+   cAppliTestARCam anAppli(argc,argv);
+   anAppli.TestAR();
+
+   return EXIT_SUCCESS;
+}
+
+int TestDistM2C_main(int argc,char ** argv)
+{
+    std::string aNameCam;
+    Pt2dr aP0;
+
+    ElInitArgMain
+    (
+        argc,argv,
+        LArgMain()  <<  EAMC(aNameCam,"Name Cam")
+                    <<  EAMC(aP0,"Pt"),
+        LArgMain()  
+    );
+
+    cElemAppliSetFile anEASF(aNameCam);
+
+    CamStenope * aCam =  CamOrientGenFromFile(aNameCam,anEASF.mICNM);
+
+    std::cout << "SZ " << aCam->Sz() << "\n";
+    std::cout   << " Delta=" << aCam->DistDirecte(aP0) -aP0 << "\n";
+    std::cout   << " Dx=" << aCam->DistDirecte(aP0) -aCam->DistDirecte(aP0+Pt2dr(-1,0)) << "\n";
+    std::cout   << " Dy=" << aCam->DistDirecte(aP0) -aCam->DistDirecte(aP0+Pt2dr(0,-1)) << "\n";
+    std::cout   << " Delta=" << aCam->DistInverse(aP0) -aP0 << "\n";
+
+   return EXIT_SUCCESS;
+}
 
 
 /*Footer-MicMac-eLiSe-25/06/2007

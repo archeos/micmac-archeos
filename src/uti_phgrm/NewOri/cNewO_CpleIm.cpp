@@ -207,6 +207,26 @@ cNewO_OrInit2Im::cNewO_OrInit2Im
    mSegAmbig      (Pt3dr(0,0,0),Pt3dr(1,1,1)),
    mW             (0)
 {
+    // Sauvegarde des point hom flottants 
+    {
+        const tLMCplP & aLM = mMergePH->ListMerged();
+        tVP2f aVP1;
+        tVP2f aVP2;
+        tVUI1 aVNb;
+ 
+         for ( tLMCplP::const_iterator itC=aLM.begin() ; itC!=aLM.end() ; itC++)
+         {
+             const Pt2dr & aP1 = (*itC)->GetVal(0);
+             const Pt2dr & aP2 = (*itC)->GetVal(1);
+             aVP1.push_back(Pt2df(aP1.x,aP1.y));
+             aVP2.push_back(Pt2df(aP2.x,aP2.y));
+             aVNb.push_back((*itC)->NbArc());
+         }
+         mI1->NM().Dir3PDeuxImage(mI1,mI2,true);
+         std::string aNameH = mI1->NM().NameHomFloat(mI1,mI2);
+         mI1->NM().WriteCouple(aNameH,aVP1,aVP2,aVNb);
+    }
+
    mXml.Im1()   = mI1->Name();
    mXml.Im2()   = mI2->Name();
    mXml.Calib() =  mI1->NM().OriCal();
@@ -471,6 +491,7 @@ cNewO_OrInit2Im::cNewO_OrInit2Im
     // CalcAmbig();
 
     mXml.Geom().SetVal(aXCmp);
+
 }
 
 const cXml_Ori2Im &  cNewO_OrInit2Im::XmlRes() const
@@ -494,11 +515,11 @@ class cNO_AppliOneCple
           cNewO_OrInit2Im * CpleIm();
           std::string NameXmlOri2Im(bool Bin) const;
     private :
-         typedef cFixedMergeTieP<2,Pt2dr> tMerge;
 
          cNO_AppliOneCple(const cNO_AppliOneCple &); // N.I.
 
          bool                 mQuick;
+         std::string          mPrefHom;
          std::string          mNameIm1;
          std::string          mNameIm2;
          std::string          mNameOriCalib;
@@ -509,7 +530,7 @@ class cNO_AppliOneCple
          std::string          mNameOriTest;
          bool                 mShow;
          bool                 mHPP;
-         cFixedMergeStruct<2,Pt2dr> mMergeStr;
+         tMergeLPackH         mMergeStr;
          ElRotation3D *       mTestSol;
 };
 
@@ -524,8 +545,10 @@ std::string cNO_AppliOneCple::NameXmlOri2Im(bool Bin) const
 
 cNO_AppliOneCple::cNO_AppliOneCple(int argc,char **argv)  :
    mQuick   (false),
+   mPrefHom (""),
    mShow    (false),
    mHPP     (true),
+   mMergeStr (2,false),
    mTestSol (0)
 {
 
@@ -538,12 +561,13 @@ cNO_AppliOneCple::cNO_AppliOneCple(int argc,char **argv)  :
                    << EAM(mNameOriTest,"OriTest",true,"Orientation for test to a reference", eSAM_IsExistDirOri)
                    << EAM(mShow,"Show",true,"Show")
                    << EAM(mQuick,"Quick",true,"Quick option adapted for UAV or easy acquisition, def = true")
+                   << EAM(mPrefHom,"PrefHom",true,"Prefix Homologous points, def=\"\"")
                    << EAM(mHPP,"HPP",true,"Homograhic Planar Patch")
    );
 
    if (MMVisualMode) return;
 
-   mNM = new cNewO_NameManager(mQuick,DirOfFile(mNameIm1),mNameOriCalib,"dat");
+   mNM = new cNewO_NameManager(mPrefHom,mQuick,DirOfFile(mNameIm1),mNameOriCalib,"dat");
 
 
    mIm1 = new cNewO_OneIm(*mNM,mNameIm1);
@@ -551,8 +575,8 @@ cNO_AppliOneCple::cNO_AppliOneCple(int argc,char **argv)  :
 
    mVI.push_back(mIm1);
    mVI.push_back(mIm2);
-   NOMerge_AddAllCams(mMergeStr,mVI);
 
+   NOMerge_AddAllCams(mMergeStr,mVI);
    mMergeStr.DoExport();
 
    if (EAMIsInit(&mNameOriTest))
@@ -567,9 +591,6 @@ cNO_AppliOneCple::cNO_AppliOneCple(int argc,char **argv)  :
       aRot = aRot.inv();
       mTestSol = new ElRotation3D(aRot);
    }
-
-//    cNewO_CombineCple aARI(aMergeStr,aTestSol);
-   // cNewO_OrInit2Im aCple(mIm1,mIm2,&mMergeStr,mTestSol,mShow,mHPP);
 }
 
 cNewO_OrInit2Im * cNO_AppliOneCple::CpleIm()
@@ -642,6 +663,8 @@ int TestAllNewOriImage_main(int argc,char ** argv)
 {
    std::string aPat,aNameOriCalib;
    bool aQuick=false;
+   std::string aPrefHom;
+   std::map<std::string,cListOfName > aMLCpleOk;
 
 
    ElInitArgMain
@@ -650,25 +673,32 @@ int TestAllNewOriImage_main(int argc,char ** argv)
         LArgMain() <<  EAMC(aPat,"Pattern"),
         LArgMain() << EAM(aNameOriCalib,"OriCalib",true,"Orientation for calibration ")
                    << EAM(aQuick,"Quick",true,"Quick option, adapted to simple acquisition (def=false)")
+                   << EAM(aPrefHom,"PrefHom",true,"Prefix Homologous")
    );
 
    cElemAppliSetFile anEASF(aPat);
    const cInterfChantierNameManipulateur::tSet * aVIm = anEASF.SetIm();
    std::string aDir = anEASF.mDir;
 
-   cNewO_NameManager * aNM =  new cNewO_NameManager(aQuick,aDir,aNameOriCalib,"dat");
+   cNewO_NameManager * aNM =  new cNewO_NameManager(aPrefHom,aQuick,aDir,aNameOriCalib,"dat");
 
    // Force la creation des directories
    for (int aK=0 ; aK<int(aVIm->size())  ; aK++)
    {
-       aNM->NameXmlOri2Im((*aVIm)[aK],(*aVIm)[aK],true);
+       std::string aName = (*aVIm)[aK];
+       // aNM->NameXmlOri2Im((*aVIm)[aK],(*aVIm)[aK],true);
+       aNM->NameXmlOri2Im(aName,aName,true);
+       aMLCpleOk[aName] = cListOfName();
    }
 
 /*
 */
 
    std::list<std::string> aLCom;
-   std::string aKeyH = "NKS-Assoc-CplIm2Hom@@dat";
+   std::string aKeyH = "NKS-Assoc-CplIm2Hom@"+ aPrefHom  + "@dat";
+   int aCptCom = 1;
+   int aNbVideCom = 200;
+   ElTimer aChrono;
    for (int aK1=0 ; aK1<int(aVIm->size()) ; aK1++)
    {
        const std::string & aName1 = (*aVIm)[aK1];
@@ -688,9 +718,18 @@ int TestAllNewOriImage_main(int argc,char ** argv)
                         if (EAMIsInit(&aNameOriCalib))
                            aCom = aCom + " OriCalib=" + aNameOriCalib;
                         aCom = aCom + " Quick=" + ToString(aQuick);
+                        aCom = aCom + " PrefHom=" + aPrefHom;
 
                         aLCom.push_back(aCom);
                     }
+                    if ((aCptCom%aNbVideCom)==0)
+                    {
+                       cEl_GPAO::DoComInParal(aLCom);
+                       aLCom.clear();
+                       int aNbIm = (int)aVIm->size();
+                       std::cout << "    Done  "  << aCptCom  << " on " <<  (aNbIm *(aNbIm-1)) /2  << " in T=" << aChrono.uval() << "\n";
+                    }
+                    aCptCom++;
                }
            }
        }
@@ -706,6 +745,9 @@ int TestAllNewOriImage_main(int argc,char ** argv)
    aTiming.TimeL2MatEss()  = 0;
    aTiming.TimeL1MatEss()  = 0;
    aTiming.TimeHomStd()    = 0;
+
+
+   cSauvegardeNamedRel                aLCple;
 
    for (int aK1=0 ; aK1<int(aVIm->size()) ; aK1++)
    {
@@ -730,13 +772,31 @@ int TestAllNewOriImage_main(int argc,char ** argv)
                       aTiming.TimeL2MatEss()  += aLocT.TimeL2MatEss();
                       aTiming.TimeL1MatEss()  += aLocT.TimeL1MatEss();
                       aTiming.TimeHomStd()    += aLocT.TimeHomStd();
+
+                      aMLCpleOk[aName1].Name().push_back(aName2);
+                      aMLCpleOk[aName2].Name().push_back(aName1);
+                      cCpleString aCple;
+                      aLCple.Cple().push_back(cCpleString(aName1,aName2));
                    }
                }
            }
        }
    }
 
+   for
+   (
+       std::map<std::string,cListOfName >::const_iterator  itM=aMLCpleOk.begin();
+       itM !=aMLCpleOk.end();
+       itM++
+   )
+   {
+          MakeFileXML(itM->second,aDir + aNM->NameListeImOrientedWith(itM->first,true));
+          MakeFileXML(itM->second,aDir + aNM->NameListeImOrientedWith(itM->first,false));
+   }
+
    MakeFileXML(aTiming,aDir +   aNM->NameTimingOri2Im());
+   MakeFileXML(aLCple,aDir +   aNM->NameListeCpleOriented(true));
+   MakeFileXML(aLCple,aDir +   aNM->NameListeCpleOriented(false));
 
    return EXIT_SUCCESS;
 }

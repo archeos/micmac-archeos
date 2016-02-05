@@ -283,9 +283,44 @@ void ELISE_fp::RmFileIfExist(const std::string & aFile)
       ELISE_fp::RmFile(aFile);
 }
 
+int  ELISE_fp::CmpFiles(const std::string & aN1,const std::string & aN2)
+{
+    FILE * aFp1 = fopen(aN1.c_str(),"r");
+    FILE * aFp2 = fopen(aN2.c_str(),"r");
+
+    if (aFp1==0) 
+    {
+       if (aFp2==0) return 0;
+       ::fclose(aFp2);
+       return -1;
+    }
+
+    if (aFp2==0)
+    {
+         ::fclose(aFp1);
+         return 1;
+    }
+
+    while (1)
+    {
+         int aC1 = ::fgetc(aFp1);
+         int aC2 = ::fgetc(aFp2);
+
+         if ((aC1!=aC2) || (aC1==EOF))
+         {
+             ::fclose(aFp1);
+             ::fclose(aFp2);
+             if (aC1==aC2) return 0;
+              return (aC1<aC2) ? -1 : 1;
+         }
+    }
+    return 0; // anti warning
+}
+
 
 void ELISE_fp::RmFile(const std::string & aFile)
 {
+
 #if ELISE_windows
 	if ( DeleteFile( aFile.c_str() )==0 )
 	{
@@ -314,24 +349,45 @@ void ELISE_fp::MvFile(const std::string & aName1,const std::string &  aDest)
 
 void ELISE_fp::CpFile(const std::string & aName1,const std::string &  aDest)
 {
-     std::string aNameCom = std::string(SYS_CP)+ " " + aName1 + " " + aDest;
-     VoidSystem(aNameCom.c_str());
+	#if ELISE_windows
+		string src = aName1;
+		replace(src.begin(), src.end(), '/', '\\');
+		string dst = aDest;
+		replace(dst.begin(), dst.end(), '/', '\\');
+		std::string aNameCom = std::string(SYS_CP) + " " + src + " " + dst;
+	#else
+		std::string aNameCom = std::string(SYS_CP) + " " + aName1 + " " + aDest;
+	#endif
+
+	VoidSystem(aNameCom.c_str());
+
+	ELISE_DEBUG_ERROR(!ELISE_fp::exist_file(aDest), "ELISE_fp::CpFile", '[' << aNameCom << "] has not been created");
 }
 
-void  ELISE_fp::PurgeDirGen(const std::string & aDir,bool Recurs)
+void  ELISE_fp::PurgeDirGen(const std::string & aDir, bool Recurs)
 {
-	std::string aDirC = aDir;
-	MakeFileDirCompl(aDirC);
-#if ELISE_windows
-	replace( aDirC.begin(), aDirC.end(), '/', '\\' );
-	std::string aCom = std::string(SYS_RM)+" /Q \""+aDirC+"*\"";
-#else
-    // MODIF MPD LES "" ne permettent pas
-	std::string aCom = std::string(SYS_RM)+ " " + aDirC+"*";
-#endif
-        if (Recurs)
-           aCom = aCom + " .* -r";
-	VoidSystem(aCom.c_str());
+	#if 1
+		ctPath path(aDir);
+		if ( !path.exists()) return;
+		if ( !path.removeContent(Recurs)) ELISE_WARNING("failed to purge " << (Recurs ? "recursively" : "") << '[' << aDir << ']');
+		return;
+	#else
+		std::string aDirC = aDir;
+		MakeFileDirCompl(aDirC);
+
+		if ( !ELISE_fp::IsDirectory(aDir)) return;
+
+		#if ELISE_windows
+			replace( aDirC.begin(), aDirC.end(), '/', '\\' );
+			std::string aCom = std::string(SYS_RM)+" /Q \""+aDirC+"*\"";
+		#else
+			//~ // MODIF MPD LES "" ne permettent pas
+			std::string aCom = std::string(SYS_RM)+ " " + aDirC+"*";
+			if (Recurs) aCom = aCom + " .* -r";
+		#endif
+
+		VoidSystem(aCom.c_str());
+	#endif
 }
 
 void  ELISE_fp::PurgeDirRecursif(const std::string & aDir)
@@ -396,29 +452,31 @@ void ELISE_fp::MkDirRec(const std::string &  aName )
 bool ELISE_fp::copy_file( const std::string i_src, const std::string i_dst, bool i_overwrite )
 {
 	#if (ELISE_windows)
-		return (bool)CopyFile( i_src.c_str(), i_dst.c_str(), i_overwrite?0:1 /*fail if Exits*/ );
+		return CopyFile(i_src.c_str(), i_dst.c_str(), i_overwrite ? 0 : 1) != 0;
 	#else
-		if ( !i_overwrite && exist_file(i_dst) ) return false;
+		if ( !i_overwrite && exist_file(i_dst)) return false;
 
-		ifstream src( i_src.c_str(), ios::binary );
-		ofstream dst( i_dst.c_str(), ios::binary );
+		ifstream src(i_src.c_str(), ios::binary);
+		ofstream dst(i_dst.c_str(), ios::binary);
 
-		if ( !src || !dst ) return false;
+		if ( !src || !dst) return false;
 
-        const unsigned int buffer_size = 1000000;
-        vector<char> buffer(buffer_size);
-		while ( !src.eof() )
+		const unsigned int buffer_size = 1000000;
+		vector<char> buffer(buffer_size);
+		while ( !src.eof())
 		{
-            src.read( buffer.data(), buffer_size );
-            dst.write( buffer.data(), src.gcount() );
+			src.read(buffer.data(), buffer_size);
+			dst.write(buffer.data(), src.gcount());
 		}
-		return true;
+
 		#if (ELISE_POSIX)
 			// copy rights on file
 			struct stat s;
-			stat( i_src.c_str(), &s );
-			chmod( i_dst.c_str(), s.st_mode );
+			stat(i_src.c_str(), &s);
+			chmod(i_dst.c_str(), s.st_mode);
 		#endif
+
+		return true;
 	#endif
 }
 
@@ -549,7 +607,7 @@ REAL8  ELISE_fp::read_REAL8 ()
 
 void  ELISE_fp::write(const std::string & aName)
 {
-	write_INT4(aName.size());
+	write_INT4((INT4)aName.size());
 	write(aName.c_str(),sizeof(char),aName.size());
 }
 
@@ -697,7 +755,7 @@ void  ELISE_fp::write_dummy(tFileOffset nb_byte)
 
 	for ( tFileOffset nb = 0; nb<nb_byte ; nb += sz_buf)
 	{
-		tFileOffset nb_loc = ElMin(tFileOffset(sz_buf),(nb_byte-nb));
+		tFileOffset nb_loc = min<tFileOffset>(tFileOffset(sz_buf),(nb_byte-nb));
 		if (!nb.BasicLLO())
 			MEM_RAZ(buf_local,nb_loc);
 		write(buf_local,sizeof(U_INT1),nb_loc);
@@ -2025,7 +2083,7 @@ Raw_ElFp_DumpUndump(Box2di)
 
 template <class tCont> void TplContDumpInFile(ELISE_fp & aFp,const tCont & aCont)
 {
-    aFp.write_INT4(aCont.size());
+    aFp.write_INT4((INT4)aCont.size());
     for (typename tCont::const_iterator itV=aCont.begin(); itV!=aCont.end() ; itV++)
          BinaryDumpInFile(aFp,*itV);
 }
@@ -2068,6 +2126,27 @@ Tpl_ElFp_DumpUndump(std::vector<std::string>)
 /********************************************************/
 /*   Qq ad hoc                                          */
 /********************************************************/
+
+void BinaryDumpInFile(ELISE_fp & aFp,const cMonomXY & aVal)
+{
+     BinaryDumpInFile(aFp,aVal.mCoeff);
+     BinaryDumpInFile(aFp,aVal.mDegX);
+     BinaryDumpInFile(aFp,aVal.mDegY);
+}
+
+void BinaryUnDumpFromFile(cMonomXY & aVal,ELISE_fp & aFp)
+{
+    double aCoeff;
+    int aDX,aDY;
+    BinaryUnDumpFromFile(aCoeff,aFp);
+    BinaryUnDumpFromFile(aDX,aFp);
+    BinaryUnDumpFromFile(aDY,aFp);
+    aVal = cMonomXY(aCoeff,aDX,aDY);
+}
+STD_MANGL(cMonomXY)
+
+
+
 
 void BinaryDumpInFile(ELISE_fp & aFp,const cCpleString & aVal)
 {

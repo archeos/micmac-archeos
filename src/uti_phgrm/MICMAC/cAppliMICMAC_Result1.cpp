@@ -382,8 +382,11 @@ std::cout << aPdsT1*aTeta1+aPdsT2*aTeta2 << "\n";
 
 void cAppliMICMAC::VerifSzFile(Pt2di aSzF) const
 {
+
+
    if ((aSzF.x==0) || (aSzF.y==0))
    {
+    {   std::cout << "cAppliMICMAC::VerifSzFile \n"; getchar();}
       MicMacErreur
       (
          eErrImageFileEmpty,
@@ -916,6 +919,7 @@ std::string   cAppliMICMAC::NameOrientationMnt(cEtapeMecComp * itE)
 
 void cAppliMICMAC::GenereOrientationMnt(cEtapeMecComp * itE)
 {
+
     cFileOriMnt aFOM = OrientFromOneEtape(*itE);
     std::string aName =    NameOrientationMnt(itE);
     cElXMLTree * aTree = ToXMLTree(aFOM);

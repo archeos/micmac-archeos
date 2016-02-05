@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 /************************************************************/
@@ -85,7 +86,7 @@ void cOneAppuisFlottant::AddLiaison
           bool  aModeDr
      )
 {
-    cPoseCam * aPose = mAppli.PoseFromName(aNameIm);
+    cGenPoseCam * aPose = mAppli.PoseGenFromName(aNameIm);
 
     for (int aK=0; aK<int(mCams.size()) ; aK++)
     {
@@ -120,13 +121,13 @@ void cOneAppuisFlottant::DoAMD(cAMD_Interf *)
 
 void  cOneAppuisFlottant::Compile()
 {
-    mNupl = new cNupletPtsHomologues(mCams.size(),1.0);
-    std::vector<cCameraFormelle *> aVCF;
+    mNupl = new cNupletPtsHomologues((int)mCams.size(), 1.0);
+    std::vector<cGenPDVFormelle *> aVCF;
 
     for (int aK=0; aK<int(mCams.size()) ; aK++)
     {
         mNupl->PK(aK) = mPts[aK];
-	aVCF.push_back(mCams[aK]->CamF());
+	aVCF.push_back(mCams[aK]->PDVF());
 	mPdsIm.push_back(1.0);
         if (mIsDroite[aK])
             mNupl->SetDr(aK);
@@ -148,7 +149,7 @@ void  cOneAppuisFlottant::Compile()
 
 int cOneAppuisFlottant::NbMesures() const
 {
-   return mCams.size();
+   return (int)mCams.size();
 }
 
 Pt3dr cOneAppuisFlottant::PInter() const
@@ -159,6 +160,12 @@ Pt3dr cOneAppuisFlottant::PInter() const
 
 double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aSO,std::string & aCamMaxErr)
 {
+   mAppli.CurXmlE(true).OneAppui().push_back(cXmlSauvExportAperoOneAppuis());
+   cXmlSauvExportAperoOneAppuis  & aXmlAp =  mAppli.CurXmlE().OneAppui().back();
+   aXmlAp.Name() = mName;
+
+
+
    if (mAppli.SqueezeDOCOAC())
    {
       if (mHasGround)
@@ -171,7 +178,7 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
               if (mCams[aK]->RotIsInit())
               {
                   aNbCam++;
-                  CamStenope * aCS = mCams[aK]->GetCamNonOrtho();
+                  CamStenope * aCS = mCams[aK]->DownCastPoseCamNN()->GetCamNonOrtho();
                   Pt2dr aPProj = aCS->R3toF2(mPt);
                   double aDist = euclid(aPProj,mPts[aK]);
                   if (aDist>anErMax)
@@ -188,6 +195,8 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
              // std::cout << "AxCAA " << mPt << PInter() << "\n";
              Pt3dr aDif =  mPt - PInter();
              std::cout << "Ctrl " << mName  << " GCP-Bundle, D=" <<  euclid(aDif) << " P=" << aDif<< "\n";
+
+             mAppli.AddEcPtsFlot(aDif);
           }
           if (aKMax>=0)
              aCamMaxErr =  mCams[aKMax]->Name();
@@ -269,6 +278,7 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
 */
    const cResiduP3Inc &  aRes = mMP3TI->UsePointLiaisonGen
                                 (
+                                   mAppli.ArgUPL(),
                                    -1,
                                    -1,
 				   0.0,  // Pds Pl
@@ -281,6 +291,15 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
 				    aUseAppAsInit,
                                     0
 				);
+
+
+/*
+    aXmlAp.DistFaiscTerrain().SetNoInit();
+    aXmlAp.EcartFaiscTerrain() = Pt3dr(0,0,0);
+    aXmlAp.EcartImMoy() = -1;
+    aXmlAp.EcartImMax() = -1;
+    aXmlAp.NameImMax() = "";
+*/
 
 
 // std::cout << "  GGGGGGGGGGGGGGGGGGGgg " << mPt   << mInc << aUseAppAsInit << "\n";
@@ -304,7 +323,7 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
                      if (mCams[aK]->RotIsInit())
                      {
                          Pt2dr aPIm =  mPts[aK];
-                         Pt2dr aPProj =   mCams[aK]->CurCam()->R3toF2(mPt);
+                         Pt2dr aPProj =   mCams[aK]->GenCurCam()->Ter2Capteur(mPt);
                          std::cout << "D=" << euclid(aPIm-aPProj) << " Im:" << aPIm << " Proj: " << aPProj;
                      }
                      else
@@ -332,8 +351,19 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
         std::cout << "Inc = "  << mInc << "PdsIm = " <<  mPdsIm  << "\n";
 
        if (HasFaiscPur)
-          std::cout << "    Ecart Estim-Faisceaux " << euclid(aPFP-aRes.mPTer) << "\n";
+       {
+          std::cout << "    Ecart Estim-Faisceaux " << euclid(aPFP-aRes.mPTer) ;
+          if (mHasGround)   std::cout << " Ter-Faisceau " << aPFP-mPt << " D= " << euclid(aPFP-mPt);
+          std::cout << "\n";
+       }
       
+   }
+
+   if (HasFaiscPur && mHasGround)
+   {
+      Pt3dr anEcart = aPFP-mPt;
+      aXmlAp.EcartFaiscTerrain().SetVal(anEcart);
+      aXmlAp.DistFaiscTerrain().SetVal(euclid(anEcart));
    }
 
    FILE * aFpRT = mAppli.FpRT() ;
@@ -358,11 +388,11 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
 
             if (aFpRT)
             {
-                cPoseCam *  aPC = mCams[aK];
+                cGenPoseCam *  aPC = mCams[aK];
                 Pt2dr anEc = aRes.mEcIm[aK];
                 Pt2dr aPIm = mNupl->PK(aK);
-                const CamStenope * aCS = aPC->CurCam();
-                Pt3dr aDir = aCS->F2toDirRayonR3(aPIm);
+                const cBasicGeomCap3D * aCS = aPC->GenCurCam();
+                Pt3dr aDir = aCS->DirRayonR3(aPIm);
 
                 fprintf(aFpRT,"%s %f %f %f %f %f %f %f",aPC->Name().c_str(),aPIm.x,aPIm.y,anEc.x,anEc.y,aDir.x,aDir.y,aDir.z);
                 fprintf(aFpRT,"\n");
@@ -379,9 +409,9 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
                {
 
 
-                   std::cout <<  mCams[aK]->Name() << " Ec-Im-Ter " << mCams[aK]->CurCam()->R3toF2(mPt)- mNupl->PK(aK);
+                   std::cout <<  mCams[aK]->Name() << " Ec-Im-Ter " << mCams[aK]->GenCurCam()->Ter2Capteur(mPt)- mNupl->PK(aK);
                    if (HasFaiscPur) 
-                       std::cout << " Ec-Im-Faisceau " << mCams[aK]->CurCam()->R3toF2(aPFP)- mNupl->PK(aK);
+                       std::cout << " Ec-Im-Faisceau " << mCams[aK]->GenCurCam()->Ter2Capteur(aPFP)- mNupl->PK(aK);
 
                    std::cout << "\n";
 /*
@@ -403,6 +433,8 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
 	    {
                 anErMax = anEr;
 	        aKMax = aK;
+                aXmlAp.EcartImMax().SetVal(anErMax);
+                aXmlAp.NameImMax().SetVal(mCams[aK]->Name());
 	    }
 
 	   mPdsIm[aK] = aPdrtIm.PdsOfError(anEr);
@@ -438,6 +470,10 @@ double cOneAppuisFlottant::AddObs(const cObsAppuisFlottant & anObs,cStatObs & aS
 
    if (anObs.ShowSom().Val())
       std::cout <<  "      ErrMoy " << aSEr/aSPds << " pixels " << " SP=" << aSPds << " \n";
+   if (aSPds>0)
+   {
+       aXmlAp.EcartImMoy().SetVal(aSEr/aSPds);
+   }
    if (anObs.ShowMax().Val())
    {
       std::cout <<  "     ErrMax = " << anErMax 
@@ -784,7 +820,7 @@ void cAppliApero::InitOneSetObsFlot
        itM++
    )
    {
-      if (NamePoseIsKnown(itM->NameIm()))
+      if (NamePoseGenIsKnown(itM->NameIm()))
       {
          for
          (
@@ -817,7 +853,7 @@ void cAppliApero::InitOneSetOnsDr
    )
    {
       std::string aNameIm = itIm->NameIm();
-      if (NamePoseIsKnown(aNameIm))
+      if (NamePoseGenIsKnown(aNameIm))
       {
 
          for

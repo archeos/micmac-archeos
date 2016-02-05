@@ -51,6 +51,11 @@ int NumHgRev()
 
 static const std::string HRevXif = "4227";
 
+string StdMetaDataFilename(const string &aBasename, bool aBinary)
+{
+	return MMTemporaryDirectory() + aBasename + "-MDT-" + HRevXif + (aBinary ? ".dmp" : ".xml");
+}
+
 const std::string & DefXifOrientation() 
 {
    static std::string aRes="";
@@ -134,14 +139,15 @@ int MakeOneXmlXifInfo_main(int argc,char ** argv)
     cXmlXifInfo aXML =  MDT2Xml(aMTD);
 
     MakeFileXML(aXML,aNameXml);
+    MakeFileXML(aXML,StdPrefix(aNameXml)+".dmp");
 
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 
 
 
-void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur * aICNM)
+void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur * aICNM,bool toForce)
 {
    std::string aDir,aPat;
    SplitDirAndFile(aDir,aPat,aFullPat);
@@ -188,7 +194,7 @@ void MakeXmlXifInfo(const std::string & aFullPat,cInterfChantierNameManipulateur
        //std::string aNameXml = aDir + "/Tmp-MM-Dir/" + aNameIm + "-MDT-"+ HRevXif + ".xml";
        std::string aNameXml = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+"Tmp-MM-Dir/" );
        aNameXml.append( aNameIm+"-MDT-"+HRevXif+".xml" );
-       if (! ELISE_fp::exist_file(aNameXml))
+       if ( toForce || (! ELISE_fp::exist_file(aNameXml)))
        {
            std::string aCom = MM3dBinFile("TestLib") +  " XmlXif " + aDir+aNameIm + " " + aNameXml;
            aLCom.push_back(aCom);
@@ -747,6 +753,16 @@ void cElDate::write_raw( ostream &io_ostream, bool i_inverseByteOrder ) const
    mH.write_raw( io_ostream, i_inverseByteOrder );
 }
 
+ostream & operator <<( ostream &aStream, const cElHour &aHour )
+{
+	return (aStream << aHour.H() << ':' << aHour.M() << ':' << aHour.S());
+}
+
+ostream & operator <<( ostream &aStream, const cElDate &aDate )
+{
+	return (aStream << aDate.H() << ' ' << aDate.D() << '/' << aDate.M() << '/' << aDate.Y());
+}
+
 
 /************************************************************/
 /*                                                          */
@@ -1049,7 +1065,7 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 		/// std::cout << "JJJJJJJJJj " << aF << "\n";
 		if (aF>0)
 		{
-			if (aMDP->FocMm(true)>0)
+			if (aF != aMDP->FocMm(true))
 			{
 				cElWarning::FocInxifAndMM.AddWarn("Cam="+aNameFile,__LINE__,__FILE__);
 			}
@@ -1065,7 +1081,7 @@ const cMetaDataPhoto & cMetaDataPhoto::CreateExiv2(const std::string & aNameFile
 		// std::string aStrCam =  aGICNM->Assoc1To1("NKS-Assoc-STD-CAM",aNameFile,true);
 		if (aStrCam!="NO-CAM")
 		{
-			if (aMDP->Cam(true)!="")
+			if (aMDP->Cam(true) != aStrCam)
 			{
 				cElWarning::CamInxifAndMM.AddWarn("Cam="+aNameFile,__LINE__,__FILE__);
 			}
@@ -1135,6 +1151,39 @@ bool cMetaDataPhoto::IsNoMTD() const
 	return mDate.IsNoDate();
 }
 
+void cMetaDataPhoto::dump( const string &aPrefix, ostream &aStream )
+{
+	if (IsNoMTD())
+	{
+		aStream << aPrefix << "no meta-data" << endl;
+		return;
+	}
+
+	aStream << aPrefix << "date = " << Date(true) << endl;
+	aStream << aPrefix << "tiff sz = " << TifSzIm(true) << endl;
+	aStream << aPrefix << "xif sz = " << XifSzIm(true) << endl;
+	aStream << aPrefix << "focal = " << FocMm(true) << "mm (equivalent 35mm = " << Foc35(true) << "mm, pixel = " << FocPix() << ')' << endl;
+	aStream << aPrefix << "exp time = " << ExpTime(true) << endl;
+	aStream << aPrefix << "diaph = " << Diaph(true) << endl;
+	aStream << aPrefix << "iso speed = " << IsoSpeed(true) << endl;
+	aStream << aPrefix << "camera name = [" << Cam(true) << ']' << endl;
+	if (XYZTetasInit())
+	{
+		aStream << aPrefix << "xyz = " << XYZ() << endl;
+		aStream << aPrefix << "tetas = " << Tetas() << endl;
+	}
+	if (HasGPSLatLon())
+	{
+		aStream << aPrefix << "GPS latitude = " << GPSLat() << endl;
+		aStream << aPrefix << "GPS longitude = " << GPSLon() << endl;
+	}
+	if (HasGPSAlt()) aStream << aPrefix << "GPS altitude = " << GPSAlt() << endl;
+	aStream << aPrefix << "bayer pattern = [" << BayPat() << ']' << endl;
+	aStream << aPrefix << "forced focal = " << to_yes_no(FocForced()) << endl;
+	aStream << aPrefix << "orientation = [" << Orientation() << ']' << endl;
+	aStream << aPrefix << "camera orientation = [" << CameraOrientation() << ']' << endl;
+}
+
 //===================================================
 
 // GERALD 
@@ -1177,6 +1226,7 @@ class cXifDecoder
 public :
 	static const std::vector<cXifDecoder *>  &  TheVect();
 	static cMetaDataPhoto GetMTDIm(const std::string & aNameIm);
+        friend class cCmpXifDecoderOnPrio;
 private  :
 	bool GenerateTxtFile(const std::string & aNameIm);
 	void  GetOneDouble(cElRegex * & anAutom,bool & aGot,double & aVal);
@@ -1185,6 +1235,7 @@ private  :
 
 	cXifDecoder
 		(
+                double  aPrio,
 		const std::string & aStrExe,
 		const std::string & aStrTmp,
 		const std::string & aStrDate,
@@ -1205,7 +1256,8 @@ private  :
 		const std::string & aStrNbBits
                
 		) :
-	mStrExe             (aStrExe + " "),
+                mPrio               (aPrio),
+	        mStrExe             (aStrExe + " "),
 		mStrLangE           (STRLANG+ mStrExe),
 		mStrTmp             (aStrTmp),
 		mAutomDate          (new cElRegex(aStrDate,15)),
@@ -1233,6 +1285,7 @@ private  :
 	}
 
            // std::cout << "  XXXXXxxxxXX  " << aNameXml << aXml.Foc35().Val() << "\n";
+        double              mPrio;
 	std::string         mStrExe;
 	std::string         mStrLangE;
 	std::string         mStrTmp;
@@ -1523,6 +1576,16 @@ void TestXD(const std::string & aNameIm)
 }
 
 
+class cCmpXifDecoderOnPrio
+{
+   public :
+
+       bool operator () (cXifDecoder * aDec1,cXifDecoder *  aDec2) const
+       {
+                  return aDec1->mPrio < aDec2->mPrio;
+       }
+};
+
 const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 {
 	static  std::vector<cXifDecoder *> aRes;
@@ -1530,12 +1593,17 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 	if (aRes.size() == 0)
 	{
 
+                double  Prio_exiftool = 0.0;
+                double  Prio_exiv2 =    1.0;
+                double  PrioElDcraw =   2.0;
 
 		aRes.push_back
 			(
+                        
 			new cXifDecoder
 			(
-              MM3dBinFile_quotes("ElDcraw")+" -i -v ",
+                         PrioElDcraw,
+                         MM3dBinFile_quotes("ElDcraw")+" -i -v ",
 			"ELDCRAW.txt",
 			"Timestamp: .* (...)  ?([0-9]{1,2})  ?([0-9]{1,2}):([0-9]{2}):([0-9]{2}) ([0-9]{4})",
 			"612345" ,
@@ -1561,6 +1629,7 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 		else aRes.push_back(
 			new cXifDecoder
 			(
+                          Prio_exiv2,
 			string(" ")+g_externalToolHandler.get("exiv2").callName()+" ",
 			"EXIV2.txt",
 			"Image timestamp : ([0-9]{4}):([0-9]{2}):([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})",
@@ -1587,6 +1656,7 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 		else aRes.push_back(
 			new cXifDecoder
 			(
+                         Prio_exiftool,
 			string(" ")+g_externalToolHandler.get("exiftool").callName()+" ",
 			"EXIFTOOL.txt",
 			"Create Date *: ([0-9]{4}):([0-9]{2}):([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})",
@@ -1609,7 +1679,20 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 			);
 	}
 
+        cCmpXifDecoderOnPrio aCmp;
+        std::sort(aRes.begin(),aRes.end(),aCmp);
+
 	return aRes;
+}
+
+
+std::string NameXifXmlOfIm(const std::string & aNameFile,bool Bin)
+{
+     std::string aDir,aNameSsDir;
+     SplitDirAndFile(aDir,aNameSsDir,aNameFile);
+     std::string aNameXml = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+"/Tmp-MM-Dir/" );
+     aNameXml.append( aNameSsDir+"-MDT-"+HRevXif+ (Bin ? ".dmp" : ".xml" ));
+     return aNameXml;
 }
 
 
@@ -1617,13 +1700,19 @@ const std::vector<cXifDecoder *> &  cXifDecoder::TheVect()
 
 cMetaDataPhoto cMetaDataPhoto::CreateNewExiv2(const std::string & aNameFile) // ,const char *  aNameTest)
 {
+/*
        std::string aDir,aNameSsDir;
        SplitDirAndFile(aDir,aNameSsDir,aNameFile);
        //std::string aNameXml = aDir + "/Tmp-MM-Dir/" + aNameSsDir + "-MDT-"+ HRevXif + ".xml";
        std::string aNameXml = ( isUsingSeparateDirectories()?MMTemporaryDirectory():aDir+"/Tmp-MM-Dir/" );
        aNameXml.append( aNameSsDir+"-MDT-"+HRevXif+".xml" );
-       if ( ELISE_fp::exist_file(aNameXml))
+*/
+       // On essaye en mode Bin puis en Xml
+       for (int aKBin=1 ; aKBin>=0 ; aKBin--)
        {
+         std::string aNameXml  = NameXifXmlOfIm(aNameFile, aKBin != 0);
+         if ( ELISE_fp::exist_file(aNameXml))
+         {
            cXmlXifInfo aXml = StdGetFromPCP(aNameXml,XmlXifInfo);
            cElDate aDate = cElDate::NoDate;
            if (aXml.Date().IsInit())
@@ -1663,6 +1752,7 @@ cMetaDataPhoto cMetaDataPhoto::CreateNewExiv2(const std::string & aNameFile) // 
 
             return aMTD;
 
+         }
        }
 
        return cXifDecoder::GetMTDIm(aNameFile);
@@ -1978,17 +2068,18 @@ std::vector<cLine_N_XYZ_WPK> cLine_N_XYZ_WPK::FromFile
 
 //  MTDImCalc
 
-std::string NameMTDImCalc(const std::string & aFullName)
+std::string NameMTDImCalc(const std::string & aFullName,bool Bin)
 {
    std::string aDir,aName;
    SplitDirAndFile(aDir,aName,aFullName);
    
-   return aDir + "Tmp-MM-Dir/CalcMDT-" + aName + ".xml";
+   return aDir + "Tmp-MM-Dir/CalcMDT-" + aName + (Bin ? ".dmp" : ".xml");
 }
 
 cMTDImCalc GetMTDImCalc(const std::string & aNameIm)
 {
-   std::string aNameXml = NameMTDImCalc(aNameIm);
+   std::string aNameXml = NameMTDImCalc(aNameIm,true);
+
    if ( ! ELISE_fp::exist_file(aNameXml))
    {
         cMTDImCalc aMTD;

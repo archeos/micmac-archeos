@@ -188,22 +188,38 @@ class cResulMSO
        cResulMSO();
        ElCamera * &       Cam() ;
        cElNuage3DMaille * & Nuage() ;
-       cCapture3D * &       Capt3d();
+       cBasicGeomCap3D * &       Capt3d();
        bool &               IsKeyOri();
    private :
        bool                 mIsKeyOri;
        ElCamera *           mCam;
        cElNuage3DMaille *   mNuage;
-       cCapture3D *         mCapt3d;
+       cBasicGeomCap3D *         mCapt3d;
 
 };
+
+std::string StdNameGBOrient(const std::string & anOri,const std::string & aNameIm,bool AddMinus);
+std::string StdNameCSOrient(const std::string & anOri,const std::string & aNameIm,bool AddMinus);
+
 
 class cInterfChantierNameManipulateur
 {
      public :
+    typedef  std::string             tKey;
 
-         std::string StdNameCalib(const std::string & anOri,const std::string & aNameIm);
-         CamStenope *  StdCamOfNames(const std::string & anOri,const std::string & aNameIm);
+
+
+         std::string NameOriStenope(const tKey & aKeyOri,const std::string & aNameIm);
+         std::string StdNameCalib(const std::string & anOri,const std::string & aNameIm);  // =>  Ori-XX/AutoCal ...
+         CamStenope *  StdCamOfNames(const std::string & anOri,const std::string & aNameIm);  // => Ori-XX/Orientation...
+         // Ori-XX/Orientation... exist, sinon  Ori-XX/GB-Orientation..
+         cBasicGeomCap3D * StdCamGenOfNames(const std::string & anOri,const std::string & aNameIm);
+         // return "" si rien trouve
+         std::string  StdNameCamGenOfNames(const std::string & anOri,const std::string & aNameIm);
+
+
+         CamStenope * GlobCalibOfName(const std::string  & aNameIm,const std::string & aPrefOriCal,bool ModeFraser /* Genre un Fraser Basixc ss dist*/ ); // No Dist if aPrefOriCal=""
+
 
          std::list<std::string> GetListImByDelta(const cListImByDelta &,const std::string & aN0);
 
@@ -237,7 +253,6 @@ class cInterfChantierNameManipulateur
         virtual ~cInterfChantierNameManipulateur();
         typedef  std::vector<std::string>   tNuplet;
         typedef  std::vector<std::string>   tSet;
-    typedef  std::string             tKey;
 
         virtual  cTplValGesInit<cResBoxMatr> GetBoxOfMatr(const tKey&,const std::string&)=0;
 
@@ -269,6 +284,7 @@ class cInterfChantierNameManipulateur
         virtual const bool  * SetIsIn(const tKey & aKey,const std::string & aName) =0;
         virtual bool AssocHasKey(const tKey & aKey) const = 0;
         std::string StdKeyOrient(const tKey &); // Elle meme si existe sinon NKS
+
         virtual bool SetHasKey(const tKey & aKey) const = 0;
     //  Renvoie true si c'est un fichier et pas une cle
     //  Renvoie false si c'est une cle et pas un fichier
@@ -292,7 +308,7 @@ class cInterfChantierNameManipulateur
                       );
 
          // Prof par defaut 2, par compat avec l'existant
-         std::list<std::string>  StdGetListOfFile(const std::string & aKeyOrPat, int aProf=2);
+         std::list<std::string>  StdGetListOfFile(const std::string & aKeyOrPat, int aProf=2,bool ErrorWhenEmpty=true);
      // Quatre  dictionnaire sont charges :
      //   Priorite 0 :
      //   Priorite 1 : aDir/aName.Val()  (si aName est initialise)
@@ -401,6 +417,7 @@ class cInterfChantierNameManipulateur
           cMakeDataBase  *  mMkDB;
 
           static cInterfChantierNameManipulateur * TheGlob;
+          std::map<std::string,CamStenope *>       mMapName2Calib; // Utilise avec GlobCamOfName
 };
 
 
@@ -1087,6 +1104,7 @@ ElMatrix<double> ImportMat(const cTypeCodageMatr & aCM);
 
 cXml_Rotation El2Xml(const ElRotation3D & aRot);
 ElRotation3D Xml2El(const cXml_Rotation & aXml);
+ElRotation3D Xml2ElRot(const cXml_O2IRotation & aXml);
 
 
 
@@ -1487,10 +1505,10 @@ class cMMByImNM
 {
     public :
 
-        static cMMByImNM * ForGlobMerge(const std::string & aDirGlob,double aDS, const std::string & aNameMatch);
+        static cMMByImNM * ForGlobMerge(const std::string & aDirGlob,double aDS, const std::string & aNameMatch,bool AddDirLoc=false);
         static cMMByImNM * ForMTDMerge(const std::string & aDirGlob,const std::string & aNameIm,const std::string & aNameMatch);
 
-        static cMMByImNM * FromExistingDirOrMatch(const std::string & aNameDirOriOrMatch,bool Svp,double aDS=1,const std::string & aDir0="./");
+        static cMMByImNM * FromExistingDirOrMatch(const std::string & aNameDirOriOrMatch,bool Svp,double aDS=1,const std::string & aDir0="./",bool AddDirLoc=false);
 
         void DoDownScale(const std::string & aNameIm);
         void PatDoDownScale(const std::string & aPat);
@@ -1519,7 +1537,7 @@ class cMMByImNM
         static std::string StdDirPims(double aDS, const std::string & aNameMatch);
 
     private  :
-        cMMByImNM (double aDS,const std::string & aDirGlob,const std::string & aDirLoc,const std::string & aPrefix,const std::string &  aNameType) ;
+        cMMByImNM (double aDS,const std::string & aDirGlob,const std::string & aDirLoc,const std::string & aPrefix,const std::string &  aNameType,bool AddDirLoc=false) ;
 
         static std::string NameOfType(eTypeMMByImNM);
         std::string NameFileGlob(eTypeMMByImNM,const std::string aNameIm,const std::string aExt);
@@ -1544,6 +1562,8 @@ class cMMByImNM
 };
 
 bool IsMacType(eTypeMMByP aType);
+
+void AutoDetermineTypeTIGB(eTypeImporGenBundle & aType,const std::string & aName);
 
 
 

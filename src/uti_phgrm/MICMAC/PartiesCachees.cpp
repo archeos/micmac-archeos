@@ -52,6 +52,8 @@ const cGenerePartiesCachees & aGPC, double aZMin, double aZMax)
 
 
 
+extern bool DEBUG_ZBB;
+Pt2di PT_BugZBB;
 
 
 
@@ -98,11 +100,11 @@ class cMicMacZbuf : public cZBuffer
          void Inspect();
          double ZBrutOfXY(const Pt2di & aP)   const { return   mTImTer.get(aP); }
          Im2D_REAL4 ZBrutOfXY()   const { return   mImTer; }
-        bool SelectP(const Pt2di & aP)   const  ;
+         bool SelectP(const Pt2di & aP)   const  ;
+         double ZofXY(const Pt2di & aP)   const ; 
     private  :
-        Pt3dr ProjTerrain(const Pt3dr &) const;
-        double ZofXY(const Pt2di & aP)   const ; 
-        double ZInterpofXY(const Pt2dr & aP,bool & OK) const;
+         Pt3dr ProjTerrain(const Pt3dr &) const;
+         double ZInterpofXY(const Pt2dr & aP,bool & OK) const;
 
 
 
@@ -125,9 +127,33 @@ Pt3dr cMicMacZbuf::ProjTerrain(const Pt3dr & aPTer) const
    // On n'utilise pas la methode BasculeInv, qui devrait a peu pres
    // le faire car elle est redefinie
 
+
     double aPax[theDimPxMax] = {0,0};
     aPax[0] = aPTer.z;
     Pt2dr aPIm = mGeom.Objet2ImageInit_Euclid(Pt2dr(aPTer.x,aPTer.y),aPax);
+if (DEBUG_ZBB)
+{
+   Pt2di aPTI = Pt2di(aPTer.x,aPTer.y);
+   std::cout << "AAAA cMicMacZbuf::ProjTerrainXXXX " << aPTI << " " <<  mTImTer.sz() << "\n";
+   //std::cout << "cMicMacZbuf::ProjTerrainXXXX  " << aPTer << " " << " " << aPIm  << " " << mTImTer.get(aPTI) << " \n";
+
+   
+   for (int aDx = -1 ; aDx<=1 ; aDx++)
+   { 
+       for (int aDy = -1 ; aDy<=1 ; aDy++)
+       {
+           PT_BugZBB =  Pt2di(aDx,aDy);
+           Pt2di aPV = aPTI + PT_BugZBB;
+           double aZ = ZofXY(aPV);
+           mGeom.Objet2ImageInit_Euclid(Pt2dr(aPV),&aZ);
+           // std::cout << " ZzzZzz " <<  mGeom.Objet2ImageInit_Euclid(Pt2dr(aPV),&aZ)  << " " << aZ << "\n";
+
+       }
+   }
+   std::cout << "====================================================\n\n";
+}
+/*
+*/
 /*
     if (mAppli.InversePx())
        return Pt3dr(aPIm.x,aPIm.y,1.0/aPTer.z);
@@ -689,6 +715,33 @@ void cAppliMICMAC::MakePartiesCachees
 
            float aZDef = -1e15f;
 
+           if (0 && MPD_MM())
+           {
+                Pt2di aP;
+                int aNbIn=0;
+                int aNbOut=0;
+                cGeomImage & aGeom = aPdv.Geom();
+                for (aP.x = 0 ; aP.x<aGT.SzClip().x; aP.x++)
+                {
+                    for (aP.y = 0 ; aP.y<aGT.SzClip().y; aP.y++)
+                    {
+                         bool Ok =  aMmZB->SelectP(aP);
+                         if (Ok) 
+                            aNbIn++;
+                         else
+                            aNbOut++;
+                         if (aNbIn)
+                         {
+                             double aZ = aMmZB->ZofXY(aP);
+                             Pt2dr aPI = aGeom.Objet2ImageInit_Euclid(Pt2dr(aP),&aZ);
+                             Pt2dr aPTer = aGeom.ImageAndPx2Obj_Euclid(aPI,&aZ);
+                             std::cout << " HHHHhhhh  " << aP << aPI <<  " " << aPTer << "\n";
+                         }
+                    }
+                }
+                std::cout << "aNbOutaNbOut " << aNbIn << " " << aNbOut << "\n";
+           }
+
            aIPC = aMmZB->ZCaches (Pt2di(0,0),aGT.SzClip(), aZDef);
            aMasqOrt = aMmZB->ImOkTer();
        }
@@ -844,15 +897,20 @@ void cAppliMICMAC::MakePartiesCachees
                     const cMakeMTDMaskOrtho & aMMMO = aMOPI.MakeMTDMaskOrtho().Val();
                     MakeFileXML(aMMMO.Mesures(),aDir+aMMMO.NameFileSauv().Val());
                 }
-   // aMetaData.Offset();
-   // aMetaData.Sz();
+		
                 cFileOriMnt anOriIm = anOriOrtho ;
                 anOriIm.NombrePixels() = aMetaData.Sz();
                 Pt2dr anOffs = Pt2dr(aMetaData.Offset());
                 anOriIm.OriginePlani() = anOriOrtho.OriginePlani() + anOffs.mcbyc(anOriOrtho.ResolutionPlani());
                 std::string aNameMtdIm = aDir + "MTD-"+ aPdv.Name() + ".xml";
                 MakeFileXML(anOriIm,aNameMtdIm);
-                GenTFW(anOriIm,aNameMtdIm);
+		// generate tfw for the ortho
+		std::string aNameMtdOrt = aDir + "Ort_"+ StdPrefix(aPdv.Name()) + ".tfw";
+		int aDzIm = mCurEtape->DeZoomIm();
+		// Pour le tfw et pour le XML, les conventions sont pas les mm, l'origine plani n'est pas correcte (pour tfw) si ZoomF!=1. Prise en compte du DzIm
+		anOriIm.OriginePlani() = anOriOrtho.OriginePlani() + anOffs.mcbyc(anOriOrtho.ResolutionPlani()*aDzIm); 
+                GenTFW(anOriIm, aNameMtdOrt);
+
            }
        }
 
@@ -941,7 +999,8 @@ void cAppliMICMAC::MakeOrtho
     Tiff_Im aFIn = Tiff_Im::StdConvGen(aNameIn.c_str(),aMOPI.NbChan().Val(),false);
 
     int aDzTer = mCurEtape->DeZoomTer();
-
+    //int aDzIm  = mCurEtape->DeZoomIm();
+	
     int aNbC = aFIn.nb_chan();
     std::vector<Im2DGen *> mOrthos;
     Pt2di aSzImIn = aFIn.sz();
@@ -1017,6 +1076,7 @@ void cAppliMICMAC::MakeOrtho
             double aValTest = -1e10;
             for (aPO.y=0 ; aPO.y<aSzT.y ; aPO.y++)
             {
+
                 if (aTMasqT.get(aPO))
                 {
                     Pt2dr aPM  = aAfPOL2PML(Pt2dr(aPO));
@@ -1052,7 +1112,11 @@ void cAppliMICMAC::MakeOrtho
                            }
                            else
                            {
-                              ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc * aDzTer);
+                              // ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc * aDzTer);
+                              // MPD le 07/10/2015 , il semble que ce soit la cause des pb dans l'image
+                              // d'incidence
+                              ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc);
+                              // ElSeg3D  aSeg = aGeom.FaisceauPersp(aPImInc * aDzIm);
                               double aTeta = acos(-aSeg.TgNormee().z);
                               if (aRF > 0)
                               {
@@ -1300,7 +1364,7 @@ void cAppliMICMAC::MakePartiesCachees()
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant �  la mise en
+Ce logiciel est un programme informatique servant \C3  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -1316,17 +1380,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
-manipuler et qui le réserve donc �  des développeurs et des professionnels
+associés au chargement,  \C3  l'utilisation,  \C3  la modification et/ou au
+développement et \C3  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe \C3  
+manipuler et qui le réserve donc \C3  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
-logiciel �  leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités \C3  charger  et  tester  l'adéquation  du
+logiciel \C3  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+\C3  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder \C3  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

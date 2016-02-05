@@ -519,9 +519,11 @@ class cEqfP3dIncTmp  : public cEqfBlocIncTmp
      public :
         friend class cSetEqFormelles;
 	Pt3d<Fonc_Num> PF();
-	void InitVal(const Pt3dr & aP);
+	void InitEqP3iVal(const Pt3dr & aP);
 
 	tContFcteur  FctrRap(const Pt3dr &);
+        Pt3dr  GetEqP3iVal() const;
+
 
      private :
         cEqfP3dIncTmp ( cSetEqFormelles & aSet, const std::string & aName);
@@ -540,7 +542,8 @@ class cBufSubstIncTmp
                   const int                     aNbBloc,
                   // const std::vector<int> & aVIndTmp,
                   // const std::vector<int> & aVIndNonTmp,
-                  bool  Raz=true // False pour des test de temps, histoire de relancer +sieur fois
+                  bool  Raz=true, // False pour des test de temps, histoire de relancer +sieur fois
+                  double LimCond=-1 
 	      );
 
           // Conditionnement du Lambda de l'inversion, on le teste comme un signal
@@ -571,7 +574,7 @@ class cSubstitueBlocIncTmp
          cSubstitueBlocIncTmp(cEqfBlocIncTmp &);
 	 void AddInc(const cIncListInterv &);
 	 void Close();
-	 void DoSubst(bool Raz=true);
+	 void DoSubst(bool Raz=true,double LimCond=-1);
 
          void RazNonTmp();
 
@@ -628,12 +631,16 @@ class cParamPtProj
 {
     public :
 
-       cParamPtProj(double SeuilBH,double aLimBsHRefut,bool Debug);
+       cParamPtProj(double SeuilBH,double aLimBsHRefut,bool Debug,double aSeuilOkBehind);
 
+       double mResolMoy;
+       double mSomPds;
+       bool   mHasResolMoy;
        double mBsH;
        double mEc2;
        bool   mDebug;
        double mSeuilBsH;
+       double mSeuilOkBehind;
        double mSeuilBsHRefut;
        bool   mProjIsInit;
 
@@ -648,13 +655,20 @@ class cParamPtProj
        Pt3dr  mI;
        Pt3dr  mJ;
        Pt3dr  mK;
-       double mBase;
-       double mHaut;
        
        bool   wDist;
        Pt2dr  mNDP0;
        Pt2dr  mNDdx;
        Pt2dr  mNDdy;
+       void SetHautPPP(const double & aH);
+       void SetBasePPP(const double &);
+  private :
+  // Attention ces deux valeurs, privees ne sont pas forcement calculees,
+  // ajouter verif si on veut y donner acces !!
+       double mBasePPP;
+       bool   mInitBasePPP;
+       double mHautPPP;
+       bool   mInitHautPPP;
 };
 
 class cRapOnZ
@@ -673,7 +687,19 @@ class cRapOnZ
        double mIE;
        std::string mLayerIm;
 };
-//
+
+class cXmlSLM_RappelOnPt;
+
+class cArg_UPL
+{
+   public :
+        cArg_UPL(const cXmlSLM_RappelOnPt *);
+
+        const cXmlSLM_RappelOnPt * mRop;
+};
+
+
+
 class cManipPt3TerInc
 {
     public :
@@ -681,15 +707,16 @@ class cManipPt3TerInc
 	(
             cSetEqFormelles &              aSet,
 	    cSurfInconnueFormelle *,             // Peut valoir 0 (souvent le cas)
-	    std::vector<cCameraFormelle *> aVCamVis,
+	    std::vector<cGenPDVFormelle *> aVCamVis,
 	    bool                           aClose = true
         );
 
-        std::vector<CamStenope *> VCamCur();
+        std::vector<cBasicGeomCap3D *> VCamCur();
 
 
 	const cResiduP3Inc & UsePointLiaison
 	                     (
+                                  const cArg_UPL &,
                                   double aLimBsHProj,
                                   double aLimBsH,
 			          double aPdsPl, // Poids de rattach a l'eventuelle surf
@@ -701,6 +728,7 @@ class cManipPt3TerInc
 
 	const cResiduP3Inc & UsePointLiaisonWithConstr
 	                     (
+                                  const cArg_UPL &,
                                   double aLimBsHProj,
                                   double aLimBsH,
 			          double aPdsPl,
@@ -712,7 +740,7 @@ class cManipPt3TerInc
 				  bool           aUseAppAsInit
 			     );
 
-        const std::vector<cCameraFormelle *> &   VCamVis() const;
+        const std::vector<cGenPDVFormelle *> &   VCamVis() const;
 
   // Utilisation "standard", enchaine les 4 prec
 
@@ -730,6 +758,7 @@ class cManipPt3TerInc
 
 	const cResiduP3Inc & UsePointLiaisonGen
 	                     (
+                                  const cArg_UPL &,
                                   double aLimBsHProj,
                                   double aLimBsH,
 			          double aPdsPl,
@@ -760,10 +789,12 @@ class cManipPt3TerInc
         cSetEqFormelles &                mSet;
         cEqfP3dIncTmp  *                 mP3Inc;
 	cSurfInconnueFormelle *          mEqSurf;
-        std::vector<cCameraFormelle *>   mVCamVis;
+        std::vector<cGenPDVFormelle *>   mVCamVis;
 	cResiduP3Inc                     mResidus;
         cSubstitueBlocIncTmp             mSubst;
         bool                             mTerIsInit;
+        bool                             mResolMoyIsInit;
+        double                           mResolMoy;
         cParamPtProj                     mPPP;
         double                           mMulGlobPds;
 };
@@ -771,7 +802,7 @@ class cManipPt3TerInc
 Pt3dr CalcPTerIFC_Robuste
       (
            double                       aDistPdsErr,
-           std::vector<CamStenope *>    aVCC,
+           std::vector<cBasicGeomCap3D *>    aVCC,
            const cNupletPtsHomologues & aNuple,
            const std::vector<double> &  aVPds
       );
@@ -844,6 +875,52 @@ class cEqRelativeGPS  : public cNameSpaceEqF,
 };
 
 
+class  cPackInPts3d
+{
+     public :
+       cPackInPts3d(const  ElPackHomologue & aPack);
+    protected :
+       std::vector<Pt3dr> mVP1;
+       std::vector<Pt3dr> mVP2;
+       std::vector<double> mVPds;
+};
+
+class  cPackInPts2d
+{
+     public :
+       cPackInPts2d(const  ElPackHomologue & aPack);
+    protected :
+       std::vector<Pt2dr> mVP1;
+       std::vector<Pt2dr> mVP2;
+       std::vector<double> mVPds;
+};
+
+
+class cPt3dEEF : public cElemEqFormelle,
+                 public cObjFormel2Destroy
+{
+    public :
+       Pt3dr             mP0;
+       Pt3d<Fonc_Num>    mP;
+
+       cPt3dEEF(cSetEqFormelles & aSet,const Pt3dr & aP0,bool HasValCste) ;
+};
+
+
+class cScalEEF : public cElemEqFormelle,
+                     public cObjFormel2Destroy
+{
+    public :
+       double      mS0;
+       Fonc_Num    mS;
+
+       cScalEEF(cSetEqFormelles & aSet,double aV0,bool HasValCste) ;
+};
+
+
+
+
+
 
 /****************************************************/
 /*                                                  */
@@ -864,6 +941,213 @@ class cAmeliorOrRel
        cSubstitueBlocIncTmp   mSubst;
 };
 */
+
+
+/*
+   Permet d'encapsuler la structure qui gere les index permettant d'acceder a une fusion a partir d'un point.
+  Pour l'instant c'est des map, mais voir qi Qdt Tree, tiles, vecteur ordonnes etc... sont + efficaces
+*/
+
+template <class TypeIndex,class TypeVal> class  cGenTabByMapPtr
+{
+   private :
+      typedef std::map<TypeIndex,TypeVal *>     tMap;
+
+   public :
+      typedef typename tMap::iterator           GT_tIter;
+
+      GT_tIter  GT_Begin()    {return mMap.begin();}
+      GT_tIter  GT_End()      {return mMap.end();}
+      static TypeVal * GT_GetValOfIt(const GT_tIter & anIter) {return anIter->second;}
+
+      inline TypeVal *  GT_GetVal(const TypeIndex & anIndex)
+      {
+         GT_tIter anIter = mMap.find(anIndex);
+
+         return (anIter!=mMap.end()) ? anIter->second : 0;
+      }
+      inline void GT_SetVal(const TypeIndex & anIndex,TypeVal * aVal)
+      {
+         mMap[anIndex] = aVal;
+      }
+
+      cGenTabByMapPtr()
+      {
+      }
+
+   private :
+      tMap    mMap;
+};
+
+#define DefcTpl_GT cGenTabByMapPtr
+/*
+ #######    Classes to store one multiple point : ###########
+
+
+  implemantation in  src/uti_phgrm/NewOri/cNewO_DynFusPtsMul.cpp
+
+
+ #    cComMergeTieP => Common to all classes used for merging one multiple  point , to factorize the code (others inhreits of its)
+
+
+ #   cVarSizeMergeTieP<Type> => Store tie point of one type=Type  (for  ex Type= Pt2dr, only use == on this type)
+                                Usable with artibrary number of images
+
+
+  #  cFixedSizeMergeTieP<TheNb,Type> => Store tie point when the number of images is limited to TheNb (optimisation 
+                                         for pair, triplet ... used in martini).
+
+  #  Requirement of Multiple tie point classe 
+
+        bool IsInit(int aK) const  => Is there some value for image K
+        int  NbSom() const         =>  number of images
+        void FusionneInThis(cVarSizeMergeTieP<Type> & anEl2,std::vector<tMapMerge> &  Tabs) 
+             Makes one single  mutiple point by merging two , El2 is merged inside this
+             Tabs is the map that for given image, reference the multiple point associated to a value
+
+             Tabs[int KImage][Pt2dr aPt] => multiple point in image KImage at value aPt
+
+
+        void AddArc(const Type & aV1,int aK1,const Type & aV2,int aK2) => Update counting when a new pair is added to the multiple
+
+        cVarSizeMergeTieP() ;
+        const Type & GetVal(int aK) const ;
+        void AddSom(const Type & aV,int aK);
+        static int FixedSize();
+
+   # cStructMergeTieP<Type>  class for storing all the multiple point, for exemple
+
+       *     cStructMergeTieP<cVarSizeMergeTieP<Pt2df> >  store Tie Points of 
+       *     cStructMergeTieP<cFixedSizeMergeTieP<3,Pt2df> >  store Tie Points for triplets
+
+
+   # Basic manipulation :
+
+       * constructor    cStructMergeTieP(int aNbVal) => Must indicate the number of image (will be redundant in cFixedSizeMergeTieP case)
+
+       * void AddArc(const tVal & aV1,int aK1,const tVal & aV2,int aK2) => add a pair of tie point in image K1 an K2) 
+          (= Add Edge)
+
+       * void DoExport() => generate the export !!!! => No more AddArc can be done after
+
+       * const std::list<tMerge *> & ListMerged() const;  => retune the list of merge tie point (in fact tMerge==Type)
+
+       * Delete  => free memory 
+
+*/
+
+
+class cComMergeTieP
+{
+    public  :
+        bool IsOk() const {return mOk;}
+        void SetNoOk() {mOk=false;}
+        void SetOkForDelete() {mOk=true;}  // A n'utiliser que dans cFixedMergeStruct::delete
+        int  NbArc() const {return mNbArc;}
+        void IncrArc() { mNbArc++;}
+        void MemoCnx(int aK1,int aK2);
+        void FusionneCnxInThis(const cComMergeTieP &);
+        const std::vector<Pt2dUi2> & Edges() const;
+    protected :
+        cComMergeTieP();
+        bool  mOk;
+        int   mNbArc;
+        std::vector<Pt2dUi2> mEdges;
+};
+
+
+
+template <class Type>  class cVarSizeMergeTieP : public cComMergeTieP
+{
+     public :
+       typedef Type                    tVal;
+       typedef cVarSizeMergeTieP<Type> tMerge;
+       //  typedef std::map<Type,tMerge *>     tMapMerge;
+       typedef  DefcTpl_GT<Type,tMerge> tMapMerge;
+
+       cVarSizeMergeTieP() ;
+       void FusionneInThis(cVarSizeMergeTieP<Type> & anEl2,std::vector<tMapMerge> &  Tabs);
+       void AddArc(const Type & aV1,int aK1,const Type & aV2,int aK2,bool MemoEdge);
+
+        bool IsInit(int aK) const ;
+        const Type & GetVal(int aK) const ;
+        int  NbSom() const ;
+        void AddSom(const Type & aV,int aK);
+        static int FixedSize();
+
+        const std::vector<U_INT2>  & VecInd() const;
+        const std::vector<Type> & VecV()   const;
+     private :
+
+        std::vector<U_INT2>   mVecInd;
+        std::vector<Type>  mVecV;
+};
+template <const int TheNbPts,class Type>  class cFixedSizeMergeTieP : public cComMergeTieP
+{
+     public :
+       typedef Type                    tVal;
+       typedef cFixedSizeMergeTieP<TheNbPts,Type> tMerge;
+       //  typedef std::map<Type,tMerge *>     tMapMerge;
+       typedef  DefcTpl_GT<Type,tMerge> tMapMerge;
+
+       cFixedSizeMergeTieP() ;
+       void FusionneInThis(cFixedSizeMergeTieP<TheNbPts,Type> & anEl2,std::vector<tMapMerge> &  Tabs);
+       void AddArc(const Type & aV1,int aK1,const Type & aV2,int aK2,bool MemoEdge);
+
+        bool IsInit(int aK) const;
+        const Type & GetVal(int aK) const;
+        int  NbSom() const ;
+        void AddSom(const Type & aV,int aK);
+        static int FixedSize();
+     private :
+
+        Type mVals[TheNbPts];
+        bool  mTabIsInit[TheNbPts];
+};
+template <class Type> class cStructMergeTieP
+{
+     public :
+        typedef Type        tMerge;
+        typedef typename Type::tVal  tVal;
+
+        typedef  DefcTpl_GT<tVal,tMerge> tMapMerge;
+        typedef typename tMapMerge::GT_tIter         tItMM;
+
+        // Pas de delete implicite dans le ~X(),  car exporte l'allocation dans
+        void Delete();
+        void DoExport();
+        const std::list<tMerge *> & ListMerged() const;
+
+
+        void AddArc(const tVal & aV1,int aK1,const tVal & aV2,int aK2);
+        cStructMergeTieP(int aNbVal,bool WithMemoEdges);
+
+        const tVal & ValInf(int aK) const {return mEnvInf[aK];}
+        const tVal & ValSup(int aK) const {return mEnvSup[aK];}
+
+
+     private :
+        cStructMergeTieP(const cStructMergeTieP<Type> &); // N.I.
+        void AssertExported() const;
+        void AssertUnExported() const;
+        void AssertUnDeleted() const;
+
+        int                                 mTheNb;
+        std::vector<tMapMerge>              mTheMapMerges;
+        std::vector<tVal>                   mEnvInf;
+        std::vector<tVal>                   mEnvSup;
+        std::vector<int>                    mNbSomOfIm;
+        std::vector<int>                    mStatArc;
+        bool                                mExportDone;
+        bool                                mDeleted;
+        std::list<tMerge *>                 mLM;
+        bool                                mWithMemoEdges;
+};
+
+
+
+
+
 
 #endif //   _EXEMPLE_PHGR_FORMEL_H_
 

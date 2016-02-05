@@ -174,6 +174,7 @@ eModeGeomMEC CalculGeomMEC(const cParamMICMAC & aParam)
          case eGeomImageModule :
          case eGeomImageCON :
          case eGeomImageOri :
+         case eGeomGen :
          {
               // Quelques cas toleres jusqu'a present mais en fait
               // au comportement pas tres definis
@@ -182,6 +183,7 @@ eModeGeomMEC CalculGeomMEC(const cParamMICMAC & aParam)
                       ||  (aParam.GeomImages()==eGeomImageGrille)
                       ||  (aParam.GeomImages()==eGeomImageRTO)
                       ||  (aParam.GeomImages()==eGeomImageCON)
+                      ||  (aParam.GeomImages()==eGeomGen)
 		)
               {
                  switch (aParam.GeomMNT())
@@ -270,6 +272,7 @@ bool UseICNM(cParamMICMAC & aParam)
 
 
 
+
      //   cAppliMICMAC::cAppliMICMAC  
      
 cAppliMICMAC::cAppliMICMAC
@@ -350,6 +353,7 @@ cAppliMICMAC::cAppliMICMAC
    // mInterpolTabule (10,8,0.0,eTabul_Bilin)
    // mInterpolTabule (10,8,0.0,eTabul_Bicub)
 {
+
       mDeZoomMax =1;
       mDeZoomMin =1<<20;
       for (std::list<cEtapeMEC>::const_iterator itE=  EtapeMEC().begin() ;  itE!= EtapeMEC().end() ; itE++)
@@ -363,6 +367,7 @@ cAppliMICMAC::cAppliMICMAC
        }
 
        GlobDebugMM = DebugMM().Val();
+
 
         mDoTheMEC = DoMEC().Val();
         if (
@@ -394,6 +399,7 @@ cAppliMICMAC::cAppliMICMAC
 	mMapEquiv		= StdAllocMn2n( ClassEquivalenceImage(), mICNM );
 	mOutputDirectory = ( isUsingSeparateDirectories()?MMOutputDirectory():WorkDir() );
 	setInputDirectory( WorkDir() );
+
 
   if (RepereCorrel().IsInit() && (RepereCorrel().Val() != "NO-REPERE"))
   {
@@ -449,6 +455,7 @@ cAppliMICMAC::cAppliMICMAC
    if (!CalcNomChantier().IsInit() &&  NomChantier().IsInit())
       mNameChantier = NomChantier().Val();
 
+
    InitDirectories();
    InitAnamSA();
    InitImages();
@@ -491,7 +498,6 @@ cAppliMICMAC::cAppliMICMAC
 
    VerifImages();
 
-   // InitMecComp();
 
 /*
    if (FCND_CalcHomFromI1I2().IsInit())
@@ -654,7 +660,6 @@ cAppliMICMAC * cAppliMICMAC::Alloc(int argc,char ** argv,eModeAllocAM aMode)
                                               "FileChantierNameDescripteur"
                                            );
     Tiff_Im::SetDefTileFile(aP2.mObj->DefTileFile().Val());
-
     aP2.mObj->WorkDir() = aP2.mDC;
 
     if (IsActive(aP2.mObj->MapMicMac()))
@@ -1141,7 +1146,6 @@ void cAppliMICMAC::InitAnamSA()
                      "",
                      mXmlAnamSA
                );
-// std::cout << "AAAAAAAAaa\n";
        if (mAnaGeomMNT && mAnaGeomMNT->UnUseAnamXCste().Val())
        {
               mAnamSA->SetUnusedAnamXCSte();
@@ -1240,13 +1244,14 @@ void cAppliMICMAC::InitImages()
          mGeoImsComps.push_back(new cGeometrieImageComp(*itG,*this));
     }
 
+
+
     if (Im1().IsInit())
        AddAnImage(Im1().Val());
     if (Im2().IsInit())
        AddAnImage(Im2().Val());
     if (ImSecByDelta().IsInit())
        AddImageByDelta(ImSecByDelta().Val());
-
     if (FCND_CalcIm2fromIm1().IsInit())
     {
          ELISE_ASSERT(Im1().IsInit(),"No Im1 with FCND_CalcIm2fromIm1");
@@ -1260,6 +1265,8 @@ void cAppliMICMAC::InitImages()
 	     )
 	 );
     }
+
+
     if (mModeAlloc==eAllocAM_Surperposition)
     {
        if (Im3Superp().IsInit())
@@ -1290,7 +1297,7 @@ void cAppliMICMAC::InitImages()
       )
    {
       cChantierAppliWithSetImage aCAWSI = StdGetFromSI(WorkDir()+ ImageSecByCAWSI().Val(),ChantierAppliWithSetImage);
-      int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+      int aNbPDV = (int)mPrisesDeVue.size();  // Car la taille va augmenter
       for (int aKV=0 ; aKV<aNbPDV ; aKV++)
       {
           const cCWWSImage * aWI = GetFromCAWSI(aCAWSI,mPrisesDeVue[aKV]->Name());
@@ -1306,7 +1313,7 @@ void cAppliMICMAC::InitImages()
    else if (ImSecCalcApero().IsInit())
    {
        const cImSecCalcApero & aISCA = ImSecCalcApero().Val();
-       int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+       int aNbPDV = (int)mPrisesDeVue.size();  // Car la taille va augmenter
        int aNbMin = aISCA.NbMin().Val();
        int aNbMax = aISCA.NbMax().Val();
        for (int aKV=0 ; aKV<aNbPDV ; aKV++)
@@ -1358,7 +1365,7 @@ void cAppliMICMAC::InitImages()
 
    if (RelGlobSelecteur().IsInit())
    {
-       int aNbPDV = mPrisesDeVue.size();  // Car la taille va augmenter
+       int aNbPDV = (int)mPrisesDeVue.size();  // Car la taille va augmenter
        for (int aKV=0 ; aKV<aNbPDV ; aKV++)
        {
            std::vector<std::string> aSBR =  GetStrFromGenStrRel(ICNM(),RelGlobSelecteur().Val(),mPrisesDeVue[aKV]->Name());
@@ -1480,6 +1487,7 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
      if (PDVFromName  (aName,0))
         return;
 
+
      if (CreateGrayFileAtBegin().Val())
      {
          Tiff_Im::StdConvGen(WorkDir() + aName, 1,true,true);
@@ -1494,6 +1502,7 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
         itG++
      )
      {
+
            if ((*itG)->AcceptAndTransform(aName,aNameGeom,mNbPDV))
                theGotGeom = *itG;
      }
@@ -1560,7 +1569,7 @@ void cAppliMICMAC::AddAnImage(const std::string & aName)
          mPDV1 =  mPrisesDeVue.back();
      if ( mNbPDV== 1)
          mPDV2 =  mPrisesDeVue.back();
-
+     
      int aDim = mPrisesDeVue.back()->Geom().DimPx();
      if (mNbPDV==0)
      {
@@ -1754,7 +1763,7 @@ double cAppliMICMAC::CurCorrelToCout(double aCor) const
 
 int cAppliMICMAC::NbVueAct() const
 {
-   return mPDVBoxGlobAct.size();
+   return (int)mPDVBoxGlobAct.size();
 }
 
 int cAppliMICMAC::NumImAct2NumImAbs(int aNum) const
@@ -2087,7 +2096,7 @@ void cAppliMICMAC::ExeProcessParallelisable
    if ((ByProcess().Val() == 0) || (ByProcess().Val() == 1))
    {
 	int num=0;
-	int nbDalles=aLProc.size();
+	int nbDalles = (int)aLProc.size();
 #ifdef MAC
 	utsname buf;
 	uname(&buf);

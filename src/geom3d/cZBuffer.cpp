@@ -138,6 +138,9 @@ Pt2di cZBuffer::ToPtIndexDef(const Pt2di & aPt) const
    return Pt2di((aPt.x-mP0In.x)/SzDalleDef,(aPt.y-mP0In.y)/SzDalleDef);
 }
 
+bool DEBUG_ZBB = false;
+bool ERupnik_MM();
+
 Im2D_REAL4 cZBuffer::Basculer
            (
                Pt2di & aOffset_Out_00,
@@ -154,6 +157,7 @@ Im2D_REAL4 cZBuffer::Basculer
     mBufDone = false;
     mP0In = aP0In;
     mSzIn =  aP1In-aP0In;
+
     if (mWihBuf)
     {
        mImX3 = Im2D<tElZB,REAL8>(mSzIn.x,mSzIn.y,22);
@@ -210,6 +214,19 @@ Im2D_REAL4 cZBuffer::Basculer
 				   aNbOkIm++;
 
 
+if (MPD_MM() || ERupnik_MM())
+{
+
+//  std::cout << "pppppppppppppp " << aP2Out << "\n";
+if (euclid(aP2Out) > 100000)
+{
+   
+   std::cout << "----aP2OutaP2Out " << aP2Out  << " " << aZofXY  << " " << aPIn << " BD=" <<  mBufDone << "\n";
+   DEBUG_ZBB = true;
+   ProjDisc(aPIn,&aZofXY);
+   DEBUG_ZBB = false;
+}
+}
 				   aPInf.SetInf(aP2Out);
 				   aPSup.SetSup(aP2Out);
 
@@ -229,7 +246,7 @@ Im2D_REAL4 cZBuffer::Basculer
             {
                 // Pt2di anIndexDef((anXDal0-aP0In.x)/SzDalleDef,(anYDal0-aP0In.y)/SzDalleDef);
                 Pt2di anIndexDef = ToPtIndexDef(Pt2di(anXDal0,anYDal0));
-                int aNbVal = aVZofXY.size();
+                int aNbVal = (int)aVZofXY.size();
 
                 if (aNbVal)
                 {
@@ -240,6 +257,7 @@ Im2D_REAL4 cZBuffer::Basculer
                       Pt3dr aDerY = (ProjDisc(aPMed+Pt3dr(0,1,0)) - ProjDisc(aPMed+Pt3dr(0,-1,0))) / 2.0;
 
                       ElMatrix<double> aJac =  MatFromCol(Pt2dr(aDerX.x,aDerX.y),Pt2dr(aDerY.x,aDerY.y));
+
                       aJac = gaussj(aJac);
                       mTImDef_00.oset(anIndexDef,aJac(0,0));
                       mTImDef_10.oset(anIndexDef,aJac(1,0));
@@ -256,7 +274,6 @@ Im2D_REAL4 cZBuffer::Basculer
             }
         }
     } 
-    // std::cout << "TER " << aNbOkTer/double(aNbPts) << " IM " << aNbOkIm/double(aNbPts) << "\n";
     aOffset_Out_00 = mOffet_Out_00 = round_down(aPInf);
     if (mWihBuf)
     {
@@ -287,6 +304,11 @@ Im2D_REAL4 cZBuffer::Basculer
     }
 
 
+if (MPD_MM())
+{
+std::cout << "mSzResmSzRes " << mSzRes  << " " << aPSup << mOffet_Out_00 << "\n";
+}
+
     mRes = Im2D_REAL4(mSzRes.x,mSzRes.y,aDef);
     mImTriInv = Im2D_Bits<1>(mSzRes.x,mSzRes.y,0);
     mDataRes = mRes.data();
@@ -314,7 +336,6 @@ Im2D_REAL4 cZBuffer::Basculer
         }
     }
 
-// std::cout << "EENnnnnnnnnnddddd " << mImTriInv.get(aPBUG.x,aPBUG.y) << "\n";
     return mRes;
 }
 
@@ -586,6 +607,7 @@ Pt3dr cZBuffer::ProjDisc(const Pt3dr & aPInDisc) const
 	 );
 
    Pt3dr aPOutTer = ProjTerrain(aPInTer);
+
 
    return Pt3dr
           (

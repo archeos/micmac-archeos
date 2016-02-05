@@ -544,7 +544,7 @@ void cAppli_Ori_Txt2Xml_main::CalcVitesse()
         aBegin.pushlast(aVSom[aK]);
 
     ElFilo<tSom *> aEnd;
-    for (int aK = aVSom.size()-4 ; aK< int(aVSom.size()) ; aK++)
+    for (int aK = (int)(aVSom.size() - 4); aK< int(aVSom.size()) ; aK++)
         aEnd.pushlast(aVSom[aK]);
 
     ElSubGrapheInFilo<cAttrHypSomV,cHypAttrA> aGrBut(aEnd);
@@ -1238,7 +1238,7 @@ void cAppli_Ori_Txt2Xml_main::CalcImCenter()
               aVSel.push_back(mVCam[aK1]);
 
        mVCam = aVSel;
-       mNbCam = mVCam.size();
+       mNbCam = (int)mVCam.size();
     }
 }
 
@@ -1302,6 +1302,29 @@ void cAppli_Ori_Txt2Xml_main::SauvRel()
              cCpleString aCpl(aC1->mNameIm,aC2->mNameIm);
              aRelIm.Cple().push_back(aCpl);
        }
+   }
+
+   if (EAMIsInit(&mDistNeigh))
+   {
+        for (int aK1=0 ; aK1<mNbCam ; aK1++)
+        {
+            for (int aK2=0 ; aK2<mNbCam ; aK2++)
+            {
+               if (aK1 != aK2)
+               {
+                   const cTxtCam & aC1 = *(mVCam[aK1]);
+                   const cTxtCam & aC2 = *(mVCam[aK2]);
+                   Pt3dr aP1 = aC1.mC;
+                   Pt3dr aP2 = aC2.mC;
+
+                   if (euclid(aP1-aP2)<mDistNeigh)
+                   {
+                       cCpleString aCpl(aC1.mNameIm,aC2.mNameIm);
+                       aRelIm.Cple().push_back(aCpl);
+                   }
+                }
+            }
+        }
    }
 
 
@@ -1579,7 +1602,9 @@ int OriExport_main(int argc,char ** argv)
     MMD_InitArgcArgv(argc,argv);
     std::string aFullName;
     std::string aRes;
-    bool        AddFormat=false;
+    bool AddFormat=false;
+    bool onlyC=false;
+    bool onlyA=false;
     std::string aModeExport="WPK";
     std::string aFormat ="N W P K X Y Z";
     // eExportOri aModeEO = eEO_WPK;
@@ -1590,7 +1615,9 @@ int OriExport_main(int argc,char ** argv)
         LArgMain()  << EAMC(aFullName,"Full Directory (Dir+Pattern)", eSAM_IsPatFile)
                     << EAMC(aRes,"Results"),
         LArgMain()  << EAM(AddFormat,"AddF",true,"Add format as first line of header, def= false",eSAM_IsBool)
-                    <<  EAM(aModeExport,"ModeExp",true,"Mode export, def=WPK (Omega Phi Kapa)",eSAM_None,ListOfVal(eEO_NbVals,"eEO_"))
+                    << EAM(aModeExport,"ModeExp",true,"Mode export, def=WPK (Omega Phi Kapa)",eSAM_None,ListOfVal(eEO_NbVals,"eEO_"))
+                    << EAM(onlyC,"OnlyCenters",true,"Export only camera centers, def=false",eSAM_IsBool)
+                    << EAM(onlyA,"OnlyAngles",true,"Export only camera angles, def=false",eSAM_IsBool)
     );
 
     eExportOri aModeEO;
@@ -1617,17 +1644,21 @@ int OriExport_main(int argc,char ** argv)
 
         for (int aK=0 ; aK<int(aEASF.SetIm()->size()) ; aK++)
         {
-             const std::string & aNameCam =  (*aEASF.SetIm())[aK];
-             std::string aNameIm = aEASF.mICNM->Assoc1To1("NKS-Assoc-Ori2ImGen",aNameCam,true);
-             CamStenope * aCS =  CamOrientGenFromFile(aNameCam,aEASF.mICNM);
-             // std::cout << "IM = " << aNameCam  << " " << aCS->Focale() << "\n";
-             Pt3dr aA = TestInvAngles(aCO,aCS->Orient().Mat());
-             Pt3dr aC = aCS->PseudoOpticalCenter();
-             fprintf(aFP,"%s %lf %lf %lf %lf %lf %f\n",aNameIm.c_str(),aA.x,aA.y,aA.z,aC.x,aC.y,aC.z);
+            const std::string & aNameCam =  (*aEASF.SetIm())[aK];
+            std::string aNameIm = aEASF.mICNM->Assoc1To1("NKS-Assoc-Ori2ImGen",aNameCam,true);
+            CamStenope * aCS =  CamOrientGenFromFile(aNameCam,aEASF.mICNM);
+            // std::cout << "IM = " << aNameCam  << " " << aCS->Focale() << "\n";
+            Pt3dr aA = TestInvAngles(aCO,aCS->Orient().Mat());
+            Pt3dr aC = aCS->PseudoOpticalCenter();
+			if(!onlyC && onlyA)
+				fprintf(aFP,"%s %lf %lf %lf\n",aNameIm.c_str(),aA.x,aA.y,aA.z);
+			else if(onlyC && !onlyA)
+				fprintf(aFP,"%s %lf %lf %lf\n",aNameIm.c_str(),aC.x,aC.y,aC.z);
+			else
+				fprintf(aFP,"%s %lf %lf %lf %lf %lf %f\n",aNameIm.c_str(),aA.x,aA.y,aA.z,aC.x,aC.y,aC.z);
         }
 
         fclose(aFP);
-
 
         BanniereMM3D();
     }

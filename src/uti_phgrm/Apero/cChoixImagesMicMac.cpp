@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 // bool DebugVisb=false;
 
@@ -410,7 +411,7 @@ class cCombinPosCam
 
 cCombinPosCam::cCombinPosCam(const std::vector<int> & aSub ,const std::vector<cPoseCam*> & aVPres) :
    mFlag  (FlagOfVI(aSub)),
-   mNbIm  (aSub.size()),
+   mNbIm  ((int)aSub.size()),
    mGainDir  (0),
    mGainGlob (0)
 {
@@ -491,7 +492,7 @@ cCombinPosCam & cSetCombPosCam::GetComb(int aFlag)
     mMapCPC[aFlag] = cCombinPosCam(aSub,mVPres);
     cCombinPosCam & aRes = mMapCPC[aFlag];
     if (mAddMBC)
-        mMapByCard[aSub.size()].push_back(&aRes);
+        mMapByCard[(int)aSub.size()].push_back(&aRes);
     return aRes;
 }
 
@@ -596,9 +597,11 @@ bool  cAppliApero::ExportImSecMM(const cChoixImMM & aCIM,cPoseCam* aPC0,const cM
 
    if (aCIM.KeyExistingFile().IsInit())
    {
-        std::string aNameFile =   mICNM->Assoc1To1(aCIM.KeyExistingFile().Val(),aPC0->Name(),true);
+        std::string aNameFile =   mDC+ mICNM->Assoc1To1(aCIM.KeyExistingFile().Val(),aPC0->Name(),true);
         if (! ELISE_fp::exist_file(aNameFile))
+        {
            return false;
+        }
    }
    bool Test = (aPC0->Name()==std::string ("IMGP3450.PEF"));
    cPoseCam* aP44=0;
@@ -617,10 +620,14 @@ bool  cAppliApero::ExportImSecMM(const cChoixImMM & aCIM,cPoseCam* aPC0,const cM
 
    if (ShowACISec) 
        std::cout << " ************ " << aPC0->Name() << " ***********\n";
-   int aNbPose = mVecPose.size();
+   int aNbPose = (int)mVecPose.size();
    cObsLiaisonMultiple * anOLM = PackMulOfIndAndNale (aCIM.IdBdl(),aPC0->Name());
 
    int aNbPtsInNu;
+if (MPD_MM())
+{
+   // std::cout << "llllllllllllllllll\n";
+}
    cPCICentr aPCIC(aPC0,anOLM->CentreNuage(aMasq3D,&aNbPtsInNu));
 
    if (aNbPtsInNu < 10)
@@ -668,7 +675,7 @@ bool  cAppliApero::ExportImSecMM(const cChoixImMM & aCIM,cPoseCam* aPC0,const cM
         if (aPMul.MemPds() >0)
         {
            cOneCombinMult * anOCM = aPMul.OCM();
-           const std::vector<cPoseCam *> & aVP = anOCM->VP();
+           const std::vector<cGenPoseCam *> & aVP = anOCM->GenVP();
            bool Ok = true;
            std::vector<double> aVPds;
            Pt3dr aPI = aPMul.QuickInter(aVPds);
@@ -758,7 +765,7 @@ bool  cAppliApero::ExportImSecMM(const cChoixImMM & aCIM,cPoseCam* aPC0,const cM
     cCmpImOnGainHom aCmp;
     std::sort(aVPPres.begin(),aVPPres.end(),aCmp);
     while (int(aVPPres.size()) >aCIM.NbMaxPresel().Val()) aVPPres.pop_back();
-    int aNbImAct = aVPPres.size();
+    int aNbImAct = (int)aVPPres.size();
 
 
     // Calcul de l'image d'occupation et de la matrice de recouvrement

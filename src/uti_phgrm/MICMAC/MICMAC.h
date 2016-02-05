@@ -73,7 +73,11 @@ FAIT :
 
 #define BRK_MICMAC_MES(aMes) \
 {\
-    std::cout << aMes << " ;BRK = "<< __LINE__ <<" at " << __FILE__ << "\n";\
+    if (MPD_MM())\
+    {\
+       std::cout << aMes << " ;BRK = "<< __LINE__ <<" at " << __FILE__ << "\n";\
+        getchar();\
+    }\
 }
 
 #define BRK_MICMAC  BRK_MICMAC_MES("")
@@ -994,7 +998,8 @@ typedef enum
    eTagGeomFaisceau,
    eTagGeomFaisZTerMaitre,
    eTagGeomFaisZTerEsclave,
-   eTagGeomModule
+   eTagGeomModule,
+   eTagGeomBundleGen
 } eTagGeometrie;
 
 
@@ -1198,6 +1203,11 @@ class cGeomImage : public cGeomBasculement3D, // Pour pouvoir basculer les MNT e
 				    std::string const &nom_module,
 				    std::string const &nom_geometrie
 				    );
+        static cGeomImage * GeomImage_Basic3D
+                            (
+                                    const cAppliMICMAC & anAppli,
+                                    cPriseDeVue &      aPDV
+                            );
 	static cGeomImage * GeomImage_Grille
                              (
                                     const cAppliMICMAC & anAppli,
@@ -3806,6 +3816,7 @@ void CombleTrouPrgDyn (
 
 
 
+
 #endif //  _ELISE_MICMAC_ALL_H_
 
 
@@ -3813,7 +3824,7 @@ void CombleTrouPrgDyn (
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant �  la mise en
+Ce logiciel est un programme informatique servant \C3  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -3829,17 +3840,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
-manipuler et qui le réserve donc �  des développeurs et des professionnels
+associés au chargement,  \C3  l'utilisation,  \C3  la modification et/ou au
+développement et \C3  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe \C3  
+manipuler et qui le réserve donc \C3  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
-logiciel �  leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités \C3  charger  et  tester  l'adéquation  du
+logiciel \C3  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+\C3  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder \C3  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

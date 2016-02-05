@@ -40,6 +40,9 @@ Header-MicMac-eLiSe-25/06/2007*/
 //Important note:
 //pt.x is either the column in image space or the longitude in geographic coordinates or the easting  in projected coordinates
 //pt.y is either the row    in image space or the latitude  in geographic coordinates or the northing in projected coordinates
+#ifndef _CRPC_H_
+#define _CRPC_H_
+
 class RPC2D
 {
 public:
@@ -119,14 +122,28 @@ public:
         //Boundaries of RPC validity for image space
         double first_row, first_col, last_row, last_col;
         //Boundaries of RPC validity for geo space
-        double first_lon, first_lat, first_height, last_lon, last_lat, last_height;
+        double first_lon, first_lat, last_lon, last_lat, first_height, last_height;
 
         //Errors indicated in DIMAP files
         RPC() :
+		first_row(0),
+		first_col(0),
+		last_row(0),
+		last_col(0),
+		first_lon(0),
+		first_lat(0),
+		last_lon(0),
+		last_lat(0),
+		first_height(0),
+		last_height(0),
                 indirErrBiasRow(0),
                 indirErrBiasCol(0),
                 dirErrBiasX(0),
-                dirErrBiasY(0)
+                dirErrBiasY(0),
+		IS_DIR_INI(false),
+		IS_INV_INI(false),
+        IS_UNIT_m(false),
+        mRecGrid(50,50,10)
         {
         }
         double indirErrBiasRow;
@@ -134,10 +151,16 @@ public:
         double dirErrBiasX;
         double dirErrBiasY;
 
+        bool IS_DIR_INI;
+	    bool IS_INV_INI;
+        bool IS_UNIT_m;
+    
+        Pt3di mRecGrid;
+
         Pt3dr DirectRPCNorm(Pt3dr)const;
         Pt3dr InverseRPCNorm(Pt3dr)const;
         Pt3dr DirectRPC(Pt3dr)const;
-        Pt3dr InverseRPC(Pt3dr, std::vector<double> vRefineCoef)const;
+        Pt3dr InverseRPC(Pt3dr, std::vector<double> vRefineCoef=std::vector<double>()) const;
 
         int RPC2Grid(int nbLayers, int altiMin, int altiMax, std::string refineCoef, std::string aNameFile, double stepPixel, double stepCarto, std::string targetSyst, std::string inputSyst, bool binaire);
 
@@ -252,25 +275,77 @@ public:
                 std::cout << "===========================================================" << std::endl;
         }
 
-        //For Dimap
-        void ReadDimap(std::string const &filename);
-        void WriteAirbusRPC(std::string aFileOut);
+        //For Dimap v2
+    void ReadDimap(std::string const &filename);
+    void WriteAirbusRPC(std::string aFileOut);
+	void ReconstructValidity();
+	void ReconstructValidity2D();
+	void ReconstructValidity3D();
+    void UpdateValidity();
 
         //For DigitalGlobe data
-        void ReadRPB(std::string const &filename);
-        void ReconstructValidity();
+    void ReadRPB(std::string const &filename);
+    void ReadXML(std::string const &filename);
 
-                //Construction of RPCs
-				vector<vector<Pt3dr> > GenerateNormLineOfSightGrid(vector<vector<Pt2dr> > aMatPtsIm, vector<vector<Pt3dr> > aMatPtsECEF, vector<vector<Pt3dr> > aMatSatPos, int nbLayers, double aHMin, double aHMax);
-                vector<Pt3dr> GenerateRandNormGrid(u_int gridSize);
-                void GCP2Direct(vector<Pt3dr> aGridGeoNorm, vector<Pt3dr> aGridImNorm);
-                void GCP2Inverse(vector<Pt3dr> aGridGeoNorm, vector<Pt3dr> aGridImNorm);
-				void ComputeNormFactors(vector<vector<Pt2dr> > aMatPtsIm, vector<vector<Pt3dr> > aMatPtsECEF, double aHMin, double aHMax);
-                void Validity2Dto3D(RPC2D aRPC2D);
+	//For IKONOS/CartoSat
+	void ReadASCII(std::string const &filename);
+    int  ReadASCIIMetaData(std::string const &metafilename, std::string const &filename);
+        
+	//For Aster
+
+		std::vector<Pt2dr> ASTERPtsIm;
+		std::vector<Pt3dr> ASTERPtsECEF;
+		std::vector<Pt3dr> ASTERSatPos;
+		void AsterMetaDataXML(std::string filename);
+
+	//For all but Dimap
+	void InverseToDirectRPC();
+
+    //Construction of RPCs
+    vector<vector<Pt3dr> > GenerateNormLineOfSightGrid(int nbLayers, double aHMin, double aHMax);
+    // Old version, not to be used ----- vector<Pt3dr> GenerateRandNormGrid(u_int gridSize);
+    vector<Pt3dr> GenerateRandNormGrid(const Pt2di &aGridSz);
+    vector<Pt3dr> GenerateNormGrid(const Pt3di &aGridSz);
+	void GCP2Direct(vector<Pt3dr> aGridGeoNorm, vector<Pt3dr> aGridImNorm);
+    void GCP2Inverse(vector<Pt3dr> aGridGeoNorm, vector<Pt3dr> aGridImNorm);
+	void ComputeNormFactors(double aHMin, double aHMax);
+    void Validity2Dto3D(RPC2D aRPC2D);
+
+	void TestDirectRPCGen();
+
+	void ChSysRPC(const cSystemeCoord &);
+    void SetRecGrid();   
+
+
+private:
+
+    void NormR2(std::vector<Pt3dr> & aPts) const;
+    void NormR3(std::vector<Pt3dr> & aPts) const;
+
+    void UnNormR2(std::vector<Pt3dr> & aPts) const;
+    void UnNormR3(std::vector<Pt3dr> & aPts) const;
+   
+    
+    void SetNewScaleOffsetR2(const std::vector<Pt3dr> & aGrid);
+    void SetNewScaleOffsetR3(const std::vector<Pt3dr> & aGrid);
+    void SetNewFirstLastR3(double& aLongMin,
+                           double& aLongMax,
+                           double& aLatMin,
+                           double& aLatMax,
+                           double& aHMin,
+                           double& aHMax);
+
+    void ReconstructValidityLong();
+    void ReconstructValidityLat();
+	void ReconstructValidityH();
+
+    void GetGridExtent(const std::vector<Pt3dr> & aGrid,
+                             Pt3dr & aExtMin, 
+                             Pt3dr & aExtMax,
+                             Pt3dr & aSumXYZ ) const;
 
 };
-
-
+#endif
 /*Footer-MicMac-eLiSe-25/06/2007
 
 Ce logiciel est un programme informatique servant Ã  la mise en

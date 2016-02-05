@@ -44,6 +44,8 @@ Header-MicMac-eLiSe-25/06/2007*/
 #include "cOrientationCon.h"
 
 
+
+
 void ShowPoly(cElPolygone  aPoly)
 {
   std::list<std::vector<Pt2dr> > aLC = aPoly.Contours();
@@ -277,6 +279,7 @@ void cGeomImage::RemplitOriXMLNuage
 
 
 
+
    aNuage.PM3D_ParamSpecifs().NoParamSpecif().SetNoInit();
    cModeFaisceauxImage aMFI;
    aMFI.ZIsInverse() = false;
@@ -284,8 +287,6 @@ void cGeomImage::RemplitOriXMLNuage
    aMFI.DirFaisceaux() = Pt3dr(0,0,1);
    aNuage.PM3D_ParamSpecifs().ModeFaisceauxImage().SetVal(aMFI);
 
-   // cCameraOrtho * aCam = cCameraOrtho::Alloc(aGT.SzDz());
-   // ElCamera * aCam = cCameraOrtho::Alloc(aGT.SzDz());
    bool ToDel;
    bool aZUP = false;
    ElCamera * aCam = GetCamera(aGT.SzDz(),ToDel,aZUP);
@@ -1190,10 +1191,7 @@ class cGeomImage_Id : public cGeomImage
       {
       }
 
-       std::string Name() const
-       {
-          return "cGeomImage_Id";
-       }
+       std::string Name() const { return "cGeomImage_Id"; }
 
     private :
        virtual Pt2dr ImageAndPx2Obj_NonEuclid(Pt2dr aP,const REAL * aPx) const
@@ -1231,10 +1229,7 @@ class cGeomImage_NoGeom : public cGeomImage
          cGeomImage(anAppli,aPDV,eTagNoGeom,aSzIm,2)
       {
       }
-       std::string Name() const
-       {
-          return "cGeomImage_NoGeom";
-       }
+       std::string Name() const { return "cGeomImage_NoGeom"; }
 
     private :
        virtual Pt2dr ImageAndPx2Obj_NonEuclid(Pt2dr aP,const REAL * aPx) const
@@ -1305,6 +1300,7 @@ class cGeomImage_NoGeom : public cGeomImage
 class cGeomImage_DHD_Px : public cGeomImage 
 {
     public :
+      std::string Name() const { return "cGeomImage_DHD_Px"; }
       cGeomImage_DHD_Px
       (
           const                   cAppliMICMAC & anAppli,
@@ -1439,6 +1435,7 @@ class cGeomImage_DHD_Px : public cGeomImage
 class cGeomImage_Terrain_Ori : public cGeomImage
 {
     public :
+      std::string Name() const { return "cGeomImage_Terrain_Ori"; }
       Pt2dr ToGeomMasqAnam(const Pt2dr & aPTer) const;
 
       std::string NameMasqImNadir() { return cGeomImage::NameMasqImNadir(mAppli.MMImNadir()->KBest()); }
@@ -1506,7 +1503,6 @@ class cGeomImage_Terrain_Ori : public cGeomImage
           // OO aPTer = mOri.terr_to_carte(aPTer);
           if (mOLiLi && mIsCarto)
              aPTer = mOLiLi->terr_to_carte(aPTer);
-/// std::cout << "BBBBBBBBBBBBBb\n";
           return Pt2dr(aPTer.x,aPTer.y);
        }
        virtual Pt2dr Objet2ImageInit_NonEuclid(Pt2dr aP,const REAL * aPx) const
@@ -1562,7 +1558,6 @@ class cGeomImage_Terrain_Ori : public cGeomImage
 */
               // std::cout << "aaaaaaaaaNNaa " << aCa << "\n";
           }
- // std::cout << "XXXXXXXXXXXX " << mOri->ResolutionPDVVerticale() << "\n"; getchar();
           return ElAbs(mOri->ResolutionPDVVerticale());
        }
        void  RemplitOri(cFileOriMnt & aFOM) const
@@ -1883,8 +1878,6 @@ void cGeomImage_Terrain_Ori::Init0MasqAnamSA()
                for (int aKY=1 ; aKY<aNbXY ; aKY++)
                {
 
-// bool TEST = (aKX==aNbXY /2) && (aKY==aNbXY /2) && (MPD_MM()) ;
-bool TEST = (aKX==2) && (aKY==2) && (MPD_MM()) ;
 
                    Pt2dr aPds(double(aKX)/aNbXY,double(aKY)/aNbXY);
                    Pt2dr aCdg = aPds.mcbyc(Pt2dr(mOri->SzPixel()));
@@ -1892,7 +1885,6 @@ bool TEST = (aKX==2) && (aKY==2) && (MPD_MM()) ;
                    cTplValGesInit<Pt3dr> aPGI3A = mAnamSA->InterDemiDroiteVisible(aSegA,0);
 
 
-if (TEST) std::cout << "CDDDGGGg " << aCdg << "\n";
                    if (aPGI3A.IsInit())
                    {
                         bool AllOk=true;
@@ -1923,7 +1915,6 @@ if (TEST) std::cout << "CDDDGGGg " << aCdg << "\n";
                                AllOk= false;
                             }
                         }
-if (TEST) std::cout << "ALLAOOOK  " << aCdg  << " " << AllOk  << " " << aPExtr0 << " " << aPExtr1 << "\n";
 
                         if (AllOk)
                         {
@@ -2157,11 +2148,45 @@ void cGeomImage_Terrain_Ori::InitAnamSA(double aResol,const Box2dr & )
 class cGeomFaisZTerMaitre : public cGeomImage_Id
 {
     public :
+/*
+    void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
+    {
+
+if (MPD_MM())
+{
+   std::cout << "RemplitOriXMLNuageRemplitOriXMLNuage \n";
+   CFM = true;
+   getchar();
+}
+        cGeomImage::RemplitOriXMLNuage(false,mtd,aGT,aNuage,mode);
+        if (CFM)
+        {
+            cModuleOrientationFile oriFile;
+            oriFile.NameFileOri()=mModule->GetFilename();
+            aNuage.Orientation().ModuleOrientationFile().SetVal(oriFile);
+            aNuage.Orientation().TypeProj().SetVal(eProjGrid);
+         }
+    }
+*/
+       void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
+       {
+/*
+if (MPD_MM())
+{
+   std::cout << "cGeomFaisZTerMaitre:: RemplitOriXMLNuageRemplitOriXMLNuage " << aNuage.Orientation().Interne().Val().PP() << " \n";
+   CFM = true;
+   getchar();
+}
+*/
+           mGeoRef->RemplitOriXMLNuage(true,mtd,aGT,aNuage,mode);
+       }
+
 
       ElCamera * GetCamera(const Pt2di & aSz,bool & ToDel,bool & aZUP) const
       {
             ToDel = false;
             ElCamera * aCam = GetOri();
+
             if (aCam) return aCam;
             return  cGeomImage::GetCamera(aSz,ToDel,aZUP);
       }
@@ -2202,11 +2227,6 @@ class cGeomFaisZTerMaitre : public cGeomImage_Id
     
     
     // Par defaut erreur fatale si pas mode Image_Nuage
-    void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
-    {
-        mGeoRef->RemplitOriXMLNuage(true,mtd,aGT,aNuage,mode);
-    }
-
     protected :
       bool GetPxMoyenne_NonEuclid(double * aPxMoy,bool MakeInvIfNeeded) const
       {
@@ -2233,6 +2253,8 @@ class cGeomFaisZTerMaitre : public cGeomImage_Id
        {return mGeoRef->GeoTerrainIntrinseque();}
 };
 
+
+
 class cGeomFaisZTerEsclave : public cGeomFaisZTerMaitre
 {
     public :
@@ -2256,7 +2278,7 @@ class cGeomFaisZTerEsclave : public cGeomFaisZTerMaitre
 
        std::string Name() const
        {
-          return "cGeomFaisZTerMaitre["+mGeom->Name() +"]["+mGeoRef->Name()+"]";
+          return "cGeomFaisZTerEsclave["+mGeom->Name() +"]["+mGeoRef->Name()+"]";
        }
 
       void InstPostInit()
@@ -2295,6 +2317,8 @@ class cGeomFaisZTerEsclave : public cGeomFaisZTerMaitre
 
        Pt2dr Objet2ImageInit_NonEuclid(Pt2dr aP,const REAL * aPx) const
        {
+
+
             Pt2dr aRes = PtOfProf(aP,aPx[0]);
             if (mDimPx > 1)
                aRes =  aRes +  mDirPx * aPx[1];
@@ -2417,6 +2441,7 @@ class cGeomImage_Id_Ori : public cGeomImage_Id
           return mOriRef->ImDirEtProf2Terrain(aP,1/aPax[0],mNormPl);
       }
 
+      std::string Name() const { return "cGeomImage_Id_Ori"; }
 
       cGeomImage_Id_Ori
       (
@@ -2560,6 +2585,7 @@ getchar();
 class cGeomImage_Faisceau : public cGeomImage_Id_Ori
 {
     public :
+       std::string Name() const {return "cGeomImage_Faisceau::" + mGITO.Name() ;}
 
       // interface pour cGeomBasculement3D, envoie de image vers terrain
       Pt3dr Bascule(const Pt3dr & aP3) const
@@ -2741,6 +2767,71 @@ if (1)
 
 /*****************************************/
 /*                                       */
+/*            cGeomImage_cBasic          */
+/*                                       */
+/*****************************************/
+
+// It is (very naively !!) hoped that this time the cBasicGeomCap3D
+// will replace all the altentaive existing general sensor; cGeomImage_cBasic
+// is then the MicMac interface to cBasicGeomCap3D
+
+class cGeomImage_cBasic : public cGeomImage
+{
+     public :
+       std::string Name() const {return "cGeomImage_cBasic"  ;}
+       virtual Pt2dr ImageAndPx2Obj_NonEuclid(Pt2dr aP,const REAL * aPx) const
+       {
+          Pt3dr aPTer =  mBGC3D->ImEtZ2Terrain(aP,aPx[0]);
+          return Pt2dr(aPTer.x,aPTer.y);
+       }
+       virtual Pt2dr Objet2ImageInit_NonEuclid(Pt2dr aP,const REAL * aPx) const
+       {
+          Pt3dr aPTer(aP.x,aP.y,aPx[0]);
+          return mBGC3D->Ter2Capteur(aPTer);
+       }
+
+       virtual double GetResolMoyenne_NonEuclid() const
+       {
+	   return mBGC3D->GlobResol();
+       }
+
+       virtual bool GetPxMoyenne_NonEuclid(double * aPxMoy,bool MakeInvIfNeeded) const
+       {
+	   aPxMoy[0] =  mBGC3D->PMoyOfCenter().z;
+           return true;
+       } 
+
+       cGeomImage_cBasic(const cAppliMICMAC & anAppli,cPriseDeVue & aPDV,cBasicGeomCap3D * aBGC3D) :
+              cGeomImage (anAppli,aPDV,eTagGeomBundleGen,aBGC3D->SzBasicCapt3D(),1),
+              mBGC3D (aBGC3D)
+       {
+       }
+
+     private :
+         cBasicGeomCap3D * mBGC3D;
+};
+
+cGeomImage * cGeomImage::GeomImage_Basic3D
+             (
+                                    const cAppliMICMAC & anAppli,
+                                    cPriseDeVue &      aPDV
+             )
+{
+    
+    int aType = eTIGB_Unknown;
+
+
+    return new cGeomImage_cBasic
+               (
+                    anAppli,
+                    aPDV,
+                    cBasicGeomCap3D::StdGetFromFile(aPDV.NameGeom(),aType)
+               );
+}
+
+
+/*****************************************/
+/*                                       */
 /*            cGeomImage_Module          */
 /*                                       */
 /*****************************************/
@@ -2806,6 +2897,7 @@ class cGeomImage_Module : public cGeomImage
     // Par defaut erreur fatale si pas mode Image_Nuage
     void RemplitOriXMLNuage(bool CFM,const cMTD_Nuage_Maille & mtd,const cGeomDiscFPx & aGT,cXML_ParamNuage3DMaille &aNuage ,eModeExportNuage mode) const
     {
+
         cGeomImage::RemplitOriXMLNuage(false,mtd,aGT,aNuage,mode);
         if (CFM)
         {
@@ -3149,16 +3241,35 @@ bool cGeometrieImageComp::AcceptAndTransform
     std::string aNameTested = aNT;
     if (mGeom.AddNumToNameGeom().Val())
         aNameTested = aNameTested + "@"+ToString(aNum);
-    if (! mAutom)
+    if (mGeom.NGI_StdDir().IsInit())
+    {
+          const cNGI_StdDir  aNGI = mGeom.NGI_StdDir().Val();
+          if (    aNGI.NGI_StdDir_Apply().IsInit()
+               && (! aNGI.NGI_StdDir_Apply().Val()->Match(aNameTested))
+             )
+             return false;
+
+         std::string aRes =  mAppli.ICNM()->StdNameCamGenOfNames(aNGI.StdDir(),aNameTested);
+         if (aRes !="")
+         {
+             aNameResult= aRes;
+
+             return true;
+         }
+    }
+    else if (! mAutom)
     {
        ELISE_ASSERT(mGeom.FCND_Mode_GeomIm().IsInit()," No FCND_Mode_GeomIm ?? ");
        const cFCND_Mode_GeomIm  &aFCND = mGeom.FCND_Mode_GeomIm().Val();
        if (
                aFCND.FCND_GeomApply().IsInit() 
-           &&  (! *(mAppli.ICNM()->SetIsIn(aFCND.FCND_GeomApply().Val(),aNameTested)))
+           && (! aFCND.FCND_GeomApply().Val()->Match(aNameTested))
+           // &&  (! *(mAppli.ICNM()->SetIsIn(aFCND.FCND_GeomApply().Val(),aNameTested)))
 	  )
 	  return false;
+//std::cout << "aNameTested " << aNameTested << "\n";
        aNameResult=  mAppli.ICNM()->Assoc1To1(aFCND.FCND_GeomCalc(),aNameTested,true);
+//std::cout << "a<res " << aNameResult << "\n";
        return true;
     }
     else
@@ -3181,6 +3292,7 @@ bool cGeometrieImageComp::AcceptAndTransform
         aNameResult =  mAutom->LastReplaced();
         return true;
     }
+    return false;
 }
 
 const cTplValGesInit< cModuleImageLoader > &  
@@ -3201,7 +3313,7 @@ const std::list<cModifieurGeometrie>  &
 
 /*Footer-MicMac-eLiSe-25/06/2007
 
-Ce logiciel est un programme informatique servant �  la mise en
+Ce logiciel est un programme informatique servant \C3  la mise en
 correspondances d'images pour la reconstruction du relief.
 
 Ce logiciel est régi par la licence CeCILL-B soumise au droit français et
@@ -3217,17 +3329,17 @@ seule une responsabilité restreinte pèse sur l'auteur du programme,  le
 titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
-associés au chargement,  �  l'utilisation,  �  la modification et/ou au
-développement et �  la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe �  
-manipuler et qui le réserve donc �  des développeurs et des professionnels
+associés au chargement,  \C3  l'utilisation,  \C3  la modification et/ou au
+développement et \C3  la reproduction du logiciel par l'utilisateur étant 
+donné sa spécificité de logiciel libre, qui peut le rendre complexe \C3  
+manipuler et qui le réserve donc \C3  des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
-utilisateurs sont donc invités �  charger  et  tester  l'adéquation  du
-logiciel �  leurs besoins dans des conditions permettant d'assurer la
+utilisateurs sont donc invités \C3  charger  et  tester  l'adéquation  du
+logiciel \C3  leurs besoins dans des conditions permettant d'assurer la
 sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-�  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+\C3  l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
 
-Le fait que vous puissiez accéder �  cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder \C3  cet en-tête signifie que vous avez 
 pris connaissance de la licence CeCILL-B, et que vous en avez accepté les
 termes.
 Footer-MicMac-eLiSe-25/06/2007*/

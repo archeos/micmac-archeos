@@ -52,17 +52,22 @@ Visu_ElImDest::~Visu_ElImDest() {}
 Visu_ElImDest::Visu_ElImDest(Pt2di aSz,INT aDimOut)  :
 
       mDimOut        (aDimOut),
-      mSz            (aSz),
-
-       mBuf          (aSz.x,Elise_Palette::MaxDimPal,0),
-       mDataBuf      (mBuf.data()),
-       mUseEtalDyn   (false),
-
-       mGama         (1.0),
-       mImGamaCorr   (256),
-       mDataGamaCorr (mImGamaCorr.data()),
-       mUseGamaCorr  (false)
+      mSzBigIm       (aSz),
+      mSzBuf         (aSz.x,Elise_Palette::MaxDimPal),
+      mBufI          (mSzBuf.x,mSzBuf.y,0),
+      mDataBufI      (mBufI.data()),
+      mUseEtalDyn    (false),
+      mGama         (1.0),
+      mImGamaCorr   (256),
+      mDataGamaCorr (mImGamaCorr.data()),
+      mUseGamaCorr  (false),
+      mIVCD         (0)
 {
+}
+
+void Visu_ElImDest::SetChgDyn(cImgVisuChgDyn * anIVCD)
+{
+    mIVCD = anIVCD;
 }
 
 INT Visu_ElImDest::VMin() const
@@ -101,40 +106,104 @@ void Visu_ElImDest::SetGamaCorr(REAL aGamaFact)
    mUseGamaCorr = true;
 }
 
-
-void Visu_ElImDest::write_image(INT  x0src,Pt2di p0dest,INT nb,INT ** data)
+template <class Type>  void FriendVisu_ElImDest<Type>::write_image(Visu_ElImDest& aVEI,INT  x0src,Pt2di p0dest,INT nb,Type ** data,int** aDataBuf,int aNbChanelIn)
 {
+
+     if (aVEI.mIVCD)
+     {
+         for (INT d=0 ; d<aVEI.mDimOut ; d++)
+         {
+              aVEI.mIVCD->ChgDyn(aDataBuf[d]+x0src,data[d]+x0src,nb);
+         }
+     }
+     else if (aVEI.mUseEtalDyn)
+     {
+         for (INT d=0 ; d<aVEI.mDimOut ; d++)
+         {
+              Type  * dIn = data[ElMin(d,aNbChanelIn-1)]+x0src;
+              INT * dOut = aDataBuf[d]+x0src;
+              for (INT k=0; k<nb ; k++)
+                  dOut[k] = ElMin(255,ElMax(0, ElStdTypeScal<int>::RtoT (((dIn[k]-aVEI.mVMin)*255)/aVEI.mDiff)));
+         }
+     }
+     else if (aVEI.mUseGamaCorr)
+     {
+         for (INT d=0 ; d<aVEI.mDimOut ; d++)
+         {
+              Type  * dIn = data[ElMin(d,aNbChanelIn-1)]+x0src;
+              INT * dOut = aDataBuf[d]+x0src;
+              for (INT k=0; k<nb ; k++)
+              {
+                  dOut[k] = aVEI.mDataGamaCorr[round_ni(dIn[k])];
+              }
+         }
+     }
+     else
+     {
+
+         for (INT d=0 ; d<aVEI.mDimOut ; d++)
+         {
+             // convert(aDataBuf[d]+x0src,data[d]+x0src,nb);
+             convert(aDataBuf[d]+x0src,data[ElMin(d,aNbChanelIn-1)]+x0src,nb);
+         }
+     }
+     aVEI.write_image_brute(x0src,p0dest,nb,aDataBuf);
+}
+
+
+
+void Visu_ElImDest::write_image(INT  x0src,Pt2di p0dest,INT nb,INT ** data,int aNbChanelIn)
+{
+    FriendVisu_ElImDest<int>::write_image(*this,x0src,p0dest,nb,data,mDataBufI,aNbChanelIn);
+
+/*
+Visu_ElImDest& aVEI,INT  x0src,Pt2di p0dest,INT nb,Type ** data,Type** aDataBuf)
+     INT ** aDataBuf = mDataBufI;
      INT ** ToW = data;
 
-     if (mUseEtalDyn)
+     if (mIVCD)
+     {
+         for (INT d=0 ; d<mDimOut ; d++)
+         {
+              mIVCD->ChgDyn(aDataBuf[d]+x0src,data[d]+x0src,nb);
+         }
+         ToW = aDataBuf;
+     }
+     else if (mUseEtalDyn)
      {
          for (INT d=0 ; d<mDimOut ; d++)
          {
               INT * dIn = data[d]+x0src;
-              INT * dOut = mDataBuf[d]+x0src;
+              INT * dOut = aDataBuf[d]+x0src;
 // cout << dIn << " " << dOut << " " << mVMin << " " << mDiff << "\n";
               for (INT k=0; k<nb ; k++)
                   dOut[k] = ElMin(255,ElMax(0,((dIn[k]-mVMin)*255)/mDiff));
          }
-         ToW = mDataBuf;
+         ToW = aDataBuf;
      }
      else if (mUseGamaCorr)
      {
          for (INT d=0 ; d<mDimOut ; d++)
          {
               INT * dIn = data[d]+x0src;
-              INT * dOut = mDataBuf[d]+x0src;
+              INT * dOut = aDataBuf[d]+x0src;
               for (INT k=0; k<nb ; k++)
               {
                   // ELISE_ASSERT(dIn[k]>=0&&dIn[k]<256,"Bad Vals in mUseGamaCorr");
                   dOut[k] = mDataGamaCorr[dIn[k]];
               }
          }
-         ToW = mDataBuf;
+         ToW = aDataBuf;
      }
      write_image_brute(x0src,p0dest,nb,ToW);
+*/
 }
 
+void Visu_ElImDest::write_image(INT  x0src,Pt2di p0dest,INT nb,double ** data,int aNbChanelIn)
+{
+    FriendVisu_ElImDest<double>::write_image(*this,x0src,p0dest,nb,data,mDataBufI,aNbChanelIn);
+   // ELISE_ASSERT(false,"Visu_ElImDest::write_image double");
+}
 
 
 /****************************************************************/
@@ -321,14 +390,9 @@ void VideoWin_Visu_ElImScr::write_image_out(Pt2di p0_src,Pt2di p0_dest,Pt2di sz)
 extern Im2D_INT4  Ok_eLise();
 
 
+/*
 ElXim  VideoWin_Visu_ElImScr::StdIm(Video_Win w)
 {
-/*
-    Tiff_Im  tif("/home/pierrot/ELISE/data/Ok_eLiSe.tif");
-    Pt2di Sz0 = tif.sz();
-    Im2D_U_INT1 E(Sz0.x,Sz0.y);
-    ELISE_COPY(tif.all_pts(),tif.in(),E.out());
-*/
     Im2D_INT4  E = Ok_eLise();
     Pt2di Sz0 = E.sz();
 
@@ -352,8 +416,72 @@ sz = Inf(sz,w.sz());
     ElXim aRes = ElXim(w,sz,Virgule(R.in(),G.in(),B.in()),w.prgb());
 
     return aRes;
-
 }
+
+GnuLinux 256,205
+*/
+
+ElXim  VideoWin_Visu_ElImScr::StdIm(Video_Win w)
+{
+
+    Tiff_Im aGnuxTiff =   MMIcone("Gnux");
+    Tiff_Im aMikMakTiff = MMIcone("MikMak");
+
+    Pt2di aSzG = aGnuxTiff.sz();
+    Pt2di aSzM = aMikMakTiff.sz();
+    Pt2di aSz(2*aSzG.x,aSzG.y+aSzM.y);
+
+    Im2D_U_INT1 R(aSz.x,aSz.y,255);
+    Im2D_U_INT1 G(aSz.x,aSz.y,255);
+    Im2D_U_INT1 B(aSz.x,aSz.y,255);
+         
+    ELISE_COPY(rectangle(Pt2di(0,0),aSzG),aGnuxTiff.in(),Virgule(R.out(),G.out(),B.out()));
+
+    Pt2di aTr1 = Pt2di(0,aSzG.y);
+    ELISE_COPY(rectangle(aTr1,aSzM+aTr1),trans(aMikMakTiff.in(),-aTr1),Virgule(R.out(),G.out(),B.out()));
+    Pt2di aTr2 = Pt2di(aSzG.x,0);
+    ELISE_COPY(rectangle(aTr2,aSzM+aTr2),trans(aMikMakTiff.in(),-aTr2),Virgule(R.out(),G.out(),B.out()));
+
+    Pt2di aTr3 = Pt2di(aSzG.x,aSzM.y);
+    ELISE_COPY(rectangle(aTr3,aSzG+aTr3),trans(aGnuxTiff.in(),-aTr3),Virgule(R.out(),G.out(),B.out()));
+
+
+    Pt2di aSzW = w.sz(); // Inf(w.sz(),Pt2di(400,400));
+    double aRatio = ElMin(double(aSzW.x-2)/aSz.x,double(aSzW.y-2)/aSz.y);
+    if (aRatio<1.0)
+    {
+         aSz = round_ni(Pt2dr(aSz)*aRatio);
+         Im2D_U_INT1 aNewR(aSz.x,aSz.y,255);
+         Im2D_U_INT1 aNewG(aSz.x,aSz.y,255);
+         Im2D_U_INT1 aNewB(aSz.x,aSz.y,255);
+         ELISE_COPY
+         (
+              aNewR.all_pts(),
+              Max (0,Min(255,
+                     StdFoncChScale
+                     (
+                              //aDebug ? ((FX/30)%2) && tiff.in_proj() : tiff.in_proj(),
+                              Virgule(R.in_proj(),G.in_proj(),B.in_proj()),
+                              Pt2dr(0,0),
+                              Pt2dr(1/aRatio,1/aRatio),
+                              Pt2dr(1.0,1.0)
+                     )
+                  )
+              ),
+              Virgule(aNewR.out(),aNewG.out(),aNewB.out())
+         );
+         R = aNewR;
+         G = aNewG;
+         B = aNewB;
+    }
+
+    ElXim aRes = ElXim(w,aSz,Virgule(R.in(),G.in(),B.in()),w.prgb());
+
+
+    return aRes;
+}
+
+
 
 void VideoWin_Visu_ElImScr::InscrustImage
      (

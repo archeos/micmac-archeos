@@ -36,7 +36,8 @@ English :
     See below and http://www.cecill.info.
 
 Header-MicMac-eLiSe-25/06/2007*/
-#include "StdAfx.h"
+#include "Apero.h"
+
 
 
 cMTActive::cMTActive(int aNbPer) :
@@ -209,7 +210,7 @@ cOneAppuiMul::cOneAppuiMul(const Pt3dr & aPTer,int aNum) :
 {
 }
 
-void cOneAppuiMul::AddPt(cPoseCam * aPC,const Pt2dr & aPIm)
+void cOneAppuiMul::AddPt(cGenPoseCam * aPC,const Pt2dr & aPIm)
 {
     mVPds.push_back(1.0);
     mPoses.push_back(aPC);
@@ -223,7 +224,7 @@ const Pt3dr & cOneAppuiMul::PTer() const
 
 int   cOneAppuiMul::NbInter() const
 {
-   return mVPds.size();
+   return (int)mVPds.size();
 }
 
 Pt3dr cOneAppuiMul::PInter() const
@@ -786,7 +787,7 @@ cPackObserv1Im<TypeEngl,TGlob>::cPackObserv1Im
         {
             std::string aNamePack = (*aVName)[aK];
             std::string aNameIm  = mAppli.ICNM()->Assoc1To1(anArg.KeyAssoc(),aNamePack,false);
-            if ( mAppli.NamePoseIsKnown(aNameIm))
+            if ( mAppli.NamePoseGenIsKnown(aNameIm))
             {
                 cObserv1Im<TypeEngl> * anObs= new  cObserv1Im<TypeEngl>(anAppli,baseDirectory+aNamePack,aNameIm,anArg);
                 Add(anObs);
@@ -1195,7 +1196,7 @@ void  cAppliApero::DoRapportAppuis
       mMTRes->Show(aFP);
    }
 
-   int aNbC = aVEr.size();
+   int aNbC = (int)aVEr.size();
 
    fprintf(aFP,"========== STAT GLOBALE =========\n");
    fprintf(aFP,"Nb Cible = %d\n",aNbC);
