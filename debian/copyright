@@ -11,7 +11,12 @@ Contibutors: Jérémie Belvaux
              Isabelle Cléry
              Matthieu Deveau
              Luc Girod
-             Grégoire Maillet 
+             Grégoire Maillet
+             Denis Jouin
+             Jean-Michael Muller
+             Ewelina Rupnik
+             Luca Penasa
+             Quoc-Dinh Nguyen
 License: CeCILL-B
  An extensive copy of the license is provided in this document.
 References (please cite these when using this software): 
@@ -32,14 +37,14 @@ Copyright: 2004-2012 Timothy A. Davis,  davis at cise.ufl.edu
 Licence: LGPL
 
 Files: src/tiff/el_dcraw.c
-Copyright: 1997-2010 Dave Coffin, dcoffin at cybercom.net
+Copyright: 1997-2015 Dave Coffin, dcoffin at cybercom.net
 License: GPL-2+ 
 
 Files: src/geom2D/Shewchuk*
 Copyright: 1996-2005 Jonathan Richard Shewchuk jrs at cs.cmu.edu
 License: Free for non-commercial use
 
-Files: src/uti_phgrm/MaxFlow/*
+Files: src/uti_phgrm/GrapCut/MaxFlow/*
 Authors: Yuri Boykov, Vladimir Kolmogorov
 Licence: Free for non-commercial use
 References: "An Experimental Comparison of Min-Cut/Max-Flow Algorithms for Energy
@@ -52,8 +57,15 @@ References: "An Experimental Comparison of Min-Cut/Max-Flow Algorithms for Energ
  Pushmeet Kohli and Philip H.S. Torr International Conference on Computer Vision
  (ICCV), 2005
 
-Files: src/poisson/* include/poisson/*
-Copyright: Copyright 2006-2013, Michael Kazhdan and Matthew Bolitho
+Files: src/uti_phgrm/GrapCut/QPBO-v1.4/*
+Copyright: 2006-2008 Vladimir Kolmogorov vnk at ist.ac.at
+License: GPL-3+
+References: "Optimizing binary MRFs via extended roof duality."
+ C. Rother, V. Kolmogorov, V. Lempitsky, and M. Szummer.
+ CVPR 2007
+
+Files: CodeExterne/Poisson/*
+Copyright: Copyright 2006-2014, Michael Kazhdan and Matthew Bolitho
 License: BSD
  Copyright (c) 2006-2013, Michael Kazhdan and Matthew Bolitho
  All rights reserved.
@@ -81,16 +93,20 @@ License: BSD
  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  DAMAGE.
 
-Files: src/poisson/plyfile.cpp /include/poisson/ply*.h
+Files: CodeExterne/Poisson/include/Ply*.h  CodeExterne/Poisson/src/PlyFile.cpp
 Copyright: 1994 The Board of Trustees of The Leland Stanford
 Author: Greg Turk
 Contributor: Joao Fradinho Oliveira
 License: GPL-2+
 
-Files: CodeExterne/*
+Files: CodeExterne/ANN
+Copyright: 1997-2010 University of Maryland and Sunil Arya and David
+License: GPL-2+
+
+Files: CodeExterne/Siftpp/*
 Copyright: 2006 The Regents of the University of California
 Author: Andrea Vedaldi
-Licence:This software program is Copyright © 2006 The Regents of the University of
+License: This software program is Copyright © 2006 The Regents of the University of
  California and can be freely used for research purposes (see the included license
  file for details). Although this implementation is original (in particular, it is
  not derived from Lowe's implementation), the SIFT algorithm has been issued a
@@ -101,7 +117,6 @@ Licence:This software program is Copyright © 2006 The Regents of the University
  of same for locating an object in an image," David G. Lowe, US Patent 6,711,293
  (March 23, 2004). Provisional application filed March 8, 1999. Asignee: The
  University of British Columbia
-
 
 Files: debian/*
 Copyright: 2013 Romain Janvier romain.janvier@hotmail.fr
