@@ -15,7 +15,7 @@ micmac (1.0+hg6294-0archeos1) UNRELEASED; urgency=medium
   * Add 'QT Assets paths' patch
   * Imported Upstream version 1.0+hg6294
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Fri, 05 Feb 2016 22:50:55 +0100
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Fri, 05 Feb 2016 22:50:55 +0100
 
 micmac (1.0+hg1340-0archeos2) theodoric; urgency=low
 
@@ -24,7 +24,7 @@ micmac (1.0+hg1340-0archeos2) theodoric; urgency=low
   * Adapts more or less hardcoded binary calls to the single binary  
     policy (Patch 9) 
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 16 Jul 2013 23:49:35 +0200
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Tue, 16 Jul 2013 23:49:35 +0200
 
 micmac (1.0+hg1340-0archeos1) theodoric; urgency=low
 
@@ -38,7 +38,7 @@ micmac (1.0+hg1340-0archeos1) theodoric; urgency=low
   * Add basic Bash completions
   * Builds with OpenMP support (poisson)
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Mon, 15 Jul 2013 23:13:31 +0200
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Mon, 15 Jul 2013 23:13:31 +0200
 
 micmac (1.0+hg560-0archeos2.1) theodoric; urgency=low
 
@@ -57,13 +57,13 @@ micmac (1.0+hg560-0archeos1) theodoric; urgency=low
     - fixed various bug in input tools
   * Added parallel package build
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Sun, 10 Feb 2013 22:16:33 +0100
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Sun, 10 Feb 2013 22:16:33 +0100
 
 micmac (1.0+hg497-0archeos1) theodoric; urgency=low
  
   * New upstream version
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Tue, 29 Jan 2013 10:40:00 +0100
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Tue, 29 Jan 2013 10:40:00 +0100
 
 micmac (1.0+hg473-0archeos1) theodoric; urgency=low
 
@@ -71,4 +71,4 @@ micmac (1.0+hg473-0archeos1) theodoric; urgency=low
   * MkTapioca is no longer created in the MMDir directory (/usr/)
   * Many patches for FHS compliance
 
- -- Romain Janvier <romain.janvier@hotmail.fr>  Wed, 23 Jan 2013 19:18:14 +0100
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Wed, 23 Jan 2013 19:18:14 +0100

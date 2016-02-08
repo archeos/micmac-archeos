@@ -1,7 +1,7 @@
 Source: micmac
 Section: non-free/science
 Priority: extra
-Maintainer: Romain Janvier <romain.janvier@hotmail.fr>
+Maintainer: Romain Janvier <romain.janvier@univ-orleans.fr>
 Build-Depends: debhelper (>= 9.0.0), 
  cmake (>= 2.8.1),
  mercurial,
