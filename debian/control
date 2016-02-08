@@ -4,6 +4,7 @@ Priority: extra
 Maintainer: Romain Janvier <romain.janvier@hotmail.fr>
 Build-Depends: debhelper (>= 9.0.0), 
  cmake (>= 2.8.1),
+ mercurial,
  libx11-dev,
  libqt5widgets5,
  libqt5concurrent5,
