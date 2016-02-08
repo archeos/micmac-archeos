@@ -1,4 +1,4 @@
-micmac (1.0+hg6294-0archeos1) UNRELEASED; urgency=medium
+micmac (1.0+hg6294-0archeos1) hypatia; urgency=medium
 
   * Update make_source_archive script
   * Imported Upstream version 1.0+hg5645+
@@ -15,7 +15,7 @@ micmac (1.0+hg6294-0archeos1) UNRELEASED; urgency=medium
   * Add 'QT Assets paths' patch
   * Imported Upstream version 1.0+hg6294
 
- -- Romain Janvier <romain.janvier@univ-orleans.fr>  Fri, 05 Feb 2016 22:50:55 +0100
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Mon, 08 Feb 2016 14:32:30 +0100
 
 micmac (1.0+hg1340-0archeos2) theodoric; urgency=low
 
