@@ -1,3 +1,9 @@
+micmac (1.0+hg6354-0archeos1) UNRELEASED; urgency=medium
+
+  * Imported Upstream version 1.0+hg6354
+
+ -- Romain Janvier <romain.janvier@univ-orleans.fr>  Mon, 29 Feb 2016 23:04:03 +0100
+
 micmac (1.0+hg6294-0archeos1) hypatia; urgency=medium
 
   * Update make_source_archive script
